@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, LogIn } from 'lucide-react';
-import logo from '../assets/LOG.png';
+import logo from '../assets/LOGO.png';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +35,7 @@ function Navbar() {
               />
             </div>
             <span className="text-xl sm:text-2xl font-bold tracking-tight bg-linear-to-r from-cyan-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent group-hover:from-cyan-300 group-hover:to-blue-300 transition-all duration-300">
-              CodeNova
+              Code-A-Nova
             </span>
           </Link>
 
@@ -64,14 +64,14 @@ function Navbar() {
             </ul>
 
             {/* Login Button */}
-            <Link
+            {/* <Link
               to="/login"
               className="relative inline-flex items-center px-5 lg:px-6 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold text-sm lg:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 hover:scale-105 group overflow-hidden"
             >
               <span className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
               <LogIn size={18} className="mr-2 relative z-10" />
               <span className="relative z-10">Login</span>
-            </Link>
+            </Link> */}
           </div>
 
           {/* Mobile Menu Button */}
@@ -111,7 +111,7 @@ function Navbar() {
               </Link>
             ))}
 
-            <Link
+            {/* <Link
               to="/login"
               onClick={() => setIsOpen(false)}
               className="block w-full text-center px-5 py-4 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold rounded-xl transition-all duration-300 shadow-xl hover:shadow-cyan-500/50 mt-4 transform hover:scale-[1.02] active:scale-[0.98]"
@@ -120,7 +120,7 @@ function Navbar() {
                 <LogIn size={20} className="mr-2" />
                 Login
               </span>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </div>

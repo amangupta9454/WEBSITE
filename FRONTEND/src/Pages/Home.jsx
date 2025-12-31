@@ -22,7 +22,7 @@ import {
   Code2,
   ArrowUp,
 } from 'lucide-react';
-import logo from '../assets/LOG.png';
+import logo from '../assets/LOGO.png';
 import LOGO from '../assets/about.png';
 
 function Home() {
@@ -124,8 +124,8 @@ function Home() {
   ];
 
   const socialLinks = [
-    { href: 'https://linkedin.com/company/codenova', icon: <Linkedin size={24} />, label: 'LinkedIn' },
-    { href: 'https://instagram.com/codenova', icon: <Instagram size={24} />, label: 'Instagram' },
+    { href: 'https://www.linkedin.com/in/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
+    { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
     { href: 'mailto:codenova31@gmail.com', icon: <Mail size={24} />, label: 'Email' },
   ];
 
@@ -488,7 +488,7 @@ function Home() {
             <Link to="/" className="flex items-center space-x-3 mb-6">
               <img src={logo} alt="CodeNova Logo" className="h-10 w-10 sm:h-12 sm:w-12 object-contain drop-shadow-md" />
               <span className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-300 tracking-tight">
-                CodeNova
+                Code-A-Nova
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 mb-4">
@@ -578,7 +578,7 @@ function Home() {
         <div className="bg-black py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-xs sm:text-sm">
             <p className="text-gray-500 text-center md:text-left">
-              © {new Date().getFullYear()} <span className="text-white font-bold">CodeNova</span>. All rights reserved.
+              © {new Date().getFullYear()} <span className="text-white font-bold">Code-A-Nova</span>. All rights reserved.
             </p>
 
             <button className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">

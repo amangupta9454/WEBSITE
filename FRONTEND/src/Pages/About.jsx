@@ -46,7 +46,7 @@ function About() {
             <div className="inline-flex items-center gap-2 mb-6">
               <Code2 className="w-12 h-12 text-cyan-400" />
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                CodeNova
+                Code-A-Nova
               </h1>
             </div>
             <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
@@ -99,12 +99,12 @@ function About() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">About CodeNova</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">About Code-A-Nova</h2>
             <div className="w-24 h-1 bg-linear-to-r from-cyan-400 to-blue-500 mx-auto rounded-full"></div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur-sm p-8 lg:p-12 rounded-2xl border border-gray-700">
             <p className="text-gray-300 text-lg leading-relaxed mb-6">
-              CodeNova is a forward-thinking internship provider platform dedicated to connecting
+              Code-A-Nova is a forward-thinking internship provider platform dedicated to connecting
               ambitious students with meaningful opportunities in technology and software development.
               Founded on the belief that practical experience is just as crucial as theoretical knowledge,
               we've built a comprehensive ecosystem that nurtures talent and accelerates career growth.

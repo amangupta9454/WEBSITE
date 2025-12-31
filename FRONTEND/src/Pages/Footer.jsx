@@ -9,7 +9,7 @@ import {
   MapPin,
   Code2,
 } from 'lucide-react';
-import logo from '../assets/LOG.png';
+import logo from '../assets/LOGo.png';
 
 function Footer() {
   const scrollToTop = () => {
@@ -30,8 +30,8 @@ function Footer() {
   ];
 
   const socialLinks = [
-    { href: 'https://linkedin.com/company/codenova', icon: <Linkedin size={24} />, label: 'LinkedIn' },
-    { href: 'https://instagram.com/codenova', icon: <Instagram size={24} />, label: 'Instagram' },
+    { href: 'https://www.linkedin.com/in/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
+    { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
     { href: 'mailto:codenova31@gmail.com', icon: <Mail size={24} />, label: 'Email' },
     
   ];
@@ -55,7 +55,7 @@ function Footer() {
             <Link to="/" className="flex items-center space-x-3 mb-6">
               <img src={logo} alt="CodeNova Logo" className="h-12 w-12 object-contain drop-shadow-md" />
               <span className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-300 tracking-tight">
-                CodeNova
+                Code-A-Nova
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 mb-4">
@@ -149,7 +149,7 @@ function Footer() {
         <div className="bg-black py-8 px-6">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-sm">
             <p className="text-gray-500">
-              © {new Date().getFullYear()} <span className="text-white font-bold">CodeNova</span>. All rights reserved.
+              © {new Date().getFullYear()} <span className="text-white font-bold">Code-A-Nova</span>. All rights reserved.
             </p>
 
             <button className="group flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">
