@@ -15,7 +15,7 @@ const register = async (req, res) => {
 
     // Send email with Resend
     await resend.emails.send({
-      from: 'Internship Team <onboarding@yourdomain.com>', // Use your verified domain or resend.dev sandbox
+      from: 'Internship Team <codenova31@gmail.com>', // Use your verified domain or resend.dev sandbox
       to: [applicant.email],
       subject: 'Thank You for Applying for the Internship!',
       html: `
@@ -56,7 +56,7 @@ const register = async (req, res) => {
             Warm Regards,<br/>
             <strong>Your Company Name</strong><br/>
             <em>(MSME Registered)</em><br/><br/>
-            📧 support@yourcompany.com<br/>
+            📧 codenova31@gmail.com<br/>
             🌐 www.yourwebsite.com
           </p>
         </div>
