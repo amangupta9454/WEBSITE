@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
 import Home from './Pages/Home';
 import Contact from './Pages/Contact';
 import About from './Pages/About';
@@ -10,74 +9,26 @@ import Term from './Pages/Term';
 import Footer from './Pages/Footer';
 import Login from './Components/Login';
 import Registration from './Components/Registration';
+import Register from './Components/Register';
+import StudentDashboard from './Components/StudentDashboard';
+import ProtectedRoute from './Components/ProtectedRoute';
 function App() {
   return (
     <Router>
-      
         <Navbar />
-        
           <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Home />
-                  {/* <Footer /> */}
-                </>
-              }
-            />
-            <Route
-              path="/about"
-              element={
-                <>
-                  <About />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/contact"
-              element={
-                <>
-                  <Contact />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/service"
-              element={
-                <>
-                  <Service />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/registration"
-              element={
-                <>
-                  <Registration />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <>
-                  <Login /> {/* Create Login page when ready */}
-                  <Footer />
-                </>
-              }
-            />
+            <Route path="/" element={ <Home /> }/>
+            <Route path="/about" element={  <>  <About /> <Footer />  </>  } />
+            <Route  path="/contact" element={ <>  <Contact /> <Footer />  </> } />
+            <Route path="/service"element={<> <Service /> <Footer /></>}/>
+            <Route path="/registration" element={<ProtectedRoute><Registration /><Footer /></ProtectedRoute>}/>
+            <Route path="/register" element={<><Register /> <Footer /></>} />
+            <Route path="/login" element={<><Login /> <Footer /></>}/>
+            <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /><Footer /></ProtectedRoute>} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Term />} />
           </Routes>
-        
-     
     </Router>
   );
 }
-
 export default App;

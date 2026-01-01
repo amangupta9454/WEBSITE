@@ -32,7 +32,7 @@ function Footer() {
   const socialLinks = [
     { href: 'https://www.linkedin.com/in/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
     { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
-    { href: 'mailto:codenova31@gmail.com', icon: <Mail size={24} />, label: 'Email' },
+    { href: 'mailto:codeanova26@gmail.com', icon: <Mail size={24} />, label: 'Email' },
     
   ];
 
@@ -64,7 +64,7 @@ function Footer() {
             <div className="space-y-2 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Mail size={16} />
-                <span>codenova31@gmail.com</span>
+                <span>codeanova26@gmail.com</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={16} />

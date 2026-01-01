@@ -1,75 +1,63 @@
 // backend/controllers/registerController.js
 
-const Applicant = require('../models/Applicant');
-const { Resend } = require('resend');
+const User = require('../models/User');
+const Counter = require('../models/Counter');
+const jwt = require('jsonwebtoken');
 
-const resend = new Resend(process.env.RESEND_API_KEY); // Add this to .env
-
-const register = async (req, res) => {
+const registerInternship = async (req, res) => {
   try {
-    console.log('Received registration data:', req.body);
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
 
-    const applicant = new Applicant(req.body);
-    await applicant.save();
-    console.log('Applicant saved to DB:', applicant._id);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
 
-    // Send email with Resend
-    await resend.emails.send({
-      from: 'Internship Team <codenova31@gmail.com>', // Use your verified domain or resend.dev sandbox
-      to: [applicant.email],
-      subject: 'Thank You for Applying for the Internship!',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px;">
-          <h2 style="color: #4f46e5;">Dear ${applicant.name},</h2>
-          <p>Thank you for showing interest and submitting your details for the <strong>${applicant.domain}</strong> Internship Program.</p>
-          <p>We’re glad to inform you that your application has been <strong>successfully received</strong>.</p>
+    console.log('[Backend] Internship application from user:', userId);
 
-          <p>Your internship duration, as per the form submitted, is <strong>${applicant.duration}</strong>, and you are currently associated with <strong>${applicant.college}</strong>.</p>
+    const currentYear = new Date().getFullYear();
+    const counterId = `internship_${currentYear}`;
 
-          <p>Our team appreciates your initiative and willingness to learn and grow.</p>
+    // Atomically increment counter
+    const counter = await Counter.findByIdAndUpdate(
+      { _id: counterId },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true } // create if not exists
+    );
 
-          <h3 style="color: #4f46e5;">What Happens Next?</h3>
-          <ul>
-            <li>Our team will now review your application.</li>
-            <li>If shortlisted, you will receive:
-              <ul>
-                <li>Internship Offer Letter</li>
-                <li>Joining & Task Details</li>
-                <li>Weekly Assignments & Guidance</li>
-                <li>Mentor Support During Internship</li>
-                <li>Certificate of Completion after successful evaluation</li>
-              </ul>
-            </li>
-          </ul>
+    const serialNumber = String(counter.seq).padStart(4, '0');
+    const studentId = `CN/INT/${currentYear}/${serialNumber}`;
 
-          <h3 style="color: #4f46e5;">Important Points:</h3>
-          <ul>
-            <li>Check your email regularly for updates</li>
-            <li>Be available for communication during onboarding</li>
-            <li>Complete tasks sincerely to receive the certificate</li>
-          </ul>
+    console.log('[Backend] Generated Student ID:', studentId);
 
-          <p>If you have any questions, feel free to reply to this email — our team is always happy to assist you.</p>
+    const applicationData = {
+      ...req.body,
+      studentId,
+      appliedAt: new Date()
+    };
 
-          <hr style="margin: 30px 0;" />
-          <p style="color: #666;">
-            Warm Regards,<br/>
-            <strong>Your Company Name</strong><br/>
-            <em>(MSME Registered)</em><br/><br/>
-            📧 codenova31@gmail.com<br/>
-            🌐 www.yourwebsite.com
-          </p>
-        </div>
-      `,
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.internships.push(applicationData);
+    await user.save();
+
+    console.log('[Backend] Internship saved with Student ID:', studentId);
+
+    res.status(201).json({ 
+      message: 'Application submitted successfully',
+      studentId 
     });
-
-    console.log('Confirmation email sent via Resend to:', applicant.email);
-
-    res.status(201).json({ message: 'Registration successful and email sent' });
   } catch (error) {
-    console.error('Error in registration:', error);
-    res.status(500).json({ message: error.message });
+    console.error('[Backend] Internship registration error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-module.exports = { register };
+module.exports = { registerInternship };

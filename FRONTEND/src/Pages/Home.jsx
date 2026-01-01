@@ -126,7 +126,7 @@ function Home() {
   const socialLinks = [
     { href: 'https://www.linkedin.com/in/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
     { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
-    { href: 'mailto:codenova31@gmail.com', icon: <Mail size={24} />, label: 'Email' },
+    { href: 'mailto:codeanova26@gmail.com', icon: <Mail size={24} />, label: 'Email' },
   ];
 
   return (
@@ -396,17 +396,7 @@ function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section
-        id="why-choose-us"
-        data-scroll-reveal
-        className={`w-full py-16 sm:py-20 lg:py-24 bg-slate-900 transition-all duration-700 delay-375 ${
-          isVisible('why-choose-us')
-            ? 'opacity-100 translate-y-0'
-            : scrollDirection === 'down'
-            ? 'opacity-0 translate-y-12'
-            : 'opacity-0 -translate-y-12'
-        }`}
-      >
+      <section id="why-choose-us" data-scroll-reveal  className={`w-full py-16 sm:py-20 lg:py-24 bg-slate-900 transition-all duration-700 delay-375 ${  isVisible('why-choose-us')  ? 'opacity-100 translate-y-0' : scrollDirection === 'down'  ? 'opacity-0 translate-y-12'  : 'opacity-0 -translate-y-12'  }`}  >
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <span className="text-cyan-400 font-semibold text-xs sm:text-sm uppercase tracking-wider">Our Advantage</span>
@@ -418,10 +408,7 @@ function Home() {
 
           <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 sm:gap-4 p-5 sm:p-6 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 hover:scale-102"
-              >
+              <div key={index} className="flex items-start gap-3 sm:gap-4 p-5 sm:p-6 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 hover:scale-102" >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-cyan-500 rounded-full flex items-center justify-center shrink-0 mt-0.5 sm:mt-1">
                   <CheckCircle size={18} className="text-slate-950" />
                 </div>
@@ -433,17 +420,7 @@ function Home() {
       </section>
 
       {/* Call to Action Section */}
-      <section
-        id="cta"
-        data-scroll-reveal
-        className={`relative w-full py-20 sm:py-28 lg:py-32 bg-slate-950 text-white overflow-hidden transition-all duration-700 delay-450 ${
-          isVisible('cta')
-            ? 'opacity-100 translate-y-0'
-            : scrollDirection === 'down'
-            ? 'opacity-0 translate-y-12'
-            : 'opacity-0 -translate-y-12'
-        }`}
-      >
+      <section id="cta"  data-scroll-reveal  className={`relative w-full py-20 sm:py-28 lg:py-32 bg-slate-950 text-white overflow-hidden transition-all duration-700 delay-450 ${  isVisible('cta') ? 'opacity-100 translate-y-0' : scrollDirection === 'down'  ? 'opacity-0 translate-y-12' : 'opacity-0 -translate-y-12'  }`} >
         <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-500/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-cyan-500/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
 
@@ -497,7 +474,7 @@ function Home() {
             <div className="space-y-2 text-xs sm:text-sm text-gray-500">
               <div className="flex items-center gap-2 hover:text-cyan-400 transition-colors">
                 <Mail size={16} className="shrink-0" />
-                <span className="break-all">codenova31@gmail.com</span>
+                <span className="break-all">codeanova26@gmail.com</span>
               </div>
               <div className="flex items-center gap-2 hover:text-cyan-400 transition-colors">
                 <Phone size={16} className="shrink-0" />
@@ -516,15 +493,11 @@ function Home() {
             <ul className="space-y-3 text-sm">
               {quickLinks.map((link) => (
                 <li key={link.to} className="group">
-                  <Link
-                    to={link.to}
-                    className="flex items-center gap-2 hover:text-cyan-400 hover:translate-x-1 transition-all duration-300"
-                  >
+                  <Link to={link.to} className="flex items-center gap-2 hover:text-cyan-400 hover:translate-x-1 transition-all duration-300" >
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-cyan-400 transition-colors"></span>
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                </li>  ))}
             </ul>
           </div>
 
@@ -534,15 +507,11 @@ function Home() {
             <ul className="space-y-3 text-sm">
               {legalLinks.map((link) => (
                 <li key={link.to} className="group">
-                  <Link
-                    to={link.to}
-                    className="flex items-center gap-2 hover:text-blue-400 hover:translate-x-1 transition-all duration-300"
-                  >
+                  <Link to={link.to} className="flex items-center gap-2 hover:text-blue-400 hover:translate-x-1 transition-all duration-300" >
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-blue-400 transition-colors"></span>
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                </li> ))}
             </ul>
           </div>
 
@@ -551,20 +520,9 @@ function Home() {
             <h4 className="text-lg sm:text-xl font-semibold text-cyan-400 mb-6">Follow Us</h4>
             <div className="flex gap-4 sm:gap-5 mb-6">
               {socialLinks.map((social, i) => (
-                <a
-                  key={i}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative p-3 rounded-xl border border-white/10 bg-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/20"
-                  aria-label={social.label}
-                >
+                <a  key={i} href={social.href} target="_blank" rel="noopener noreferrer" className="group relative p-3 rounded-xl border border-white/10 bg-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/20" aria-label={social.label} >
                   <span className="text-gray-400 group-hover:text-cyan-400 transition-colors">
-                    {social.icon}
-                  </span>
-                </a>
-              ))}
-            </div>
+                    {social.icon} </span>  </a>))}</div>
             <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
               Connect with us on social media for updates, opportunities, and insights.
             </p>

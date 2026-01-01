@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const registerRoutes = require('./routes/register');
+const authRoutes = require('./routes/auth');
+
 dotenv.config();
 const app = express();
 app.use(cors("*"));
@@ -13,8 +15,10 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
-
+// intern registration
 app.use('/api', registerRoutes);
+// login
+app.use('/api/auth', authRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
