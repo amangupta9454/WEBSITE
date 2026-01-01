@@ -26,11 +26,11 @@ function Footer() {
 
   const legalLinks = [
     { to: '/terms', label: 'Terms & Conditions' },
-    { to: '/privacy', label: 'Privacy Policy' },
+    // { to: '/privacy', label: 'Privacy Policy' },
   ];
 
   const socialLinks = [
-    { href: 'https://www.linkedin.com/in/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
+    { href: 'https://www.linkedin.com/company/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
     { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
     { href: 'mailto:codeanova26@gmail.com', icon: <Mail size={24} />, label: 'Email' },
     
@@ -155,7 +155,7 @@ function Footer() {
             <button className="group flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">
               <span className="text-gray-400 group-hover:text-white transition-colors">Created by</span>
               <span className="font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent tracking-wide group-hover:brightness-125 transition-all">
-                Research Radiance
+                CODE-A-NOVA
               </span>
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-cyan-500 to-purple-500 flex items-center justify-center group-hover:rotate-12 transition-transform">
                 <Code2 size={18} className="text-white" />

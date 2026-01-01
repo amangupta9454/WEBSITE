@@ -35,7 +35,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800 flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-white/20">
           <h2 className="text-3xl font-bold text-center text-white mb-8">Admin Login</h2>
@@ -73,7 +73,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl transition-all duration-300 shadow-xl hover:shadow-cyan-500/50 disabled:opacity-70 flex items-center justify-center"
+              className="w-full py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl transition-all duration-300 shadow-xl hover:shadow-cyan-500/50 disabled:opacity-70 flex items-center justify-center"
             >
               {loading ? (
                 <>

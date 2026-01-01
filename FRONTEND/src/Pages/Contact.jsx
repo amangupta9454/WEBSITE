@@ -239,7 +239,7 @@ function Contact() {
                     <div className="flex-1">
                       <h3 className="text-sm font-semibold text-gray-400 mb-1">Email</h3>
                       <p className="text-white group-hover:text-cyan-400 transition-colors duration-300">
-                       codenova31@gmail.com
+                       codeanova26@gmail.com
                       </p>
                     </div>
                   </a>
