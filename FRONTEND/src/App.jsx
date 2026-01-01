@@ -12,6 +12,8 @@ import Registration from './Components/Registration';
 import Register from './Components/Register';
 import StudentDashboard from './Components/StudentDashboard';
 import ProtectedRoute from './Components/ProtectedRoute';
+import AdminLogin from './Components/AdminLogin';
+import AdminDashboard from './Components/AdminDashboard';
 function App() {
   return (
     <Router>
@@ -27,6 +29,8 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /><Footer /></ProtectedRoute>} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Term />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Routes>
     </Router>
   );

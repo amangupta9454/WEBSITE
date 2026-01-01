@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema({
     whyHire: String,
     hearAbout: String,
     resumeUrl: String,
-    appliedAt: { type: Date, default: Date.now }
+    appliedAt: { type: Date, default: Date.now },
+    downloadedAt: { type: Date }
   }]
 }, { timestamps: true });
 

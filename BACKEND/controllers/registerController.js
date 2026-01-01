@@ -26,7 +26,7 @@ const registerInternship = async (req, res) => {
       { new: true, upsert: true } // create if not exists
     );
 
-    const serialNumber = String(counter.seq).padStart(4, '0');
+    const serialNumber = String(counter.seq).padStart(3, '0');
     const studentId = `CN/INT/${currentYear}/${serialNumber}`;
 
     console.log('[Backend] Generated Student ID:', studentId);

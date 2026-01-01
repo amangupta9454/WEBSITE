@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const counterSchema = new mongoose.Schema({
   _id: { type: String, required: true }, // e.g., "internship_2026"
-  seq: { type: Number, default: 0 }
+  seq: { type: Number, default: 1 }
 });
 
 // Correct export — this is critical!
