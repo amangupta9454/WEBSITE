@@ -31,7 +31,7 @@ const Services = () => {
     },
     {
       id: 2,
-      name: 'Backend',
+      name: 'Backend Development',
       description: 'Develop robust server-side applications with Node.js and databases.',
       icon: Server,
       gradient: 'from-green-500 to-emerald-500',
@@ -45,7 +45,7 @@ const Services = () => {
     },
     {
       id: 3,
-      name: 'Fullstack',
+      name: 'Fullstack Development',
       description: 'Build complete applications combining frontend and backend expertise.',
       icon: Layers,
       gradient: 'from-orange-500 to-red-500',
@@ -59,7 +59,7 @@ const Services = () => {
     },
     {
       id: 4,
-      name: 'Python',
+      name: 'Python Programming',
       description: 'Learn versatile Python for automation, data science, and web development.',
       icon: FileCode,
       gradient: 'from-yellow-500 to-amber-500',
