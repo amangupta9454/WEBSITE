@@ -288,6 +288,1118 @@
 // };
 
 // export default AdminDashboard;
+// // before 3 jan
+// import { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import { toast, ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+// import * as XLSX from 'xlsx';
+// import { LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail, Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText } from 'lucide-react';
+
+// const AdminDashboard = () => {
+//   const [applications, setApplications] = useState([]);
+//   const [filteredApplications, setFilteredApplications] = useState([]);
+//   const [domains, setDomains] = useState([]);
+//   const [selectedDomain, setSelectedDomain] = useState('');
+//   const [loading, setLoading] = useState(true);
+//   const [exporting, setExporting] = useState(false);
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     const token = localStorage.getItem('adminToken');
+//     if (!token) {
+//       toast.error('Admin login required');
+//       navigate('/admin-login');
+//       return;
+//     }
+
+//     fetchApplications(token);
+
+//     const logoutTimer = setTimeout(() => {
+//       handleLogout();
+//       toast.info('Session timed out due to inactivity');
+//     }, 5 * 60 * 1000);
+
+//     return () => clearTimeout(logoutTimer);
+//   }, []);
+
+//   const fetchApplications = async (token) => {
+//     try {
+//       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internships`, {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+
+//       const allApps = res.data;
+//       setApplications(allApps);
+//       setFilteredApplications(allApps);
+
+//       const uniqueDomains = [...new Set(allApps.map(app => app.domain))];
+//       setDomains(uniqueDomains);
+//     } catch (err) {
+//       toast.error('Failed to load applications');
+//       localStorage.removeItem('adminToken');
+//       navigate('/admin-login');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleFilter = (e) => {
+//     const domain = e.target.value;
+//     setSelectedDomain(domain);
+
+//     if (domain === '') {
+//       setFilteredApplications(applications);
+//     } else {
+//       setFilteredApplications(applications.filter(app => app.domain === domain));
+//     }
+//   };
+
+//   const handleExport = async () => {
+//     setExporting(true);
+//     const token = localStorage.getItem('adminToken');
+
+//     try {
+//       const newApps = filteredApplications.filter(app => !app.downloadedAt);
+      
+//       if (newApps.length === 0) {
+//         toast.info('No new applications to export');
+//         setExporting(false);
+//         return;
+//       }
+
+//       const data = newApps.map(app => ({
+//         StudentID: app.studentId || 'N/A',
+//         Name: app.name,
+//         Email: app.email,
+//         Domain: app.domain,
+//         Duration: app.duration,
+//         Mobile: app.mobile,
+//         WhatsApp: app.whatsapp || app.mobile,
+//         Course: app.course,
+//         Branch: app.branch,
+//         Year: app.year,
+//         College: app.college,
+//         State: app.state,
+//         PassingYear: app.passingYear,
+//         Portfolio: app.portfolio || 'N/A',
+//         GitHub: app.github || 'N/A',
+//         LinkedIn: app.linkedin || 'N/A',
+//         WhyHire: app.whyHire,
+//         HearAbout: app.hearAbout,
+//         ResumeURL: app.resumeUrl,
+//         AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
+//       }));
+
+//       const ws = XLSX.utils.json_to_sheet(data, {
+//         header: [
+//           'StudentID', 'Name', 'Email', 'Domain', 'Duration',
+//           'Mobile', 'WhatsApp', 'Course', 'Branch', 'Year',
+//           'College', 'State', 'PassingYear', 'Portfolio', 'GitHub',
+//           'LinkedIn', 'WhyHire', 'HearAbout', 'ResumeURL', 'AppliedAt'
+//         ]
+//       });
+
+//       const colWidths = [
+//         { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 12 },
+//         { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
+//         { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 35 },
+//         { wch: 35 }, { wch: 60 }, { wch: 20 }, { wch: 50 }, { wch: 22 },
+//       ];
+//       ws['!cols'] = colWidths;
+
+//       const wb = XLSX.utils.book_new();
+//       XLSX.utils.book_append_sheet(wb, ws, 'Internship Applications');
+
+//       const fileName = `CodeNova_New_Internships_${new Date().toISOString().slice(0,10)}.xlsx`;
+//       XLSX.writeFile(wb, fileName);
+
+//       const applicationIds = newApps.map(app => app._id);
+//       await axios.post(
+//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-downloaded`,
+//         { applicationIds },
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       toast.success(`${newApps.length} new applications exported successfully!`);
+      
+//       fetchApplications(token);
+//     } catch (err) {
+//       console.error('Export error:', err);
+//       toast.error('Export failed. Please try again.');
+//     } finally {
+//       setExporting(false);
+//     }
+//   };
+
+//   const handleLogout = () => {
+//     localStorage.removeItem('adminToken');
+//     toast.success('Admin logged out');
+//     navigate('/admin-login');
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+//         <div className="text-center">
+//           <Loader2 className="w-16 h-16 animate-spin text-blue-500 mx-auto mb-4" />
+//           <p className="text-white text-xl font-medium">Loading applications...</p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   const newApplications = filteredApplications.filter(app => !app.downloadedAt);
+//   const downloadedApplications = filteredApplications.filter(app => app.downloadedAt);
+
+//   const ApplicationCard = ({ app, isDownloaded }) => (
+//     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+//       <div className="flex items-start justify-between mb-4">
+//         <div className="flex items-center gap-3">
+//           <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+//             <User className="w-6 h-6 text-white" />
+//           </div>
+//           <div>
+//             <h3 className="text-lg font-semibold text-white">{app.name}</h3>
+//             <p className="text-sm text-slate-400">{app.studentId || 'N/A'}</p>
+//           </div>
+//         </div>
+//         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+//           isDownloaded 
+//             ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+//             : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+//         }`}>
+//           {isDownloaded ? 'Downloaded' : 'New'}
+//         </span>
+//       </div>
+
+//       <div className="space-y-3">
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Mail className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm break-all">{app.email}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Briefcase className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.domain} - {app.duration}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Phone className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.mobile}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <GraduationCap className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.course} - {app.branch} ({app.year})</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <MapPin className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.college}, {app.state}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Calendar className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">Applied: {new Date(app.appliedAt).toLocaleString('en-IN')}</span>
+//         </div>
+//         {isDownloaded && app.downloadedAt && (
+//           <div className="flex items-center gap-2 text-slate-300">
+//             <CheckCircle className="w-4 h-4 text-green-500" />
+//             <span className="text-sm">Downloaded: {new Date(app.downloadedAt).toLocaleString('en-IN')}</span>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+
+//   return (
+//     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+//         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8 pt-20">
+//           <div>
+//             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+//               Admin Dashboard
+//             </h1>
+//             <p className="text-slate-400 text-sm sm:text-base">Manage internship applications</p>
+//           </div>
+//           <button 
+//             onClick={handleLogout} 
+//             className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 font-medium"
+//           >
+//             <LogOut size={20} /> 
+//             <span>Logout</span>
+//           </button>
+//         </div>
+
+//         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+//           <div className="bg-linear-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">Total Applications</p>
+//                 <p className="text-3xl font-bold text-white">{filteredApplications.length}</p>
+//               </div>
+//               <FileText className="w-12 h-12 text-blue-400 opacity-80" />
+//             </div>
+//           </div>
+
+//           <div className="bg-linear-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">New Applications</p>
+//                 <p className="text-3xl font-bold text-white">{newApplications.length}</p>
+//               </div>
+//               <Clock className="w-12 h-12 text-amber-400 opacity-80" />
+//             </div>
+//           </div>
+
+//           <div className="bg-linear-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">Downloaded</p>
+//                 <p className="text-3xl font-bold text-white">{downloadedApplications.length}</p>
+//               </div>
+//               <CheckCircle className="w-12 h-12 text-green-400 opacity-80" />
+//             </div>
+//           </div>
+//         </div>
+
+//         <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8">
+//           <div className="flex flex-col sm:flex-row gap-4">
+//             <div className="flex-1">
+//               <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Domain</label>
+//               <div className="relative">
+//                 <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
+//                 <select 
+//                   value={selectedDomain} 
+//                   onChange={handleFilter} 
+//                   className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+//                 >
+//                   <option value="">All Domains</option>
+//                   {domains.map(d => <option key={d} value={d}>{d}</option>)}
+//                 </select>
+//               </div>
+//             </div>
+
+//             <div className="flex items-end">
+//               <button 
+//                 onClick={handleExport} 
+//                 disabled={exporting || newApplications.length === 0} 
+//                 className="w-full sm:w-auto px-8 py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium"
+//               >
+//                 {exporting ? (
+//                   <>
+//                     <Loader2 className="animate-spin" size={20} />
+//                     <span>Exporting...</span>
+//                   </>
+//                 ) : (
+//                   <>
+//                     <Download size={20} />
+//                     <span className="hidden sm:inline">Export New to Excel</span>
+//                     <span className="sm:hidden">Export</span>
+//                   </>
+//                 )}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+
+//         <div className="space-y-8">
+//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
+//             <div className="flex items-center gap-3 mb-6">
+//               <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+//                 <Clock size={24} className="text-amber-400" />
+//               </div>
+//               <div>
+//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">New Applications</h2>
+//                 <p className="text-slate-400 text-sm">{newApplications.length} pending review</p>
+//               </div>
+//             </div>
+
+//             {newApplications.length === 0 ? (
+//               <div className="text-center py-16">
+//                 <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+//                 <p className="text-slate-400 text-lg">No new applications available</p>
+//                 <p className="text-slate-500 text-sm mt-2">All applications have been downloaded</p>
+//               </div>
+//             ) : (
+//               <>
+//                 <div className="hidden lg:block overflow-x-auto">
+//                   <table className="w-full">
+//                     <thead>
+//                       <tr className="border-b border-slate-700">
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {newApplications.map((app, i) => (
+//                         <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
+//                           <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
+//                           <td className="py-4 px-4 text-white font-medium">{app.name}</td>
+//                           <td className="py-4 px-4 text-slate-300">{app.email}</td>
+//                           <td className="py-4 px-4">
+//                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+//                               {app.domain}
+//                             </span>
+//                           </td>
+//                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
+//                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 </div>
+
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+//                   {newApplications.map((app, i) => (
+//                     <ApplicationCard key={i} app={app} isDownloaded={false} />
+//                   ))}
+//                 </div>
+//               </>
+//             )}
+//           </div>
+
+//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
+//             <div className="flex items-center gap-3 mb-6">
+//               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+//                 <CheckCircle size={24} className="text-green-400" />
+//               </div>
+//               <div>
+//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">Already Downloaded</h2>
+//                 <p className="text-slate-400 text-sm">{downloadedApplications.length} applications processed</p>
+//               </div>
+//             </div>
+
+//             {downloadedApplications.length === 0 ? (
+//               <div className="text-center py-16">
+//                 <CheckCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+//                 <p className="text-slate-400 text-lg">No downloaded applications</p>
+//                 <p className="text-slate-500 text-sm mt-2">Export new applications to see them here</p>
+//               </div>
+//             ) : (
+//               <>
+//                 <div className="hidden lg:block overflow-x-auto">
+//                   <table className="w-full">
+//                     <thead>
+//                       <tr className="border-b border-slate-700">
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Downloaded At</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {downloadedApplications.map((app, i) => (
+//                         <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
+//                           <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
+//                           <td className="py-4 px-4 text-white font-medium">{app.name}</td>
+//                           <td className="py-4 px-4 text-slate-300">{app.email}</td>
+//                           <td className="py-4 px-4">
+//                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+//                               {app.domain}
+//                             </span>
+//                           </td>
+//                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
+//                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+//                           <td className="py-4 px-4 text-green-400">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 </div>
+
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+//                   {downloadedApplications.map((app, i) => (
+//                     <ApplicationCard key={i} app={app} isDownloaded={true} />
+//                   ))}
+//                 </div>
+//               </>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       <ToastContainer theme="dark" position="top-center" autoClose={3000} />
+//     </div>
+//   );
+// };
+
+// export default AdminDashboard;
+
+
+// certificate download code 3 jan
+// frontend/src/components/AdminDashboard.jsx
+
+// import { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import { toast, ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+// import * as XLSX from 'xlsx';
+// import { 
+//   LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail, 
+//   Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText, 
+//   UploadCloud, Save 
+// } from 'lucide-react';
+
+// const AdminDashboard = () => {
+//   const [applications, setApplications] = useState([]);
+//   const [filteredApplications, setFilteredApplications] = useState([]);
+//   const [domains, setDomains] = useState([]);
+//   const [selectedDomain, setSelectedDomain] = useState('');
+//   const [loading, setLoading] = useState(true);
+//   const [exporting, setExporting] = useState(false);
+//   const [updating, setUpdating] = useState({}); // { appId: true/false }
+//   const [forms, setForms] = useState({});       // { appId: { startDate, endDate, certificateUrl } }
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     const token = localStorage.getItem('adminToken');
+//     if (!token) {
+//       toast.error('Admin login required');
+//       navigate('/admin-login');
+//       return;
+//     }
+
+//     fetchApplications(token);
+
+//     // Auto logout after 5 minutes of inactivity
+//     const logoutTimer = setTimeout(() => {
+//       handleLogout();
+//       toast.info('Session timed out due to inactivity');
+//     }, 5 * 60 * 1000);
+
+//     return () => clearTimeout(logoutTimer);
+//   }, [navigate]);
+
+//   const fetchApplications = async (token) => {
+//     try {
+//       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internships`, {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+
+//       const allApps = res.data;
+//       setApplications(allApps);
+//       setFilteredApplications(allApps);
+
+//       const uniqueDomains = [...new Set(allApps.map(app => app.domain))];
+//       setDomains(uniqueDomains);
+//     } catch (err) {
+//       toast.error('Failed to load applications');
+//       localStorage.removeItem('adminToken');
+//       navigate('/admin-login');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleFilter = (e) => {
+//     const domain = e.target.value;
+//     setSelectedDomain(domain);
+
+//     if (domain === '') {
+//       setFilteredApplications(applications);
+//     } else {
+//       setFilteredApplications(applications.filter(app => app.domain === domain));
+//     }
+//   };
+
+//   const handleExport = async () => {
+//     setExporting(true);
+//     const token = localStorage.getItem('adminToken');
+
+//     try {
+//       const newApps = filteredApplications.filter(app => !app.downloadedAt);
+      
+//       if (newApps.length === 0) {
+//         toast.info('No new applications to export');
+//         setExporting(false);
+//         return;
+//       }
+
+//       const data = newApps.map(app => ({
+//         StudentID: app.studentId || 'N/A',
+//         Name: app.name,
+//         Email: app.email,
+//         Domain: app.domain,
+//         Duration: app.duration,
+//         Mobile: app.mobile,
+//         WhatsApp: app.whatsapp || app.mobile,
+//         Course: app.course,
+//         Branch: app.branch,
+//         Year: app.year,
+//         College: app.college,
+//         State: app.state,
+//         PassingYear: app.passingYear,
+//         Portfolio: app.portfolio || 'N/A',
+//         GitHub: app.github || 'N/A',
+//         LinkedIn: app.linkedin || 'N/A',
+//         WhyHire: app.whyHire,
+//         HearAbout: app.hearAbout,
+//         ResumeURL: app.resumeUrl,
+//         AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
+//       }));
+
+//       const ws = XLSX.utils.json_to_sheet(data);
+//       ws['!cols'] = [
+//         { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 12 },
+//         { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
+//         { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 35 },
+//         { wch: 35 }, { wch: 60 }, { wch: 20 }, { wch: 50 }, { wch: 22 },
+//       ];
+
+//       const wb = XLSX.utils.book_new();
+//       XLSX.utils.book_append_sheet(wb, ws, 'Internship Applications');
+
+//       const fileName = `CodeNova_New_Internships_${new Date().toISOString().slice(0,10)}.xlsx`;
+//       XLSX.writeFile(wb, fileName);
+
+//       const applicationIds = newApps.map(app => app._id);
+//       await axios.post(
+//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-downloaded`,
+//         { applicationIds },
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       toast.success(`${newApps.length} new applications exported successfully!`);
+//       fetchApplications(token);
+//     } catch (err) {
+//       console.error('Export error:', err);
+//       toast.error('Export failed. Please try again.');
+//     } finally {
+//       setExporting(false);
+//     }
+//   };
+
+//   const handleLogout = () => {
+//     localStorage.removeItem('adminToken');
+//     toast.success('Admin logged out');
+//     navigate('/admin-login');
+//   };
+
+//   const handleFormChange = (appId, field, value) => {
+//     setForms(prev => ({
+//       ...prev,
+//       [appId]: {
+//         ...prev[appId],
+//         [field]: value
+//       }
+//     }));
+//   };
+
+//   const handleCertificateUpload = async (appId, file) => {
+//     if (!file || file.type !== 'application/pdf') {
+//       toast.error('Only PDF files are allowed');
+//       return;
+//     }
+//     if (file.size > 1024 * 1024) { // 1MB limit
+//       toast.error('File too large, maximum 1MB');
+//       return;
+//     }
+
+//     setUpdating(prev => ({ ...prev, [appId]: true }));
+
+//     const uploadData = new FormData();
+//     uploadData.append('file', file);
+//     uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+//     uploadData.append('folder', 'internship-certificates');
+//     uploadData.append('resource_type', 'raw');
+
+//     try {
+//       const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`, {
+//         method: 'POST',
+//         body: uploadData
+//       });
+//       const data = await res.json();
+//       if (data.secure_url) {
+//         handleFormChange(appId, 'certificateUrl', data.secure_url);
+//         toast.success('Certificate uploaded successfully!');
+//       } else {
+//         toast.error('Upload failed');
+//       }
+//     } catch (err) {
+//       toast.error('Certificate upload failed');
+//     } finally {
+//       setUpdating(prev => ({ ...prev, [appId]: false }));
+//     }
+//   };
+
+//   const handleUpdateInternship = async (appId) => {
+//     const token = localStorage.getItem('adminToken');
+//     const form = forms[appId] || {};
+
+//     if (!form.startDate || !form.endDate || !form.certificateUrl) {
+//       toast.error('Please fill Start Date, End Date, and upload Certificate');
+//       return;
+//     }
+
+//     setUpdating(prev => ({ ...prev, [appId]: true }));
+
+//     try {
+//       await axios.post(
+//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`,
+//         {
+//           applicationId: appId,
+//           startDate: form.startDate,
+//           endDate: form.endDate,
+//           certificateUrl: form.certificateUrl
+//         },
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       toast.success('Internship details & certificate saved successfully!');
+//       fetchApplications(token);
+//     } catch (err) {
+//       toast.error('Failed to save details. Try again.');
+//     } finally {
+//       setUpdating(prev => ({ ...prev, [appId]: false }));
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+//         <div className="text-center">
+//           <Loader2 className="w-16 h-16 animate-spin text-blue-500 mx-auto mb-4" />
+//           <p className="text-white text-xl font-medium">Loading applications...</p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   const newApplications = filteredApplications.filter(app => !app.downloadedAt);
+//   const downloadedApplications = filteredApplications.filter(app => app.downloadedAt);
+
+//   const ApplicationCard = ({ app, isDownloaded }) => (
+//     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
+//       <div className="flex items-start justify-between mb-4">
+//         <div className="flex items-center gap-3">
+//           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+//             <User className="w-6 h-6 text-white" />
+//           </div>
+//           <div>
+//             <h3 className="text-lg font-semibold text-white">{app.name}</h3>
+//             <p className="text-sm text-slate-400">{app.studentId || 'N/A'}</p>
+//           </div>
+//         </div>
+//         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+//           isDownloaded 
+//             ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+//             : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+//         }`}>
+//           {isDownloaded ? 'Downloaded' : 'New'}
+//         </span>
+//       </div>
+
+//       <div className="space-y-3">
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Mail className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm break-all">{app.email}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Briefcase className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.domain} - {app.duration}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Phone className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.mobile}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <GraduationCap className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.course} - {app.branch} ({app.year})</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <MapPin className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">{app.college}, {app.state}</span>
+//         </div>
+//         <div className="flex items-center gap-2 text-slate-300">
+//           <Calendar className="w-4 h-4 text-slate-500" />
+//           <span className="text-sm">Applied: {new Date(app.appliedAt).toLocaleString('en-IN')}</span>
+//         </div>
+//         {isDownloaded && app.downloadedAt && (
+//           <div className="flex items-center gap-2 text-slate-300">
+//             <CheckCircle className="w-4 h-4 text-green-500" />
+//             <span className="text-sm">Downloaded: {new Date(app.downloadedAt).toLocaleString('en-IN')}</span>
+//           </div>
+//         )}
+//       </div>
+
+//       {/* Internship Completion Form (Only for Downloaded & Not Completed) */}
+//       {isDownloaded && !app.certificateUrl && (
+//         <div className="mt-6 p-4 bg-slate-700/50 rounded-lg space-y-4">
+//           <h4 className="text-white font-medium">Complete Internship Details</h4>
+          
+//           <div>
+//             <label className="text-sm text-slate-300">Start Date</label>
+//             <input
+//               type="date"
+//               value={forms[app._id]?.startDate || ''}
+//               onChange={(e) => handleFormChange(app._id, 'startDate', e.target.value)}
+//               className="w-full mt-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="text-sm text-slate-300">End Date</label>
+//             <input
+//               type="date"
+//               value={forms[app._id]?.endDate || ''}
+//               onChange={(e) => handleFormChange(app._id, 'endDate', e.target.value)}
+//               className="w-full mt-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="text-sm text-slate-300">Upload Certificate (PDF)</label>
+//             <label className="mt-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 border border-dashed border-slate-500 rounded cursor-pointer hover:bg-slate-700">
+//               <UploadCloud className="w-5 h-5" />
+//               <span>Choose PDF</span>
+//               <input
+//                 type="file"
+//                 accept="application/pdf"
+//                 onChange={(e) => e.target.files[0] && handleCertificateUpload(app._id, e.target.files[0])}
+//                 className="hidden"
+//               />
+//             </label>
+//           </div>
+
+//           <button
+//             onClick={() => handleUpdateInternship(app._id)}
+//             disabled={updating[app._id]}
+//             className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded flex items-center justify-center gap-2 disabled:opacity-70"
+//           >
+//             {updating[app._id] ? <Loader2 className="animate-spin" /> : <Save className="w-5 h-5" />}
+//             Save Details & Certificate
+//           </button>
+//         </div>
+//       )}
+
+//       {/* Show if already completed */}
+//       {app.certificateUrl && (
+//         <div className="mt-4 p-4 bg-green-800/30 border border-green-600/50 rounded-lg space-y-2">
+//           <p className="text-green-400"><strong>Completed:</strong></p>
+//           <p className="text-sm">Start: {app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+//           <p className="text-sm">End: {app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+//           <p className="text-sm">Duration: {app.totalMonths} months</p>
+//           <a href={app.certificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+//             View Certificate PDF
+//           </a>
+//         </div>
+//       )}
+//     </div>
+//   );
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+//         {/* Header */}
+//         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8 pt-20">
+//           <div>
+//             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+//               Admin Dashboard
+//             </h1>
+//             <p className="text-slate-400 text-sm sm:text-base">Manage internship applications</p>
+//           </div>
+//           <button 
+//             onClick={handleLogout} 
+//             className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 font-medium"
+//           >
+//             <LogOut size={20} /> 
+//             <span>Logout</span>
+//           </button>
+//         </div>
+
+//         {/* Stats Cards */}
+//         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+//           <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">Total Applications</p>
+//                 <p className="text-3xl font-bold text-white">{filteredApplications.length}</p>
+//               </div>
+//               <FileText className="w-12 h-12 text-blue-400 opacity-80" />
+//             </div>
+//           </div>
+
+//           <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">New Applications</p>
+//                 <p className="text-3xl font-bold text-white">{newApplications.length}</p>
+//               </div>
+//               <Clock className="w-12 h-12 text-amber-400 opacity-80" />
+//             </div>
+//           </div>
+
+//           <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <p className="text-slate-400 text-sm font-medium mb-1">Downloaded</p>
+//                 <p className="text-3xl font-bold text-white">{downloadedApplications.length}</p>
+//               </div>
+//               <CheckCircle className="w-12 h-12 text-green-400 opacity-80" />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Filter & Export */}
+//         <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8">
+//           <div className="flex flex-col sm:flex-row gap-4">
+//             <div className="flex-1">
+//               <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Domain</label>
+//               <div className="relative">
+//                 <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
+//                 <select 
+//                   value={selectedDomain} 
+//                   onChange={handleFilter} 
+//                   className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+//                 >
+//                   <option value="">All Domains</option>
+//                   {domains.map(d => <option key={d} value={d}>{d}</option>)}
+//                 </select>
+//               </div>
+//             </div>
+
+//             <div className="flex items-end">
+//               <button 
+//                 onClick={handleExport} 
+//                 disabled={exporting || newApplications.length === 0} 
+//                 className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium"
+//               >
+//                 {exporting ? (
+//                   <>
+//                     <Loader2 className="animate-spin" size={20} />
+//                     <span>Exporting...</span>
+//                   </>
+//                 ) : (
+//                   <>
+//                     <Download size={20} />
+//                     <span className="hidden sm:inline">Export New to Excel</span>
+//                     <span className="sm:hidden">Export</span>
+//                   </>
+//                 )}
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Sections */}
+//         <div className="space-y-8">
+
+//           {/* New Applications */}
+//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
+//             <div className="flex items-center gap-3 mb-6">
+//               <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+//                 <Clock size={24} className="text-amber-400" />
+//               </div>
+//               <div>
+//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">New Applications</h2>
+//                 <p className="text-slate-400 text-sm">{newApplications.length} pending review</p>
+//               </div>
+//             </div>
+
+//             {newApplications.length === 0 ? (
+//               <div className="text-center py-16">
+//                 <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+//                 <p className="text-slate-400 text-lg">No new applications available</p>
+//               </div>
+//             ) : (
+//               <>
+//                 {/* Desktop Table */}
+//                 <div className="hidden lg:block overflow-x-auto">
+//                   <table className="w-full">
+//                     <thead>
+//                       <tr className="border-b border-slate-700">
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {newApplications.map((app, i) => (
+//                         <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
+//                           <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
+//                           <td className="py-4 px-4 text-white font-medium">{app.name}</td>
+//                           <td className="py-4 px-4 text-slate-300">{app.email}</td>
+//                           <td className="py-4 px-4">
+//                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+//                               {app.domain}
+//                             </span>
+//                           </td>
+//                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
+//                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 </div>
+
+//                 {/* Mobile Cards */}
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+//                   {newApplications.map((app, i) => (
+//                     <ApplicationCard key={i} app={app} isDownloaded={false} />
+//                   ))}
+//                 </div>
+//               </>
+//             )}
+//           </div>
+
+//           {/* Already Downloaded */}
+//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
+//             <div className="flex items-center gap-3 mb-6">
+//               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+//                 <CheckCircle size={24} className="text-green-400" />
+//               </div>
+//               <div>
+//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">Already Downloaded</h2>
+//                 <p className="text-slate-400 text-sm">{downloadedApplications.length} processed</p>
+//               </div>
+//             </div>
+
+//             {downloadedApplications.length === 0 ? (
+//               <div className="text-center py-16">
+//                 <CheckCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+//                 <p className="text-slate-400 text-lg">No downloaded applications yet</p>
+//               </div>
+//             ) : (
+//               <>
+//                 {/* Desktop Table with Editable Fields */}
+//                 <div className="hidden lg:block overflow-x-auto">
+//                   <table className="w-full">
+//                     <thead>
+//                       <tr className="border-b border-slate-700">
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Downloaded At</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Start Date</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">End Date</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Months</th>
+//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Certificate</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {downloadedApplications.map((app) => {
+//                         const form = forms[app._id] || {};
+//                         const isUpdating = updating[app._id];
+
+//                         return (
+//                           <tr key={app._id} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+//                             <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
+//                             <td className="py-4 px-4 text-white font-medium">{app.name}</td>
+//                             <td className="py-4 px-4 text-slate-300">{app.email}</td>
+//                             <td className="py-4 px-4">
+//                               <span className="px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30">
+//                                 {app.domain}
+//                               </span>
+//                             </td>
+//                             <td className="py-4 px-4 text-slate-300">{app.duration}</td>
+//                             <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+//                             <td className="py-4 px-4 text-green-400">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
+
+//                             {/* Start Date */}
+//                             <td className="py-4 px-4">
+//                               {app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : (
+//                                 <input
+//                                   type="date"
+//                                   value={form.startDate || ''}
+//                                   onChange={(e) => handleFormChange(app._id, 'startDate', e.target.value)}
+//                                   className="w-full px-2 py-1 text-sm bg-slate-800 border border-slate-600 rounded text-white"
+//                                   disabled={!!app.certificateUrl}
+//                                 />
+//                               )}
+//                             </td>
+
+//                             {/* End Date */}
+//                             <td className="py-4 px-4">
+//                               {app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : (
+//                                 <input
+//                                   type="date"
+//                                   value={form.endDate || ''}
+//                                   onChange={(e) => handleFormChange(app._id, 'endDate', e.target.value)}
+//                                   className="w-full px-2 py-1 text-sm bg-slate-800 border border-slate-600 rounded text-white"
+//                                   disabled={!!app.certificateUrl}
+//                                 />
+//                               )}
+//                             </td>
+
+//                             {/* Total Months */}
+//                             <td className="py-4 px-4 text-slate-300">
+//                               {app.totalMonths || (form.startDate && form.endDate
+//                                 ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24 * 30))
+//                                 : '-')}
+//                             </td>
+
+//                             {/* Certificate */}
+//                             <td className="py-4 px-4">
+//                               {app.certificateUrl ? (
+//                                 <a href={app.certificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+//                                   <FileText size={16} />
+//                                   View PDF
+//                                 </a>
+//                               ) : (
+//                                 <div className="space-y-2">
+//                                   <label className="block">
+//                                     <input
+//                                       type="file"
+//                                       accept="application/pdf"
+//                                       onChange={(e) => e.target.files[0] && handleCertificateUpload(app._id, e.target.files[0])}
+//                                       className="text-sm file:mr-2 file:py-1 file:px-3 file:rounded file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer"
+//                                       disabled={isUpdating}
+//                                     />
+//                                   </label>
+//                                   {form.startDate && form.endDate && form.certificateUrl && (
+//                                     <button
+//                                       onClick={() => handleUpdateInternship(app._id)}
+//                                       disabled={isUpdating}
+//                                       className="w-full px-3 py-1.5 text-sm bg-green-600 hover:bg-green-500 text-white rounded flex items-center justify-center gap-1"
+//                                     >
+//                                       {isUpdating ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+//                                       Save
+//                                     </button>
+//                                   )}
+//                                 </div>
+//                               )}
+//                             </td>
+//                           </tr>
+//                         );
+//                       })}
+//                     </tbody>
+//                   </table>
+//                 </div>
+
+//                 {/* Mobile Cards */}
+//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+//                   {downloadedApplications.map((app, i) => (
+//                     <ApplicationCard key={i} app={app} isDownloaded={true} />
+//                   ))}
+//                 </div>
+//               </>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       <ToastContainer theme="dark" position="top-center" autoClose={3000} />
+//     </div>
+//   );
+// };
+
+// export default AdminDashboard;
+
+
+// upload certificate verification fix
+// frontend/src/components/AdminDashboard.jsx
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -295,7 +1407,11 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import * as XLSX from 'xlsx';
-import { LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail, Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText } from 'lucide-react';
+import { 
+  LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail, 
+  Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText, 
+  UploadCloud, Save, FileInput 
+} from 'lucide-react';
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -304,6 +1420,9 @@ const AdminDashboard = () => {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [updating, setUpdating] = useState({});
+  const [forms, setForms] = useState({});
+  const [uploadingExcel, setUploadingExcel] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -439,9 +1558,118 @@ const AdminDashboard = () => {
     navigate('/admin-login');
   };
 
+  const handleFormChange = (appId, field, value) => {
+    setForms(prev => ({
+      ...prev,
+      [appId]: {
+        ...prev[appId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleCertificateUpload = async (appId, file) => {
+    if (!file || file.type !== 'application/pdf') {
+      toast.error('Only PDF files allowed');
+      return;
+    }
+    if (file.size > 1024 * 1024) { // 1MB limit
+      toast.error('File too large, max 1MB');
+      return;
+    }
+
+    setUpdating(prev => ({ ...prev, [appId]: true }));
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    uploadData.append('folder', 'internship-certificates');
+    uploadData.append('resource_type', 'raw');
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`, {
+        method: 'POST',
+        body: uploadData
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        handleFormChange(appId, 'certificateUrl', data.secure_url);
+        toast.success('Certificate uploaded!');
+      }
+    } catch (err) {
+      toast.error('Upload failed');
+    } finally {
+      setUpdating(prev => ({ ...prev, [appId]: false }));
+    }
+  };
+
+  const handleUpdateInternship = async (appId) => {
+    const token = localStorage.getItem('adminToken');
+    const form = forms[appId] || {};
+    if (!form.startDate || !form.endDate || !form.certificateUrl) {
+      toast.error('All fields required');
+      return;
+    }
+
+    setUpdating(prev => ({ ...prev, [appId]: true }));
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`,
+        {
+          applicationId: appId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          certificateUrl: form.certificateUrl
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Updated successfully!');
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Update failed');
+    } finally {
+      setUpdating(prev => ({ ...prev, [appId]: false }));
+    }
+  };
+
+  const handleExcelUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      toast.error('Only Excel files (.xlsx) are allowed');
+      return;
+    }
+
+    setUploadingExcel(true);
+    const token = localStorage.getItem('adminToken');
+
+    const formData = new FormData();
+    formData.append('excelFile', file);
+
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/upload-certificates`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error('Upload failed. Please try again.');
+    } finally {
+      setUploadingExcel(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-white text-xl font-medium">Loading applications...</p>
@@ -457,7 +1685,7 @@ const AdminDashboard = () => {
     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
             <User className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -506,11 +1734,58 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {isDownloaded && !app.certificateUrl && (
+        <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+          <h4 className="text-white font-medium mb-4">Add Internship Details</h4>
+          <div className="space-y-4">
+            <input
+              type="date"
+              value={forms[app._id]?.startDate || ''}
+              onChange={(e) => handleFormChange(app._id, 'startDate', e.target.value)}
+              className="w-full p-2 bg-slate-800 border border-slate-600 rounded"
+            />
+            <input
+              type="date"
+              value={forms[app._id]?.endDate || ''}
+              onChange={(e) => handleFormChange(app._id, 'endDate', e.target.value)}
+              className="w-full p-2 bg-slate-800 border border-slate-600 rounded"
+            />
+            <label className="flex items-center gap-2 p-2 bg-slate-800 border border-dashed border-slate-600 rounded cursor-pointer">
+              <UploadCloud className="w-5 h-5" />
+              <span>Upload Certificate PDF</span>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => handleCertificateUpload(app._id, e.target.files[0])}
+                className="hidden"
+              />
+            </label>
+            <button
+              onClick={() => handleUpdateInternship(app._id)}
+              disabled={updating[app._id]}
+              className="w-full p-2 bg-green-600 text-white rounded flex items-center justify-center gap-2"
+            >
+              {updating[app._id] ? <Loader2 className="animate-spin" /> : <Save />}
+              Save
+            </button>
+          </div>
+        </div>
+      )}
+
+      {app.certificateUrl && (
+        <div className="mt-4 p-4 bg-green-800/20 rounded-lg">
+          <p>Start: {app.startDate ? new Date(app.startDate).toLocaleDateString() : 'N/A'}</p>
+          <p>End: {app.endDate ? new Date(app.endDate).toLocaleDateString() : 'N/A'}</p>
+          <p>Months: {app.totalMonths || 'N/A'}</p>
+          <a href={app.certificateUrl} target="_blank" className="text-blue-400">View Certificate</a>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8 pt-20">
           <div>
@@ -529,7 +1804,7 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-linear-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
+          <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm font-medium mb-1">Total Applications</p>
@@ -539,7 +1814,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
+          <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm font-medium mb-1">New Applications</p>
@@ -549,7 +1824,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
+          <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm font-medium mb-1">Downloaded</p>
@@ -581,7 +1856,7 @@ const AdminDashboard = () => {
               <button 
                 onClick={handleExport} 
                 disabled={exporting || newApplications.length === 0} 
-                className="w-full sm:w-auto px-8 py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium"
+                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium"
               >
                 {exporting ? (
                   <>
@@ -598,6 +1873,28 @@ const AdminDashboard = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* New: Excel Upload Section */}
+        <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8">
+          <h3 className="text-xl font-semibold text-white mb-4">Upload Certificates Excel</h3>
+          <div className="flex items-center gap-4">
+            <label className="flex-1 flex items-center gap-2 p-3 bg-slate-900/50 border border-slate-700 rounded-lg cursor-pointer hover:border-blue-500 transition-all">
+              <FileInput className="w-5 h-5 text-blue-400" />
+              <span className="text-slate-300">Choose Excel File (.xlsx)</span>
+              <input
+                type="file"
+                accept=".xlsx"
+                onChange={handleExcelUpload}
+                className="hidden"
+                disabled={uploadingExcel}
+              />
+            </label>
+            {uploadingExcel && (
+              <Loader2 className="animate-spin text-blue-500" size={24} />
+            )}
+          </div>
+          <p className="text-sm text-slate-500 mt-2">Expected columns: Certificate_Number, Student_Name, Domain, Start_Date, End_Date, Duration, Student_ID</p>
         </div>
 
         <div className="space-y-8">
@@ -690,6 +1987,10 @@ const AdminDashboard = () => {
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Downloaded At</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Start Date</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">End Date</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Months</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Certificate</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -706,6 +2007,14 @@ const AdminDashboard = () => {
                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
                           <td className="py-4 px-4 text-green-400">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
+                          <td className="py-4 px-4 text-slate-300">{app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</td>
+                          <td className="py-4 px-4 text-slate-300">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</td>
+                          <td className="py-4 px-4 text-slate-300">{app.totalMonths || 'N/A'}</td>
+                          <td className="py-4 px-4">
+                            {app.certificateUrl ? (
+                              <a href={app.certificateUrl} target="_blank" className="text-blue-400">View</a>
+                            ) : 'N/A'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

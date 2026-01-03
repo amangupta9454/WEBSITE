@@ -121,6 +121,7 @@ function Home() {
   const legalLinks = [
     { to: '/terms', label: 'Terms & Conditions' },
     // { to: '/privacy', label: 'Privacy Policy' },
+    { to: '/verify', label: 'Verify Certificate' },
   ];
 
   const socialLinks = [

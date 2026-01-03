@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const registerRoutes = require('./routes/register');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const verifyRoutes = require('./routes/verify');
 dotenv.config();
 const app = express();
 app.use(cors("*"));
@@ -21,6 +22,8 @@ app.use('/api', registerRoutes);
 app.use('/api/auth', authRoutes);
 // admin
 app.use('/api/admin', adminRoutes);
+// verify
+app.use('/api/verify', verifyRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
