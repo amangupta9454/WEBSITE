@@ -67,10 +67,7 @@ function Footer() {
                 <Mail size={16} />
                 <span>codeanova26@gmail.com</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone size={16} />
-                <span>+91 7880533908</span>
-              </div>
+             
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
                 <span>India</span>

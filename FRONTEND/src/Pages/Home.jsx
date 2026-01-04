@@ -477,10 +477,7 @@ function Home() {
                 <Mail size={16} className="shrink-0" />
                 <span className="break-all">codeanova26@gmail.com</span>
               </div>
-              <div className="flex items-center gap-2 hover:text-cyan-400 transition-colors">
-                <Phone size={16} className="shrink-0" />
-                <span>+91 7880533908</span>
-              </div>
+              
               <div className="flex items-center gap-2 hover:text-cyan-400 transition-colors">
                 <MapPin size={16} className="shrink-0" />
                 <span>India</span>

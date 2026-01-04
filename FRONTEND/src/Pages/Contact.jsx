@@ -243,24 +243,7 @@ function Contact() {
                       </p>
                     </div>
                   </a>
-
-
-                  <a
-                    href="https://wa.me/917880533908"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 border border-transparent hover:border-emerald-500/30 transition-all duration-300 group"
-                  >
-                    <div className="w-11 h-11 bg-linear-to-br from-emerald-500/20 to-green-500/20 rounded-xl flex items-center justify-center shrink-0 border border-emerald-500/20 group-hover:border-emerald-500/40 transition-all duration-300">
-                      <MessageCircle className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-gray-400 mb-1">WhatsApp</h3>
-                      <p className="text-white group-hover:text-emerald-400 transition-colors duration-300">
-                        +91 7880533908
-                      </p>
-                    </div>
-                  </a>
+                   
 
                   <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/30 border border-transparent">
                     <div className="w-11 h-11 bg-linear-to-br from-orange-500/20 to-amber-500/20 rounded-xl flex items-center justify-center shrink-0 border border-orange-500/20">
