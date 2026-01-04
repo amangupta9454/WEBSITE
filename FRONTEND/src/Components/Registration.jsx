@@ -854,7 +854,7 @@ const Registration = () => {
   const GOOGLE_FORM_LINK = "https://docs.google.com/forms/d/e/1FAIpQLSd07u9aiqJAVHSJot1pxSDD9QPod1_J3AqsDZbgr6XC89FN5A/viewform";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center px-4 py-12 sm:py-16">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center px-4 py-12 sm:py-16">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
@@ -866,7 +866,7 @@ const Registration = () => {
         <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-800 overflow-hidden">
           <div className="p-8 sm:p-12 lg:p-16 text-center">
             {/* Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full mb-8 shadow-lg">
+            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-linear-to-br from-purple-600 to-blue-600 rounded-full mb-8 shadow-lg">
               <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
             </div>
 
@@ -885,7 +885,7 @@ const Registration = () => {
               href={GOOGLE_FORM_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-4 px-8 sm:px-12 py-5 sm:py-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg sm:text-xl font-bold rounded-full transition-all duration-300 shadow-xl transform hover:scale-105 hover:shadow-2xl"
+              className="group inline-flex items-center gap-4 px-8 sm:px-12 py-5 sm:py-6 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg sm:text-xl font-bold rounded-full transition-all duration-300 shadow-xl transform hover:scale-105 hover:shadow-2xl"
             >
               <ExternalLink className="w-6 h-6 sm:w-7 sm:h-7 group-hover:translate-x-1 transition-transform" />
               Apply Now
