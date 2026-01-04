@@ -2,19 +2,10 @@
 
 const User = require('../models/User');
 const Counter = require('../models/Counter');
-const jwt = require('jsonwebtoken');
 
 const registerInternship = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.id;
-
-    console.log('[Backend] Internship application from user:', userId);
+    console.log('[Backend] Public internship application received:', req.body.email || 'No email');
 
     const currentYear = new Date().getFullYear();
     const counterId = `internship_${currentYear}`;
@@ -23,7 +14,7 @@ const registerInternship = async (req, res) => {
     const counter = await Counter.findByIdAndUpdate(
       { _id: counterId },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true } // create if not exists
+      { new: true, upsert: true }
     );
 
     const serialNumber = String(counter.seq).padStart(3, '0');
@@ -37,9 +28,19 @@ const registerInternship = async (req, res) => {
       appliedAt: new Date()
     };
 
-    const user = await User.findById(userId);
+    // Create a temporary user-like entry or just push to internships array
+    // Since no login, we create a minimal user if email doesn't exist
+    let user = await User.findOne({ email: req.body.email });
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      // Create new user without password (since no login)
+      user = await User.create({
+        name: req.body.name,
+        email: req.body.email,
+        mobile: req.body.mobile,
+        // No password, profileImage, etc.
+        internships: []
+      });
     }
 
     user.internships.push(applicationData);
@@ -53,9 +54,6 @@ const registerInternship = async (req, res) => {
     });
   } catch (error) {
     console.error('[Backend] Internship registration error:', error);
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
     res.status(500).json({ message: 'Server error' });
   }
 };

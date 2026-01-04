@@ -1,11 +1,11 @@
-// backend/routes/register.js  (or wherever your internship route is)
+// backend/routes/register.js
 
 const express = require('express');
 const { registerInternship } = require('../controllers/registerController');
-const auth = require('../middleware/auth'); // Your JWT middleware
+// Removed auth middleware — now fully public
 
 const router = express.Router();
 
-router.post('/register', auth, registerInternship); // Protected route
+router.post('/', registerInternship); // No authentication needed
 
 module.exports = router;
