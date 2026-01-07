@@ -7,6 +7,7 @@ import Navbar from './Pages/Navbar';
 import Privacy from './Pages/Privacy';
 import Term from './Pages/Term';
 import Footer from './Pages/Footer';
+import Refund from './Pages/Refund';
 // import Login from './Components/Login';
 import Registration from './Components/Registration';
 // import Register from './Components/Register';
@@ -28,7 +29,8 @@ function App() {
             {/* <Route path="/register" element={<><Register /> <Footer /></>} />
             <Route path="/login" element={<><Login /> <Footer /></>}/>
             <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /><Footer /></ProtectedRoute>} /> */}
-            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/privacy-policy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<Refund />} />
             <Route path="/terms" element={<Term />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />

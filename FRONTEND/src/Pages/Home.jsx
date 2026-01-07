@@ -210,6 +210,7 @@ function Home() {
   const legalLinks = [
     { to: '/terms', label: 'Terms & Conditions' },
     { to: '/verify', label: 'Verify Certificate' },
+    { to: '/refund-policy', label: 'Refund Policy' },
   ];
 
   const socialLinks = [
