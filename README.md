@@ -43,7 +43,7 @@
 <h2 id="structure">🗂️ Folder & File Structure</h2>
 
 <pre>
-AGRI/
+CODENOVA/
 ├── BACKEND/
 │   ├── .env
 │   ├── .gitignore
@@ -235,4 +235,40 @@ AGRI/
                    <p style="text-align:center; color:#94a3b8;">
                    👨‍💻 Created by <strong>Aman Gupta</strong> | First Freelance Project for Code-A-Nova  </p>
                     <p align="center">⭐ If you found this project helpful, give it a star!</p>
+
+<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+    <h2 id="screenshots" style="color: #4CAF50; font-size: 28px; font-weight: bold; margin-bottom: 20px;">📸 Screenshots</h2>
+    <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
+        Explore the interface of Code-A-Nova to explore services, register for internships, receive email notifications, verify certificates, and contact the organization through a seamless and user-friendly interface.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">🏠 Home Page – A clean and responsive landing page introducing Code-A-Nova and its mission.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951669/Screenshot_2026-01-09_150858_z7h2vj.png" alt="Home Page" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">ℹ️ About Us – Information about the company, vision, and core values of Code-A-Nova.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951669/Screenshot_2026-01-09_150910_orranx.png" alt="About Us" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">🛠️ Our Services – Detailed overview of internships and training programs offered by the startup.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951670/Screenshot_2026-01-09_150927_agqany.png" alt="Our Services" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">📝 Internship Registration – Simple and user-friendly form for students to apply for internships.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951669/Screenshot_2026-01-09_150938_e8gryt.png" alt="Internship Registration" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">📞 Contact Us – Contact form integrated with Getform.io for seamless user communication.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951669/Screenshot_2026-01-09_150949_hr91ud.png" alt="Contact Us" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+        <div style="flex: 1 1 280px; background-color: #fff; padding: 15px; text-align: center; border: 1px solid #ddd;">
+            <h3 style="color: #333; font-size: 20px; font-weight: bold; margin: 0 0 10px;">📜 Certificate Verification – Secure interface to verify the authenticity of issued certificates.</h3>
+            <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767951670/Screenshot_2026-01-09_151020_ckfuva.png" alt="Verify Your Certificate" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+        </div>
+    </div>
+</div>
+
+<hr>
+
 
