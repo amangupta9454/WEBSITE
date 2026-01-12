@@ -53,7 +53,7 @@ CODENOVA/
 │   ├── server.js
 │   ├── controllers/
 │   │   ├── adminController.js
-│   │   ├── authController.js
+│   │   ├── projectController.js
 │   │   ├── registerController.js
 │   │   ├── verifyController.js
 │   ├── middleware/
@@ -62,10 +62,11 @@ CODENOVA/
 │   │   ├── Admin.js
 │   │   ├── Certificate.js
 │   │   ├── Counter.js
+│   │   ├── ProjectSubmission.js
 │   │   ├── User.js
 │   ├── routes/
 │   │   ├── admin.js
-│   │   ├── auth.js
+│   │   ├── project.js
 │   │   ├── register.js
 │   │   ├── verify.js
 ├── FRONTEND/
@@ -87,11 +88,8 @@ CODENOVA/
 │       ├── components/
 │       │   ├── AdminLogin.jsx
 │       │   ├── AdminDashboard.jsx
-│       │   ├── Login.jsx
-│       │   ├── ProtectedRoute.jsx
-│       │   ├── Register.jsx
+│       │   ├── Project.jsx
 │       │   ├── Registration.jsx
-│       │   ├── StudentDashboard.jsx
 │       │   ├── Verify.jsx
 │       ├── pages/
 │       │   ├── About.jsx
@@ -119,7 +117,7 @@ CODENOVA/
     <tr><td style="padding:10px;">Database</td><td style="padding:10px;">MongoDB</td></tr>
     <tr><td style="padding:10px;">Email</td><td style="padding:10px;">Nodemailer</td></tr>
     <tr><td style="padding:10px;">Forms</td><td style="padding:10px;">Getform.io</td></tr>
-    <tr><td style="padding:10px;">Hosting</td><td style="padding:10px;">Vercel</td></tr>
+    <tr><td style="padding:10px;">Hosting</td><td style="padding:10px;">Render, Netlify</td></tr>
   </table>
 
 <hr>

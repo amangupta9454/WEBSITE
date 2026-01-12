@@ -118,7 +118,7 @@ const Project = () => {
                 ...payload
               });
               toast.success(verifyRes.data.message);
-              alert('Your payment is successfully paid and the project is submitted successfully!');
+              
             } catch (err) {
               toast.error('Payment verification failed');
             }
@@ -134,7 +134,7 @@ const Project = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        toast.success(res.data.message || 'Project submitted successfully!');
+        toast.success(res.data.message || 'Payment is verified and Project is Submitted');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Submission failed');
@@ -145,7 +145,7 @@ const Project = () => {
 
   return (
     <div className="min-h-screen bg-black py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-black to-slate-950 opacity-40"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-black to-slate-950 opacity-40"></div>
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="text-center mb-8 sm:mb-12 lg:mb-16 pt-14">
@@ -342,7 +342,7 @@ const Project = () => {
             <button
               type="submit"
               disabled={submitting || !currentMonth || currentMonth > 3 || loadingMonth}
-              className="w-full py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-lg sm:text-xl font-bold rounded-lg transition-all duration-500 shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-4 sm:py-6 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-lg sm:text-xl font-bold rounded-lg transition-all duration-500 shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

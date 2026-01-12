@@ -100,7 +100,7 @@ function Home() {
 
     const duration = 2000;
     const steps = 60;
-    const internIncrement = 50 / steps;
+    const internIncrement =300 / steps;
     const rateIncrement = 95 / steps;
     let currentStep = 0;
 
@@ -113,9 +113,9 @@ function Home() {
 
       if (currentStep >= steps) {
         clearInterval(interval);
-        setActiveInterns(50);
+        setActiveInterns(300);
         setSuccessRate(95);
-        localStorage.setItem('internshipStats', JSON.stringify({ interns: 50, rate: 95 }));
+        localStorage.setItem('internshipStats', JSON.stringify({ interns: 300, rate: 95 }));
         setAnimationStarted(true);
       }
     }, duration / steps);
@@ -296,7 +296,7 @@ function Home() {
               <div
                 key={index}
                 className="group relative p-6 bg-linear-to-br from-slate-900/80 to-slate-800/80 rounded-2xl backdrop-blur-sm border border-slate-700 hover:border-cyan-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20 animate-fade-in-up cursor-pointer overflow-hidden"
-                style={{ animationDelay: `${800 + index * 100}ms` }}
+                style={{ animationDelay: `${900 + index * 100}ms` }}
               >
                 <div className="absolute inset-0 bg-linear-to-br from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 rounded-2xl transition-all duration-500"></div>
                 <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -590,7 +590,7 @@ function Home() {
             </Link>
           </div>
           <p className="mt-8 text-gray-400 px-4 animate-fade-in-up animation-delay-600">
-            Join 50+ students who have already started their journey
+            Join 300+ students who have already started their journey
           </p>
         </div>
       </section>

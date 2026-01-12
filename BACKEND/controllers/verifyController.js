@@ -1,4 +1,3 @@
-// backend/controllers/verifyController.js
 
 const Certificate = require('../models/Certificate');
 
