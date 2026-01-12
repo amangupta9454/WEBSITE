@@ -75,7 +75,8 @@
 
 const User = require('../models/User');
 const Counter = require('../models/Counter');
-const { sendInternshipConfirmation } = require('../config/nodemailer');
+const transporter = require('../config/nodemailer');
+const { getInternshipConfirmationEmail } = require('../config/emailTemplates');
 
 const registerInternship = async (req, res) => {
   try {
@@ -133,17 +134,31 @@ const registerInternship = async (req, res) => {
 
     console.log('[Backend] Internship saved with Student ID:', studentId);
 
-    // Send email (non-blocking - don't await in response)
-    sendInternshipConfirmation({
-      name,
-      email,
-      domain,
-      duration,
-      college,
-      batch,
-      studentId
-    }).catch(err => console.error('Email sending failed but registration succeeded:', err));
+    // Send confirmation email
+    try {
+      const htmlContent = getInternshipConfirmationEmail({
+        name,
+        domain,
+        duration,
+        college,
+        batch,
+        studentId,
+      });
 
+      await transporter.sendMail({
+        from: `"CODE-A-NOVA" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `Application Received - CODE-A-NOVA ${domain} Internship (${studentId})`,
+        html: htmlContent,
+      });
+
+      console.log('[EMAIL] Confirmation email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('[EMAIL] Failed to send confirmation email:', emailError.message);
+      // Do NOT return error to user — registration should still succeed
+    }
+
+    // Always respond success
     res.status(201).json({ 
       message: 'Application submitted successfully',
       studentId 
