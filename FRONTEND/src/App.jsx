@@ -16,6 +16,7 @@ import Registration from './Components/Registration';
 import AdminLogin from './Components/AdminLogin';
 import AdminDashboard from './Components/AdminDashboard';
 import Verify from './Components/Verify';
+import Project from './Components/Project';
 function App() {
   return (
     <Router>
@@ -26,6 +27,7 @@ function App() {
             <Route  path="/contact" element={ <>  <Contact /> <Footer />  </> } />
             <Route path="/service"element={<> <Service /> <Footer /></>}/>
             <Route path="/registration" element={<Registration />}/>
+            <Route path='/project-submission' element={<Project/>}/>
             {/* <Route path="/register" element={<><Register /> <Footer /></>} />
             <Route path="/login" element={<><Login /> <Footer /></>}/>
             <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /><Footer /></ProtectedRoute>} /> */}

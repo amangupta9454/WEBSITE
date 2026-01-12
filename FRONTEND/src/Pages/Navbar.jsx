@@ -41,6 +41,7 @@ function Navbar() {
     { to: '/about', label: 'About' },
     { to: '/service', label: 'Our Services' },
     { to: '/registration', label: 'Internship Registration' },
+    {to:'/project-submission', label:'Project Submission'},
     { to: '/contact', label: 'Contact' },
   ];
 
