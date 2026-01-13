@@ -54,6 +54,7 @@ const getInternships = async (req, res) => {
           whyHire: app.whyHire,
           hearAbout: app.hearAbout,
           resumeUrl: app.resumeUrl,
+          batch: app.batch,
           appliedAt: app.appliedAt,
           downloadedAt: app.downloadedAt,
           startDate: app.startDate,
@@ -198,7 +199,8 @@ const uploadCertificates = async (req, res) => {
         startDate,
         endDate,
         duration: row.Duration?.toString().trim(),
-        studentId: row.Student_ID?.toString().trim()
+        studentId: row.Student_ID?.toString().trim(),
+        batch: row.Batch?.toString().trim()
       };
     }).filter(cert => cert.certificateNumber && cert.studentId); // Filter invalid
 

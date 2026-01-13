@@ -102,6 +102,7 @@ const AdminDashboard = () => {
         Portfolio: app.portfolio || 'N/A',
         GitHub: app.github || 'N/A',
         LinkedIn: app.linkedin || 'N/A',
+        Batch: app.batch || 'N/A',
         WhyHire: app.whyHire,
         HearAbout: app.hearAbout,
         ResumeURL: app.resumeUrl,
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
 
       const ws = XLSX.utils.json_to_sheet(data, {
         header: [
-          'StudentID', 'Name', 'Email', 'Domain', 'Duration',
+          'StudentID', 'Name', 'Email', 'Domain', 'Duration','Batch',
           'Mobile', 'WhatsApp', 'Course', 'Branch', 'Year',
           'College', 'State', 'PassingYear', 'Portfolio', 'GitHub',
           'LinkedIn', 'WhyHire', 'HearAbout', 'ResumeURL', 'AppliedAt'
@@ -118,7 +119,7 @@ const AdminDashboard = () => {
       });
 
       const colWidths = [
-        { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 12 },
+        { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 },{ wch: 18 }, { wch: 12 },
         { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
         { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 35 },
         { wch: 35 }, { wch: 60 }, { wch: 20 }, { wch: 50 }, { wch: 22 },
