@@ -19,6 +19,7 @@ function Footer() {
   const quickLinks = [
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About' },
+    { to: '/resume-builder', label: 'Resume Builder' },
     { to: '/service', label: 'Service' },
     { to: '/contact', label: 'Contact' },
     { to: '/registration', label: 'Registration' },

@@ -185,8 +185,8 @@ const Terms = () => {
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-100 mb-2">Email Support</h3>
                 <p className="text-gray-400 text-sm sm:text-base mb-4">Get in touch with us</p>
-                <a href="mailto:codenova31@gmail.com" className="text-blue-400 hover:text-blue-300 font-semibold text-sm sm:text-base transition-colors break-all">
-                 codenova31@gmail.com
+                <a href="mailto:codeanova9@gmail.com" className="text-blue-400 hover:text-blue-300 font-semibold text-sm sm:text-base transition-colors break-all">
+                 codeanova9@gmail.com
                 </a>
               </div>
 

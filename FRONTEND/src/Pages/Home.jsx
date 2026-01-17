@@ -21,6 +21,8 @@ import {
   Code2,
   ArrowUp,
   Sparkles,
+  X,
+  FileText,
 } from 'lucide-react';
 import logo from '../assets/LOGO.png';
 import LOGO from '../assets/about.png';
@@ -35,6 +37,7 @@ function Home() {
   const [activeInterns, setActiveInterns] = useState(0);
   const [successRate, setSuccessRate] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
+  const [showResumePopup, setShowResumePopup] = useState(false);
 
   const targetText = 'Real-World Internships';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()';
@@ -46,6 +49,16 @@ function Home() {
       setActiveInterns(stats.interns);
       setSuccessRate(stats.rate);
       setAnimationStarted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const hasSeenPopup = sessionStorage.getItem('hasSeenResumePopup');
+    if (!hasSeenPopup) {
+      setTimeout(() => {
+        setShowResumePopup(true);
+        sessionStorage.setItem('hasSeenResumePopup', 'true');
+      }, 1000);
     }
   }, []);
 
@@ -202,6 +215,7 @@ function Home() {
   const quickLinks = [
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About' },
+    { to: '/resume-builder', label: 'Resume Builder' },
     { to: '/service', label: 'Service' },
     { to: '/contact', label: 'Contact' },
     { to: '/registration', label: 'Registration' },
@@ -237,6 +251,51 @@ function Home() {
       >
         <ArrowUp size={20} />
       </button>
+
+      <div
+        className={`fixed bottom-6 right-6 z-50 max-w-sm transition-all duration-500 ${
+          showResumePopup ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20 pointer-events-none'
+        }`}
+      >
+        <div className="relative bg-linear-to-br from-slate-900 to-slate-800 border-2 border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/20 p-6 backdrop-blur-lg overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
+
+          <button
+            onClick={() => setShowResumePopup(false)}
+            className="absolute top-3 right-3 p-1 text-gray-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 z-10"
+            aria-label="Close popup"
+          >
+            <X size={18} />
+          </button>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-linear-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/50">
+                <FileText className="text-white" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Create Your Resume</h3>
+                <p className="text-sm text-gray-400">ATS-Friendly Builder</p>
+              </div>
+            </div>
+
+            <p className="text-gray-300 text-sm mb-5 leading-relaxed">
+              Want to create an ATS-friendly resume that gets you noticed by recruiters?
+            </p>
+
+            <Link
+              to="/resume-builder"
+              onClick={() => setShowResumePopup(false)}
+              className="group relative w-full px-6 py-3 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-xl hover:shadow-cyan-500/50 hover:scale-105 overflow-hidden"
+            >
+              <span className="absolute inset-0 bg-linear-to-r from-blue-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <span className="relative">Create Now</span>
+              <ArrowRight className="relative group-hover:translate-x-1 transition-transform" size={18} />
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <section
         id="hero"
@@ -554,6 +613,142 @@ function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="resume-builder-cta"
+        data-scroll-reveal
+        className={`relative w-full py-24 bg-slate-950 overflow-hidden transition-all duration-1000 ${
+          isVisible('resume-builder-cta') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+        }`}
+      >
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 via-transparent to-blue-500/5"></div>
+        <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] animate-pulse"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse animation-delay-1000"></div>
+
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 border border-cyan-500/20 shadow-2xl shadow-cyan-500/10">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-bl from-cyan-500/10 via-transparent to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-1/2 h-full bg-linear-to-tr from-blue-500/10 via-transparent to-transparent"></div>
+            
+            <div className="absolute top-10 right-20 w-40 h-40 border border-cyan-500/20 rounded-full animate-pulse"></div>
+            <div className="absolute bottom-10 right-40 w-20 h-20 border border-blue-500/20 rounded-full animate-pulse animation-delay-1000"></div>
+            
+            <div className="grid md:grid-cols-2 gap-12 items-center p-8 md:p-16 relative z-10">
+              <div className="space-y-6 animate-fade-in-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full backdrop-blur-sm">
+                  <Sparkles size={16} className="text-cyan-400 animate-spin-slow" />
+                  <span className="text-cyan-400 text-sm font-semibold">Free Tool</span>
+                </div>
+                
+                <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                  Build Your Perfect
+                  <span className="block bg-linear-to-r from-cyan-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent mt-2 animate-gradient-x">
+                    ATS-Friendly Resume
+                  </span>
+                </h2>
+                
+                <p className="text-lg text-gray-300 leading-relaxed">
+                  Create a professional resume that gets past Applicant Tracking Systems and lands you interviews. 
+                  Our AI-powered builder ensures your resume is optimized for both robots and recruiters.
+                </p>
+                
+                <div className="space-y-3 pt-4">
+                  {[
+                    'ATS-Optimized Templates',
+                    'Smart Keyword Suggestions',
+                    'Instant PDF Download',
+                    'Completely Free Forever'
+                  ].map((feature, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 group animate-fade-in-up"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <div className="w-6 h-6 bg-linear-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg shadow-cyan-500/50">
+                        <CheckCircle size={14} className="text-white" />
+                      </div>
+                      <span className="text-gray-200 font-medium group-hover:text-cyan-400 transition-colors duration-300">
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="pt-6">
+                  <Link
+                    to="/resume-builder"
+                    className="group inline-flex items-center gap-3 px-8 py-4 bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl font-bold text-lg text-white transition-all duration-300 shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-105 overflow-hidden relative"
+                  >
+                    <span className="absolute inset-0 bg-linear-to-r from-blue-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                    <FileText className="relative" size={24} />
+                    <span className="relative">Create Resume Now</span>
+                    <ArrowRight className="relative group-hover:translate-x-1 transition-transform" size={24} />
+                  </Link>
+                  <p className="mt-4 text-sm text-gray-400">
+                    No credit card required • No hidden fees • Start in seconds
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative h-full min-h-[400px] hidden md:block animate-fade-in-right">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-full max-w-md">
+                    <div className="absolute -top-4 -right-4 w-72 h-72 bg-linear-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+                    
+                    <div className="relative space-y-4">
+                      <div className="group p-6 bg-slate-800/80 backdrop-blur-sm border border-cyan-500/30 rounded-2xl shadow-xl hover:shadow-cyan-500/30 transition-all duration-500 hover:-translate-y-1 cursor-pointer">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-linear-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <FileText size={24} className="text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-3 bg-cyan-500/30 rounded-full w-3/4 mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-full mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-5/6"></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="group p-6 bg-slate-800/80 backdrop-blur-sm border border-blue-500/30 rounded-2xl shadow-xl hover:shadow-blue-500/30 transition-all duration-500 hover:-translate-y-1 cursor-pointer animation-delay-200">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <Award size={24} className="text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-3 bg-blue-500/30 rounded-full w-2/3 mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-full mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-4/5"></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="group p-6 bg-slate-800/80 backdrop-blur-sm border border-cyan-500/30 rounded-2xl shadow-xl hover:shadow-cyan-500/30 transition-all duration-500 hover:-translate-y-1 cursor-pointer animation-delay-400">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-linear-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                            <Briefcase size={24} className="text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-3 bg-cyan-500/30 rounded-full w-4/5 mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-full mb-2"></div>
+                            <div className="h-2 bg-slate-600/50 rounded-full w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="absolute -bottom-2 -right-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-500 rounded-full shadow-lg shadow-green-500/50 animate-bounce">
+                      <span className="text-white text-sm font-bold flex items-center gap-1">
+                        <CheckCircle size={16} />
+                        ATS Ready
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

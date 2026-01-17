@@ -8,7 +8,7 @@ import Privacy from './Pages/Privacy';
 import Term from './Pages/Term';
 import Footer from './Pages/Footer';
 import Refund from './Pages/Refund';
-// import Login from './Components/Login';
+import ResumeEmbed from './Pages/ResumeEmbed';
 import Registration from './Components/Registration';
 // import Register from './Components/Register';
 // import StudentDashboard from './Components/StudentDashboard';
@@ -28,9 +28,8 @@ function App() {
             <Route path="/service"element={<> <Service /> <Footer /></>}/>
             <Route path="/registration" element={<Registration />}/>
             <Route path='/project-submission' element={<Project/>}/>
-            {/* <Route path="/register" element={<><Register /> <Footer /></>} />
-            <Route path="/login" element={<><Login /> <Footer /></>}/>
-            <Route path="/dashboard" element={<ProtectedRoute><StudentDashboard /><Footer /></ProtectedRoute>} /> */}
+            {/* <Route path="/register" element={<><Register /> <Footer /></>} /> */}
+           <Route path="/resume-builder" element={<><ResumeEmbed /></>} />
             <Route path="/privacy-policy" element={<Privacy />} />
             <Route path="/refund-policy" element={<Refund />} />
             <Route path="/terms" element={<Term />} />
