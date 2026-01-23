@@ -37,33 +37,59 @@ const Registration = () => {
   const hearOptions = ['LinkedIn', 'College', 'Friends/Students', 'Instagram', 'Website'];
 
   // Compute next 3 batch dates
-  const getNextBatches = () => {
-    const today = new Date();
-    const batches = [];
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
+ // Compute batches — only for the current month (until its last batch date passes)
+const getNextBatches = () => {
+  const today = new Date();           // current date & time
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();  // 0 = Jan, 1 = Feb, ...
 
-    const days = [5, 15, 25];
-    let index = 0;
+  // Your fixed batch dates every month
+  const batchDays = [5, 15, 25];
 
-    while (batches.length < 3) {
-      for (let d of days) {
-        const batchDate = new Date(currentYear, currentMonth, d);
-        if (batchDate >= today) {
-          batches.push(batchDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
-          if (batches.length === 3) return batches;
-        }
-      }
-      currentMonth++;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
-      index++;
-      if (index > 12) break; // Safety
+  const batches = [];
+
+  for (let day of batchDays) {
+    // Create date for this month's batch
+    const batchDate = new Date(currentYear, currentMonth, day, 23, 59, 59); // end of day
+
+    // Only add if batch date is today or in future
+    if (batchDate >= today) {
+      batches.push(
+        batchDate.toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        })
+      );
     }
-    return batches;
-  };
+  }
+
+  // Agar current month mein koi bhi batch bachi nahi hai (sab pass ho chuke)
+  // to automatically next month ki list ban jayegi
+  if (batches.length === 0) {
+    // Next month
+    let nextMonth = currentMonth + 1;
+    let nextYear = currentYear;
+    if (nextMonth > 11) {
+      nextMonth = 0;
+      nextYear++;
+    }
+
+    for (let day of batchDays) {
+      const batchDate = new Date(nextYear, nextMonth, day, 23, 59, 59);
+      // Since we're in next month already, all will be future
+      batches.push(
+        batchDate.toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        })
+      );
+    }
+  }
+
+  return batches;
+};
 
   const batchOptions = getNextBatches();
 
