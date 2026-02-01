@@ -693,7 +693,7 @@ function Home() {
                 </div>
               </div>
               
-              <div className="relative h-full min-h-[400px] hidden md:block animate-fade-in-right">
+              <div className="relative h-full min-h-100 hidden md:block animate-fade-in-right">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="relative w-full max-w-md">
                     <div className="absolute -top-4 -right-4 w-72 h-72 bg-linear-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
