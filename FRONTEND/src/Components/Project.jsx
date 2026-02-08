@@ -381,13 +381,13 @@ const Project = () => {
     domain: '',
     duration: '',
     assignments: [
-      { projectName: '', github: '', hosted: '' }, // Assignment 1 - required fields
-      { projectName: '', github: '', hosted: '' }, // Assignment 2 - required fields
-      { projectName: '', github: '', hosted: '' }  // Assignment 3 - fully optional
+      { projectName: '', github: '', hosted: '' },
+      { projectName: '', github: '', hosted: '' },
+      { projectName: '', github: '', hosted: '' }
     ]
   });
 
-  const [currentMonth, setCurrentMonth] = useState(null); // 1, 2, or 3
+  const [currentMonth, setCurrentMonth] = useState(null);
   const [loadingMonth, setLoadingMonth] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -415,7 +415,7 @@ const Project = () => {
         if (res.data.canSubmit) {
           setCurrentMonth(res.data.currentMonth);
         } else {
-          setCurrentMonth(4); // all done
+          setCurrentMonth(4);
         }
       } catch (err) {
         console.error("Month fetch failed:", err);
@@ -446,7 +446,6 @@ const Project = () => {
     setFormData({ ...formData, assignments: newAssignments });
   };
 
-  // New: Validate required fields before submit
   const validateAssignments = () => {
     const ass1 = formData.assignments[0];
     const ass2 = formData.assignments[1];
@@ -464,6 +463,24 @@ const Project = () => {
     return true;
   };
 
+  // Reset function (clears form + month display)
+  const resetForm = () => {
+    setFormData({
+      studentId: '',
+      name: '',
+      email: '',
+      mobile: '',
+      domain: '',
+      duration: '',
+      assignments: [
+        { projectName: '', github: '', hosted: '' },
+        { projectName: '', github: '', hosted: '' },
+        { projectName: '', github: '', hosted: '' }
+      ]
+    });
+    setCurrentMonth(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -472,7 +489,6 @@ const Project = () => {
       return;
     }
 
-    // Check required assignments
     if (!validateAssignments()) {
       return;
     }
@@ -482,8 +498,9 @@ const Project = () => {
     try {
       const payload = {
         ...formData,
-        // Filter out completely empty assignments (only Assignment 3 might be empty)
-        assignments: formData.assignments.filter(a => a.projectName?.trim() || a.github?.trim() || a.hosted?.trim())
+        assignments: formData.assignments.filter(
+          a => a.projectName?.trim() || a.github?.trim() || a.hosted?.trim()
+        )
       };
 
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/submit`, payload);
@@ -502,6 +519,10 @@ const Project = () => {
                 ...payload
               });
               toast.success(verifyRes.data.message || 'Payment successful! Assignment submitted.');
+              
+              // Success → show alert + reset form
+              alert('Success! Your final assignment has been submitted and payment is verified. Form has been reset for next use.');
+              resetForm();
             } catch (err) {
               toast.error('Payment verification failed');
             }
@@ -517,7 +538,12 @@ const Project = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
+        // Direct success (no payment needed)
         toast.success(res.data.message || 'Assignment submitted successfully!');
+        
+        // Success → show alert + reset form
+        alert('Success! Your assignment has been submitted. Form has been reset for next use.');
+        resetForm();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Submission failed. Please try again.');
@@ -661,7 +687,7 @@ const Project = () => {
               </div>
             </div>
 
-            {/* Assignments Section */}
+            {/* Assignments */}
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
@@ -684,7 +710,7 @@ const Project = () => {
                       : 'bg-gray-900/50 border-blue-800/50'
                   }`}
                 >
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
                     Assignment {index + 1}
                     {index < 2 && (
                       <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full">
@@ -707,7 +733,7 @@ const Project = () => {
                         value={ass.projectName}
                         onChange={(e) => handleAssignmentChange(index, 'projectName', e.target.value)}
                         placeholder="e.g., E-commerce Product Page"
-                        required={index < 2} // HTML required for better UX
+                        required={index < 2}
                         className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
                       />
                     </div>
