@@ -387,6 +387,13 @@ const Project = () => {
     ]
   });
 
+  // Track which fields were auto-filled → to make them read-only
+  const [autoFilledFields, setAutoFilledFields] = useState({
+    name: false,
+    email: false,
+    mobile: false
+  });
+
   const [currentMonth, setCurrentMonth] = useState(null);
   const [loadingMonth, setLoadingMonth] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -404,6 +411,8 @@ const Project = () => {
       const sid = formData.studentId?.trim();
       if (!sid) {
         setCurrentMonth(null);
+        // Reset auto-filled status when studentId is cleared
+        setAutoFilledFields({ name: false, email: false, mobile: false });
         return;
       }
 
@@ -413,18 +422,36 @@ const Project = () => {
         const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(sid)}`;
         const res = await axios.get(url);
 
+        console.log("Backend response:", res.data);
+
         if (res.data.canSubmit) {
           setCurrentMonth(res.data.currentMonth);
 
-          // Autofill name, email, mobile if available
-          if (res.data.name || res.data.email || res.data.mobile) {
-            setFormData((prev) => ({
-              ...prev,
-              name: res.data.name || prev.name,
-              email: res.data.email || prev.email,
-              mobile: res.data.mobile || prev.mobile
-            }));
+          // Autofill and mark fields as auto-filled (only if not already filled manually)
+          const newAutoFilled = { name: false, email: false, mobile: false };
 
+          setFormData((prev) => {
+            const updates = { ...prev };
+
+            if (res.data.name && !prev.name) {
+              updates.name = res.data.name;
+              newAutoFilled.name = true;
+            }
+            if (res.data.email && !prev.email) {
+              updates.email = res.data.email;
+              newAutoFilled.email = true;
+            }
+            if (res.data.mobile && !prev.mobile) {
+              updates.mobile = res.data.mobile;
+              newAutoFilled.mobile = true;
+            }
+
+            return updates;
+          });
+
+          setAutoFilledFields(newAutoFilled);
+
+          if (newAutoFilled.name || newAutoFilled.email || newAutoFilled.mobile) {
             toast.info("Student details auto-filled from your registration!", {
               autoClose: 5000,
               position: "top-right",
@@ -448,7 +475,7 @@ const Project = () => {
       }
     };
 
-    // Debounce: wait 600ms after typing stops
+    // Debounce: wait 600ms after typing/pasting stops
     const timer = setTimeout(fetchStudentData, 600);
     return () => clearTimeout(timer);
   }, [formData.studentId]);
@@ -461,7 +488,8 @@ const Project = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleAssignmentChange = (index, field, value) => {
@@ -502,6 +530,7 @@ const Project = () => {
       ]
     });
     setCurrentMonth(null);
+    setAutoFilledFields({ name: false, email: false, mobile: false });
   };
 
   const handleSubmit = async (e) => {
@@ -529,7 +558,7 @@ const Project = () => {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/submit`, payload);
 
       if (res.data.order) {
-        // Payment required (final month)
+        // Payment flow (final month)
         const options = {
           key: res.data.key,
           amount: res.data.order.amount,
@@ -539,10 +568,7 @@ const Project = () => {
             try {
               const verifyRes = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/api/project/verify`,
-                {
-                  response,
-                  ...payload
-                }
+                { response, ...payload }
               );
 
               toast.success(verifyRes.data.message || 'Payment successful! Final assignment submitted.');
@@ -579,11 +605,7 @@ const Project = () => {
       } else {
         // Direct success
         toast.success(res.data.message || 'Assignment submitted successfully!');
-
-        toast.success("Form has been reset for next use.", {
-          autoClose: 5000
-        });
-
+        toast.success("Form has been reset for next use.", { autoClose: 5000 });
         resetForm();
       }
     } catch (err) {
@@ -603,7 +625,7 @@ const Project = () => {
             Project / Assignment Submission
           </h1>
           <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Paste your Student ID to auto-fill your details and see which month to submit.
+            Paste your Student ID — your name, email & mobile will auto-fill and become read-only.
           </p>
         </div>
 
@@ -618,7 +640,7 @@ const Project = () => {
             <p className="text-blue-300 text-sm">
               {currentMonth === 4
                 ? "You've already completed all required submissions!"
-                : "Your details will auto-fill after entering Student ID"}
+                : "Your personal details will auto-fill and lock after entering Student ID"}
             </p>
           </div>
 
@@ -657,8 +679,13 @@ const Project = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    readOnly={autoFilledFields.name}
                     placeholder="Your full name"
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                      autoFilledFields.name
+                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
+                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
 
@@ -673,8 +700,13 @@ const Project = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    readOnly={autoFilledFields.email}
                     placeholder="your.email@example.com"
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                      autoFilledFields.email
+                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
+                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
 
@@ -688,8 +720,13 @@ const Project = () => {
                     value={formData.mobile}
                     onChange={handleChange}
                     required
+                    readOnly={autoFilledFields.mobile}
                     placeholder="10-digit number"
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                      autoFilledFields.mobile
+                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
+                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
               </div>
