@@ -398,9 +398,11 @@ const Project = () => {
   ];
   const durations = ['1 Month', '2 Months', '3 Months'];
 
+  // Fetch month + student details when studentId changes
   useEffect(() => {
-    const fetchMonth = async () => {
-      if (!formData.studentId?.trim()) {
+    const fetchStudentData = async () => {
+      const sid = formData.studentId?.trim();
+      if (!sid) {
         setCurrentMonth(null);
         return;
       }
@@ -408,31 +410,54 @@ const Project = () => {
       setLoadingMonth(true);
 
       try {
-        const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(formData.studentId)}`;
+        const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(sid)}`;
         const res = await axios.get(url);
 
         if (res.data.canSubmit) {
           setCurrentMonth(res.data.currentMonth);
+
+          // Autofill name, email, mobile if available
+          if (res.data.name || res.data.email || res.data.mobile) {
+            setFormData((prev) => ({
+              ...prev,
+              name: res.data.name || prev.name,
+              email: res.data.email || prev.email,
+              mobile: res.data.mobile || prev.mobile
+            }));
+
+            toast.info("Student details auto-filled from your registration!", {
+              autoClose: 5000,
+              position: "top-right",
+              theme: "dark"
+            });
+          }
         } else {
-          setCurrentMonth(4); // all done
+          setCurrentMonth(4);
+          toast.info("All assignments already submitted!", {
+            autoClose: 6000
+          });
         }
       } catch (err) {
-        console.error("Month fetch failed:", err);
+        console.error("Fetch failed:", err);
+        toast.error(
+          err.response?.data?.message || "Could not fetch your details. Please check Student ID."
+        );
         setCurrentMonth(null);
       } finally {
         setLoadingMonth(false);
       }
     };
 
-    const timer = setTimeout(fetchMonth, 600);
+    // Debounce: wait 600ms after typing stops
+    const timer = setTimeout(fetchStudentData, 600);
     return () => clearTimeout(timer);
   }, [formData.studentId]);
 
   const getMonthDisplay = () => {
-    if (loadingMonth) return 'Checking...';
+    if (loadingMonth) return 'Checking student details...';
     if (currentMonth === 4) return 'All assignments already submitted';
     if (currentMonth) return `Assignment for Month ${currentMonth}`;
-    return 'Enter Student ID to see which month you are submitting for';
+    return 'Enter Student ID to load your details & month';
   };
 
   const handleChange = (e) => {
@@ -497,14 +522,14 @@ const Project = () => {
       const payload = {
         ...formData,
         assignments: formData.assignments.filter(
-          a => a.projectName?.trim() || a.github?.trim() || a.hosted?.trim()
+          (a) => a.projectName?.trim() || a.github?.trim() || a.hosted?.trim()
         )
       };
 
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/submit`, payload);
 
       if (res.data.order) {
-        // Payment flow (final month)
+        // Payment required (final month)
         const options = {
           key: res.data.key,
           amount: res.data.order.amount,
@@ -512,13 +537,17 @@ const Project = () => {
           order_id: res.data.order.id,
           handler: async function (response) {
             try {
-              const verifyRes = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/verify`, {
-                response,
-                ...payload
-              });
+              const verifyRes = await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/project/verify`,
+                {
+                  response,
+                  ...payload
+                }
+              );
 
-              // Success → show toast + alert-style toast + reset
               toast.success(verifyRes.data.message || 'Payment successful! Final assignment submitted.');
+
+              // Final completion message
               toast.success(
                 "🎉 All monthly tasks completed successfully!\nNo more submissions needed.",
                 {
@@ -548,8 +577,9 @@ const Project = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Direct success (non-final months)
+        // Direct success
         toast.success(res.data.message || 'Assignment submitted successfully!');
+
         toast.success("Form has been reset for next use.", {
           autoClose: 5000
         });
@@ -573,7 +603,7 @@ const Project = () => {
             Project / Assignment Submission
           </h1>
           <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Submit your monthly internship assignments. Assignment 1 & 2 require Project Name + GitHub Link.
+            Paste your Student ID to auto-fill your details and see which month to submit.
           </p>
         </div>
 
@@ -586,9 +616,9 @@ const Project = () => {
               </h2>
             </div>
             <p className="text-blue-300 text-sm">
-              {currentMonth === 4 
-                ? "You've already completed all required submissions!" 
-                : "Enter your Student ID to see which month you're submitting for"}
+              {currentMonth === 4
+                ? "You've already completed all required submissions!"
+                : "Your details will auto-fill after entering Student ID"}
             </p>
           </div>
 
@@ -603,7 +633,9 @@ const Project = () => {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="studentId" className="block text-gray-300 mb-2 font-medium">Student ID *</label>
+                  <label htmlFor="studentId" className="block text-gray-300 mb-2 font-medium">
+                    Student ID *
+                  </label>
                   <input
                     id="studentId"
                     name="studentId"
@@ -616,7 +648,9 @@ const Project = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-gray-300 mb-2 font-medium">Full Name *</label>
+                  <label htmlFor="name" className="block text-gray-300 mb-2 font-medium">
+                    Full Name *
+                  </label>
                   <input
                     id="name"
                     name="name"
@@ -629,7 +663,9 @@ const Project = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-gray-300 mb-2 font-medium">Email Address *</label>
+                  <label htmlFor="email" className="block text-gray-300 mb-2 font-medium">
+                    Email Address *
+                  </label>
                   <input
                     id="email"
                     name="email"
@@ -643,7 +679,9 @@ const Project = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="mobile" className="block text-gray-300 mb-2 font-medium">Mobile Number *</label>
+                  <label htmlFor="mobile" className="block text-gray-300 mb-2 font-medium">
+                    Mobile Number *
+                  </label>
                   <input
                     id="mobile"
                     name="mobile"
@@ -667,7 +705,9 @@ const Project = () => {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="domain" className="block text-gray-300 mb-2 font-medium">Domain *</label>
+                  <label htmlFor="domain" className="block text-gray-300 mb-2 font-medium">
+                    Domain *
+                  </label>
                   <select
                     id="domain"
                     name="domain"
@@ -677,12 +717,18 @@ const Project = () => {
                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="">Select Domain</option>
-                    {domains.map(d => <option key={d} value={d}>{d}</option>)}
+                    {domains.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="duration" className="block text-gray-300 mb-2 font-medium">Duration *</label>
+                  <label htmlFor="duration" className="block text-gray-300 mb-2 font-medium">
+                    Duration *
+                  </label>
                   <select
                     id="duration"
                     name="duration"
@@ -692,7 +738,11 @@ const Project = () => {
                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="">Select Duration</option>
-                    {durations.map(d => <option key={d} value={d}>{d}</option>)}
+                    {durations.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -713,15 +763,13 @@ const Project = () => {
               </p>
 
               {formData.assignments.map((ass, index) => (
-                <div 
-                  key={index} 
-                  className={`mb-8 p-5 rounded-xl border text-white ${
-                    index === 2 
-                      ? 'bg-gray-900/30 border-gray-700' 
-                      : 'bg-gray-900/50 border-blue-800/50'
+                <div
+                  key={index}
+                  className={`mb-8 p-5 rounded-xl border ${
+                    index === 2 ? 'bg-gray-900/30 border-gray-700' : 'bg-gray-900/50 border-blue-800/50'
                   }`}
                 >
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
                     Assignment {index + 1}
                     {index < 2 && (
                       <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full">
@@ -732,10 +780,7 @@ const Project = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <label 
-                        htmlFor={`projectName-${index}`} 
-                        className="block text-gray-300 mb-2 font-medium"
-                      >
+                      <label htmlFor={`projectName-${index}`} className="block text-gray-300 mb-2 font-medium">
                         Project / Assignment Name
                         {index < 2 && <span className="text-red-400 ml-1">*</span>}
                       </label>
@@ -750,10 +795,7 @@ const Project = () => {
                     </div>
 
                     <div>
-                      <label 
-                        htmlFor={`github-${index}`} 
-                        className="block text-gray-300 mb-2 font-medium"
-                      >
+                      <label htmlFor={`github-${index}`} className="block text-gray-300 mb-2 font-medium">
                         GitHub Link
                         {index < 2 && <span className="text-red-400 ml-1">*</span>}
                       </label>
@@ -768,10 +810,7 @@ const Project = () => {
                     </div>
 
                     <div>
-                      <label 
-                        htmlFor={`hosted-${index}`} 
-                        className="block text-gray-300 mb-2 font-medium"
-                      >
+                      <label htmlFor={`hosted-${index}`} className="block text-gray-300 mb-2 font-medium">
                         Hosted / Live Link or LinkedIn (optional)
                       </label>
                       <input
@@ -808,12 +847,7 @@ const Project = () => {
         </div>
       </div>
 
-      <ToastContainer 
-        position="top-center" 
-        theme="dark" 
-        autoClose={6000} 
-        limit={3}
-      />
+      <ToastContainer position="top-center" theme="dark" autoClose={6000} limit={3} />
     </div>
   );
 };

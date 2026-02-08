@@ -12,6 +12,8 @@ router.get('/test', (req, res) => {
 });
 
 // Get current submission month status
+// backend/routes/project.js
+
 router.get('/current-month/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -19,8 +21,6 @@ router.get('/current-month/:studentId', async (req, res) => {
     if (!studentId || typeof studentId !== 'string' || studentId.trim() === '') {
       return res.status(400).json({ message: 'Student ID is required' });
     }
-
-    const submittedCount = await ProjectSubmission.countDocuments({ studentId });
 
     const user = await User.findOne({ 'internships.studentId': studentId });
     if (!user) {
@@ -32,14 +32,21 @@ router.get('/current-month/:studentId', async (req, res) => {
       return res.status(404).json({ message: 'Internship not found for this student' });
     }
 
+    const submittedCount = await ProjectSubmission.countDocuments({ studentId });
     const maxMonths = parseInt(internship.duration.split(' ')[0]) || 0;
     const currentMonth = submittedCount + 1;
 
+    const canSubmit = currentMonth <= maxMonths;
+
+    // NEW: Return student basic info too
     res.json({
       currentMonth,
       maxMonths,
-      canSubmit: currentMonth <= maxMonths,
-      needsPayment: (currentMonth === maxMonths) && !internship.hasPaid
+      canSubmit,
+      needsPayment: (currentMonth === maxMonths) && !internship.hasPaid,
+      name: internship.name,          // ← add this
+      email: internship.email,        // ← add this
+      mobile: internship.mobile       // ← add this
     });
   } catch (error) {
     console.error('[Current Month] Error:', error);
