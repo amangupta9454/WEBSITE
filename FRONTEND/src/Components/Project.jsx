@@ -398,7 +398,6 @@ const Project = () => {
   ];
   const durations = ['1 Month', '2 Months', '3 Months'];
 
-  // Fetch current month when studentId changes
   useEffect(() => {
     const fetchMonth = async () => {
       if (!formData.studentId?.trim()) {
@@ -415,7 +414,7 @@ const Project = () => {
         if (res.data.canSubmit) {
           setCurrentMonth(res.data.currentMonth);
         } else {
-          setCurrentMonth(4);
+          setCurrentMonth(4); // all done
         }
       } catch (err) {
         console.error("Month fetch failed:", err);
@@ -463,7 +462,6 @@ const Project = () => {
     return true;
   };
 
-  // Reset function (clears form + month display)
   const resetForm = () => {
     setFormData({
       studentId: '',
@@ -506,7 +504,7 @@ const Project = () => {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/submit`, payload);
 
       if (res.data.order) {
-        // Payment required (final month)
+        // Payment flow (final month)
         const options = {
           key: res.data.key,
           amount: res.data.order.amount,
@@ -518,10 +516,22 @@ const Project = () => {
                 response,
                 ...payload
               });
-              toast.success(verifyRes.data.message || 'Payment successful! Assignment submitted.');
-              
-              // Success → show alert + reset form
-              alert('Success! Your final assignment has been submitted and payment is verified. Form has been reset for next use.');
+
+              // Success → show toast + alert-style toast + reset
+              toast.success(verifyRes.data.message || 'Payment successful! Final assignment submitted.');
+              toast.success(
+                "🎉 All monthly tasks completed successfully!\nNo more submissions needed.",
+                {
+                  autoClose: 8000,
+                  icon: '🏆',
+                  style: {
+                    background: '#10b981',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }
+                }
+              );
+
               resetForm();
             } catch (err) {
               toast.error('Payment verification failed');
@@ -538,11 +548,12 @@ const Project = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Direct success (no payment needed)
+        // Direct success (non-final months)
         toast.success(res.data.message || 'Assignment submitted successfully!');
-        
-        // Success → show alert + reset form
-        alert('Success! Your assignment has been submitted. Form has been reset for next use.');
+        toast.success("Form has been reset for next use.", {
+          autoClose: 5000
+        });
+
         resetForm();
       }
     } catch (err) {
@@ -704,13 +715,13 @@ const Project = () => {
               {formData.assignments.map((ass, index) => (
                 <div 
                   key={index} 
-                  className={`mb-8 p-5 rounded-xl border ${
+                  className={`mb-8 p-5 rounded-xl border text-white ${
                     index === 2 
                       ? 'bg-gray-900/30 border-gray-700' 
                       : 'bg-gray-900/50 border-blue-800/50'
                   }`}
                 >
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     Assignment {index + 1}
                     {index < 2 && (
                       <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full">
@@ -797,7 +808,12 @@ const Project = () => {
         </div>
       </div>
 
-      <ToastContainer position="top-center" theme="dark" autoClose={5000} />
+      <ToastContainer 
+        position="top-center" 
+        theme="dark" 
+        autoClose={6000} 
+        limit={3}
+      />
     </div>
   );
 };
