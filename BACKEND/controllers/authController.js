@@ -11,7 +11,19 @@ const loginStudent = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch = false;
+
+    // Handle legacy users without a stored password hash
+    if (!user.password) {
+      if (password === 'Welcome@123') {
+        isMatch = true;
+      } else {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+    } else {
+      isMatch = await bcrypt.compare(password, user.password);
+    }
+
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -28,7 +40,7 @@ const loginStudent = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isFirstLogin: user.isFirstLogin
+        isFirstLogin: user.isFirstLogin === undefined ? true : user.isFirstLogin
       }
     });
 

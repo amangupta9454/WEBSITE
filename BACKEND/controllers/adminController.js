@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const XLSX = require('xlsx');
 const multer = require('multer');
+const ProjectSubmission = require('../models/ProjectSubmission');
 const upload = multer({ storage: multer.memoryStorage() });
 
 const adminLogin = async (req, res) => {
@@ -28,6 +29,7 @@ const adminLogin = async (req, res) => {
 const getInternships = async (req, res) => {
   try {
     const users = await User.find({ 'internships.0': { $exists: true } }); // Users with at least one internship
+    const allSubmissions = await ProjectSubmission.find({}); // Globally pull tracking histories
 
     const allApplications = [];
 
@@ -63,7 +65,7 @@ const getInternships = async (req, res) => {
           certificateUrl: app.certificateUrl,
           offerLetterStatus: app.offerLetterStatus,
           hasPaid: app.hasPaid,
-          submissions: app.submissions || []
+          submissions: allSubmissions.filter(sub => String(sub.studentId) === String(app.studentId))
         });
       });
     });
@@ -243,5 +245,37 @@ const uploadCertificates = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+const setStartDate = async (req, res) => {
+  try {
+    const { applicationId, startDate } = req.body;
+    if (!applicationId || !startDate) {
+      return res.status(400).json({ message: 'Application ID and start date required' });
+    }
 
-module.exports = { adminLogin, getInternships, markDownloaded, updateInternshipDetails, uploadCertificates, updateOfferStatus };
+    const user = await User.findOne({ 'internships._id': applicationId });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const internship = user.internships.id(applicationId);
+    if (!internship) return res.status(404).json({ message: 'Internship not found' });
+
+    const durationStr = internship.duration || '1 Month';
+    const totalMonths = parseInt(durationStr.split(' ')[0], 10) || 1;
+    
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + totalMonths);
+
+    internship.startDate = start;
+    internship.endDate = end;
+    internship.totalMonths = totalMonths;
+
+    await user.save();
+
+    res.json({ message: 'Timeline updated successfully', startDate: start, endDate: end });
+  } catch (error) {
+    console.error('[Admin] Error setting start date:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { adminLogin, getInternships, markDownloaded, updateInternshipDetails, uploadCertificates, updateOfferStatus, setStartDate };

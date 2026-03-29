@@ -76,7 +76,32 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const markAlertRead = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { internshipId, alertId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const internship = user.internships.id(internshipId);
+    if (!internship) return res.status(404).json({ message: 'Internship not found' });
+
+    const alert = internship.alerts.id(alertId);
+    if (!alert) return res.status(404).json({ message: 'Alert not found' });
+
+    alert.isRead = true;
+    await user.save();
+
+    res.json({ message: 'Alert marked as read' });
+  } catch (error) {
+    console.error('[Backend] Mark alert error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 module.exports = {
   getDashboardInfo,
-  updateProfile
+  updateProfile,
+  markAlertRead
 };

@@ -204,12 +204,15 @@ CODENOVA/
   <ul>
     <li>🏠 Modern and responsive Home page</li>
     <li>🛠️ Services section with detailed offerings</li>
-    <li>🧑‍💻 Internship registration system</li>
-    <li>📩 Email notification support</li>
-    <li>📜 Certificate verification portal</li>
+    <li>🧑‍💻 Dynamic Internship registration system natively mapping student durations</li>
+    <li>🤖 Vercel Serverless Cron Jobs handling automated progression mapping (Month 1, 2, 3 Targets)</li>
+    <li>📩 Nodemailer automated assignment reminders dispatched recursively via Cron events</li>
+    <li>📊 Robust Admin Dashboard mapping internal `Tasks Done` metrics & explicit 5th/15th/25th Date configurations</li>
+    <li>🔐 Integrated Cloudinary API enabling live Student Photo storage pipelines</li>
+    <li>📥 Dedicated Export-to-Excel pipelines securely sorting 'Paid' subscribers</li>
+    <li>📜 Full Certificate verification portal ensuring credential integrity</li>
     <li>📞 Contact form powered by Getform.io</li>
-    <li>⚡ Fast and SEO-friendly frontend</li>
-    <li>🔑 Admin dashboard</li>
+    <li>⚡ Fast and SEO-friendly frontend structure wrapped in secure Authentication layouts</li>
   </ul>
         <hr> 
         <h2 id="enhancements">🚀 Future Enhancements</h2>

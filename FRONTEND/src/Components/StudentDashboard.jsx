@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, User, BookOpen, Link2, CheckCircle, Save, LogOut } from 'lucide-react';
+import { Loader2, User, BookOpen, Link2, CheckCircle, Save, LogOut, Camera, Bell } from 'lucide-react';
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('internships');
@@ -36,7 +36,8 @@ const StudentDashboard = () => {
         setProfileForm({
           github: response.data.user.github || '',
           linkedin: response.data.user.linkedin || '',
-          portfolio: response.data.user.portfolio || ''
+          portfolio: response.data.user.portfolio || '',
+          profileImage: response.data.user.profileImage || ''
         });
       } catch (err) {
         if (err.response?.status === 401) {
@@ -76,6 +77,60 @@ const StudentDashboard = () => {
     navigate('/student-login');
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size should be less than 2MB');
+      return;
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    uploadData.append('folder', 'profiles');
+
+    toast.info('Uploading image...', { autoClose: 2000 });
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: uploadData
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        setProfileForm(prev => ({ ...prev, profileImage: data.secure_url }));
+        toast.success('Image uploaded! Click Save Profile to apply changes.');
+      }
+    } catch (err) {
+      toast.error('Upload failed!');
+    }
+  };
+
+  const handleMarkAlert = async (internshipId, alertId) => {
+    try {
+      const token = localStorage.getItem('studentToken');
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/mark-alert`, 
+        { internshipId, alertId }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Optimitically update UI
+      setData(prev => {
+        const newData = { ...prev };
+        const iIndex = newData.internships.findIndex(i => i._id === internshipId);
+        if (iIndex !== -1) {
+          const aIndex = newData.internships[iIndex].alerts.findIndex(a => a._id === alertId);
+          if (aIndex !== -1) {
+             newData.internships[iIndex].alerts[aIndex].isRead = true;
+          }
+        }
+        return newData;
+      });
+    } catch (err) {
+      toast.error('Failed to dismiss alert');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -90,13 +145,28 @@ const StudentDashboard = () => {
       
       <div className="max-w-6xl mx-auto relative z-10 py-10">
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-gray-800">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Welcome, {data?.user?.name}</h1>
-            <p className="text-gray-400 mt-2">Manage your internships and profile</p>
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-800 overflow-hidden border-2 border-indigo-500 flex items-center justify-center">
+                {profileForm.profileImage ? (
+                  <img src={profileForm.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={40} className="text-gray-400" />
+                )}
+              </div>
+              <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 rounded-full cursor-pointer hover:bg-indigo-500 transition-colors shadow-lg">
+                <Camera size={16} className="text-white" />
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              </label>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Welcome, {data?.user?.name}</h1>
+              <p className="text-gray-400 mt-2">Manage your internships and profile</p>
+            </div>
           </div>
           <button 
             onClick={handleLogout} 
-            className="mt-4 md:mt-0 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-all font-medium"
+            className="mt-6 md:mt-0 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 border border-red-500/20 rounded-lg flex items-center gap-2 transition-all font-medium"
           >
             <LogOut size={18} /> Logout
           </button>
@@ -185,14 +255,36 @@ const StudentDashboard = () => {
                       </div>
                     </div>
 
+                    {/* Alerts Dashboard */}
+                    {internship.alerts && internship.alerts.filter(a => !a.isRead).length > 0 && (
+                      <div className="mb-6 space-y-3">
+                        {internship.alerts.filter(a => !a.isRead).map(alert => (
+                          <div key={alert._id} className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded-r-lg flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                              <Bell className="text-red-400" size={20} />
+                              <div>
+                                <p className="text-red-200 font-medium">{alert.message}</p>
+                                <p className="text-xs text-red-400 mt-1">{new Date(alert.date).toLocaleDateString()} {new Date(alert.date).toLocaleTimeString()}</p>
+                              </div>
+                            </div>
+                            <button onClick={() => handleMarkAlert(internship._id, alert._id)} className="text-xs px-3 py-1 bg-red-900/50 hover:bg-red-800 text-white rounded transition-colors">
+                              Dismiss
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                       <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Duration Target</p>
+                        <p className="text-gray-500 text-sm">Target Timeline</p>
                         <p className="text-white font-semibold text-lg">{internship.duration}</p>
                       </div>
                       <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Batch Start</p>
-                        <p className="text-white font-semibold text-lg">{internship.batch}</p>
+                        <p className="text-gray-500 text-sm">Official Start Date</p>
+                        <p className="text-white font-semibold text-lg">
+                           {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-IN') : 'Pending Admin'}
+                        </p>
                       </div>
                       <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
                         <p className="text-gray-500 text-sm">Projects Submitted</p>

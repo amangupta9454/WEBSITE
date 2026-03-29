@@ -22,6 +22,28 @@ const AdminDashboard = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const navigate = useNavigate();
 
+  const getUpcomingDates = () => {
+    const dates = [];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    // Gen options for rolling 3 months
+    for (let i = 0; i < 3; i++) {
+      const year = today.getFullYear();
+      const month = today.getMonth() + i;
+      [5, 15, 25].forEach(day => {
+        const d = new Date(year, month, day);
+        if (d >= today) {
+           dates.push({
+              value: d.toISOString(),
+              label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+           });
+        }
+      });
+    }
+    return dates.sort((a,b) => new Date(a.value) - new Date(b.value)).slice(0, 6); // Up to next 6 dates
+  };
+  const upcomingDateOptions = getUpcomingDates();
+
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -150,6 +172,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExportPaid = () => {
+    try {
+      const paidApps = applications.filter(app => app.hasPaid);
+      if (paidApps.length === 0) {
+        toast.info('No paid applications found.');
+        return;
+      }
+      const data = paidApps.map(app => ({
+        StudentID: app.studentId || 'N/A',
+        Name: app.name,
+        Email: app.email,
+        Domain: app.domain,
+        Duration: app.duration,
+        Mobile: app.mobile,
+        AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
+        StartDate: app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A',
+        EndDate: app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A',
+        TotalSubmissions: app.submissions ? app.submissions.length : 0
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Paid Interns');
+      XLSX.writeFile(wb, `CodeNova_Paid_Interns_${new Date().toISOString().slice(0,10)}.xlsx`);
+      toast.success(`${paidApps.length} paid applications exported successfully!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to export paid applications');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     toast.success('Admin logged out');
@@ -168,6 +221,22 @@ const AdminDashboard = () => {
       fetchApplications(token);
     } catch (err) {
       toast.error('Failed to update Offer Letter status');
+    }
+  };
+
+  const handleStartDateAssignment = async (appId, dateValue) => {
+    if (!dateValue) return;
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/set-start-date`,
+        { applicationId: appId, startDate: dateValue },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Timeline successfully activated!');
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to set start date');
     }
   };
 
@@ -465,11 +534,11 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end gap-3 flex-wrap sm:flex-nowrap">
               <button 
                 onClick={handleExport} 
                 disabled={exporting || newApplications.length === 0} 
-                className="w-full sm:w-auto px-8 py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium"
+                className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium whitespace-nowrap"
               >
                 {exporting ? (
                   <>
@@ -479,10 +548,17 @@ const AdminDashboard = () => {
                 ) : (
                   <>
                     <Download size={20} />
-                    <span className="hidden sm:inline">Export New to Excel</span>
-                    <span className="sm:hidden">Export</span>
+                    <span>Export New To Excel</span>
                   </>
                 )}
+              </button>
+
+              <button 
+                onClick={handleExportPaid} 
+                className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/30 font-medium whitespace-nowrap"
+              >
+                 <Download size={20} />
+                 <span>Export Paid Logs</span>
               </button>
             </div>
           </div>
@@ -539,9 +615,11 @@ const AdminDashboard = () => {
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Timeline / Start</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Tasks Done</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -556,6 +634,25 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
+                          <td className="py-4 px-4">
+                            {app.startDate ? (
+                              <div className="text-xs">
+                                <span className="text-green-400 block pb-1">Start: {new Date(app.startDate).toLocaleDateString('en-IN')}</span>
+                                <span className="text-amber-400 block">End: {new Date(app.endDate).toLocaleDateString('en-IN')}</span>
+                              </div>
+                            ) : (
+                              <select
+                                onChange={(e) => handleStartDateAssignment(app._id, e.target.value)}
+                                className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white cursor-pointer w-full"
+                                defaultValue=""
+                              >
+                                <option value="" disabled>Select Date...</option>
+                                {upcomingDateOptions.map((opt, idx) => (
+                                  <option key={idx} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
                           <td className="py-4 px-4">
                             <select
@@ -569,6 +666,13 @@ const AdminDashboard = () => {
                           </td>
                           <td className="py-4 px-4">
                             {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
+                          </td>
+                          <td className="py-4 px-4">
+                             <div className="flex items-center gap-1">
+                                <span className="text-white font-medium text-xs">{app.submissions ? app.submissions.length : 0}</span>
+                                <span className="text-slate-500 text-xs">/</span>
+                                <span className="text-slate-400 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
+                             </div>
                           </td>
                         </tr>
                       ))}
@@ -622,6 +726,7 @@ const AdminDashboard = () => {
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Certificate</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Tasks Done</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -639,7 +744,20 @@ const AdminDashboard = () => {
                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
                           <td className="py-4 px-4 text-slate-300">{app.batch || 'N/A'}</td>
                           <td className="py-4 px-4 text-green-400">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
-                          <td className="py-4 px-4 text-slate-300">{app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</td>
+                          <td className="py-4 px-4 text-slate-300">
+                            {app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : (
+                              <select
+                                onChange={(e) => handleStartDateAssignment(app._id, e.target.value)}
+                                className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white cursor-pointer w-full"
+                                defaultValue=""
+                              >
+                                <option value="" disabled>Select Date...</option>
+                                {upcomingDateOptions.map((opt, idx) => (
+                                  <option key={idx} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
                           <td className="py-4 px-4 text-slate-300">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</td>
                           <td className="py-4 px-4 text-slate-300">{app.totalMonths || 'N/A'}</td>
                           <td className="py-4 px-4">
@@ -659,6 +777,13 @@ const AdminDashboard = () => {
                           </td>
                           <td className="py-4 px-4">
                             {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
+                          </td>
+                          <td className="py-4 px-4">
+                             <div className="flex items-center gap-1">
+                                <span className="text-white font-medium text-xs">{app.submissions ? app.submissions.length : 0}</span>
+                                <span className="text-slate-500 text-xs">/</span>
+                                <span className="text-slate-400 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
+                             </div>
                           </td>
                         </tr>
                       ))}

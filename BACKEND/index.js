@@ -10,6 +10,7 @@ const verifyRoutes = require('./routes/verify');
 const projectRoutes = require('./routes/project');
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/student');
+const cronRoutes = require('./routes/cron');
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
@@ -56,6 +57,7 @@ app.use('/api/verify', verifyRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running on Vercel...');
