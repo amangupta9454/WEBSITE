@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Counter = require('../models/Counter');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail', // or your provider
@@ -14,20 +15,34 @@ const registerInternship = async (req, res) => {
   try {
     console.log('[Backend] Public internship application received:', req.body.email || 'No email');
 
-    const { email, batch, name, domain, duration, college } = req.body;
-    if (!batch) {
-      return res.status(400).json({ message: 'Batch selection required' });
-    }
+    const { email, mobile, name, domain, duration, college, github, linkedin, portfolio } = req.body;
 
-    let user = await User.findOne({ email });
+    // Check duplicate by email OR mobile
+    let user = await User.findOne({ $or: [{ email }, { mobile }] });
 
     if (user && user.internships.length > 0) {
-      const lastApp = user.internships[user.internships.length - 1];
+      // Find the most recent application
+      const sortedInternships = [...user.internships].sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+      const lastApp = sortedInternships[0];
+      
       const daysSinceLast = Math.floor((new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24));
-      if (daysSinceLast < 10) {
+      
+      // Restriction: 15 days
+      if (daysSinceLast < 15) {
         return res.status(429).json({ 
-          message: `You can reapply after 10 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${10 - daysSinceLast}` 
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}` 
         });
+      }
+      
+      // Also check exact domain matching just in case (though it's blocked by 15 days anyway)
+      const sameDomain = user.internships.find(app => app.domain === domain);
+      if (sameDomain) {
+        const daysSinceSameDomain = Math.floor((new Date() - new Date(sameDomain.appliedAt)) / (1000 * 60 * 60 * 24));
+        if (daysSinceSameDomain < 15) {
+          return res.status(429).json({ 
+            message: `You have already applied for ${domain} within the last 15 days.` 
+          });
+        }
       }
     }
 
@@ -52,14 +67,26 @@ const registerInternship = async (req, res) => {
     };
 
     if (!user) {
+      const hashedPassword = await bcrypt.hash('Welcome@123', 10);
       user = await User.create({
-        name: req.body.name,
-        email: req.body.email,
-        mobile: req.body.mobile,
+        name,
+        email,
+        mobile,
+        password: hashedPassword,
+        isFirstLogin: true,
+        github: github || '',
+        linkedin: linkedin || '',
+        portfolio: portfolio || '',
         internships: []
       });
+    } else {
+      // Opt: sync the latest links if provided
+      if (github) user.github = github;
+      if (linkedin) user.linkedin = linkedin;
+      if (portfolio) user.portfolio = portfolio;
     }
 
+    // Attach offer letter status defaults safely handled by schema
     user.internships.push(applicationData);
     await user.save();
 
@@ -135,11 +162,40 @@ const registerInternship = async (req, res) => {
                 <td style="padding:8px 0; font-weight:600; color:#1e40af;">College</td>
                 <td style="padding:8px 0;">${college || 'Not provided'}</td>
               </tr>
+
+            </table>
+          </div>
+
+          <!-- LOGIN CREDENTIALS GLASS CARD -->
+          <div style="
+            margin:30px 0;
+            padding:22px;
+            border-radius:16px;
+            background:linear-gradient(135deg,#fffbeb,#fef3c7);
+            border:1px solid #fde68a;
+          ">
+            <h3 style="margin-top:0; font-size:20px; color:#d97706;">
+              🔐 Student Dashboard Access
+            </h3>
+            
+            <p style="font-size:15.5px; color:#92400e; margin-bottom:12px;">
+              You can track your application status, project assignments, and offer letters via your new Student Dashboard:
+            </p>
+
+            <table style="width:100%; font-size:15.5px; border-collapse:collapse;">
               <tr>
-                <td style="padding:8px 0; font-weight:600; color:#1e40af;">Batch Start Date</td>
-                <td style="padding:8px 0;">${batch}</td>
+                <td style="padding:8px 0; font-weight:600; color:#b45309;">User ID</td>
+                <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0; font-weight:600; color:#b45309;">Password</td>
+                <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${!user.isFirstLogin && !user.isNew ? '(Your Existing Password)' : 'Welcome@123'}</td>
               </tr>
             </table>
+            
+            <p style="font-size:14px; color:#92400e; margin-top:12px; margin-bottom:0;">
+              <em>Note: You will be asked to update your password on your first login.</em>
+            </p>
           </div>
 
           <!-- NEXT STEPS -->

@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, LogIn, LogOut, User, Loader2 } from 'lucide-react';
 import logo from '../assets/LOGO.png';
@@ -8,31 +8,27 @@ import logo from '../assets/LOGO.png';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  // const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // const [user, setUser] = useState(null);
-  // const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('');
   const location = useLocation();
-  // const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem('token');
-  //   const userData = localStorage.getItem('user');
-  //   if (token && userData) {
-  //     setIsAuthenticated(true);
-  //     setUser(JSON.parse(userData));
-  //   }
-  // }, []);
+  useEffect(() => {
+    const token = localStorage.getItem('studentToken');
+    const userData = localStorage.getItem('studentData');
+    if (token && userData) {
+      setIsAuthenticated(true);
+      setUserName(JSON.parse(userData).name || 'Student');
+    } else {
+      setIsAuthenticated(false);
+      setUserName('');
+    }
+  }, [location.pathname]);
 
-  // const handleLogout = () => {
-  //   setLoading(true);
-  //   localStorage.removeItem('token');
-  //   localStorage.removeItem('user');
-  //   setIsAuthenticated(false);
-  //   setUser(null);
-  //   toast.success('Logged out successfully!');
-  //   setLoading(false);
-  //   navigate('/');
-  // };
+  const handleLogout = () => {
+    localStorage.removeItem('studentToken');
+    localStorage.removeItem('studentData');
+    setIsAuthenticated(false);
+  };
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -81,36 +77,35 @@ function Navbar() {
             </ul>
 
             {/* Auth Buttons */}
-            {/* <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 ml-6">
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/dashboard"
-                    className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
+                    to="/student-dashboard"
+                    className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 flex items-center"
                   >
                     <User className="inline mr-2" size={18} />
-                    Dashboard
+                    {userName}
                   </Link>
                   <button
                     onClick={handleLogout}
-                    disabled={loading}
                     className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-red-500/50 flex items-center"
                   >
-                    {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : <LogOut size={18} className="mr-2" />}
+                    <LogOut size={18} className="mr-2" />
                     Logout
                   </button>
                 </>
               ) : (
                 <Link
-                  to="/login"
+                  to="/student-login"
                   className="relative inline-flex items-center px-6 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 overflow-hidden group"
                 >
                   <span className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
                   <LogIn size={18} className="mr-2 relative z-10" />
-                  <span className="relative z-10">Login </span>
+                  <span className="relative z-10">Login</span>
                 </Link>
               )}
-            </div> */}
+            </div>
           </div>
 
           {/* Mobile Toggle */}
@@ -129,19 +124,19 @@ function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {/* {isAuthenticated ? (
+            {isAuthenticated ? (
               <>
-                <Link to="/dashboard" onClick={() => setIsOpen(false)} className="block w-full text-center py-3 bg-cyan-600 text-white rounded-xl">Dashboard</Link>
-                <button onClick={handleLogout} className="w-full py-3 bg-red-600 text-white rounded-xl flex justify-center items-center">
-                  {loading ? <Loader2 className="animate-spin mr-2" /> : <LogOut className="mr-2" size={20} />}
+                <Link to="/student-dashboard" onClick={() => setIsOpen(false)} className="block w-full text-center py-3 bg-cyan-600 text-white rounded-xl">Dashboard</Link>
+                <button onClick={() => { handleLogout(); setIsOpen(false); }} className="w-full py-3 bg-red-600 text-white rounded-xl flex justify-center items-center">
+                  <LogOut className="mr-2" size={20} />
                   Logout
                 </button>
               </>
             ) : (
-              <Link to="/login" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl">
+              <Link to="/student-login" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl">
                 Login
               </Link>
-            )} */}
+            )}
           </div>
         </div>
       )}

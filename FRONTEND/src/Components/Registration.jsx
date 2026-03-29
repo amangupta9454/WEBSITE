@@ -22,8 +22,7 @@ const Registration = () => {
     github: '',
     linkedin: '',
     whyHire: '',
-    hearAbout: '',
-    batch: '',
+    hearAbout: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -35,50 +34,7 @@ const Registration = () => {
   const durations = ['1 Month', '2 Months', '3 Months'];
   const hearOptions = ['LinkedIn', 'College', 'Friends/Students', 'Instagram', 'Website'];
 
-  // Compute next 3 batch dates
-  const getNextBatches = () => {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const batchDays = [5, 15, 25];
-    const batches = [];
 
-    for (let day of batchDays) {
-      const batchDate = new Date(currentYear, currentMonth, day, 23, 59, 59);
-      if (batchDate >= today) {
-        batches.push(
-          batchDate.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })
-        );
-      }
-    }
-
-    if (batches.length === 0) {
-      let nextMonth = currentMonth + 1;
-      let nextYear = currentYear;
-      if (nextMonth > 11) {
-        nextMonth = 0;
-        nextYear++;
-      }
-      for (let day of batchDays) {
-        const batchDate = new Date(nextYear, nextMonth, day, 23, 59, 59);
-        batches.push(
-          batchDate.toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })
-        );
-      }
-    }
-
-    return batches;
-  };
-
-  const batchOptions = getNextBatches();
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 100);
@@ -90,11 +46,6 @@ const Registration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.batch) {
-      toast.error('Please select a batch');
-      return;
-    }
 
     setSubmitting(true);
 
@@ -110,7 +61,7 @@ const Registration = () => {
       setFormData({
         name: '', email: '', mobile: '', whatsapp: '', course: '', branch: '',
         year: '', college: '', state: '', passingYear: '', domain: '', duration: '',
-        portfolio: '', github: '', linkedin: '', whyHire: '', hearAbout: '', batch: ''
+        portfolio: '', github: '', linkedin: '', whyHire: '', hearAbout: ''
       });
 
     } catch (err) {
@@ -236,13 +187,7 @@ const Registration = () => {
                     {durations.map(d => <option key={d} value={d} className="bg-gray-800">{d}</option>)}
                   </select>
                 </div>
-                <div className="group lg:col-span-2">
-                  <label className="block text-gray-300 mb-2 font-medium text-sm sm:text-base">Select Batch Start Date *</label>
-                  <select name="batch" value={formData.batch} onChange={handleChange} required className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300 appearance-none cursor-pointer">
-                    <option value="" className="bg-gray-800">Choose upcoming batch</option>
-                    {batchOptions.map(b => <option key={b} value={b} className="bg-gray-800">{b}</option>)}
-                  </select>
-                </div>
+
               </div>
             </div>
 
@@ -264,12 +209,12 @@ const Registration = () => {
                   <input name="portfolio" value={formData.portfolio} onChange={handleChange} className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300" placeholder="https://yourportfolio.com" />
                 </div>
                 <div className="group">
-                  <label className="block text-gray-300 mb-2 font-medium text-sm sm:text-base">GitHub URL</label>
-                  <input name="github" value={formData.github} onChange={handleChange} className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300" placeholder="https://github.com/username" />
+                  <label className="block text-gray-300 mb-2 font-medium text-sm sm:text-base">GitHub URL *</label>
+                  <input name="github" value={formData.github} onChange={handleChange} required className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300" placeholder="https://github.com/username" />
                 </div>
                 <div className="group">
-                  <label className="block text-gray-300 mb-2 font-medium text-sm sm:text-base">LinkedIn URL</label>
-                  <input name="linkedin" value={formData.linkedin} onChange={handleChange} className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300" placeholder="https://linkedin.com/in/username" />
+                  <label className="block text-gray-300 mb-2 font-medium text-sm sm:text-base">LinkedIn URL *</label>
+                  <input name="linkedin" value={formData.linkedin} onChange={handleChange} required className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-gray-900 border border-gray-700 hover:border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-300" placeholder="https://linkedin.com/in/username" />
                 </div>
               </div>
             </div>

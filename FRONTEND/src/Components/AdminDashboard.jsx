@@ -156,6 +156,21 @@ const AdminDashboard = () => {
     navigate('/admin-login');
   };
 
+  const handleOfferLetterChange = async (appId, newStatus) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-offer-status`,
+        { applicationId: appId, status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Offer Letter marked as ${newStatus}`);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to update Offer Letter status');
+    }
+  };
+
   const handleFormChange = (appId, field, value) => {
     setForms(prev => ({
       ...prev,
@@ -525,6 +540,8 @@ const AdminDashboard = () => {
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -540,6 +557,19 @@ const AdminDashboard = () => {
                           </td>
                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+                          <td className="py-4 px-4">
+                            <select
+                              value={app.offerLetterStatus || 'Not Sent'}
+                              onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
+                              className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white"
+                            >
+                              <option value="Not Sent">Not Sent</option>
+                              <option value="Sent">Sent</option>
+                            </select>
+                          </td>
+                          <td className="py-4 px-4">
+                            {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -583,13 +613,15 @@ const AdminDashboard = () => {
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
-                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">SApplied At</th>
-                       <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Start Date</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Batch</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Downloaded At</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Start Date</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">End Date</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Months</th>
                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Certificate</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -614,6 +646,19 @@ const AdminDashboard = () => {
                             {app.certificateUrl ? (
                               <a href={app.certificateUrl} target="_blank" className="text-blue-400">View</a>
                             ) : 'N/A'}
+                          </td>
+                          <td className="py-4 px-4">
+                            <select
+                              value={app.offerLetterStatus || 'Not Sent'}
+                              onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
+                              className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white"
+                            >
+                              <option value="Not Sent">Not Sent</option>
+                              <option value="Sent">Sent</option>
+                            </select>
+                          </td>
+                          <td className="py-4 px-4">
+                            {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
                           </td>
                         </tr>
                       ))}

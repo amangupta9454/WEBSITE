@@ -60,7 +60,10 @@ const getInternships = async (req, res) => {
           startDate: app.startDate,
           endDate: app.endDate,
           totalMonths: app.totalMonths,
-          certificateUrl: app.certificateUrl
+          certificateUrl: app.certificateUrl,
+          offerLetterStatus: app.offerLetterStatus,
+          hasPaid: app.hasPaid,
+          submissions: app.submissions || []
         });
       });
     });
@@ -137,6 +140,29 @@ const updateInternshipDetails = async (req, res) => {
     res.json({ message: 'Internship details updated successfully' });
   } catch (error) {
     console.error('[Admin] Error updating internship details:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateOfferStatus = async (req, res) => {
+  try {
+    const { applicationId, status } = req.body;
+    if (!applicationId || !status) {
+      return res.status(400).json({ message: 'Application ID and status required' });
+    }
+
+    const result = await User.updateOne(
+      { 'internships._id': applicationId },
+      { $set: { 'internships.$.offerLetterStatus': status } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    res.json({ message: `Offer letter marked as ${status}` });
+  } catch (error) {
+    console.error('[Admin] Error updating offer status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -218,4 +244,4 @@ const uploadCertificates = async (req, res) => {
   }
 };
 
-module.exports = { adminLogin, getInternships, markDownloaded, updateInternshipDetails, uploadCertificates };
+module.exports = { adminLogin, getInternships, markDownloaded, updateInternshipDetails, uploadCertificates, updateOfferStatus };
