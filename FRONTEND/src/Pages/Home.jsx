@@ -173,7 +173,8 @@ function Home() {
     { icon: BarChart, name: 'Data Analytics', delay: 200 },
     { icon: Megaphone, name: 'C Programming', delay: 300 },
     { icon: DollarSign, name: 'Python Programming', delay: 400 },
-    { icon: Briefcase, name: 'AI & ML', delay: 500 }
+    { icon: Briefcase, name: 'AI & ML', delay: 500 },
+    { icon: Code, name: 'Programming', delay: 600 },
   ];
 
   const features = [
