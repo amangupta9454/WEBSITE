@@ -30,7 +30,7 @@ const Registration = () => {
 
   const states = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'].sort();
 
-  const domains = ['Frontend Development', 'Backend Development', 'MERN Stack Development', 'C Programming', 'Python Development', 'Artificial Intelligence', 'Figma or UI/UX', 'Data Science', 'Machine Learning','Full Stack Development'];
+  const domains = ['Frontend Development', 'Backend Development', 'MERN Stack Development', 'C Programming', 'Python Development', 'Artificial Intelligence', 'Figma or UI/UX', 'Data Science', 'Machine Learning','Full Stack Development','App Development', 'Marketing'];
   const durations = ['1 Month', '2 Months', '3 Months'];
   const hearOptions = ['LinkedIn', 'College', 'Friends/Students', 'Instagram', 'Website'];
 
