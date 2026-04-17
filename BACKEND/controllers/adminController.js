@@ -188,36 +188,36 @@ const uploadCertificates = async (req, res) => {
 
       // If not Date, parse as string in dd-mm-yyyy
       const parseDate = (val) => {
-  if (val instanceof Date) return val;
-  if (typeof val !== 'string') return null;
+        if (val instanceof Date) return val;
+        if (typeof val !== 'string') return null;
 
-  const parts = val.trim().split(/[-\/.]/);
-  if (parts.length !== 3) return null;
+        const parts = val.trim().split(/[-\/.]/);
+        if (parts.length !== 3) return null;
 
-  let d = parseInt(parts[0], 10);
-  let m = parseInt(parts[1], 10);
-  let y = parseInt(parts[2], 10);
+        let d = parseInt(parts[0], 10);
+        let m = parseInt(parts[1], 10);
+        let y = parseInt(parts[2], 10);
 
-  if (y < 100) y += 2000;
+        if (y < 100) y += 2000;
 
-  // Handle if accidentally mm-dd-yyyy
-  if (m > 12 && d <= 12) {
-    [d, m] = [m, d];
-  }
+        // Handle if accidentally mm-dd-yyyy
+        if (m > 12 && d <= 12) {
+          [d, m] = [m, d];
+        }
 
-  const dateObj = new Date(y, m - 1, d);
-  if (isNaN(dateObj.getTime())) return null;
+        const dateObj = new Date(y, m - 1, d);
+        if (isNaN(dateObj.getTime())) return null;
 
-  dateObj.setUTCHours(0, 0, 0, 0); // Critical fix
-  return dateObj;
-};
+        dateObj.setUTCHours(0, 0, 0, 0); // Critical fix
+        return dateObj;
+      };
 
       startDate = parseDate(startDate);
       endDate = parseDate(endDate);
 
       if (!startDate || !endDate) {
         console.warn('Invalid date in row:', row);
-        throw new Error(`Invalid date format in row for Certificate ${row.Certificate_Number}`);
+        return null; // Skip invalid dates instead of throwing 500 Error
       }
 
       return {
@@ -230,19 +230,29 @@ const uploadCertificates = async (req, res) => {
         studentId: row.Student_ID?.toString().trim(),
         batch: row.Batch?.toString().trim()
       };
-    }).filter(cert => cert.certificateNumber && cert.studentId); // Filter invalid
+    }).filter(cert => cert && cert.certificateNumber && cert.studentId); // Filter invalid
 
     if (certificates.length === 0) {
       return res.status(400).json({ message: 'No valid certificates found in the Excel file' });
     }
 
-    // Insert to DB (ignore duplicates)
-    await Certificate.insertMany(certificates, { ordered: false });
+    // Insert to DB (ignore duplicates safely)
+    try {
+      await Certificate.insertMany(certificates, { ordered: false });
+      res.json({ message: `${certificates.length} certificates uploaded successfully` });
+    } catch (insertError) {
+      if (insertError.code === 11000) {
+        // This means some (or all) were duplicates, but others were inserted because of ordered: false
+        const insertedCount = insertError.insertedDocs ? insertError.insertedDocs.length : 0;
+        res.json({ message: `Upload completed. Inserted ${insertedCount} new certificates (skipped duplicates).` });
+      } else {
+        throw insertError;
+      }
+    }
 
-    res.json({ message: `${certificates.length} certificates uploaded successfully` });
   } catch (error) {
     console.error('[Admin] Error uploading certificates:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 const setStartDate = async (req, res) => {
