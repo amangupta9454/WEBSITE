@@ -609,7 +609,7 @@ const Registration = () => {
               />
 
               {/* Fees Info Cards */}
-              <div className="mb-8 sm:mb-10">
+              {/* <div className="mb-8 sm:mb-10">
                 <div className="flex items-center gap-2.5 mb-4 group">
                   <Zap size={16} className="text-amber-400 animate-pulse group-hover:animate-bounce" />
                   <span className="text-xs font-black uppercase tracking-widest text-amber-400 group-hover:text-amber-300 transition-colors duration-300">Registration Fees</span>
@@ -648,7 +648,7 @@ const Registration = () => {
                     </div>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                 <InputField label="Preferred Domain" required>
@@ -742,7 +742,7 @@ const Registration = () => {
             </section>
 
             {/* Summary strip before submit */}
-            {currentFee && (
+            {/* {currentFee && (
               <div className="rounded-xl bg-gradient-to-r from-sky-500/10 via-sky-500/8 to-teal-500/10 border border-sky-500/25 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transform transition-all duration-300 hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/20 hover:scale-102 group cursor-pointer">
                 <div className="flex items-center gap-3.5">
                   <div className="p-2.5 rounded-lg bg-sky-500/15 border border-sky-500/30 group-hover:border-sky-500/60 transition-all duration-300 group-hover:scale-110">
@@ -760,7 +760,7 @@ const Registration = () => {
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Submit Button */}
             <button
