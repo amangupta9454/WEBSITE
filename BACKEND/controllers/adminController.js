@@ -30,11 +30,16 @@ const getInternships = async (req, res) => {
   try {
     const users = await User.find({ 'internships.0': { $exists: true } }); // Users with at least one internship
     const allSubmissions = await ProjectSubmission.find({}); // Globally pull tracking histories
+    const allCertificates = await Certificate.find({}); // Fetch all certificates to match studentId
 
     const allApplications = [];
 
     users.forEach(user => {
       user.internships.forEach(app => {
+        const isVerified = allCertificates.some(cert => {
+          return cert.studentId && app.studentId && 
+            cert.studentId.toString().trim().toLowerCase() === app.studentId.toString().trim().toLowerCase();
+        });
         allApplications.push({
           _id: app._id, // ← MUST include this
           studentId: app.studentId,
@@ -65,6 +70,10 @@ const getInternships = async (req, res) => {
           certificateUrl: app.certificateUrl,
           offerLetterStatus: app.offerLetterStatus,
           hasPaid: app.hasPaid,
+          paidExported: app.paidExported || false,
+          projectExported: app.projectExported || false,
+          bypassBlock: app.bypassBlock || false,
+          isCertificateVerified: isVerified,
           submissions: allSubmissions.filter(sub => String(sub.studentId) === String(app.studentId))
         });
       });
@@ -112,34 +121,35 @@ const markDownloaded = async (req, res) => {
 
 const updateInternshipDetails = async (req, res) => {
   try {
-    const { applicationId, startDate, endDate, certificateUrl } = req.body;
+    const { applicationId, startDate, certificateUrl } = req.body;
 
     if (!applicationId) {
       return res.status(400).json({ message: 'Application ID required' });
     }
 
-    // Calculate total months
+    const user = await User.findOne({ 'internships._id': applicationId });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const internship = user.internships.id(applicationId);
+    if (!internship) return res.status(404).json({ message: 'Internship not found' });
+
+    const durationStr = internship.duration || '1 Month';
+    const totalMonths = parseInt(durationStr.split(' ')[0], 10) || 1;
+    
     const start = new Date(startDate);
-    const end = new Date(endDate);
-    const totalMonths = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 30)); // Approximate months
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + totalMonths);
 
-    const result = await User.updateOne(
-      { 'internships._id': applicationId },
-      {
-        $set: {
-          'internships.$.startDate': start,
-          'internships.$.endDate': end,
-          'internships.$.totalMonths': totalMonths,
-          'internships.$.certificateUrl': certificateUrl
-        }
-      }
-    );
-
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ message: 'Application not found' });
+    internship.startDate = start;
+    internship.endDate = end;
+    internship.totalMonths = totalMonths;
+    if (certificateUrl) {
+      internship.certificateUrl = certificateUrl;
     }
 
-    res.json({ message: 'Internship details updated successfully' });
+    await user.save();
+
+    res.json({ message: 'Internship details updated successfully', startDate: start, endDate: end });
   } catch (error) {
     console.error('[Admin] Error updating internship details:', error);
     res.status(500).json({ message: 'Server error' });
@@ -288,4 +298,117 @@ const setStartDate = async (req, res) => {
   }
 };
 
-module.exports = { adminLogin, getInternships, markDownloaded, updateInternshipDetails, uploadCertificates, updateOfferStatus, setStartDate };
+const updatePaidStatus = async (req, res) => {
+  try {
+    const { applicationId, hasPaid } = req.body;
+    if (!applicationId) {
+      return res.status(400).json({ message: 'Application ID required' });
+    }
+
+    const result = await User.updateOne(
+      { 'internships._id': applicationId },
+      { 
+        $set: { 
+          'internships.$.hasPaid': hasPaid,
+          'internships.$.paidExported': false 
+        } 
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    res.json({ message: `Paid status updated to ${hasPaid ? 'Yes' : 'No'}` });
+  } catch (error) {
+    console.error('[Admin] Error updating paid status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const updateBypassBlock = async (req, res) => {
+  try {
+    const { applicationId, bypassBlock } = req.body;
+    if (!applicationId) {
+      return res.status(400).json({ message: 'Application ID required' });
+    }
+
+    const result = await User.updateOne(
+      { 'internships._id': applicationId },
+      { $set: { 'internships.$.bypassBlock': bypassBlock } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    res.json({ message: `Bypass block status updated to ${bypassBlock ? 'Yes' : 'No'}` });
+  } catch (error) {
+    console.error('[Admin] Error updating bypass block:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const markPaidExported = async (req, res) => {
+  try {
+    const { applicationIds } = req.body;
+    if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({ message: 'No application IDs provided' });
+    }
+
+    let modifiedCount = 0;
+    for (const appId of applicationIds) {
+      const result = await User.updateOne(
+        { 'internships._id': appId },
+        { $set: { 'internships.$.paidExported': true } }
+      );
+      if (result.modifiedCount > 0) {
+        modifiedCount++;
+      }
+    }
+
+    res.json({ message: `Successfully marked ${modifiedCount} paid student(s) as exported.`, modifiedCount });
+  } catch (error) {
+    console.error('[Admin] Error marking paid exported:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const markProjectExported = async (req, res) => {
+  try {
+    const { applicationIds } = req.body;
+    if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({ message: 'No application IDs provided' });
+    }
+
+    let modifiedCount = 0;
+    for (const appId of applicationIds) {
+      const result = await User.updateOne(
+        { 'internships._id': appId },
+        { $set: { 'internships.$.projectExported': true } }
+      );
+      if (result.modifiedCount > 0) {
+        modifiedCount++;
+      }
+    }
+
+    res.json({ message: `Successfully marked ${modifiedCount} submitted student(s) as exported.`, modifiedCount });
+  } catch (error) {
+    console.error('[Admin] Error marking project exported:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { 
+  adminLogin, 
+  getInternships, 
+  markDownloaded, 
+  updateInternshipDetails, 
+  uploadCertificates, 
+  updateOfferStatus, 
+  setStartDate,
+  updatePaidStatus,
+  updateBypassBlock,
+  markPaidExported,
+  markProjectExported
+};

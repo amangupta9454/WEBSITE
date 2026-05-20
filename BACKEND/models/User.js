@@ -42,6 +42,9 @@ const userSchema = new mongoose.Schema({
     certificateUrl: { type: String },
     offerLetterStatus: { type: String, enum: ['Not Sent', 'Sent'], default: 'Not Sent' },
     hasPaid: { type: Boolean, default: false }, // New: tracks if final payment done
+    paidExported: { type: Boolean, default: false },
+    projectExported: { type: Boolean, default: false },
+    bypassBlock: { type: Boolean, default: false },
     alerts: [{
       message: String,
       date: { type: Date, default: Date.now },

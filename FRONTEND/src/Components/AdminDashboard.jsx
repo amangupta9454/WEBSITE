@@ -834,6 +834,7 @@ const AdminDashboard = () => {
   const [forms, setForms] = useState({});
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [exportDuration, setExportDuration] = useState('1');
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -959,10 +960,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleExportPaid = () => {
+  const handleExportPaid = async () => {
     try {
-      const paidApps = applications.filter(app => app.hasPaid);
-      if (paidApps.length === 0) { toast.info('No paid applications found.'); return; }
+      const paidApps = applications.filter(app => app.hasPaid && !app.paidExported);
+      if (paidApps.length === 0) {
+        toast.info('No newly paid applications found to export.');
+        return;
+      }
       const data = paidApps.map(app => ({
         StudentID: app.studentId || 'N/A', Name: app.name, Email: app.email,
         Domain: app.domain, Duration: app.duration, Mobile: app.mobile,
@@ -975,9 +979,106 @@ const AdminDashboard = () => {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Paid Interns');
       XLSX.writeFile(wb, `CodeNova_Paid_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success(`${paidApps.length} paid applications exported!`);
+
+      const token = localStorage.getItem('adminToken');
+      const applicationIds = paidApps.map(app => app._id);
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-paid-exported`, { applicationIds }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast.success(`${paidApps.length} newly paid applications exported and marked!`);
+      fetchApplications(token);
     } catch (err) {
       toast.error('Failed to export paid applications');
+      console.error(err);
+    }
+  };
+
+  const handleExportProjectSubmitted = async (durationVal) => {
+    try {
+      if (!durationVal) {
+        toast.info('Please select an internship duration to export.');
+        return;
+      }
+
+      const targetDurationStr = `${durationVal} Month${parseInt(durationVal) > 1 ? 's' : ''}`;
+      
+      const completedApps = applications.filter(app => {
+        const regDuration = parseInt(app.duration?.split(' ')[0], 10) || 1;
+        const subCount = app.submissions ? app.submissions.length : 0;
+        const isTargetDuration = regDuration === parseInt(durationVal, 10);
+        return isTargetDuration && subCount >= regDuration && !app.projectExported;
+      });
+
+      if (completedApps.length === 0) {
+        toast.info(`No newly completed project submissions found for ${targetDurationStr}.`);
+        return;
+      }
+
+      const data = completedApps.map(app => ({
+        'Student Name': app.name,
+        'Email ID': app.email,
+        'Student ID': app.studentId || 'N/A',
+        'Project Submitted': app.submissions ? app.submissions.length : 0,
+        'Mobile Number': app.mobile,
+        'Internship Start Date': app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A',
+        'End Date': app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A',
+        'Project Submission Duration': app.duration || targetDurationStr
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data, {
+        header: ['Student Name', 'Email ID', 'Student ID', 'Project Submitted', 'Mobile Number', 'Internship Start Date', 'End Date', 'Project Submission Duration']
+      });
+      const colWidths = [{ wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 25 }];
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `Completed Interns ${durationVal}M`);
+      XLSX.writeFile(wb, `CodeNova_Completed_${durationVal}Month_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+      const token = localStorage.getItem('adminToken');
+      const applicationIds = completedApps.map(app => app._id);
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-project-exported`, { applicationIds }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast.success(`${completedApps.length} completed students (${targetDurationStr}) exported!`);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to export completed student projects');
+      console.error(err);
+    }
+  };
+
+  const handleTogglePaidStatus = async (appId, currentStatus) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-paid-status`,
+        { applicationId: appId, hasPaid: !currentStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Paid status updated to ${!currentStatus ? 'Yes' : 'No'}`);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to update paid status');
+      console.error(err);
+    }
+  };
+
+  const handleToggleBypassBlock = async (appId, currentStatus) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-bypass-block`,
+        { applicationId: appId, bypassBlock: !currentStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Bypass block status updated to ${!currentStatus ? 'Yes' : 'No'}`);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to update bypass block status');
+      console.error(err);
     }
   };
 
@@ -1034,13 +1135,42 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleStartDateChange = (appId, durationStr, val) => {
+    const months = parseInt(durationStr, 10) || 1;
+    let endVal = '';
+    if (val) {
+      const date = new Date(val);
+      if (!isNaN(date.getTime())) {
+        date.setMonth(date.getMonth() + months);
+        endVal = date.toISOString().split('T')[0];
+      }
+    }
+    setForms(prev => ({
+      ...prev,
+      [appId]: {
+        ...prev[appId],
+        startDate: val,
+        endDate: endVal
+      }
+    }));
+  };
+
   const handleUpdateInternship = async (appId) => {
     const token = localStorage.getItem('adminToken');
     const form = forms[appId] || {};
-    if (!form.startDate || !form.endDate || !form.certificateUrl) { toast.error('All fields required'); return; }
+    if (!form.startDate || !form.endDate) { toast.error('Start date is required'); return; }
     setUpdating(prev => ({ ...prev, [appId]: true }));
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`, { applicationId: appId, startDate: form.startDate, endDate: form.endDate, certificateUrl: form.certificateUrl }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`,
+        { 
+          applicationId: appId, 
+          startDate: form.startDate, 
+          endDate: form.endDate, 
+          certificateUrl: form.certificateUrl || '' 
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success('Updated successfully!');
       fetchApplications(token);
     } catch (err) {
@@ -1234,6 +1364,27 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-slate-500 text-xs mb-1.5">Paid Status</p>
+                <SelectField
+                  value={app.hasPaid ? 'Yes' : 'No'}
+                  onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
+                  options={[{ value: 'No', label: 'No' }, { value: 'Yes', label: 'Yes' }]}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <p className="text-slate-500 text-xs mb-1.5">Dashboard Access</p>
+                <SelectField
+                  value={app.bypassBlock ? 'Give Access' : 'Strict'}
+                  onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
+                  options={[{ value: 'Strict', label: 'Strict' }, { value: 'Give Access', label: 'Give Access' }]}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
             {isDownloaded && !app.certificateUrl && (
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/40">
                 <p className="text-white text-xs font-medium mb-3">Add Internship Details</p>
@@ -1241,13 +1392,13 @@ const AdminDashboard = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-slate-500 text-xs block mb-1">Start Date</label>
-                      <input type="date" value={forms[app._id]?.startDate || ''} onChange={(e) => handleFormChange(app._id, 'startDate', e.target.value)}
+                      <input type="date" value={forms[app._id]?.startDate || ''} onChange={(e) => handleStartDateChange(app._id, app.duration, e.target.value)}
                         className="w-full bg-slate-800 border border-slate-600/50 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                     </div>
                     <div>
                       <label className="text-slate-500 text-xs block mb-1">End Date</label>
-                      <input type="date" value={forms[app._id]?.endDate || ''} onChange={(e) => handleFormChange(app._id, 'endDate', e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600/50 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      <input type="date" value={forms[app._id]?.endDate || ''} disabled readOnly
+                        className="w-full bg-slate-900 border border-slate-700 text-slate-400 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-not-allowed" />
                     </div>
                   </div>
                   <label className="flex items-center gap-2 p-2.5 bg-slate-800/80 border border-dashed border-slate-600/50 rounded-lg cursor-pointer hover:border-blue-500/50 transition-colors">
@@ -1275,6 +1426,17 @@ const AdminDashboard = () => {
                   className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" />View Certificate
                 </a>
+              </div>
+            )}
+
+            {isDownloaded && (
+              <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-700/40 flex items-center justify-between">
+                <span className="text-xs text-slate-400 font-medium">Verify Certificate Status:</span>
+                {app.isCertificateVerified ? (
+                  <Badge variant="green">True</Badge>
+                ) : (
+                  <Badge variant="red">False</Badge>
+                )}
               </div>
             )}
           </div>
@@ -1361,6 +1523,24 @@ const AdminDashboard = () => {
                 <Download className="w-4 h-4" />
                 Export Paid
               </button>
+              <div className="flex-1 lg:flex-none flex gap-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-1 items-center">
+                <select 
+                  value={exportDuration} 
+                  onChange={(e) => setExportDuration(e.target.value)}
+                  className="bg-transparent text-white text-xs border-0 focus:ring-0 focus:outline-none px-2 cursor-pointer"
+                >
+                  <option value="1" className="bg-slate-900 text-white">1 Month</option>
+                  <option value="2" className="bg-slate-900 text-white">2 Months</option>
+                  <option value="3" className="bg-slate-900 text-white">3 Months</option>
+                </select>
+                <button 
+                  onClick={() => handleExportProjectSubmitted(exportDuration)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export Completed
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1444,6 +1624,7 @@ const AdminDashboard = () => {
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Applied At</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tasks</th>
                         </>
                       ) : (
@@ -1461,6 +1642,7 @@ const AdminDashboard = () => {
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Certificate</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tasks</th>
                         </>
                       )}
@@ -1510,7 +1692,24 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
-                              {app.hasPaid ? <Badge variant="green">Paid</Badge> : <Badge variant="amber">Pending</Badge>}
+                              <div className="relative">
+                                <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
+                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  <option value="No">No</option>
+                                  <option value="Yes">Yes</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="relative">
+                                <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
+                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  <option value="Strict">Strict</option>
+                                  <option value="Give Access">Give Access</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                              </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1">
@@ -1541,12 +1740,11 @@ const AdminDashboard = () => {
                             <td className="py-3.5 px-4 text-slate-400 text-xs whitespace-nowrap">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : '—'}</td>
                             <td className="py-3.5 px-4 text-slate-400 text-sm">{app.totalMonths || '—'}</td>
                             <td className="py-3.5 px-4">
-                              {app.certificateUrl ? (
-                                <a href={app.certificateUrl} target="_blank" rel="noreferrer"
-                                  className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs transition-colors">
-                                  <ExternalLink className="w-3 h-3" />View
-                                </a>
-                              ) : <span className="text-slate-600 text-xs">—</span>}
+                              {app.isCertificateVerified ? (
+                                <Badge variant="green">True</Badge>
+                              ) : (
+                                <Badge variant="red">False</Badge>
+                              )}
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
@@ -1559,7 +1757,24 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
-                              {app.hasPaid ? <Badge variant="green">Paid</Badge> : <Badge variant="amber">Pending</Badge>}
+                              <div className="relative">
+                                <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
+                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  <option value="No">No</option>
+                                  <option value="Yes">Yes</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="relative">
+                                <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
+                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  <option value="Strict">Strict</option>
+                                  <option value="Give Access">Give Access</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                              </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1">
