@@ -3,14 +3,24 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, User, BookOpen, Link2, CheckCircle, Save, LogOut, Camera, Bell, Lock, ShieldAlert } from 'lucide-react';
+import { Loader2, User, BookOpen, Link2, CheckCircle, Save, LogOut, Camera, Bell, Lock, ShieldAlert, Award, Sparkles, X, Calendar, Clock, CheckSquare, Bookmark, FileCheck, ArrowRight } from 'lucide-react';
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('internships');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showCertificatePopup, setShowCertificatePopup] = useState(false);
+  const [eligibleInternship, setEligibleInternship] = useState(null);
   const navigate = useNavigate();
+
+  const getEndDate = (startDate, duration) => {
+    if (!startDate) return 'Pending Start Date';
+    const start = new Date(startDate);
+    const months = parseInt(duration) || 1;
+    start.setMonth(start.getMonth() + months);
+    return start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -39,6 +49,22 @@ const StudentDashboard = () => {
           portfolio: response.data.user.portfolio || '',
           profileImage: response.data.user.profileImage || ''
         });
+
+        // Check for certificate eligibility to trigger popup automatically
+        if (response.data.internships && response.data.internships.length > 0) {
+          const eligible = response.data.internships.find(internship => {
+            const totalTargetMonths = parseInt(internship.duration.split(' ')[0]) || 1;
+            const submittedMonths = internship.submissions?.length || 0;
+            return internship.hasPaid && submittedMonths >= totalTargetMonths;
+          });
+          if (eligible) {
+            const hasSeen = sessionStorage.getItem('hasSeenCertificatePopup');
+            if (!hasSeen) {
+              setEligibleInternship(eligible);
+              setShowCertificatePopup(true);
+            }
+          }
+        }
       } catch (err) {
         if (err.response?.status === 401) {
           localStorage.removeItem('studentToken');
@@ -306,123 +332,281 @@ const StudentDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Dynamic Deadline Alerts */}
-                    {internship.activeAlert && (
-                      <div className={`mb-6 p-4 rounded-xl border flex items-start gap-3.5 transition-all duration-300 relative overflow-hidden ${
-                        internship.activeAlert.type === 'red'
-                          ? 'bg-rose-950/20 border-rose-500/30 text-rose-200 shadow-md shadow-rose-900/5'
-                          : internship.activeAlert.type === 'yellow'
-                          ? 'bg-amber-950/20 border-amber-500/30 text-amber-200 shadow-md shadow-amber-900/5'
-                          : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200 shadow-md shadow-emerald-900/5'
-                      }`}>
-                        <div className={`absolute top-0 left-0 w-1.5 h-full ${
-                          internship.activeAlert.type === 'red' ? 'bg-rose-500' : internship.activeAlert.type === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}></div>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${
-                          internship.activeAlert.type === 'red'
-                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                            : internship.activeAlert.type === 'yellow'
-                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        }`}>
-                          <ShieldAlert className={`w-5 h-5 ${internship.activeAlert.type === 'red' ? 'animate-pulse' : ''}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-bold uppercase tracking-wider ${
-                              internship.activeAlert.type === 'red'
-                                ? 'text-rose-400'
-                                : internship.activeAlert.type === 'yellow'
-                                ? 'text-amber-400'
-                                : 'text-emerald-400'
-                            }`}>
-                              {internship.activeAlert.type === 'red' ? 'Critical Action Required' : internship.activeAlert.type === 'yellow' ? 'Action Required' : 'Upcoming Deadline'}
-                            </span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                            <span className="text-[10px] text-slate-400 font-medium">Timeline Warning</span>
+                    {/* Certificate Eligibility Banner */}
+                    {isEligible && (
+                      <div className="mb-6 p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900 border border-emerald-500/30 text-emerald-200 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -z-10"></div>
+                        <div className="flex flex-col sm:flex-row items-center gap-5">
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 flex-shrink-0">
+                            <Award className="w-8 h-8 animate-bounce" />
                           </div>
-                          <p className="text-slate-300 text-sm font-medium mt-1 leading-relaxed">
-                            {internship.activeAlert.message}
-                          </p>
+                          <div className="flex-1 text-center sm:text-left">
+                            <h4 className="text-xl font-extrabold text-white tracking-tight flex items-center justify-center sm:justify-start gap-2">
+                              🎉 Certification Eligibility Achieved! <Sparkles className="w-5 h-5 text-amber-400" />
+                            </h4>
+                            <p className="text-emerald-300/80 text-sm mt-1.5 leading-relaxed font-medium">
+                              Congratulations! You have successfully completed all required project submissions ({submittedMonths}/{totalTargetMonths}) and your internship payment is fully verified. You are eligible for your official internship completion certificate.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEligibleInternship(internship);
+                              setShowCertificatePopup(true);
+                            }}
+                            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-emerald-500/30 flex items-center gap-2 text-sm whitespace-nowrap"
+                          >
+                            View Certificate Status <ArrowRight className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Alerts Dashboard */}
-                    {internship.alerts && internship.alerts.filter(a => !a.isRead).length > 0 && (
-                      <div className="mb-6 space-y-3">
-                        {internship.alerts.filter(a => !a.isRead).map(alert => (
-                          <div key={alert._id} className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded-r-lg flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <Bell className="text-red-400" size={20} />
-                              <div>
-                                <p className="text-red-200 font-medium">{alert.message}</p>
-                                <p className="text-xs text-red-400 mt-1">{new Date(alert.date).toLocaleDateString()} {new Date(alert.date).toLocaleTimeString()}</p>
-                              </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                      {/* Left Column (Col-7): Timeline & Checklist */}
+                      <div className="lg:col-span-7 space-y-6">
+                        {/* Dynamic Deadline Alerts */}
+                        {internship.activeAlert && (
+                          <div className={`p-4 rounded-xl border flex items-start gap-3.5 transition-all duration-300 relative overflow-hidden ${
+                            internship.activeAlert.type === 'red'
+                              ? 'bg-rose-950/20 border-rose-500/30 text-rose-200 shadow-md shadow-rose-900/5'
+                              : internship.activeAlert.type === 'yellow'
+                              ? 'bg-amber-950/20 border-amber-500/30 text-amber-200 shadow-md shadow-amber-900/5'
+                              : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200 shadow-md shadow-emerald-900/5'
+                          }`}>
+                            <div className={`absolute top-0 left-0 w-1.5 h-full ${
+                              internship.activeAlert.type === 'red' ? 'bg-rose-500' : internship.activeAlert.type === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}></div>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${
+                              internship.activeAlert.type === 'red'
+                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                : internship.activeAlert.type === 'yellow'
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            }`}>
+                              <ShieldAlert className={`w-5 h-5 ${internship.activeAlert.type === 'red' ? 'animate-pulse' : ''}`} />
                             </div>
-                            <button onClick={() => handleMarkAlert(internship._id, alert._id)} className="text-xs px-3 py-1 bg-red-900/50 hover:bg-red-800 text-white rounded transition-colors">
-                              Dismiss
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold uppercase tracking-wider ${
+                                  internship.activeAlert.type === 'red'
+                                    ? 'text-rose-400'
+                                    : internship.activeAlert.type === 'yellow'
+                                    ? 'text-amber-400'
+                                    : 'text-emerald-400'
+                                }`}>
+                                  {internship.activeAlert.type === 'red' ? 'Critical Action Required' : internship.activeAlert.type === 'yellow' ? 'Action Required' : 'Upcoming Deadline'}
+                                </span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                                <span className="text-[10px] text-slate-400 font-medium">Timeline Warning</span>
+                              </div>
+                              <p className="text-slate-300 text-sm font-medium mt-1 leading-relaxed">
+                                {internship.activeAlert.message}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Alerts Dashboard */}
+                        {internship.alerts && internship.alerts.filter(a => !a.isRead).length > 0 && (
+                          <div className="space-y-3">
+                            {internship.alerts.filter(a => !a.isRead).map(alert => (
+                              <div key={alert._id} className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded-r-lg flex justify-between items-center shadow-lg">
+                                <div className="flex items-center gap-3">
+                                  <Bell className="text-red-400" size={20} />
+                                  <div>
+                                    <p className="text-red-200 font-medium text-sm">{alert.message}</p>
+                                    <p className="text-[11px] text-red-400 mt-1">{new Date(alert.date).toLocaleDateString()} {new Date(alert.date).toLocaleTimeString()}</p>
+                                  </div>
+                                </div>
+                                <button onClick={() => handleMarkAlert(internship._id, alert._id)} className="text-xs px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-white rounded-lg transition-colors font-medium border border-red-700/30">
+                                  Dismiss
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Project Checklist */}
+                        <div>
+                          <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <CheckSquare className="text-indigo-400 w-5 h-5" /> Project Tracking Timeline
+                          </h4>
+                          <div className="space-y-4">
+                            {Array.from({ length: totalTargetMonths }).map((_, i) => {
+                              const monthNum = i + 1;
+                              const sb = internship.submissions.find(s => s.month === monthNum);
+                              return (
+                                <div key={monthNum} className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${sb ? 'bg-emerald-950/10 border-emerald-900/50 hover:border-emerald-500/30' : 'bg-gray-800/10 border-gray-800/80 hover:border-gray-700/50'}`}>
+                                  {sb ? (
+                                    <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/5 flex-shrink-0">
+                                      <CheckCircle className="w-4 h-4" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-7 h-7 rounded-full border border-slate-700 bg-slate-900/50 flex items-center justify-center text-slate-500 flex-shrink-0 font-bold text-xs">
+                                      {monthNum}
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`font-semibold text-sm ${sb ? 'text-emerald-400' : 'text-slate-300'}`}>Month {monthNum} Internal Submission</p>
+                                    {sb && (
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-[11px] text-slate-500">Submitted on: {new Date(sb.submittedAt).toLocaleDateString()}</p>
+                                        <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                                        <p className="text-[11px] text-indigo-400 font-medium">{sb.assignmentsCount || 0} Assignments Tracked</p>
+                                      </div>
+                                    )}
+                                    {!sb && monthNum === submittedMonths + 1 && (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+                                        <button onClick={() => navigate('/project-submission')} className="text-xs text-indigo-400 hover:text-indigo-300 font-bold hover:underline flex items-center gap-1">
+                                          Ready for submission <ArrowRight className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {paymentLinkOpen && (
+                          <div className="p-6 bg-gradient-to-br from-orange-950/30 to-amber-950/20 border border-orange-500/20 rounded-2xl shadow-xl relative overflow-hidden">
+                            <p className="text-orange-300 font-bold mb-3 text-base">🎉 All target projects are submitted! Final verification payment is unlocked.</p>
+                            <p className="text-xs text-orange-400/80 mb-4 leading-relaxed">Please complete the required verification payment to unlock your certification status instantly.</p>
+                            <button onClick={() => navigate('/project-submission')} className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold rounded-xl transition-all shadow-lg shadow-orange-600/20 hover:shadow-orange-500/30 flex items-center justify-center gap-2 mx-auto sm:mx-0">
+                              Complete Payment & Final Validation
                             </button>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                      <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Target Timeline</p>
-                        <p className="text-white font-semibold text-lg">{internship.duration}</p>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Official Start Date</p>
-                        <p className="text-white font-semibold text-lg">
-                           {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-IN') : 'Pending Admin'}
-                        </p>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Projects Submitted</p>
-                        <p className="text-white font-semibold text-lg">{submittedMonths} / {totalTargetMonths}</p>
-                      </div>
-                      <div className="bg-black/50 p-4 rounded-xl border border-gray-800">
-                        <p className="text-gray-500 text-sm">Total Assignments Tracked</p>
-                        <p className="text-white font-semibold text-lg">
-                          {internship.submissions.reduce((acc, curr) => acc + curr.assignmentsCount, 0)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mb-6">
-                      <h4 className="text-lg font-bold text-white mb-4">Project Tracking Timeline</h4>
-                      <div className="space-y-4">
-                        {Array.from({ length: totalTargetMonths }).map((_, i) => {
-                          const monthNum = i + 1;
-                          const sb = internship.submissions.find(s => s.month === monthNum);
-                          return (
-                            <div key={monthNum} className={`flex items-center gap-4 p-4 rounded-xl border ${sb ? 'bg-emerald-950/20 border-emerald-900/50' : 'bg-gray-800/30 border-gray-800'}`}>
-                              {sb ? <CheckCircle className="text-emerald-500" /> : <div className="w-6 h-6 rounded-full border-2 border-gray-600" />}
-                              <div>
-                                <p className={`font-semibold ${sb ? 'text-emerald-400' : 'text-gray-400'}`}>Month {monthNum} Internal Submission</p>
-                                {sb && <p className="text-xs text-gray-500">Submitted on: {new Date(sb.submittedAt).toLocaleDateString()}</p>}
-                                {!sb && monthNum === submittedMonths + 1 && (
-                                  <button onClick={() => navigate('/project-submission')} className="mt-2 text-sm text-indigo-400 hover:underline">
-                                    Click here to submit
-                                  </button>
-                                )}
+                      {/* Right Column (Col-5): 8 Variables Grid */}
+                      <div className="lg:col-span-5 bg-black/40 border border-gray-800/80 rounded-2xl p-6 shadow-xl space-y-6">
+                        <h4 className="text-lg font-bold text-white flex items-center gap-2 pb-3 border-b border-gray-800/60">
+                          <Sparkles className="text-indigo-400 w-5 h-5" /> Internship Status Overview
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* 1. Start Date */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Start Date</p>
+                                <p className="text-slate-200 text-sm font-semibold mt-0.5 truncate">
+                                  {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Pending Start'}
+                                </p>
                               </div>
                             </div>
-                          );
-                        })}
+                          </div>
+
+                          {/* 2. End Date */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <Clock className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">End Date</p>
+                                <p className="text-slate-200 text-sm font-semibold mt-0.5 truncate">
+                                  {getEndDate(internship.startDate, internship.duration)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 3. Duration */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <Clock className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Duration</p>
+                                <p className="text-slate-200 text-sm font-semibold mt-0.5 truncate">{internship.duration}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 4. Assignments Tracked */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Assignments</p>
+                                <p className="text-slate-200 text-sm font-semibold mt-0.5 truncate">
+                                  {internship.submissions.reduce((acc, curr) => acc + (curr.assignmentsCount || 0), 0)} Total
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 5. Projects Submitted */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <FileCheck className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Projects</p>
+                                <p className="text-slate-200 text-sm font-semibold mt-0.5 truncate">{submittedMonths} / {totalTargetMonths} Done</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 6. Eligible for Certificate */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 ${isEligible ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'}`}>
+                                <Award className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Certification</p>
+                                <p className={`text-sm font-bold mt-0.5 truncate ${isEligible ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                  {isEligible ? 'Eligible' : 'Ineligible'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 7. Offer Letter Status */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 ${internship.offerLetterStatus === 'Sent' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'}`}>
+                                <Bookmark className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Offer Letter</p>
+                                <p className={`text-sm font-semibold mt-0.5 truncate ${internship.offerLetterStatus === 'Sent' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                  {internship.offerLetterStatus}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 8. Internship Details */}
+                          <div className="bg-slate-900/60 border border-slate-800/60 p-4 rounded-xl hover:border-slate-700/50 hover:bg-slate-900/80 transition-all group duration-300 sm:col-span-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform flex-shrink-0">
+                                <User className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Internship Details</p>
+                                <div className="flex items-center justify-between gap-2 mt-0.5">
+                                  <span className="text-slate-200 text-xs font-semibold truncate max-w-[120px]">{internship.domain}</span>
+                                  <span className="text-indigo-400 text-xs font-bold font-mono">{internship.studentId}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {paymentLinkOpen && (
-                      <div className="mt-6 p-6 bg-orange-950/20 border border-orange-900/50 rounded-xl text-center">
-                        <p className="text-orange-400 font-semibold mb-3">All target projects are submitted. Final verification payment is unlocked.</p>
-                        <button onClick={() => navigate('/project-submission')} className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-orange-900/50">
-                          Complete Payment & Final Validation
-                        </button>
-                      </div>
-                    )}
                   </div>
                 );
               })
@@ -430,6 +614,78 @@ const StudentDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Certificate Eligibility Success Modal */}
+      {showCertificatePopup && eligibleInternship && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => {
+            sessionStorage.setItem('hasSeenCertificatePopup', 'true');
+            setShowCertificatePopup(false);
+          }}></div>
+          
+          <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-emerald-500/30 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative z-10 text-center space-y-6 animate-scale-up overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -z-10"></div>
+            
+            <button 
+              onClick={() => {
+                sessionStorage.setItem('hasSeenCertificatePopup', 'true');
+                setShowCertificatePopup(false);
+              }}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/10 flex-shrink-0">
+              <Award className="w-10 h-10 text-emerald-400 animate-pulse" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-2xl font-extrabold text-white tracking-tight">
+                Certification <span className="text-emerald-400">Eligible!</span>
+              </h3>
+              <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Official Internship Completion</p>
+            </div>
+            
+            <div className="bg-emerald-950/20 border border-emerald-500/15 p-5 rounded-2xl text-left space-y-3">
+              <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
+                <span className="text-[11px] font-bold text-emerald-500 uppercase">Internship Domain</span>
+                <span className="text-white text-xs font-bold">{eligibleInternship.domain}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
+                <span className="text-[11px] font-bold text-emerald-500 uppercase">Student ID</span>
+                <span className="text-indigo-400 text-xs font-mono font-bold">{eligibleInternship.studentId}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
+                <span className="text-[11px] font-bold text-emerald-500 uppercase">Start Date</span>
+                <span className="text-white text-xs font-semibold">
+                  {eligibleInternship.startDate ? new Date(eligibleInternship.startDate).toLocaleDateString('en-IN') : 'Pending'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-bold text-emerald-500 uppercase">End Date</span>
+                <span className="text-white text-xs font-semibold">
+                  {getEndDate(eligibleInternship.startDate, eligibleInternship.duration)}
+                </span>
+              </div>
+            </div>
+            
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Your achievements are locked in and payment is verified. Your completion certificate has been generated and queued for dispatch!
+            </p>
+            
+            <button
+              onClick={() => {
+                sessionStorage.setItem('hasSeenCertificatePopup', 'true');
+                setShowCertificatePopup(false);
+              }}
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-xl transition-all shadow-lg shadow-emerald-600/25 hover:shadow-emerald-500/30 flex items-center justify-center gap-2"
+            >
+              Excellent, Thank you!
+            </button>
+          </div>
+        </div>
+      )}
       <ToastContainer position="bottom-right" theme="dark" autoClose={3000} />
     </div>
   );

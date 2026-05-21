@@ -137,7 +137,6 @@ function Home() {
   const [successRate, setSuccessRate] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
   const [showResumePopup, setShowResumePopup] = useState(false);
-  const [showInternshipPopup, setShowInternshipPopup] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -164,11 +163,7 @@ function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    setTimeout(() => {
-      setShowInternshipPopup(true);
-    }, 1500);
-  }, []);
+
 
   useEffect(() => {
     const handleMouseMove = (e) => setMousePosition({ x: e.clientX, y: e.clientY });
@@ -350,50 +345,7 @@ function Home() {
         </div>
       </div>
 
-      {/* Summer Internship Popup Modal */}
-      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 transition-all duration-500 ${showInternshipPopup ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setShowInternshipPopup(false)}></div>
-        
-        <div className={`relative w-full max-w-lg bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-cyan-500/40 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.3)] p-8 sm:p-10 overflow-hidden transition-all duration-700 ${showInternshipPopup ? 'scale-100 translate-y-0' : 'scale-95 translate-y-10'}`}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/20 rounded-full blur-[80px]" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]" />
-          
-          <button onClick={() => setShowInternshipPopup(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200 z-10" aria-label="Close">
-            <X size={20} />
-          </button>
-          
-          <div className="relative z-10 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl mb-6 shadow-xl shadow-cyan-500/40 group relative">
-              <div className="absolute inset-0 bg-white/20 rounded-2xl animate-ping opacity-20"></div>
-              <Briefcase className="text-white" size={40} />
-            </div>
-            
-            <h2 className="text-3xl font-black text-white mb-3">
-              We Are Hiring <br/>
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Summer Interns</span>
-            </h2>
-            
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-full mb-6">
-              <Sparkles size={16} className="text-green-400 animate-pulse" />
-              <span className="text-green-400 font-bold tracking-wide uppercase text-sm">Completely Free</span>
-            </div>
-            
-            <p className="text-gray-300 text-lg leading-relaxed mb-8">
-              Join our exclusive summer internship program to gain real-world experience. There are <span className="text-white font-bold underline decoration-cyan-500 underline-offset-4">NO hidden fees</span> or any type of charge for summer interns.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-              <Link to="/registration" onClick={() => setShowInternshipPopup(false)}
-                className="group relative flex-1 px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl font-bold text-lg text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-xl hover:shadow-cyan-500/50 hover:scale-105 overflow-hidden">
-                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="relative">Apply Now</span>
-                <ArrowRight className="relative group-hover:translate-x-1 transition-transform" size={20} />
-              </Link>
-            </div>
-            <p className="mt-4 text-xs text-gray-500 uppercase tracking-widest">Limited Spots Available</p>
-          </div>
-        </div>
-      </div>
+
 
       {/* ─── HERO ─── */}
       <section id="hero" data-scroll-reveal className="relative w-full min-h-screen flex items-center justify-center text-white px-4 sm:px-6 lg:px-8 overflow-hidden">

@@ -12,6 +12,10 @@ function Navbar() {
   const [userName, setUserName] = useState('');
   const location = useLocation();
 
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+
   useEffect(() => {
     const token = localStorage.getItem('studentToken');
     const userData = localStorage.getItem('studentData');
@@ -44,7 +48,7 @@ function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl bg-opacity-80 border-b border-slate-700/50 shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 md:h-20">
+        <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
@@ -57,7 +61,7 @@ function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-8">
             <ul className="flex items-center space-x-4">
               {navLinks.map((link) => (
                 <li key={link.to}>
@@ -109,7 +113,7 @@ function Navbar() {
           </div>
 
           {/* Mobile Toggle */}
-          <button onClick={toggleMenu} className="md:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+          <button onClick={toggleMenu} className="lg:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all">
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -117,7 +121,7 @@ function Navbar() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/50">
+        <div className="lg:hidden bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/50">
           <div className="px-4 py-6 space-y-3">
             {navLinks.map((link) => (
               <Link key={link.to} to={link.to} onClick={() => setIsOpen(false)} className="block px-5 py-3 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl">
