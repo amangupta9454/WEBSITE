@@ -124,21 +124,72 @@ const Registration = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/register`,
-        formData
+      // 1. Create a registration order
+      const orderRes = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/register/create-order`,
+        {
+          email: formData.email,
+          mobile: formData.mobile,
+          domain: formData.domain,
+          duration: formData.duration
+        }
       );
-      toast.success(`Application submitted! Your Student ID: ${response.data.studentId}`, {
-        icon: '🎉'
-      });
-      setFormData({
-        name:'',email:'',mobile:'',whatsapp:'',course:'',branch:'',
-        year:'',college:'',state:'',passingYear:'',domain:'',duration:'',
-        portfolio:'',github:'',linkedin:'',whyHire:'',hearAbout:''
-      });
+      const { order, key } = orderRes.data;
+
+      // 2. Configure Razorpay checkout options
+      const options = {
+        key: key,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'CODE-A-NOVA',
+        description: `Internship Registration Fee - ${formData.domain} (${formData.duration})`,
+        image: 'https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png',
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            setSubmitting(true);
+            const verifyRes = await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL}/api/register/verify-payment`,
+              {
+                response,
+                formData
+              }
+            );
+            toast.success(`Payment verified & Application submitted! Your Student ID: ${verifyRes.data.studentId}`, {
+              icon: '🎉',
+              autoClose: 10000
+            });
+            setFormData({
+              name:'',email:'',mobile:'',whatsapp:'',course:'',branch:'',
+              year:'',college:'',state:'',passingYear:'',domain:'',duration:'',
+              portfolio:'',github:'',linkedin:'',whyHire:'',hearAbout:''
+            });
+          } catch (verifyErr) {
+            toast.error(verifyErr.response?.data?.message || 'Payment verification failed. Please contact support.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.mobile
+        },
+        theme: {
+          color: '#0ea5e9'
+        },
+        modal: {
+          ondismiss: function () {
+            toast.info('Payment cancelled');
+            setSubmitting(false);
+          }
+        }
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.open();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Submission failed. Please try again.');
-    } finally {
+      toast.error(err.response?.data?.message || 'Failed to initiate application payment. Please try again.');
       setSubmitting(false);
     }
   };
@@ -356,7 +407,7 @@ const Registration = () => {
                         <p className="text-white font-bold text-sm sm:text-base">
                           Fees for <span className="text-green-300">{formData.duration}</span>: <span className="text-green-300 font-black">₹{currentFee}</span>
                         </p>
-                        <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable at the time of project submission</p>
+                        <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable at the time of registration</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 group-hover:text-gray-400 transition-colors duration-300 flex-shrink-0">
@@ -469,7 +520,7 @@ const Registration = () => {
                     <p className="text-white font-black text-sm sm:text-base">
                       Total Fees: <span className="text-sky-300">₹{currentFee}</span>
                     </p>
-                    <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable upon project submission for {formData.duration}</p>
+                    <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable upon registration for {formData.duration}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-sky-300 flex-shrink-0">

@@ -44,35 +44,26 @@ const getDashboardInfo = async (req, res) => {
           const completionDateString = completionDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
           const blockDateString = blockDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-          // 1. Block Check
-          if (daysElapsed >= blockDay) {
-            if (!internship.bypassBlock) {
-              isBlocked = true;
-              blockReason = `Your Month ${currentDueMonth} project submission was due on Day ${completionDay} (${completionDateString}) and is delayed beyond the ${blockDay}-day grace period limit. Access will remain locked until your project is submitted or an administrator grants bypass access.`;
-            }
-          }
+          // 1. Block Check is removed. Student is never blocked.
+          isBlocked = false;
+          blockReason = '';
 
-          // 2. Alert warnings (only relevant if not blocked)
-          if (!isBlocked) {
-            if (daysElapsed >= yellowStartDay && daysElapsed < completionDay) {
-              activeAlert = {
-                type: 'yellow',
-                message: `Your Month ${currentDueMonth} assignment submission is due on ${completionDateString}. Kindly submit the project at the earliest.`
-              };
-            } else if (daysElapsed >= completionDay && (daysElapsed < blockDay || internship.bypassBlock)) {
-              const isPastGrace = daysElapsed >= blockDay;
-              activeAlert = {
-                type: 'red',
-                message: isPastGrace
-                  ? `Your assignment submission is critically delayed! Your dashboard access block has been bypassed by an admin. Please submit the project immediately.`
-                  : `Your assignment submission is delayed! Kindly submit the project as soon as possible, otherwise you will lose dashboard access on ${blockDateString}.`
-              };
-            } else if (daysElapsed >= (completionDay - 10) && daysElapsed < yellowStartDay) {
-              activeAlert = {
-                type: 'green',
-                message: `The project submission deadline is nearing. Please submit the project as soon as possible.`
-              };
-            }
+          // 2. Alert warnings
+          if (daysElapsed >= yellowStartDay && daysElapsed < completionDay) {
+            activeAlert = {
+              type: 'yellow',
+              message: `Your Month ${currentDueMonth} assignment submission is due on ${completionDateString}. Kindly submit the project at the earliest.`
+            };
+          } else if (daysElapsed >= completionDay) {
+            activeAlert = {
+              type: 'red',
+              message: `Your assignment submission is delayed! Kindly submit the project as soon as possible to keep your progress updated.`
+            };
+          } else if (daysElapsed >= (completionDay - 10) && daysElapsed < yellowStartDay) {
+            activeAlert = {
+              type: 'green',
+              message: `The project submission deadline is nearing. Please submit the project as soon as possible.`
+            };
           }
         }
 

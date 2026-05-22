@@ -165,56 +165,7 @@ const StudentDashboard = () => {
     );
   }
 
-  if (data?.isBlocked) {
-    const blockedInternship = data.internships?.find(i => i.isBlocked);
-    const reason = blockedInternship?.blockReason || 'Your dashboard access is temporarily locked due to a delayed project submission.';
-    
-    return (
-      <div className="min-h-screen bg-black pt-20 px-4 sm:px-6 relative overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-950/20 via-black to-slate-900/30 opacity-80"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-600/10 rounded-full blur-3xl -z-10"></div>
-        
-        <div className="max-w-xl w-full bg-slate-900/80 backdrop-blur-xl border border-red-500/20 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10 text-center space-y-6">
-          <div className="mx-auto w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 shadow-lg shadow-red-500/5 animate-pulse">
-            <Lock className="w-10 h-10 text-red-500" />
-          </div>
-          
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">
-            Dashboard Access <span className="text-red-500">Locked</span>
-          </h2>
-          
-          <div className="bg-black/40 border-l-4 border-red-500 p-5 rounded-r-2xl text-left">
-            <p className="text-red-200/90 text-sm font-medium leading-relaxed">
-              {reason}
-            </p>
-          </div>
-          
-          <p className="text-slate-400 text-xs sm:text-sm">
-            To restore full access to your student dashboard, please submit your pending project.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-            <button
-              onClick={() => navigate('/project-submission')}
-              className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-600/25 hover:shadow-red-500/30 flex items-center justify-center gap-2"
-            >
-              Submit Pending Project
-            </button>
-            <button
-              onClick={handleLogout}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-xl transition-all border border-slate-700/50 flex items-center justify-center gap-2"
-            >
-              <LogOut size={16} /> Logout
-            </button>
-          </div>
-          
-          <div className="border-t border-slate-800 pt-6 text-xs text-slate-500">
-            Need help? Contact support at <a href="mailto:support@codenova.in" className="text-indigo-400 hover:underline">support@codenova.in</a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Dashboard block screen is removed. Student is never blocked in UI.
 
   return (
     <div className="min-h-screen bg-black pt-20 px-4 sm:px-6 relative overflow-hidden">
@@ -314,6 +265,7 @@ const StudentDashboard = () => {
                 const totalTargetMonths = parseInt(internship.duration.split(' ')[0]) || 1;
                 const submittedMonths = internship.submissions.length;
                 const paymentLinkOpen = (!internship.hasPaid && submittedMonths >= totalTargetMonths);
+                const isEligible = internship.hasPaid && submittedMonths >= totalTargetMonths;
                 
                 return (
                   <div key={index} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 shadow-xl">
