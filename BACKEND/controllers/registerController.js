@@ -17,8 +17,11 @@ const registerInternship = async (req, res) => {
 
     const { email, mobile, name, domain, duration, college, github, linkedin, portfolio } = req.body;
 
+    const normalizedEmail = email ? email.trim().toLowerCase() : '';
+    const normalizedMobile = mobile ? mobile.trim() : '';
+
     // Check duplicate by email OR mobile
-    let user = await User.findOne({ $or: [{ email }, { mobile }] });
+    let user = await User.findOne({ $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }] });
 
     if (user && user.internships.length > 0) {
       // Find the most recent application
@@ -62,6 +65,8 @@ const registerInternship = async (req, res) => {
 
     const applicationData = {
       ...req.body,
+      email: normalizedEmail,
+      mobile: normalizedMobile,
       studentId,
       appliedAt: new Date()
     };
@@ -70,8 +75,8 @@ const registerInternship = async (req, res) => {
       const hashedPassword = await bcrypt.hash('Welcome@123', 10);
       user = await User.create({
         name,
-        email,
-        mobile,
+        email: normalizedEmail,
+        mobile: normalizedMobile,
         password: hashedPassword,
         isFirstLogin: true,
         github: github || '',
@@ -84,6 +89,14 @@ const registerInternship = async (req, res) => {
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
       if (portfolio) user.portfolio = portfolio;
+
+      // Ensure that if the existing user has no password set (legacy or imported),
+      // they get assigned the default Welcome@123 hashed password.
+      if (!user.password) {
+        const hashedPassword = await bcrypt.hash('Welcome@123', 10);
+        user.password = hashedPassword;
+        user.isFirstLogin = true;
+      }
     }
 
     // Attach offer letter status defaults safely handled by schema
