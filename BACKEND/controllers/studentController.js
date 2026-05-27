@@ -1,3 +1,5 @@
+const Settings = require('../models/Settings');
+const Waitlist = require('../models/Waitlist');
 const User = require('../models/User');
 const ProjectSubmission = require('../models/ProjectSubmission');
 
@@ -163,4 +165,37 @@ module.exports = {
   getDashboardInfo,
   updateProfile,
   markAlertRead
+};
+
+
+exports.getRegistrationStatus = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: 'registrationEnabled' });
+    if (!setting) {
+      setting = await Settings.create({ key: 'registrationEnabled', value: true });
+    }
+    res.json({ registrationEnabled: setting.value });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.joinWaitlist = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    const existing = await Waitlist.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'You are already on the waitlist!' });
+    }
+
+    await Waitlist.create({ name, email });
+    res.status(201).json({ message: 'Successfully added to waitlist' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
 };

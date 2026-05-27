@@ -1,383 +1,16 @@
-// import { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { toast, ToastContainer } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
-// import { Loader2, Send, User, Briefcase, Link2, MessageSquare, Calendar } from 'lucide-react';
-
-// const Project = () => {
-//   const [formData, setFormData] = useState({
-//     studentId: '',
-//     name: '',
-//     email: '',
-//     mobile: '',
-//     domain: '',
-//     duration: '',
-//     assignments: [
-//       { projectName: '', github: '', hosted: '' },
-//       { projectName: '', github: '', hosted: '' },
-//       { projectName: '', github: '', hosted: '' }
-//     ]
-//   });
-
-//   const [currentMonth, setCurrentMonth] = useState(null); // 1, 2, or 3
-//   const [loadingMonth, setLoadingMonth] = useState(false);
-//   const [submitting, setSubmitting] = useState(false);
-
-//   const domains = [
-//     'Frontend Development', 'Backend Development', 'MERN Stack Development',
-//     'C Programming', 'Python Development', 'Artificial Intelligence',
-//     'Figma or UI/UX', 'Data Science', 'Machine Learning', 'Full Stack Development'
-//   ];
-//   const durations = ['1 Month', '2 Months', '3 Months'];
-
-//   // Fetch current month when studentId is entered
-//   useEffect(() => {
-//   const fetchMonth = async () => {
-//   if (!formData.studentId?.trim()) {
-//     setCurrentMonth(null);
-//     return;
-//   }
-
-//   setLoadingMonth(true);
-
-//   try {
-//     const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(formData.studentId)}`;
-//     console.log("Fetching month from:", url);
-
-//     const res = await axios.get(url);
-
-//     console.log("Backend responded:", res.status, res.data);
-
-//     if (res.data.canSubmit) {
-//       setCurrentMonth(res.data.currentMonth);
-//     } else {
-//       setCurrentMonth(4); // all done
-//     }
-//   } catch (err) {
-//     console.error("Month fetch failed ── full error:", err);
-//     console.log("→ Error message:", err.message);
-//     console.log("→ Status:", err.response?.status ?? "no response");
-//     console.log("→ Response data:", err.response?.data ?? "no data");
-//     console.log("→ Request URL:", err.config?.url ?? "unknown");
-    
-//     setCurrentMonth(null);
-//   } finally {
-//     setLoadingMonth(false);
-//   }
-// };
-
-//   const timer = setTimeout(fetchMonth, 600);
-//   return () => clearTimeout(timer);
-// }, [formData.studentId, formData.name, formData.email, formData.mobile, formData.domain, formData.duration]);
-
-//   const getMonthDisplay = () => {
-//     if (loadingMonth) return 'Checking...';
-//     if (currentMonth === 4) return 'All assignments already submitted';
-//     if (currentMonth) return `Assignment for Month ${currentMonth}`;
-//     return 'Enter Student ID to see which month you are submitting for';
-//   };
-
-//   const handleChange = (e) => {
-//     setFormData({ ...formData, [e.target.name]: e.target.value });
-//   };
-
-//   const handleAssignmentChange = (index, field, value) => {
-//     const newAssignments = [...formData.assignments];
-//     newAssignments[index][field] = value;
-//     setFormData({ ...formData, assignments: newAssignments });
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     if (!currentMonth || currentMonth > 3) {
-//       toast.error('Cannot submit: Invalid month or all submissions completed');
-//       return;
-//     }
-
-//     setSubmitting(true);
-
-//     try {
-//       const payload = {
-//         ...formData,
-//         assignments: formData.assignments.filter(a => a.projectName || a.github || a.hosted) // only send filled ones
-//       };
-
-//       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/submit`, payload);
-
-//       if (res.data.order) {
-//         const options = {
-//           key: res.data.key,
-//           amount: res.data.order.amount,
-//           currency: 'INR',
-//           order_id: res.data.order.id,
-//           handler: async function (response) {
-//             try {
-//               const verifyRes = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/verify`, {
-//                 response,
-//                 ...payload
-//               });
-//               toast.success(verifyRes.data.message);
-              
-//             } catch (err) {
-//               toast.error('Payment verification failed');
-//             }
-//           },
-//           prefill: {
-//             name: formData.name,
-//             email: formData.email,
-//             contact: formData.mobile
-//           },
-//           theme: { color: '#3399cc' }
-//         };
-
-//         const rzp = new window.Razorpay(options);
-//         rzp.open();
-//       } else {
-//         toast.success(res.data.message || 'Payment is verified and Project is Submitted');
-//       }
-//     } catch (err) {
-//       toast.error(err.response?.data?.message || 'Submission failed');
-//     } finally {
-//       setSubmitting(false);
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-black py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-//       <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-black to-slate-950 opacity-40"></div>
-
-//       <div className="max-w-6xl mx-auto relative z-10">
-//         <div className="text-center mb-8 sm:mb-12 lg:mb-16 pt-14">
-//           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
-//             Project / Assignment Submission
-//           </h1>
-//           <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto px-4">
-//             Submit your monthly internship assignments. Fields are optional except personal & internship details.
-//           </p>
-//         </div>
-
-//         <div className="bg-slate-950 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 border border-gray-800 hover:border-gray-700 transition-all duration-500">
-//           <div className="mb-8 p-4 bg-blue-900/30 rounded-xl border border-blue-700/40 text-center">
-//             <div className="flex items-center justify-center gap-3 mb-2">
-//               <Calendar className="text-blue-400" size={28} />
-//               <h2 className="text-xl sm:text-2xl font-bold text-white">
-//                 {getMonthDisplay()}
-//               </h2>
-//             </div>
-//             <p className="text-blue-300 text-sm">
-//               {currentMonth === 4 
-//                 ? "You've already completed all required submissions!" 
-//                 : "Enter your Student ID to see which month you're submitting for"}
-//             </p>
-//           </div>
-
-//           <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-10 lg:space-y-12">
-//             {/* Student Details */}
-//             <div>
-//               <div className="flex items-center gap-3 mb-6">
-//                 <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
-//                   <User className="text-white" size={24} />
-//                 </div>
-//                 <h2 className="text-2xl font-semibold text-white">Student Details (Required)</h2>
-//               </div>
-//               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//                 <div>
-//                   <label htmlFor="studentId" className="block text-gray-300 mb-2 font-medium">Student ID *</label>
-//                   <input
-//                     id="studentId"
-//                     name="studentId"
-//                     value={formData.studentId}
-//                     onChange={handleChange}
-//                     required
-//                     placeholder="e.g., CN/INT/2026/001"
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label htmlFor="name" className="block text-gray-300 mb-2 font-medium">Full Name *</label>
-//                   <input
-//                     id="name"
-//                     name="name"
-//                     value={formData.name}
-//                     onChange={handleChange}
-//                     required
-//                     placeholder="Your full name"
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label htmlFor="email" className="block text-gray-300 mb-2 font-medium">Email Address *</label>
-//                   <input
-//                     id="email"
-//                     name="email"
-//                     type="email"
-//                     value={formData.email}
-//                     onChange={handleChange}
-//                     required
-//                     placeholder="your.email@example.com"
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label htmlFor="mobile" className="block text-gray-300 mb-2 font-medium">Mobile Number *</label>
-//                   <input
-//                     id="mobile"
-//                     name="mobile"
-//                     value={formData.mobile}
-//                     onChange={handleChange}
-//                     required
-//                     placeholder="10-digit number"
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   />
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Internship Details */}
-//             <div>
-//               <div className="flex items-center gap-3 mb-6">
-//                 <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
-//                   <Briefcase className="text-white" size={24} />
-//                 </div>
-//                 <h2 className="text-2xl font-semibold text-white">Internship Details (Required)</h2>
-//               </div>
-//               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//                 <div>
-//                   <label htmlFor="domain" className="block text-gray-300 mb-2 font-medium">Domain *</label>
-//                   <select
-//                     id="domain"
-//                     name="domain"
-//                     value={formData.domain}
-//                     onChange={handleChange}
-//                     required
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   >
-//                     <option value="">Select Domain</option>
-//                     {domains.map(d => <option key={d} value={d}>{d}</option>)}
-//                   </select>
-//                 </div>
-
-//                 <div>
-//                   <label htmlFor="duration" className="block text-gray-300 mb-2 font-medium">Duration *</label>
-//                   <select
-//                     id="duration"
-//                     name="duration"
-//                     value={formData.duration}
-//                     onChange={handleChange}
-//                     required
-//                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-//                   >
-//                     <option value="">Select Duration</option>
-//                     {durations.map(d => <option key={d} value={d}>{d}</option>)}
-//                   </select>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Assignments */}
-//             <div>
-//               <div className="flex items-center gap-3 mb-6">
-//                 <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
-//                   <MessageSquare className="text-white" size={24} />
-//                 </div>
-//                 <h2 className="text-2xl font-semibold text-white">Assignments (Optional)</h2>
-//               </div>
-//               <p className="text-gray-400 mb-6">
-//                 Fill in details for any of the 3 possible assignments — you can leave them blank if not applicable.
-//               </p>
-
-//               {formData.assignments.map((ass, index) => (
-//                 <div key={index} className="mb-8 p-5 bg-gray-900/50 rounded-xl border border-gray-800">
-//                   <h3 className="text-lg font-semibold text-blue-300 mb-4">
-//                     Assignment {index + 1}
-//                   </h3>
-//                   <div className="space-y-4">
-//                     <div>
-//                       <label htmlFor={`projectName-${index}`} className="block text-gray-300 mb-2 font-medium">
-//                         Project / Assignment Name
-//                       </label>
-//                       <input
-//                         id={`projectName-${index}`}
-//                         value={ass.projectName}
-//                         onChange={(e) => handleAssignmentChange(index, 'projectName', e.target.value)}
-//                         placeholder="e.g., E-commerce Product Page"
-//                         className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label htmlFor={`github-${index}`} className="block text-gray-300 mb-2 font-medium">
-//                         GitHub Link
-//                       </label>
-//                       <input
-//                         id={`github-${index}`}
-//                         value={ass.github}
-//                         onChange={(e) => handleAssignmentChange(index, 'github', e.target.value)}
-//                         placeholder="https://github.com/username/repo"
-//                         className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label htmlFor={`hosted-${index}`} className="block text-gray-300 mb-2 font-medium">
-//                         Hosted / Live Link or LinkedIn
-//                       </label>
-//                       <input
-//                         id={`hosted-${index}`}
-//                         value={ass.hosted}
-//                         onChange={(e) => handleAssignmentChange(index, 'hosted', e.target.value)}
-//                         placeholder="https://your-project.vercel.app or LinkedIn post"
-//                         className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-//                       />
-//                     </div>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-
-//             <button
-//               type="submit"
-//               disabled={submitting || !currentMonth || currentMonth > 3 || loadingMonth}
-//               className="w-full py-4 sm:py-6 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-lg sm:text-xl font-bold rounded-lg transition-all duration-500 shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
-//             >
-//               {submitting ? (
-//                 <>
-//                   <Loader2 className="animate-spin" size={28} />
-//                   Submitting...
-//                 </>
-//               ) : (
-//                 <>
-//                   <Send size={28} />
-//                   Submit Assignment for Month {currentMonth || '?'}
-//                 </>
-//               )}
-//             </button>
-//           </form>
-//         </div>
-//       </div>
-
-//       <ToastContainer position="top-center" theme="dark" autoClose={5000} />
-//     </div>
-//   );
-// };
-
-// export default Project;
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Send, User, Briefcase, Link2, MessageSquare, Calendar } from 'lucide-react';
+import { Loader2, Send, User, Briefcase, MessageSquare, Calendar } from 'lucide-react';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 const Project = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     name: '',
     email: '',
-    mobile: '',
     domain: '',
     duration: '',
     assignments: [
@@ -388,13 +21,12 @@ const Project = () => {
   });
 
   // Track which fields were auto-filled → to make them read-only
-  const [autoFilledFields, setAutoFilledFields] = useState({
-    name: false,
-    email: false,
-    mobile: false
-  });
+  const [autoFilledFields, setAutoFilledFields] = useState({ name: false, email: false, domain: false, duration: false });
 
   const [currentMonth, setCurrentMonth] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiRecycle, setConfettiRecycle] = useState(false);
+  const { width, height } = useWindowSize();
   const [loadingMonth, setLoadingMonth] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -412,7 +44,7 @@ const Project = () => {
       if (!sid) {
         setCurrentMonth(null);
         // Reset auto-filled status when studentId is cleared
-        setAutoFilledFields({ name: false, email: false, mobile: false });
+        setAutoFilledFields({ name: false, email: false, domain: false, duration: false });
         return;
       }
 
@@ -428,7 +60,7 @@ const Project = () => {
           setCurrentMonth(res.data.currentMonth);
 
           // Autofill and mark fields as auto-filled (only if not already filled manually)
-          const newAutoFilled = { name: false, email: false, mobile: false };
+          const newAutoFilled = { name: false, email: false, domain: false, duration: false };
 
           setFormData((prev) => {
             const updates = { ...prev };
@@ -441,9 +73,13 @@ const Project = () => {
               updates.email = res.data.email;
               newAutoFilled.email = true;
             }
-            if (res.data.mobile && !prev.mobile) {
-              updates.mobile = res.data.mobile;
-              newAutoFilled.mobile = true;
+            if (res.data.domain && !prev.domain) {
+              updates.domain = res.data.domain;
+              newAutoFilled.domain = true;
+            }
+            if (res.data.duration && !prev.duration) {
+              updates.duration = res.data.duration;
+              newAutoFilled.duration = true;
             }
 
             return updates;
@@ -451,11 +87,11 @@ const Project = () => {
 
           setAutoFilledFields(newAutoFilled);
 
-          if (newAutoFilled.name || newAutoFilled.email || newAutoFilled.mobile) {
+          if (newAutoFilled.name || newAutoFilled.email || newAutoFilled.domain || newAutoFilled.duration) {
             toast.info("Student details auto-filled from your registration!", {
               autoClose: 5000,
               position: "top-right",
-              theme: "dark"
+              theme: "light"
             });
           }
         } else {
@@ -484,7 +120,7 @@ const Project = () => {
     if (loadingMonth) return 'Checking student details...';
     if (currentMonth === 4) return 'All assignments already submitted';
     if (currentMonth) return `Assignment for Month ${currentMonth}`;
-    return 'Enter Student ID to load your details & month';
+    return 'Enter Intern ID/Student ID to load your details & month';
   };
 
   const handleChange = (e) => {
@@ -520,7 +156,6 @@ const Project = () => {
       studentId: '',
       name: '',
       email: '',
-      mobile: '',
       domain: '',
       duration: '',
       assignments: [
@@ -530,7 +165,7 @@ const Project = () => {
       ]
     });
     setCurrentMonth(null);
-    setAutoFilledFields({ name: false, email: false, mobile: false });
+    setAutoFilledFields({ name: false, email: false, domain: false, duration: false });
   };
 
   const handleSubmit = async (e) => {
@@ -571,9 +206,7 @@ const Project = () => {
                 { response, ...payload }
               );
 
-              toast.success(verifyRes.data.message || 'Payment successful! Final assignment submitted.');
-
-              // Final completion message
+              // Final completion message (replaces normal success toast)
               toast.success(
                 "🎉 All monthly tasks completed successfully!\nNo more submissions needed.",
                 {
@@ -586,6 +219,10 @@ const Project = () => {
                   }
                 }
               );
+              setShowConfetti(true);
+              setConfettiRecycle(true);
+              setTimeout(() => setConfettiRecycle(false), 10000); // Stop shooting after 10s
+              setTimeout(() => setShowConfetti(false), 15000);    // Unmount after they fall
 
               resetForm();
             } catch (err) {
@@ -603,9 +240,31 @@ const Project = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Direct success
-        toast.success(res.data.message || 'Assignment submitted successfully!');
-        toast.success("Form has been reset for next use.", { autoClose: 5000 });
+        // Check if it was the final submission based on duration
+        const totalDuration = parseInt(formData.duration.split(" ")[0]);
+        if (currentMonth === totalDuration) {
+          toast.success(
+            "🎉 Congratulations! You have completed all assignments for your internship!",
+            {
+              autoClose: 8000,
+              icon: '🏆',
+              style: {
+                background: '#10b981',
+                color: 'white',
+                fontWeight: 'bold'
+              }
+            }
+          );
+          setShowConfetti(true);
+          setConfettiRecycle(true);
+          setTimeout(() => setConfettiRecycle(false), 10000); // Stop shooting after 10s
+          setTimeout(() => setShowConfetti(false), 15000);    // Unmount after they fall
+        } else {
+          // Direct success for normal month
+          toast.success(res.data.message || 'Assignment submitted successfully!');
+          toast.success("Form has been reset for next use.", { autoClose: 5000 });
+        }
+        
         resetForm();
       }
     } catch (err) {
@@ -616,47 +275,76 @@ const Project = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-black to-slate-950 opacity-40"></div>
+    <div className="min-h-screen bg-slate-50 py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      {showConfetti && (
+        <Confetti 
+          width={width} 
+          height={height} 
+          recycle={confettiRecycle} 
+          numberOfPieces={confettiRecycle ? 500 : 200} 
+          gravity={0.15} 
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: 99999, pointerEvents: 'none' }}
+        />
+      )}
+      <ToastContainer position="top-center" autoClose={3000} />
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent"></div>
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute top-48 -left-24 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl opacity-50"></div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        <div className="text-center mb-8 sm:mb-12 lg:mb-16 pt-14">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
-            Project / Assignment Submission
+      <div className="max-w-5xl mx-auto relative z-10 mt-10">
+        
+        {/* Header Section */}
+        <div className="text-center mb-10 sm:mb-14">
+          <span className="inline-block py-1.5 px-4 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold tracking-wide mb-4 shadow-sm border border-blue-200">
+            Monthly Submissions
+          </span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-4 tracking-tight">
+            Submit Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Project</span>
           </h1>
-          <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Paste your Student ID — your name, email & mobile will auto-fill and become read-only.
+          <p className="text-slate-500 text-lg sm:text-xl max-w-2xl mx-auto">
+            Paste your Intern ID / Student ID to instantly load your profile. Fill out the details below to submit your monthly assignments.
           </p>
         </div>
 
-        <div className="bg-slate-950 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 border border-gray-800 hover:border-gray-700 transition-all duration-500">
-          <div className="mb-8 p-4 bg-blue-900/30 rounded-xl border border-blue-700/40 text-center">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <Calendar className="text-blue-400" size={28} />
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
+        {/* Form Container */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl p-6 sm:p-10 lg:p-14 border border-white relative">
+          
+          {/* Status Badge */}
+          <div className="mb-10 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100/50 flex flex-col items-center justify-center text-center shadow-inner">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-white rounded-full shadow-sm">
+                <Calendar className="text-blue-600" size={24} />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
                 {getMonthDisplay()}
               </h2>
             </div>
-            <p className="text-blue-300 text-sm">
+            <p className="text-slate-500 text-sm font-medium">
               {currentMonth === 4
-                ? "You've already completed all required submissions!"
-                : "Your personal details will auto-fill and lock after entering Student ID"}
+                ? "You've successfully completed all required submissions!"
+                : "Your personal details will lock automatically after entering your ID"}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8 sm:space-y-10 lg:space-y-12">
-            {/* Student Details */}
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+          <form onSubmit={handleSubmit} className="space-y-12">
+            
+            {/* Student Details Section */}
+            <div className="bg-slate-50/50 p-6 sm:p-8 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/30">
                   <User className="text-white" size={24} />
                 </div>
-                <h2 className="text-2xl font-semibold text-white">Student Details (Required)</h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="studentId" className="block text-gray-300 mb-2 font-medium">
-                    Student ID *
+                  <h2 className="text-2xl font-bold text-slate-900">Student Details</h2>
+                  <p className="text-sm text-slate-500">Enter ID to auto-fill</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+                <div className="col-span-1 lg:col-span-2">
+                  <label htmlFor="studentId" className="block text-slate-700 mb-2 font-medium">
+                    Intern ID / Student ID <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="studentId"
@@ -665,13 +353,13 @@ const Project = () => {
                     onChange={handleChange}
                     required
                     placeholder="e.g., CN/INT/2026/001"
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm text-lg"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-gray-300 mb-2 font-medium">
-                    Full Name *
+                  <label htmlFor="name" className="block text-slate-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+                    Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="name"
@@ -681,17 +369,17 @@ const Project = () => {
                     required
                     readOnly={autoFilledFields.name}
                     placeholder="Your full name"
-                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                    className={`w-full px-5 py-3.5 border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none transition-all shadow-sm ${
                       autoFilledFields.name
-                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     }`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-gray-300 mb-2 font-medium">
-                    Email Address *
+                  <label htmlFor="email" className="block text-slate-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+                    Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="email"
@@ -702,48 +390,34 @@ const Project = () => {
                     required
                     readOnly={autoFilledFields.email}
                     placeholder="your.email@example.com"
-                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                    className={`w-full px-5 py-3.5 border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none transition-all shadow-sm ${
                       autoFilledFields.email
-                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     }`}
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="mobile" className="block text-gray-300 mb-2 font-medium">
-                    Mobile Number *
-                  </label>
-                  <input
-                    id="mobile"
-                    name="mobile"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    required
-                    readOnly={autoFilledFields.mobile}
-                    placeholder="10-digit number"
-                    className={`w-full px-4 py-3 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
-                      autoFilledFields.mobile
-                        ? 'bg-gray-800/50 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-900 border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                    }`}
-                  />
-                </div>
+
               </div>
             </div>
 
-            {/* Internship Details */}
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+            {/* Internship Details Section */}
+            <div className="bg-slate-50/50 p-6 sm:p-8 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30">
                   <Briefcase className="text-white" size={24} />
                 </div>
-                <h2 className="text-2xl font-semibold text-white">Internship Details (Required)</h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="domain" className="block text-gray-300 mb-2 font-medium">
-                    Domain *
+                  <h2 className="text-2xl font-bold text-slate-900">Internship Details</h2>
+                  <p className="text-sm text-slate-500">Select your program context</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+                <div>
+                  <label htmlFor="domain" className="block text-slate-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+                    Domain <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="domain"
@@ -751,20 +425,24 @@ const Project = () => {
                     value={formData.domain}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    disabled={autoFilledFields.domain}
+                    className={`w-full px-5 py-3.5 border rounded-xl text-slate-900 focus:outline-none transition-all shadow-sm appearance-none ${
+                      autoFilledFields.domain
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer'
+                    }`}
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                   >
-                    <option value="">Select Domain</option>
+                    <option value="" disabled>Select Domain</option>
                     {domains.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="duration" className="block text-gray-300 mb-2 font-medium">
-                    Duration *
+                  <label htmlFor="duration" className="block text-slate-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+                    Duration <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="duration"
@@ -772,119 +450,140 @@ const Project = () => {
                     value={formData.duration}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    disabled={autoFilledFields.duration}
+                    className={`w-full px-5 py-3.5 border rounded-xl text-slate-900 focus:outline-none transition-all shadow-sm appearance-none ${
+                      autoFilledFields.duration
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed'
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer'
+                    }`}
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                   >
-                    <option value="">Select Duration</option>
+                    <option value="" disabled>Select Duration</option>
                     {durations.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Assignments */}
+            {/* Assignments Section */}
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3.5 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30">
                   <MessageSquare className="text-white" size={24} />
                 </div>
-                <h2 className="text-2xl font-semibold text-white">Assignments</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Assignments</h2>
+                  <p className="text-sm text-slate-500">Provide links to your completed tasks</p>
+                </div>
               </div>
 
-              <p className="text-gray-400 mb-6">
-                Assignment 1 & 2: <strong>Project Name + GitHub Link are required</strong>.<br />
-                Assignment 3: Completely optional — you can leave it blank.
-              </p>
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-8">
+                <p className="text-amber-800 text-sm font-medium">
+                  <strong>Assignment 1 & 2:</strong> Project Name & GitHub Link are mandatory.<br />
+                  <strong>Assignment 3:</strong> Completely optional.
+                </p>
+              </div>
 
-              {formData.assignments.map((ass, index) => (
-                <div
-                  key={index}
-                  className={`mb-8 p-5 rounded-xl border ${
-                    index === 2 ? 'bg-gray-900/30 border-gray-700' : 'bg-gray-900/50 border-blue-800/50'
-                  }`}
-                >
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
-                    Assignment {index + 1}
-                    {index < 2 && (
-                      <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full">
-                        Required
-                      </span>
-                    )}
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor={`projectName-${index}`} className="block text-gray-300 mb-2 font-medium">
-                        Project / Assignment Name
-                        {index < 2 && <span className="text-red-400 ml-1">*</span>}
-                      </label>
-                      <input
-                        id={`projectName-${index}`}
-                        value={ass.projectName}
-                        onChange={(e) => handleAssignmentChange(index, 'projectName', e.target.value)}
-                        placeholder="e.g., E-commerce Product Page"
-                        required={index < 2}
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-                      />
+              <div className="space-y-6">
+                {formData.assignments.map((ass, index) => (
+                  <div
+                    key={index}
+                    className={`p-6 sm:p-8 rounded-2xl border transition-all duration-300 hover:shadow-md ${
+                      index === 2 
+                        ? 'bg-slate-50 border-slate-200 border-dashed' 
+                        : 'bg-white border-slate-200 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                      <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm text-white ${index === 2 ? 'bg-slate-400' : 'bg-emerald-500'}`}>
+                          {index + 1}
+                        </span>
+                        Assignment {index + 1}
+                      </h3>
+                      {index < 2 && (
+                        <span className="text-xs font-bold uppercase tracking-wider bg-red-100 text-red-600 px-3 py-1 rounded-full">
+                          Required
+                        </span>
+                      )}
                     </div>
 
-                    <div>
-                      <label htmlFor={`github-${index}`} className="block text-gray-300 mb-2 font-medium">
-                        GitHub Link
-                        {index < 2 && <span className="text-red-400 ml-1">*</span>}
-                      </label>
-                      <input
-                        id={`github-${index}`}
-                        value={ass.github}
-                        onChange={(e) => handleAssignmentChange(index, 'github', e.target.value)}
-                        placeholder="https://github.com/username/repo"
-                        required={index < 2}
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <label htmlFor={`projectName-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
+                          Project Name {index < 2 && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id={`projectName-${index}`}
+                          value={ass.projectName}
+                          onChange={(e) => handleAssignmentChange(index, 'projectName', e.target.value)}
+                          placeholder="e.g., E-commerce Dashboard"
+                          required={index < 2}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                        />
+                      </div>
 
-                    <div>
-                      <label htmlFor={`hosted-${index}`} className="block text-gray-300 mb-2 font-medium">
-                        Hosted / Live Link or LinkedIn (optional)
-                      </label>
-                      <input
-                        id={`hosted-${index}`}
-                        value={ass.hosted}
-                        onChange={(e) => handleAssignmentChange(index, 'hosted', e.target.value)}
-                        placeholder="https://your-project.vercel.app or LinkedIn post"
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500"
-                      />
+                      <div>
+                        <label htmlFor={`github-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
+                          GitHub Link {index < 2 && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id={`github-${index}`}
+                          value={ass.github}
+                          onChange={(e) => handleAssignmentChange(index, 'github', e.target.value)}
+                          placeholder="https://github.com/..."
+                          required={index < 2}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor={`hosted-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
+                          Hosted Link (Optional)
+                        </label>
+                        <input
+                          id={`hosted-${index}`}
+                          value={ass.hosted}
+                          onChange={(e) => handleAssignmentChange(index, 'hosted', e.target.value)}
+                          placeholder="https://vercel.app/..."
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting || !currentMonth || currentMonth > 3 || loadingMonth}
-              className="w-full py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-lg sm:text-xl font-bold rounded-lg transition-all duration-500 shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={28} />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send size={28} />
-                  Submit Assignment for Month {currentMonth || '?'}
-                </>
-              )}
-            </button>
+            {/* Submit Button */}
+            <div className="pt-6">
+              <button
+                type="submit"
+                disabled={submitting || !currentMonth || currentMonth > 3 || loadingMonth}
+                className="group relative w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-lg font-bold rounded-2xl transition-all duration-300 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+              >
+                <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:translate-x-[250%] transition-transform duration-700 ease-in-out" />
+                
+                {submitting ? (
+                  <>
+                    <Loader2 className="animate-spin" size={24} />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Send size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    Submit Assignment for Month {currentMonth || '?'}
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </div>
       </div>
 
-      <ToastContainer position="top-center" theme="dark" autoClose={6000} limit={3} />
+      <ToastContainer position="top-right" theme="colored" autoClose={5000} limit={3} />
     </div>
   );
 };
