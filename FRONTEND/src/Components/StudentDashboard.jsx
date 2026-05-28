@@ -1,182 +1,598 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, User, BookOpen, Link2, CheckCircle, Save, LogOut, Camera, Bell, Lock, ShieldAlert, Award, Sparkles, Briefcase, X, Calendar, Clock, CheckSquare, Bookmark, FileCheck, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  Loader2,
+  LogOut,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  Github,
+  BookOpen,
+  Star,
+  Mail,
+  ListTodo,
+  Code,
+  Eye,
+  Award,
+  Briefcase,
+  CheckSquare,
+  FileText,
+  AlertCircle
+} from "lucide-react";
 
-const StudentDashboard = () => {
-  const [activeTab, setActiveTab] = useState('internships');
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+// Normal Intern Dashboard Component
+const NormalInternDashboard = ({ internship }) => {
+  const navigate = useNavigate();
+  const totalMonths = parseInt(internship.duration) || 1;
+  
+  const stages = [
+    "Shortlisted",
+    "Offer Letter",
+    ...Array.from({length: totalMonths}).map((_, i) => `Month ${i + 1} Project`),
+    "Review",
+    "Certificate"
+  ];
+  
+  // Task starts according to start date and duration.
+  const startDate = internship.startDate ? new Date(internship.startDate) : null;
+  const isStarted = startDate && startDate <= new Date();
+  const submitted = internship.submissions?.length || 0;
+  
+  let currentStage = 0;
+  if (internship.offerLetterStatus === "Sent") {
+    currentStage = 2; // Jump to Month 1
+    if (isStarted) {
+      currentStage = 2 + submitted;
+    }
+  }
+  if (submitted > 0 && submitted >= totalMonths) {
+    currentStage = stages.length - 2; // Review is active
+    
+    const lastSubmission = internship.submissions[submitted - 1];
+    let isReviewCompleted = false;
+    
+    if (lastSubmission && lastSubmission.submittedAt) {
+      const submissionDate = new Date(lastSubmission.submittedAt);
+      const twoDaysLater = new Date(submissionDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+      if (new Date() >= twoDaysLater) {
+        isReviewCompleted = true;
+      }
+    }
 
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
+    if (isReviewCompleted) {
+      currentStage = stages.length - 1; // Certificate active (Review ticked)
+    }
+    
+    if (internship.isCertificateSent) {
+      currentStage = stages.length; // Certificate ticked
+    }
+  }
+  
+  const clampedStage = Math.min(currentStage, stages.length - 1);
 
-  const fetchTasks = async () => {
-    setLoadingTasks(true);
+  const getStageIcon = (stageName) => {
+    if (stageName.includes("Shortlisted")) return <Star size={16} strokeWidth={2.5} />;
+    if (stageName.includes("Offer")) return <Mail size={16} strokeWidth={2.5} />;
+    if (stageName.includes("Month")) return <Code size={16} strokeWidth={2.5} />;
+    if (stageName.includes("Review")) return <Eye size={16} strokeWidth={2.5} />;
+    if (stageName.includes("Certificate")) return <Award size={16} strokeWidth={2.5} />;
+    return <CheckCircle size={16} />;
+  };
+
+  const handleSubmitProject = (taskName = '') => {
+    navigate("/project-submission", {
+      state: {
+        internshipId: internship._id,
+        domain: internship.domain,
+        studentId: internship.studentId,
+        taskName: taskName
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{internship.domain}</h2>
+            <p className="text-slate-500 font-medium mt-1">Normal Intern • ID: {internship.studentId}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {internship.startDate && (
+              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200">
+                Start Date: {new Date(internship.startDate).toLocaleDateString('en-IN')}
+              </span>
+            )}
+            {internship.endDate && (
+              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-red-50 text-red-700 border-red-200">
+                End Date: {new Date(internship.endDate).toLocaleDateString('en-IN')}
+              </span>
+            )}
+            <span className={`px-4 py-2 rounded-lg text-sm font-bold border ${internship.offerLetterStatus === 'Sent' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+              Offer Letter: {internship.offerLetterStatus || "Pending"}
+            </span>
+          </div>
+        </div>
+
+        {/* Timeline Horizontal view (dots) */}
+        <div className="pt-8 pb-12">
+          <div className="flex items-center justify-between relative px-8">
+            <div className="absolute left-[52px] right-[52px] top-5 h-1.5 bg-slate-100 -z-10 rounded-full overflow-hidden shadow-inner"></div>
+            <div className="absolute left-[52px] top-5 h-1.5 bg-gradient-to-r from-blue-400 to-blue-600 -z-10 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `calc(${(clampedStage / (stages.length - 1)) * 100}% - ${(clampedStage / (stages.length - 1)) * 104}px)` }}></div>
+            {stages.map((stage, idx) => {
+              const isCompleted = idx < currentStage;
+              const isActive = idx === currentStage;
+              
+              return (
+                <div key={idx} className="flex flex-col items-center relative z-10 group cursor-default">
+                  <div className="bg-white p-1 rounded-full relative">
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-40"></div>
+                    )}
+                    <div className={`w-8 h-8 relative rounded-full flex items-center justify-center font-bold border-2 transition-all duration-300 ${
+                      isCompleted ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/40 scale-100' :
+                      isActive ? 'bg-white text-blue-600 border-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.4)] scale-110' : 
+                      'bg-slate-50 text-slate-300 border-slate-200 scale-95 group-hover:scale-100'
+                    }`}>
+                      {isCompleted ? <CheckCircle size={18} strokeWidth={3} /> : getStageIcon(stage)}
+                    </div>
+                  </div>
+                  <div className={`absolute top-12 flex flex-col items-center transition-all duration-300 ${isActive ? 'scale-110 translate-y-1' : ''}`}>
+                    <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider w-20 sm:w-24 text-center leading-tight ${
+                      isCompleted ? 'text-blue-800' : 
+                      isActive ? 'text-blue-600 drop-shadow-sm' : 
+                      'text-slate-400'
+                    }`}>
+                      {stage}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800 mb-6">Your Assignments</h3>
+        {isStarted ? (
+          <div className="space-y-4">
+            {Array.from({ length: Math.min(Math.floor(Math.max(0, (new Date() - startDate) / (1000 * 60 * 60 * 24))) / 30 + 1, totalMonths) }).map((_, idx) => {
+              const isSubmitted = idx < submitted;
+              // Ensure sequential submission: only show button if this is the CURRENT pending task
+              const isCurrentPending = idx === submitted;
+              
+              const assignedTaskName = internship.assignedNormalTasks && internship.assignedNormalTasks[idx] 
+                ? internship.assignedNormalTasks[idx] 
+                : null;
+
+              return (
+                <div key={idx} className={`p-6 border rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${isSubmitted ? 'border-emerald-100 bg-emerald-50' : 'border-blue-100 bg-gradient-to-br from-blue-50 to-white'}`}>
+                  <div>
+                    <h4 className={`font-bold text-lg ${isSubmitted ? 'text-emerald-900' : 'text-blue-900'}`}>
+                      {assignedTaskName && !assignedTaskName.startsWith('http') ? `Task: ${assignedTaskName}` : `Task Phase ${idx + 1}`}
+                    </h4>
+                    {assignedTaskName && assignedTaskName.startsWith('http') && (
+                      <a href={assignedTaskName} target="_blank" rel="noreferrer" className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded-md transition-colors">
+                        📄 View Task Document
+                      </a>
+                    )}
+                    <p className={`text-sm mt-2 ${isSubmitted ? 'text-emerald-700' : 'text-blue-700'}`}>
+                      {isSubmitted ? 'This task has been successfully submitted.' : 'Submit your assigned task updates to move forward.'}
+                    </p>
+                  </div>
+                  {isCurrentPending && (
+                    <button 
+                      onClick={() => handleSubmitProject(assignedTaskName)}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
+                    >
+                      Submit Project <ArrowRight size={18}/>
+                    </button>
+                  )}
+                  {!isSubmitted && !isCurrentPending && (
+                     <div className="px-6 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold flex items-center gap-2 justify-center shrink-0">
+                       Pending Previous
+                     </div>
+                  )}
+                  {isSubmitted && (
+                    <div className="px-6 py-3 bg-emerald-200/50 text-emerald-800 rounded-xl font-bold flex items-center gap-2 justify-center shrink-0">
+                      <CheckCircle size={18}/> Submitted
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-12 px-6 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+            <Clock className="mx-auto text-slate-400 mb-3" size={40} />
+            <p className="font-medium text-slate-600">Tasks will be visible once your internship starts.</p>
+            <p className="text-sm mt-1">Scheduled Start Date: {startDate ? startDate.toLocaleDateString() : 'Pending'}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Summer Intern Dashboard Component
+const SummerInternDashboard = ({ internship, onRefresh }) => {
+  const navigate = useNavigate();
+  const [repoInputs, setRepoInputs] = useState({});
+  const [submittingRepo, setSubmittingRepo] = useState(null);
+  const [finalSubmitting, setFinalSubmitting] = useState(null);
+
+  const handleSubmitRepo = async (projectId) => {
+    const link = repoInputs[projectId];
+    if (!link || !link.startsWith('https://github.com/')) {
+      toast.error('Please enter a valid GitHub repository link.');
+      return;
+    }
     try {
-      const token = localStorage.getItem('studentToken');
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/student/tasks`, {
+      setSubmittingRepo(projectId);
+      const token = localStorage.getItem("studentToken");
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/submit-repo`, {
+        internshipId: internship._id,
+        projectId: projectId,
+        repoLink: link
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTasks(res.data);
+      toast.success('Repository link submitted successfully!');
+      if (onRefresh) onRefresh();
     } catch (err) {
-      toast.error('Failed to load tasks');
+      toast.error('Failed to submit repository link.');
     } finally {
-      setLoadingTasks(false);
+      setSubmittingRepo(null);
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'tasks') {
-      fetchTasks();
+  const handleFinalSubmit = async (projectId) => {
+    if (!window.confirm("Are you sure you want to final submit this project? You won't be able to edit the link afterwards.")) return;
+    try {
+      setFinalSubmitting(projectId);
+      const token = localStorage.getItem("studentToken");
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/final-submit-repo`, {
+        internshipId: internship._id,
+        projectId: projectId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Project final submitted successfully!');
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error('Failed to final submit project.');
+    } finally {
+      setFinalSubmitting(null);
     }
-  }, [activeTab]);
-
-  const [showCertificatePopup, setShowCertificatePopup] = useState(false);
-  const [eligibleInternship, setEligibleInternship] = useState(null);
-  const navigate = useNavigate();
-
-  const getEndDate = (startDate, duration) => {
-    if (!startDate) return 'Pending Start Date';
-    const start = new Date(startDate);
-    const months = parseInt(duration) || 1;
-    start.setMonth(start.getMonth() + months);
-    return start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const [profileForm, setProfileForm] = useState({
-    github: '',
-    linkedin: '',
-    portfolio: ''
-  });
+  const stages = [
+    "Shortlisted",
+    "Offer Letter",
+    "Project Assigned",
+    "Review",
+    "Completed",
+    "Certificate"
+  ];
+  
+  // Simulated array for multiple projects support based on domain
+  const projects = internship.projects?.length > 0 ? internship.projects : [{
+    id: 1,
+    name: internship.domain,
+    description: "Main assigned project track for summer."
+  }];
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const token = localStorage.getItem('studentToken');
-        if (!token) {
-          navigate('/student-login');
-          return;
-        }
-
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/student/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        setData(response.data);
-        setProfileForm({
-          github: response.data.user.github || '',
-          linkedin: response.data.user.linkedin || '',
-          portfolio: response.data.user.portfolio || '',
-          profileImage: response.data.user.profileImage || ''
-        });
-
-        if (response.data.internships && response.data.internships.length > 0) {
-          const eligible = response.data.internships.find(internship => {
-            const totalTargetMonths = parseInt(internship.duration.split(' ')[0]) || 1;
-            const submittedMonths = internship.submissions?.length || 0;
-            return internship.hasPaid && submittedMonths >= totalTargetMonths;
-          });
-          if (eligible) {
-            const hasSeen = sessionStorage.getItem('hasSeenCertificatePopup');
-            if (!hasSeen) {
-              setEligibleInternship(eligible);
-              setShowCertificatePopup(true);
-            }
-          }
-        }
-      } catch (err) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('studentToken');
-          localStorage.removeItem('studentData');
-          navigate('/student-login');
-        } else {
-          toast.error('Failed to load dashboard data');
-        }
-      } finally {
-        setLoading(false);
+  let currentStage = 0;
+  if (internship.offerLetterStatus === "Sent") {
+    currentStage = 1;
+    if (projects.length > 0) {
+      currentStage = 3; // "jaise hi summer intern ko project assigned ho jaye then step review pe aa jaye"
+      
+      const isEndDateReached = internship.endDate && new Date() >= new Date(internship.endDate);
+      
+      if (isEndDateReached) {
+        currentStage = 4; // "only last date ko hi wo completed pe jaye"
       }
-    };
+      
+      if (internship.isCertificateSent) {
+        currentStage = stages.length; // Certificate ticked
+      }
+    }
+  }
 
+  const clampedStage = Math.min(currentStage, stages.length - 1);
+
+  const getSummerStageIcon = (stageName) => {
+    if (stageName.includes("Shortlisted")) return <Star size={22} strokeWidth={2.5} />;
+    if (stageName.includes("Offer")) return <Mail size={22} strokeWidth={2.5} />;
+    if (stageName.includes("Project")) return <Briefcase size={22} strokeWidth={2.5} />;
+    if (stageName.includes("Review")) return <Eye size={22} strokeWidth={2.5} />;
+    if (stageName.includes("Completed")) return <CheckSquare size={22} strokeWidth={2.5} />;
+    if (stageName.includes("Certificate")) return <Award size={22} strokeWidth={2.5} />;
+    return <CheckCircle size={22} />;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{internship.domain}</h2>
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Summer Internship</span>
+              <span className="text-slate-500 text-sm font-medium">• ID: {internship.studentId}</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {internship.startDate && (
+              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200">
+                Start Date: {new Date(internship.startDate).toLocaleDateString('en-IN')}
+              </span>
+            )}
+            {internship.endDate && (
+              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-red-50 text-red-700 border-red-200">
+                End Date: {new Date(internship.endDate).toLocaleDateString('en-IN')}
+              </span>
+            )}
+            <span className={`px-4 py-2 rounded-lg text-sm font-bold border ${internship.offerLetterStatus === 'Sent' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+              Offer Letter: {internship.offerLetterStatus || "Pending"}
+            </span>
+          </div>
+        </div>
+
+        {/* Timeline Horizontal view (circles) */}
+        <div className="pt-10 pb-16 overflow-x-auto">
+          <div className="flex items-center justify-between min-w-[700px] relative px-10">
+            <div className="absolute left-[72px] right-[72px] top-8 h-2 bg-slate-100 -z-10 rounded-full shadow-inner"></div>
+            <div className="absolute left-[72px] top-8 h-2 bg-gradient-to-r from-amber-400 via-orange-400 to-orange-500 -z-10 rounded-full transition-all duration-700 ease-out shadow-[0_0_15px_rgba(245,158,11,0.5)]" style={{ width: `calc(${(clampedStage / (stages.length - 1)) * 100}% - ${(clampedStage / (stages.length - 1)) * 144}px)` }}></div>
+            {stages.map((stage, idx) => {
+              const isCompleted = idx < currentStage;
+              const isActive = idx === currentStage;
+              
+              return (
+                <div key={idx} className="flex flex-col items-center relative z-10 group cursor-default">
+                  <div className="bg-white p-1 rounded-full relative">
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-40"></div>
+                    )}
+                    <div className={`w-14 h-14 relative rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 border-4 ${
+                      isCompleted ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white border-white shadow-lg shadow-orange-500/40 scale-100' :
+                      isActive ? 'bg-white text-orange-600 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] scale-110' : 
+                      'bg-slate-50 text-slate-300 border-slate-100 scale-95 group-hover:scale-100'
+                    }`}>
+                      {isCompleted ? <CheckCircle size={28} strokeWidth={3} /> : getSummerStageIcon(stage)}
+                    </div>
+                  </div>
+                  <div className={`absolute top-20 flex flex-col items-center transition-all duration-300 ${isActive ? 'scale-110 translate-y-1' : ''}`}>
+                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider w-24 sm:w-28 text-center leading-tight ${
+                      isCompleted ? 'text-orange-700' : 
+                      isActive ? 'text-orange-600 drop-shadow-sm' : 
+                      'text-slate-400'
+                    }`}>
+                      {stage}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <BookOpen className="text-amber-600"/> Assigned Projects
+        </h3>
+        
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 mb-6 shadow-sm shadow-orange-100/50">
+          <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
+            <AlertCircle className="w-5 h-5 text-orange-600" />
+            Mandatory Project Rules & Guidelines
+          </h4>
+          <ul className="space-y-2 text-sm text-orange-800 font-medium">
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span>You will be assigned <strong className="text-orange-950 font-bold">2-3 projects per month</strong> during your internship.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span>Adding a GitHub repository link for your project is <strong className="text-orange-950 font-bold">mandatory</strong>.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span><strong className="text-orange-950 font-bold">Daily code push on GitHub</strong> is strictly required.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span>Create a <strong className="text-orange-950 font-bold">new repository</strong> for every new assignment/project you receive.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span>The Code-A-Nova Team will monitor and <strong className="text-orange-950 font-bold">verify your daily pushes</strong>.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-500 mt-0.5">•</span>
+              <span>Completing the project and following these rules is <strong className="text-orange-950 font-bold">mandatory for your certification</strong>.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="grid gap-5">
+          {projects.map((proj, idx) => (
+            <div key={idx} className="border border-slate-200 rounded-2xl p-6 transition-colors bg-slate-50">
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-lg">{proj.name}</h4>
+                    <p className="text-sm text-slate-500 mt-1">{proj.description}</p>
+                    
+                    {(proj.createdAt || proj.dueDate) && (
+                      <div className="flex gap-4 mt-3 text-xs font-semibold">
+                        {proj.createdAt && (
+                          <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-100">
+                            Assigned: {new Date(proj.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
+                        {proj.dueDate && (
+                          <div className="bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100">
+                            Due Date: {new Date(proj.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {proj.pdfUrl && (
+                    <a href={proj.pdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-1 md:mt-0 text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg transition-colors whitespace-nowrap shrink-0">
+                      <FileText size={16} /> Download Project Document
+                    </a>
+                  )}
+                </div>
+                
+                {proj.isFinalSubmitted ? (
+                  <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl p-4 flex items-start gap-4 shadow-sm shadow-emerald-100/50 mt-4">
+                    <div className="bg-emerald-100/80 p-2.5 rounded-xl text-emerald-600 shadow-sm mt-0.5">
+                      <CheckCircle size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-emerald-900 text-sm mb-1">Project Final Submitted Successfully</h5>
+                      <p className="text-sm text-emerald-800 leading-relaxed font-medium mb-2">
+                        Your GitHub repository and project has been locked and submitted for admin review.
+                      </p>
+                      <a href={proj.repoLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-200/50 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition-colors">
+                        <Github size={14} /> View Repository
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 flex flex-col gap-4 shadow-sm shadow-amber-100/50 mt-4">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-amber-100/80 p-2.5 rounded-xl text-amber-600 shadow-sm mt-0.5">
+                        <Github size={20} strokeWidth={2.5} />
+                      </div>
+                      <div className="w-full">
+                        <h5 className="font-bold text-amber-900 text-sm mb-1">Link Your GitHub Repository</h5>
+                        <p className="text-sm text-amber-800 leading-relaxed font-medium mb-3">
+                          Save your Github link here. Once your project is fully complete, click the "Final Submit Project" button.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2 max-w-lg">
+                          <input
+                            type="url"
+                            placeholder="https://github.com/username/repo"
+                            value={repoInputs[proj.id] !== undefined ? repoInputs[proj.id] : (proj.repoLink || '')}
+                            onChange={(e) => setRepoInputs({...repoInputs, [proj.id]: e.target.value})}
+                            className="flex-1 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white placeholder-amber-800/40"
+                          />
+                          <button
+                            onClick={() => handleSubmitRepo(proj.id)}
+                            disabled={submittingRepo === proj.id}
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-bold transition-colors whitespace-nowrap disabled:opacity-50"
+                          >
+                            {submittingRepo === proj.id ? 'Saving...' : 'Save Link'}
+                          </button>
+                        </div>
+                        {proj.repoLink && (
+                          <div className="mt-4 pt-4 border-t border-amber-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <span className="text-xs font-bold text-amber-700 flex items-center gap-1.5"><CheckCircle size={14}/> Link Saved! Ready for Final Submission?</span>
+                            <button
+                              onClick={() => handleFinalSubmit(proj.id)}
+                              disabled={finalSubmitting === proj.id}
+                              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2"
+                            >
+                              <CheckCircle size={16}/> Final Submit Project
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const StudentDashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { width, height } = useWindowSize();
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiRecycle, setConfettiRecycle] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.showConfetti) {
+      setShowConfetti(true);
+      setConfettiRecycle(true);
+      setTimeout(() => setConfettiRecycle(false), 10000);
+      setTimeout(() => setShowConfetti(false), 15000);
+      
+      // Clear state so on refresh it doesn't trigger again
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("studentToken");
+      if (!token) {
+        navigate("/student-login");
+        return;
+      }
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/dashboard`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setData(response.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem("studentToken");
+        localStorage.removeItem("studentData");
+        navigate("/student-login");
+      } else {
+        toast.error("Failed to load dashboard data");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboard();
   }, [navigate]);
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('studentToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/profile`, profileForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Profile updated successfully');
-    } catch (err) {
-      toast.error('Failed to update profile');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem('studentToken');
-    localStorage.removeItem('studentData');
-    navigate('/student-login');
+    localStorage.removeItem("studentToken");
+    localStorage.removeItem("studentData");
+    navigate("/student-login");
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size should be less than 2MB');
-      return;
-    }
+  const getInternshipMode = (internship) => {
+    const explicitType = internship?.internshipType || internship?.mode;
+    if (explicitType) return explicitType;
 
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-    uploadData.append('folder', 'profiles');
-
-    toast.info('Uploading image...', { autoClose: 2000 });
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: uploadData
-      });
-      const data = await res.json();
-      if (data.secure_url) {
-        setProfileForm(prev => ({ ...prev, profileImage: data.secure_url }));
-        toast.success('Image uploaded! Click Save Profile to apply changes.');
-      }
-    } catch (err) {
-      toast.error('Upload failed!');
-    }
-  };
-
-  const handleMarkAlert = async (internshipId, alertId) => {
-    try {
-      const token = localStorage.getItem('studentToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/mark-alert`, 
-        { internshipId, alertId }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setData(prev => {
-        const newData = { ...prev };
-        const iIndex = newData.internships.findIndex(i => i._id === internshipId);
-        if (iIndex !== -1) {
-          const aIndex = newData.internships[iIndex].alerts.findIndex(a => a._id === alertId);
-          if (aIndex !== -1) {
-             newData.internships[iIndex].alerts[aIndex].isRead = true;
-          }
-        }
-        return newData;
-      });
-    } catch (err) {
-      toast.error('Failed to dismiss alert');
-    }
+    const duration = parseInt(
+      String(internship?.duration || "").match(/\d+/)?.[0] || "1",
+      10
+    );
+    return duration > 1 ? "Summer/Winter Intern" : "Normal Intern";
   };
 
   if (loading) {
@@ -188,398 +604,67 @@ const StudentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-20 px-4 sm:px-6 relative overflow-hidden font-sans">
-      {/* Light Theme Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent pointer-events-none"></div>
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-      
-      <div className="max-w-6xl mx-auto relative z-10 py-10">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-slate-200">
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center">
-                {profileForm.profileImage ? (
-                  <img src={profileForm.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <User size={40} className="text-slate-300" />
-                )}
-              </div>
-              <label className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full cursor-pointer hover:bg-blue-700 transition-colors shadow-lg">
-                <Camera size={16} className="text-white" />
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
+    <div className="min-h-screen bg-slate-50 pt-28 px-4 sm:px-6 pb-16 font-sans">
+      {showConfetti && (
+        <Confetti 
+          width={width} 
+          height={height} 
+          recycle={confettiRecycle} 
+          numberOfPieces={confettiRecycle ? 500 : 200} 
+          gravity={0.15} 
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: 99999, pointerEvents: 'none' }}
+        />
+      )}
+      <div className="max-w-6xl mx-auto">
+        {/* Header section */}
+        <header className="flex flex-col sm:flex-row justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-8 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+              {data?.user?.profileImage ? (
+                <img src={data.user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl font-bold text-blue-600">{data?.user?.name?.charAt(0)}</span>
+              )}
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome, {data?.user?.name}</h1>
-              <p className="text-slate-500 mt-1 font-medium text-sm">Manage your internships and profile</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Student Portal</p>
+              <h1 className="text-xl font-black text-slate-800 leading-tight">{data?.user?.name}</h1>
             </div>
           </div>
-          <button 
-            onClick={handleLogout} 
-            className="mt-6 md:mt-0 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm rounded-xl flex items-center gap-2 transition-all font-semibold text-sm"
+          <button
+            onClick={handleLogout}
+            className="px-5 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-red-100 text-sm"
           >
             <LogOut size={18} /> Logout
           </button>
-        </div>
+        </header>
 
-        {/* Tabs */}
-        <div className="flex space-x-4 mb-8">
-          <button
-            onClick={() => setActiveTab('internships')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm border ${activeTab === 'internships' ? 'bg-white text-blue-600 border-blue-100 shadow-blue-500/5' : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200 hover:text-slate-700'}`}
-          >
-            <BookOpen size={18} /> Internships
-          </button>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm border ${activeTab === 'profile' ? 'bg-white text-blue-600 border-blue-100 shadow-blue-500/5' : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200 hover:text-slate-700'}`}
-          >
-            <User size={18} /> Profile Details
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tasks')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-sm border ${activeTab === 'tasks' ? 'bg-white text-blue-600 border-blue-100 shadow-blue-500/5' : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200 hover:text-slate-700'}`}
-          >
-            <Briefcase size={18} /> Active Tasks
-          </button>
-        </div>
-
-        {activeTab === 'profile' && (
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm max-w-3xl">
-            <h2 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-3">
-              <Link2 className="text-blue-500" /> Professional Links
-            </h2>
-            <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <div>
-                <label className="block text-slate-700 mb-2 font-semibold text-sm">GitHub URL</label>
-                <input 
-                  type="url" required value={profileForm.github} 
-                  onChange={(e) => setProfileForm({...profileForm, github: e.target.value})}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm" 
-                />
+        {/* Dashboard Content */}
+        <main>
+          {data?.internships?.length > 0 ? (
+            data.internships.map((internship) => {
+              const mode = getInternshipMode(internship);
+              return (
+                <div key={internship._id} className="mb-10">
+                  {mode === "Summer/Winter Intern" ? (
+                    <SummerInternDashboard internship={internship} onRefresh={fetchDashboard} />
+                  ) : (
+                    <NormalInternDashboard internship={internship} />
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="bg-white py-16 px-6 text-center rounded-2xl shadow-sm border border-slate-200">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="text-slate-400 w-8 h-8" />
               </div>
-              <div>
-                <label className="block text-slate-700 mb-2 font-semibold text-sm">LinkedIn URL</label>
-                <input 
-                  type="url" required value={profileForm.linkedin} 
-                  onChange={(e) => setProfileForm({...profileForm, linkedin: e.target.value})}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm" 
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 mb-2 font-semibold text-sm">Portfolio URL (Optional)</label>
-                <input 
-                  type="url" value={profileForm.portfolio} 
-                  onChange={(e) => setProfileForm({...profileForm, portfolio: e.target.value})}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm" 
-                />
-              </div>
-              <button 
-                type="submit" disabled={saving}
-                className="mt-6 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all disabled:opacity-70 text-sm"
-              >
-                {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />} Save Profile
-              </button>
-            </form>
-          </div>
-        )}
-        {activeTab === 'tasks' && (
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-            <h2 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-3">
-              <Briefcase className="text-blue-500" /> Active Assignments
-            </h2>
-            {loadingTasks ? (
-              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
-            ) : tasks.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No tasks assigned to you right now.</p>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {tasks.map(task => (
-                  <div key={task._id} className="p-6 border border-slate-200 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group bg-slate-50">
-                    <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-blue-700 transition-colors">{task.title}</h3>
-                    <p className="text-slate-600 text-sm mb-4 leading-relaxed whitespace-pre-wrap">{task.description}</p>
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-200">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        {task.deadline ? `Due: ${new Date(task.deadline).toLocaleDateString()}` : 'No Deadline'}
-                      </span>
-                      <Link to="/project" className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">Submit Work &rarr;</Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'internships' && (
-          <div className="space-y-8">
-            {data?.internships?.length === 0 ? (
-              <p className="text-slate-500">No applications found.</p>
-            ) : (
-              data.internships.map((internship, index) => {
-                const totalTargetMonths = parseInt(internship.duration.split(' ')[0]) || 1;
-                const submittedMonths = internship.submissions.length;
-                const paymentLinkOpen = (!internship.hasPaid && submittedMonths >= totalTargetMonths);
-                const isEligible = internship.hasPaid && submittedMonths >= totalTargetMonths;
-                
-                return (
-                  <div key={index} className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                      <div>
-                        <h3 className="text-2xl font-extrabold text-slate-900">{internship.domain}</h3>
-                        <p className="text-slate-500 font-medium text-sm mt-1">Student ID: <span className="text-blue-600 font-bold">{internship.studentId}</span></p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`px-4 py-1.5 rounded-lg text-xs font-bold border ${internship.offerLetterStatus === 'Sent' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                          Offer Letter: {internship.offerLetterStatus}
-                        </span>
-                        <span className={`px-4 py-1.5 rounded-lg text-xs font-bold border ${internship.hasPaid ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                          Payment: {internship.hasPaid ? 'Done' : 'Pending'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {isEligible && (
-                      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 text-emerald-900 shadow-sm relative overflow-hidden">
-                        <div className="flex flex-col sm:flex-row items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100 flex-shrink-0">
-                            <Award className="w-8 h-8 animate-bounce" />
-                          </div>
-                          <div className="flex-1 text-center sm:text-left">
-                            <h4 className="text-lg font-extrabold text-emerald-900 tracking-tight flex items-center justify-center sm:justify-start gap-2">
-                              🎉 Certification Eligibility Achieved!
-                            </h4>
-                            <p className="text-emerald-700 text-sm mt-1 leading-relaxed font-medium">
-                              Congratulations! You have completed all submissions ({submittedMonths}/{totalTargetMonths}) and payment is verified.
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => {
-                              setEligibleInternship(internship);
-                              setShowCertificatePopup(true);
-                            }}
-                            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 text-sm whitespace-nowrap"
-                          >
-                            View Status <ArrowRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                      <div className="lg:col-span-7 space-y-6">
-                        {internship.activeAlert && (
-                          <div className={`p-4 rounded-2xl border flex items-start gap-3.5 relative overflow-hidden ${
-                            internship.activeAlert.type === 'red'
-                              ? 'bg-rose-50 border-rose-200'
-                              : internship.activeAlert.type === 'yellow'
-                              ? 'bg-amber-50 border-amber-200'
-                              : 'bg-emerald-50 border-emerald-200'
-                          }`}>
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white shadow-sm border ${
-                              internship.activeAlert.type === 'red' ? 'border-rose-100 text-rose-500' : internship.activeAlert.type === 'yellow' ? 'border-amber-100 text-amber-500' : 'border-emerald-100 text-emerald-500'
-                            }`}>
-                              <ShieldAlert className={`w-5 h-5 ${internship.activeAlert.type === 'red' ? 'animate-pulse' : ''}`} />
-                            </div>
-                            <div className="flex-1 min-w-0 pt-0.5">
-                              <span className={`text-xs font-extrabold uppercase tracking-wider ${
-                                internship.activeAlert.type === 'red' ? 'text-rose-700' : internship.activeAlert.type === 'yellow' ? 'text-amber-700' : 'text-emerald-700'
-                              }`}>
-                                {internship.activeAlert.type === 'red' ? 'Critical Action Required' : internship.activeAlert.type === 'yellow' ? 'Action Required' : 'Timeline Info'}
-                              </span>
-                              <p className={`text-sm font-semibold mt-1 leading-relaxed ${
-                                internship.activeAlert.type === 'red' ? 'text-rose-900' : internship.activeAlert.type === 'yellow' ? 'text-amber-900' : 'text-emerald-900'
-                              }`}>
-                                {internship.activeAlert.message}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                        {internship.alerts && internship.alerts.filter(a => !a.isRead).length > 0 && (
-                          <div className="space-y-3">
-                            {internship.alerts.filter(a => !a.isRead).map(alert => (
-                              <div key={alert._id} className="bg-red-50 border border-red-100 p-4 rounded-2xl flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                  <div className="bg-white p-2 rounded-lg border border-red-100"><Bell className="text-red-500 w-4 h-4" /></div>
-                                  <div>
-                                    <p className="text-red-900 font-semibold text-sm">{alert.message}</p>
-                                    <p className="text-[11px] text-red-500 font-medium mt-0.5">{new Date(alert.date).toLocaleString()}</p>
-                                  </div>
-                                </div>
-                                <button onClick={() => handleMarkAlert(internship._id, alert._id)} className="text-xs px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 font-bold rounded-lg border border-red-200 transition-colors shadow-sm">
-                                  Dismiss
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        <div>
-                          <h4 className="text-base font-extrabold text-slate-900 mb-4 flex items-center gap-2">
-                            <CheckSquare className="text-blue-500 w-5 h-5" /> Project Tracking Timeline
-                          </h4>
-                          <div className="space-y-3">
-                            {Array.from({ length: totalTargetMonths }).map((_, i) => {
-                              const monthNum = i + 1;
-                              const sb = internship.submissions.find(s => s.month === monthNum);
-                              return (
-                                <div key={monthNum} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${sb ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-200'}`}>
-                                  {sb ? (
-                                    <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 flex-shrink-0">
-                                      <CheckCircle className="w-4 h-4" />
-                                    </div>
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0 font-bold text-xs shadow-sm">
-                                      {monthNum}
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`font-bold text-sm ${sb ? 'text-emerald-800' : 'text-slate-600'}`}>Month {monthNum} Submission</p>
-                                    {sb && (
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-xs text-emerald-600 font-medium">Submitted {new Date(sb.submittedAt).toLocaleDateString()}</p>
-                                      </div>
-                                    )}
-                                    {!sb && monthNum === submittedMonths + 1 && (
-                                      <div className="mt-1.5 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                        <button onClick={() => navigate('/project-submission')} className="text-xs text-blue-600 hover:text-blue-700 font-bold hover:underline flex items-center gap-1">
-                                          Ready for submission <ArrowRight className="w-3 h-3" />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {paymentLinkOpen && (
-                          <div className="p-6 bg-orange-50 border border-orange-200 rounded-2xl relative overflow-hidden">
-                            <p className="text-orange-900 font-bold text-sm mb-2">🎉 Target projects submitted! Verification unlocked.</p>
-                            <p className="text-xs text-orange-700 font-medium mb-4">Complete the verification to instantly unlock your certification status.</p>
-                            <button onClick={() => navigate('/project-submission')} className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-sm transition-colors">
-                              Complete Verification
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-inner space-y-5">
-                        <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2 uppercase tracking-wide">
-                          <Sparkles className="text-blue-500 w-4 h-4" /> Overview
-                        </h4>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform"><Calendar className="w-4 h-4" /></div>
-                              <div>
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Start Date</p>
-                                <p className="text-slate-900 text-sm font-bold truncate">{internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-IN') : 'Pending'}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-pink-200 hover:shadow-md transition-all group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-105 transition-transform"><Clock className="w-4 h-4" /></div>
-                              <div>
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">End Date</p>
-                                <p className="text-slate-900 text-sm font-bold truncate">{getEndDate(internship.startDate, internship.duration)}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-amber-200 hover:shadow-md transition-all group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform"><Clock className="w-4 h-4" /></div>
-                              <div>
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Duration</p>
-                                <p className="text-slate-900 text-sm font-bold truncate">{internship.duration}</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="bg-white border border-slate-200 p-4 rounded-2xl hover:border-teal-200 hover:shadow-md transition-all group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-105 transition-transform"><FileCheck className="w-4 h-4" /></div>
-                              <div>
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Projects</p>
-                                <p className="text-slate-900 text-sm font-bold truncate">{submittedMonths} / {totalTargetMonths} Done</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">No Internships Found</h3>
+              <p className="text-slate-500 font-medium">You haven't been assigned any internships yet.</p>
+            </div>
+          )}
+        </main>
       </div>
-
-      {showCertificatePopup && eligibleInternship && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => {
-            sessionStorage.setItem('hasSeenCertificatePopup', 'true');
-            setShowCertificatePopup(false);
-          }}></div>
-          
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-md w-full shadow-2xl relative z-10 text-center space-y-6">
-            <button 
-              onClick={() => {
-                sessionStorage.setItem('hasSeenCertificatePopup', 'true');
-                setShowCertificatePopup(false);
-              }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            
-            <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center shadow-inner">
-              <Award className="w-8 h-8 text-emerald-600 animate-bounce" />
-            </div>
-            
-            <div>
-              <h3 className="text-2xl font-extrabold text-slate-900">
-                Certification <span className="text-emerald-600">Eligible!</span>
-              </h3>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-2">Official Completion</p>
-            </div>
-            
-            <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-left space-y-3">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                <span className="text-xs font-bold text-slate-500">Domain</span>
-                <span className="text-slate-900 text-sm font-bold">{eligibleInternship.domain}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                <span className="text-xs font-bold text-slate-500">Student ID</span>
-                <span className="text-blue-600 text-sm font-bold font-mono">{eligibleInternship.studentId}</span>
-              </div>
-            </div>
-            
-            <p className="text-slate-500 text-xs font-medium leading-relaxed">
-              Your achievements are locked in and payment is verified. Your completion certificate has been generated and queued for dispatch!
-            </p>
-            
-            <button
-              onClick={() => {
-                sessionStorage.setItem('hasSeenCertificatePopup', 'true');
-                setShowCertificatePopup(false);
-              }}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-colors"
-            >
-              Excellent, Thank you!
-            </button>
-          </div>
-        </div>
-      )}
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );

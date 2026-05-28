@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Linkedin,
   Github,
   Instagram,
   ArrowUp,
+  ArrowRight,
   Mail,
   Phone,
   MapPin,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 
 function Footer() {
+  const navigate = useNavigate();
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -62,7 +64,7 @@ function Footer() {
         {/* Main Grid */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-6 relative z-10 mb-16">
           {/* Column 1: Brand & Info */}
-          <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all hover:scale-[1.02] hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] duration-500">
+          <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all hover:scale-[1.02] hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] duration-500 text-left">
             <Link to="/" className="flex items-center space-x-3 mb-6">
               <span className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-300 tracking-tight">
                 Code-A-Nova
@@ -72,16 +74,22 @@ function Footer() {
               Empowering students with real-world tech internships and expert
               mentorship.
             </p>
-            <div className="space-y-2 text-sm text-gray-500">
+            <div className="space-y-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Mail size={16} />
                 <span>codeanova26@gmail.com</span>
               </div>
-
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
                 <span>India</span>
               </div>
+              <button
+                onClick={() => navigate('/student-login')}
+                className="flex items-center gap-2 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors duration-200"
+              >
+                <ArrowRight size={14} />
+                <span>Intern Login</span>
+              </button>
             </div>
           </div>
 

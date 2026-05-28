@@ -3,18 +3,20 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Loader2, Send, User, Briefcase, MessageSquare, Calendar } from 'lucide-react';
-import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Project = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
-    studentId: '',
+    studentId: location.state?.studentId || '',
     name: '',
     email: '',
     domain: '',
     duration: '',
     assignments: [
-      { projectName: '', github: '', hosted: '' },
+      { projectName: location.state?.taskName || '', github: '', hosted: '' },
       { projectName: '', github: '', hosted: '' },
       { projectName: '', github: '', hosted: '' }
     ]
@@ -24,9 +26,6 @@ const Project = () => {
   const [autoFilledFields, setAutoFilledFields] = useState({ name: false, email: false, domain: false, duration: false });
 
   const [currentMonth, setCurrentMonth] = useState(null);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [confettiRecycle, setConfettiRecycle] = useState(false);
-  const { width, height } = useWindowSize();
   const [loadingMonth, setLoadingMonth] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -219,12 +218,9 @@ const Project = () => {
                   }
                 }
               );
-              setShowConfetti(true);
-              setConfettiRecycle(true);
-              setTimeout(() => setConfettiRecycle(false), 10000); // Stop shooting after 10s
-              setTimeout(() => setShowConfetti(false), 15000);    // Unmount after they fall
 
               resetForm();
+              setTimeout(() => navigate('/student-dashboard', { state: { showConfetti: true } }), 1000);
             } catch (err) {
               toast.error('Payment verification failed');
             }
@@ -255,14 +251,12 @@ const Project = () => {
               }
             }
           );
-          setShowConfetti(true);
-          setConfettiRecycle(true);
-          setTimeout(() => setConfettiRecycle(false), 10000); // Stop shooting after 10s
-          setTimeout(() => setShowConfetti(false), 15000);    // Unmount after they fall
+          setTimeout(() => navigate('/student-dashboard', { state: { showConfetti: true } }), 1000);
         } else {
           // Direct success for normal month
           toast.success(res.data.message || 'Assignment submitted successfully!');
-          toast.success("Form has been reset for next use.", { autoClose: 5000 });
+          toast.success("Redirecting to dashboard...", { autoClose: 2000 });
+          setTimeout(() => navigate('/student-dashboard'), 1000);
         }
         
         resetForm();
@@ -276,16 +270,6 @@ const Project = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
-      {showConfetti && (
-        <Confetti 
-          width={width} 
-          height={height} 
-          recycle={confettiRecycle} 
-          numberOfPieces={confettiRecycle ? 500 : 200} 
-          gravity={0.15} 
-          style={{ position: 'fixed', top: 0, left: 0, zIndex: 99999, pointerEvents: 'none' }}
-        />
-      )}
       <ToastContainer position="top-center" autoClose={3000} />
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent"></div>

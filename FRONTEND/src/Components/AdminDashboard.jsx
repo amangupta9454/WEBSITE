@@ -8,8 +8,10 @@ import {
   LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail,
   Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText,
   UploadCloud, Save, FileInput, Search, ChevronDown, ExternalLink, UserPlus,
-  TrendingUp, Users, AlertCircle, X, CreditCard, LayoutDashboard, Activity, Plus, Trash2, ListTodo
+  TrendingUp, Users, AlertCircle, X, CreditCard, LayoutDashboard, Activity, Plus, Trash2, ListTodo, BookOpen
 } from 'lucide-react';
+import SummerProjectsAdmin from './SummerProjectsAdmin';
+import NormalTasksAdmin from './NormalTasksAdmin';
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -25,9 +27,11 @@ const AdminDashboard = () => {
   const [forms, setForms] = useState({});
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [selectedSubmissionsApp, setSelectedSubmissionsApp] = useState(null);
   const [exportDuration, setExportDuration] = useState('1');
   const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [assignTasksModal, setAssignTasksModal] = useState({ isOpen: false, appId: null, duration: 1, tasks: [] });
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -91,8 +95,17 @@ const AdminDashboard = () => {
       const allApps = res.data;
       setApplications(allApps);
       setFilteredApplications(allApps);
-      const uniqueDomains = [...new Set(allApps.map(app => app.domain))];
-      setDomains(uniqueDomains);
+      
+      const baseDomains = [
+        'Frontend Development','Backend Development','Full Stack Development',
+        'C Programming','Python Development','Artificial Intelligence',
+        'Figma or UI/UX','Data Science','Machine Learning',
+        'App Development','Marketing'
+      ];
+      const uniqueDynamicDomains = [...new Set(allApps.map(app => app.domain))].filter(Boolean);
+      const allDomains = [...new Set([...baseDomains, ...uniqueDynamicDomains])].sort();
+      
+      setDomains(allDomains);
     } catch (err) {
       toast.error('Failed to load applications');
       localStorage.removeItem('adminToken');
@@ -134,6 +147,30 @@ const AdminDashboard = () => {
       toast.success(res.data.message);
     } catch (err) {
       toast.error('Failed to toggle registration setting');
+    }
+  };
+
+  const openAssignTasksModal = (appId, durationStr, existingTasks = []) => {
+    const totalMonths = parseInt(durationStr.split(" ")[0], 10) || 1;
+    const initialTasks = Array.from({ length: totalMonths }).map((_, i) => existingTasks[i] || '');
+    setAssignTasksModal({ isOpen: true, appId, duration: totalMonths, tasks: initialTasks });
+  };
+
+  const handleAssignTasksSubmit = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const { appId, tasks } = assignTasksModal;
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-normal-tasks`, {
+        applicationId: appId,
+        tasks
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Tasks assigned successfully");
+      setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] });
+      fetchApplications(token);
+    } catch (err) {
+      toast.error("Failed to assign tasks");
     }
   };
 
@@ -310,18 +347,18 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleToggleBypassBlock = async (appId, currentStatus) => {
+  const handleToggleCertificateSent = async (appId, currentStatus) => {
     try {
       const token = localStorage.getItem('adminToken');
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-bypass-block`,
-        { applicationId: appId, bypassBlock: !currentStatus },
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-certificate-sent`,
+        { applicationId: appId, isCertificateSent: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(`Bypass block status updated to ${!currentStatus ? 'Yes' : 'No'}`);
+      toast.success(`Certificate Sent status updated to ${!currentStatus ? 'Yes' : 'No'}`);
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to update bypass block status');
+      toast.error('Failed to update Certificate Sent status');
       console.error(err);
     }
   };
@@ -340,6 +377,17 @@ const AdminDashboard = () => {
       fetchApplications(token);
     } catch (err) {
       toast.error('Failed to update Offer Letter status');
+    }
+  };
+
+  const handleInternshipTypeChange = async (appId, newType) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship-type`, { applicationId: appId, internshipType: newType }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success(`Internship type marked as ${newType}`);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error('Failed to update Internship Type');
     }
   };
 
@@ -580,7 +628,16 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <p className="text-slate-500 text-xs mb-1.5">Internship Type</p>
+                <SelectField
+                  value={app.internshipType || app.mode || 'Normal Intern'}
+                  onChange={(e) => handleInternshipTypeChange(app._id, e.target.value)}
+                  options={[{ value: 'Normal Intern', label: 'Normal Intern' }, { value: 'Summer/Winter Intern', label: 'Summer/Winter' }]}
+                  className="w-full"
+                />
+              </div>
               <div>
                 <p className="text-slate-500 text-xs mb-1.5">Offer Letter</p>
                 <SelectField
@@ -619,11 +676,11 @@ const AdminDashboard = () => {
                 />
               </div>
               <div>
-                <p className="text-slate-500 text-xs mb-1.5">Dashboard Access</p>
+                <p className="text-slate-500 text-xs mb-1.5">Certificate Sent</p>
                 <SelectField
-                  value={app.bypassBlock ? 'Give Access' : 'Strict'}
-                  onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
-                  options={[{ value: 'Strict', label: 'Strict' }, { value: 'Give Access', label: 'Give Access' }]}
+                  value={app.isCertificateSent ? 'Yes' : 'No'}
+                  onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
+                  options={[{ value: 'No', label: 'No' }, { value: 'Yes', label: 'Yes' }]}
                   className="w-full"
                 />
               </div>
@@ -674,13 +731,20 @@ const AdminDashboard = () => {
             )}
 
             {isDownloaded && (
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">Verify Certificate Status:</span>
-                {app.isCertificateVerified ? (
-                  <Badge variant="green">True</Badge>
-                ) : (
-                  <Badge variant="red">False</Badge>
-                )}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <p className="text-slate-500 text-xs mb-1.5 flex items-center justify-between">
+                  <span>Task Submissions</span>
+                  <span className="font-bold text-slate-700">
+                    {app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1}
+                  </span>
+                </p>
+                <button
+                  onClick={() => setSelectedSubmissionsApp(app)}
+                  className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-colors border border-blue-200 flex items-center justify-center gap-2"
+                >
+                  <ExternalLink size={14} /> View GitHub Links
+                </button>
+
               </div>
             )}
           </div>
@@ -729,6 +793,62 @@ const AdminDashboard = () => {
           ))}
         </div>
       </div>
+
+      {assignTasksModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                <Briefcase className="text-blue-600" size={20} /> Assign Monthly Tasks
+              </h3>
+              <button 
+                onClick={() => setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] })}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-4">
+              <p className="text-sm text-slate-500 mb-4">
+                Assign a specific task topic for each month of the internship. These will unlock automatically for the student.
+              </p>
+              
+              {assignTasksModal.tasks.map((task, idx) => (
+                <div key={idx}>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Month {idx + 1} Task</label>
+                  <input
+                    type="text"
+                    value={task}
+                    onChange={(e) => {
+                      const newTasks = [...assignTasksModal.tasks];
+                      newTasks[idx] = e.target.value;
+                      setAssignTasksModal({ ...assignTasksModal, tasks: newTasks });
+                    }}
+                    placeholder="e.g. Build a Calculator"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button 
+                onClick={() => setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] })}
+                className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAssignTasksSubmit}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
+              >
+                Save Tasks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -806,13 +926,13 @@ const AdminDashboard = () => {
               <Users className="w-4 h-4" />
               Interns & Apps
             </button>
-            <button onClick={() => setActiveSidebarTab('tasks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
-              <Briefcase className="w-4 h-4" />
-              Tasks & Projects
+            <button onClick={() => setActiveSidebarTab('monthly_tasks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'monthly_tasks' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+              <Calendar className="w-4 h-4" />
+              Monthly Tasks
             </button>
-            <button onClick={() => setActiveSidebarTab('activity')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'activity' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
-              <Activity className="w-4 h-4" />
-              Activity Logs
+            <button onClick={() => setActiveSidebarTab('summer_projects')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'summer_projects' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+              <BookOpen className="w-4 h-4" />
+              Summer Projects
             </button>
           </div>
         </div>
@@ -975,9 +1095,10 @@ const AdminDashboard = () => {
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Timeline</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied At</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Internship Type</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Certificate Sent</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
                         </>
                       ) : (
@@ -991,11 +1112,10 @@ const AdminDashboard = () => {
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Downloaded At</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Start Date</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">End Date</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Months</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Certificate</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Months</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Certificate Sent</th>
                           <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
                         </>
                       )}
@@ -1036,6 +1156,16 @@ const AdminDashboard = () => {
                             <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
+                                <select value={app.internshipType || app.mode || 'Normal Intern'} onChange={(e) => handleInternshipTypeChange(app._id, e.target.value)}
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  <option value="Normal Intern">Normal Intern</option>
+                                  <option value="Summer/Winter Intern">Summer/Winter Intern</option>
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="relative">
                                 <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
                                   className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="Not Sent">Not Sent</option>
@@ -1056,20 +1186,21 @@ const AdminDashboard = () => {
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
-                                <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
+                                <select value={app.isCertificateSent ? 'Yes' : 'No'} onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
                                   className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="Strict">Strict</option>
-                                  <option value="Give Access">Give Access</option>
+                                  <option value="No">No</option>
+                                  <option value="Yes">Yes</option>
                                 </select>
                                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-1">
-                                <span className="text-slate-900 text-xs font-medium">{app.submissions?.length || 0}</span>
-                                <span className="text-slate-600 text-xs">/</span>
-                                <span className="text-slate-500 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
-                              </div>
+                              <button
+                                onClick={() => setSelectedSubmissionsApp(app)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                              >
+                                View ({app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1})
+                              </button>
                             </td>
                           </>
                         ) : (
@@ -1093,13 +1224,6 @@ const AdminDashboard = () => {
                             <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : '—'}</td>
                             <td className="py-3.5 px-4 text-slate-500 text-sm">{app.totalMonths || '—'}</td>
                             <td className="py-3.5 px-4">
-                              {app.isCertificateVerified ? (
-                                <Badge variant="green">True</Badge>
-                              ) : (
-                                <Badge variant="red">False</Badge>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
                                   className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
@@ -1121,20 +1245,21 @@ const AdminDashboard = () => {
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
-                                <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
+                                <select value={app.isCertificateSent ? 'Yes' : 'No'} onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
                                   className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="Strict">Strict</option>
-                                  <option value="Give Access">Give Access</option>
+                                  <option value="No">No</option>
+                                  <option value="Yes">Yes</option>
                                 </select>
                                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-1">
-                                <span className="text-slate-900 text-xs font-medium">{app.submissions?.length || 0}</span>
-                                <span className="text-slate-600 text-xs">/</span>
-                                <span className="text-slate-500 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
-                              </div>
+                              <button
+                                onClick={() => setSelectedSubmissionsApp(app)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                              >
+                                View ({app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1})
+                              </button>
                             </td>
                           </>
                         )}
@@ -1165,10 +1290,59 @@ const AdminDashboard = () => {
         </div>
       </div>
       )}
-      {activeSidebarTab === 'tasks' && <TasksTab />}
-      {activeSidebarTab === 'activity' && <ActivityTab />}
+      {activeSidebarTab === 'monthly_tasks' && <NormalTasksAdmin domains={domains} />}
+      {activeSidebarTab === 'summer_projects' && <SummerProjectsAdmin applications={applications} />}
     </div>
   </div>
+
+      {selectedSubmissionsApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">Project Submissions</h3>
+                <p className="text-sm text-slate-500">{selectedSubmissionsApp.name}</p>
+              </div>
+              <button
+                onClick={() => setSelectedSubmissionsApp(null)}
+                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {!selectedSubmissionsApp.submissions || selectedSubmissionsApp.submissions.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  No projects submitted yet.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {selectedSubmissionsApp.submissions.map((sub, idx) => (
+                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md">
+                          Task Phase {idx + 1}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(sub.submittedAt).toLocaleDateString('en-IN')}
+                        </span>
+                      </div>
+                      <a
+                        href={sub.repoLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium break-all flex items-center gap-1.5"
+                      >
+                        <ExternalLink size={14} /> {sub.repoLink}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <ToastContainer
         theme="dark"

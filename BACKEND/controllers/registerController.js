@@ -1,68 +1,103 @@
-const User = require('../models/User');
-const Counter = require('../models/Counter');
-const nodemailer = require('nodemailer');
-const bcrypt = require('bcryptjs');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
-const cloudinary = require('cloudinary').v2;
-const streamifier = require('streamifier');
+const User = require("../models/User");
+const Counter = require("../models/Counter");
+
+const getInternshipType = (duration) => {
+  const months = parseInt(String(duration || "").match(/\d+/)?.[0] || "1", 10);
+  return months > 1 ? "Summer/Winter Intern" : "Normal Intern";
+};
+const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const rzp = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your provider
+  service: "gmail", // or your provider
   auth: {
-    user: process.env.EMAIL_USER,           // e.g. yourcompany@gmail.com
-    pass: process.env.EMAIL_APP_PASSWORD    // App password (NOT normal password)
-  }
+    user: process.env.EMAIL_USER, // e.g. yourcompany@gmail.com
+    pass: process.env.EMAIL_APP_PASSWORD, // App password (NOT normal password)
+  },
 });
 
 const registerInternship = async (req, res) => {
   try {
-    console.log('[Backend] Public internship application received:', req.body?.email || 'No email');
-    console.log('[Backend] req.body keys:', req.body ? Object.keys(req.body) : []);
-    console.log('[Backend] req.file:', req.file ? req.file.originalname : 'No file');
+    console.log(
+      "[Backend] Public internship application received:",
+      req.body?.email || "No email",
+    );
+    console.log(
+      "[Backend] req.body keys:",
+      req.body ? Object.keys(req.body) : [],
+    );
+    console.log(
+      "[Backend] req.file:",
+      req.file ? req.file.originalname : "No file",
+    );
 
-    const { email, whatsapp, name, course, branch, college, state, passingYear, domain, duration, github, linkedin } = req.body;
+    const {
+      email,
+      whatsapp,
+      name,
+      course,
+      branch,
+      college,
+      state,
+      passingYear,
+      domain,
+      duration,
+      github,
+      linkedin,
+    } = req.body;
 
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    const normalizedWhatsapp = whatsapp ? whatsapp.trim() : '';
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
+    const normalizedWhatsapp = whatsapp ? whatsapp.trim() : "";
     // Map whatsapp to mobile for legacy checks
     const normalizedMobile = normalizedWhatsapp;
 
     // Check duplicate by email OR mobile
-    let user = await User.findOne({ $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }] });
+    let user = await User.findOne({
+      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
+    });
 
     if (user && user.internships.length > 0) {
       // Find the most recent application
-      const sortedInternships = [...user.internships].sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+      const sortedInternships = [...user.internships].sort(
+        (a, b) => new Date(b.appliedAt) - new Date(a.appliedAt),
+      );
       const lastApp = sortedInternships[0];
-      
-      const daysSinceLast = Math.floor((new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24));
-      
+
+      const daysSinceLast = Math.floor(
+        (new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24),
+      );
+
       // Restriction: 15 days
       if (daysSinceLast < 15) {
-        return res.status(429).json({ 
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}` 
+        return res.status(429).json({
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
-      
+
       // Also check exact domain matching just in case (though it's blocked by 15 days anyway)
-      const sameDomain = user.internships.find(app => app.domain === domain);
+      const sameDomain = user.internships.find((app) => app.domain === domain);
       if (sameDomain) {
-        const daysSinceSameDomain = Math.floor((new Date() - new Date(sameDomain.appliedAt)) / (1000 * 60 * 60 * 24));
+        const daysSinceSameDomain = Math.floor(
+          (new Date() - new Date(sameDomain.appliedAt)) / (1000 * 60 * 60 * 24),
+        );
         if (daysSinceSameDomain < 15) {
-          return res.status(429).json({ 
-            message: `You have already applied for ${domain} within the last 15 days.` 
+          return res.status(429).json({
+            message: `You have already applied for ${domain} within the last 15 days.`,
           });
         }
       }
@@ -74,26 +109,26 @@ const registerInternship = async (req, res) => {
     const counter = await Counter.findByIdAndUpdate(
       { _id: counterId },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
-    const serialNumber = String(counter.seq).padStart(3, '0');
+    const serialNumber = String(counter.seq).padStart(3, "0");
     const studentId = `CN/INT/${currentYear}/${serialNumber}`;
 
-    console.log('[Backend] Generated Student ID:', studentId);
+    console.log("[Backend] Generated Student ID:", studentId);
 
-    let resumeUrl = '';
+    let resumeUrl = "";
     if (req.file) {
       resumeUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'resumes', resource_type: 'auto' },
+          { folder: "resumes", resource_type: "auto" },
           (error, result) => {
             if (result) {
               resolve(result.secure_url);
             } else {
               reject(error);
             }
-          }
+          },
         );
         streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
@@ -103,37 +138,38 @@ const registerInternship = async (req, res) => {
       ...req.body,
       mobile: normalizedMobile, // Map whatsapp to mobile internally
       email: normalizedEmail,
+      internshipType: getInternshipType(req.body.duration),
       studentId,
       resume: resumeUrl,
-      appliedAt: new Date()
+      appliedAt: new Date(),
     };
 
     if (!user) {
-      const hashedPassword = await bcrypt.hash('Welcome@123', 10);
+      const hashedPassword = await bcrypt.hash("Welcome@123", 10);
       user = await User.create({
         name,
         email: normalizedEmail,
         mobile: normalizedMobile,
         password: hashedPassword,
         isFirstLogin: true,
-        github: github || '',
-        linkedin: linkedin || '',
-        portfolio: '', // Portfolio removed
-        internships: []
+        github: github || "",
+        linkedin: linkedin || "",
+        portfolio: "", // Portfolio removed
+        internships: [],
       });
     } else {
       // Opt: sync the latest links if provided
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
-      
+
       // Fix for legacy users missing required fields
-      if (!user.name) user.name = name || 'Student';
-      if (!user.mobile) user.mobile = normalizedMobile || '0000000000';
+      if (!user.name) user.name = name || "Student";
+      if (!user.mobile) user.mobile = normalizedMobile || "0000000000";
 
       // Ensure that if the existing user has no password set (legacy or imported),
       // they get assigned the default Welcome@123 hashed password.
       if (!user.password) {
-        const hashedPassword = await bcrypt.hash('Welcome@123', 10);
+        const hashedPassword = await bcrypt.hash("Welcome@123", 10);
         user.password = hashedPassword;
         user.isFirstLogin = true;
       }
@@ -143,10 +179,10 @@ const registerInternship = async (req, res) => {
     user.internships.push(applicationData);
     await user.save();
 
-    console.log('[Backend] Internship saved with Student ID:', studentId);
+    console.log("[Backend] Internship saved with Student ID:", studentId);
 
     // Send confirmation email with Nodemailer
-   const mailOptions = {
+    const mailOptions = {
       from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: `Registration Confirmed - CODE-A-NOVA Internship`,
@@ -192,7 +228,7 @@ const registerInternship = async (req, res) => {
         </tr>
         <tr>
           <td style="padding: 10px 0; color: #6b7280;">Institution</td>
-          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || 'Not provided'}</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || "Not provided"}</td>
         </tr>
       </table>
       
@@ -210,7 +246,7 @@ const registerInternship = async (req, res) => {
           </div>
           <div>
             <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Password</span><br>
-            <strong style="font-size: 15px; color: #0f172a;">${(!user.isFirstLogin && !user.isNew) ? '(Your Existing Password)' : 'Welcome@123'}</strong>
+            <strong style="font-size: 15px; color: #0f172a;">${!user.isFirstLogin && !user.isNew ? "(Your Existing Password)" : "Welcome@123"}</strong>
           </div>
         </div>
       </div>
@@ -241,19 +277,19 @@ const registerInternship = async (req, res) => {
     
   </div>
 </div>
-      `
+      `,
     };
 
     await transporter.sendMail(mailOptions);
     console.log(`Confirmation email sent to ${email}`);
 
-    res.status(201).json({ 
-      message: 'Application submitted successfully',
-      studentId 
+    res.status(201).json({
+      message: "Application submitted successfully",
+      studentId,
     });
   } catch (error) {
-    console.error('[Backend] Internship registration error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("[Backend] Internship registration error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -261,30 +297,38 @@ const createRegistrationOrder = async (req, res) => {
   try {
     const { email, mobile, domain, duration } = req.body;
 
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    const normalizedMobile = mobile ? mobile.trim() : '';
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
+    const normalizedMobile = mobile ? mobile.trim() : "";
 
     // 1. Validation for 15-day restriction
-    let user = await User.findOne({ $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }] });
+    let user = await User.findOne({
+      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
+    });
 
     if (user && user.internships.length > 0) {
-      const sortedInternships = [...user.internships].sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+      const sortedInternships = [...user.internships].sort(
+        (a, b) => new Date(b.appliedAt) - new Date(a.appliedAt),
+      );
       const lastApp = sortedInternships[0];
-      
-      const daysSinceLast = Math.floor((new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24));
-      
+
+      const daysSinceLast = Math.floor(
+        (new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24),
+      );
+
       if (daysSinceLast < 15) {
-        return res.status(429).json({ 
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}` 
+        return res.status(429).json({
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
-      
-      const sameDomain = user.internships.find(app => app.domain === domain);
+
+      const sameDomain = user.internships.find((app) => app.domain === domain);
       if (sameDomain) {
-        const daysSinceSameDomain = Math.floor((new Date() - new Date(sameDomain.appliedAt)) / (1000 * 60 * 60 * 24));
+        const daysSinceSameDomain = Math.floor(
+          (new Date() - new Date(sameDomain.appliedAt)) / (1000 * 60 * 60 * 24),
+        );
         if (daysSinceSameDomain < 15) {
-          return res.status(429).json({ 
-            message: `You have already applied for ${domain} within the last 15 days.` 
+          return res.status(429).json({
+            message: `You have already applied for ${domain} within the last 15 days.`,
           });
         }
       }
@@ -292,60 +336,77 @@ const createRegistrationOrder = async (req, res) => {
 
     // 2. Compute Amount
     let amount = 199; // 1 or 2 months duration is 199
-    if (duration && duration.includes('3')) {
+    if (duration && duration.includes("3")) {
       amount = 399; // 3 months duration is 399
     }
 
     // 3. Create Razorpay Order
     const order = await rzp.orders.create({
       amount: amount * 100, // Razorpay takes paise
-      currency: 'INR',
-      receipt: `reg_${Date.now()}`
+      currency: "INR",
+      receipt: `reg_${Date.now()}`,
     });
 
     res.json({
       order,
       key: process.env.RAZORPAY_KEY_ID,
       amount,
-      message: 'Razorpay order created successfully'
+      message: "Razorpay order created successfully",
     });
   } catch (error) {
-    console.error('[Backend] Create registration order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("[Backend] Create registration order error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 const verifyRegistrationPayment = async (req, res) => {
   try {
     const { response, formData } = req.body;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      response;
 
     // 1. Verify Payment Signature
-    const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
-    hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
-    const generatedSignature = hmac.digest('hex');
+    const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generatedSignature = hmac.digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: 'Invalid payment signature' });
+      return res.status(400).json({ message: "Invalid payment signature" });
     }
 
     // 2. Perform the exact internship registration logic
-    const { email, mobile, name, domain, duration, college, github, linkedin, portfolio } = formData;
+    const {
+      email,
+      mobile,
+      name,
+      domain,
+      duration,
+      college,
+      github,
+      linkedin,
+      portfolio,
+    } = formData;
 
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    const normalizedMobile = mobile ? mobile.trim() : '';
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
+    const normalizedMobile = mobile ? mobile.trim() : "";
 
     // Extra safety duplicate check
-    let user = await User.findOne({ $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }] });
+    let user = await User.findOne({
+      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
+    });
 
     if (user && user.internships.length > 0) {
-      const sortedInternships = [...user.internships].sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+      const sortedInternships = [...user.internships].sort(
+        (a, b) => new Date(b.appliedAt) - new Date(a.appliedAt),
+      );
       const lastApp = sortedInternships[0];
-      const daysSinceLast = Math.floor((new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24));
-      
+      const daysSinceLast = Math.floor(
+        (new Date() - new Date(lastApp.appliedAt)) / (1000 * 60 * 60 * 24),
+      );
+
       if (daysSinceLast < 15) {
-        return res.status(429).json({ 
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}` 
+        return res.status(429).json({
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
     }
@@ -356,46 +417,47 @@ const verifyRegistrationPayment = async (req, res) => {
     const counter = await Counter.findByIdAndUpdate(
       { _id: counterId },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
-    const serialNumber = String(counter.seq).padStart(3, '0');
+    const serialNumber = String(counter.seq).padStart(3, "0");
     const studentId = `CN/INT/${currentYear}/${serialNumber}`;
 
-    console.log('[Backend] Generated Student ID for Paid Reg:', studentId);
+    console.log("[Backend] Generated Student ID for Paid Reg:", studentId);
 
     const applicationData = {
       ...formData,
       email: normalizedEmail,
       mobile: normalizedMobile,
+      internshipType: getInternshipType(formData.duration),
       studentId,
       appliedAt: new Date(),
-      hasPaid: true // Mark paid instantly!
+      hasPaid: true, // Mark paid instantly!
     };
 
     if (!user) {
-      const hashedPassword = await bcrypt.hash('Welcome@123', 10);
+      const hashedPassword = await bcrypt.hash("Welcome@123", 10);
       user = await User.create({
         name,
         email: normalizedEmail,
         mobile: normalizedMobile,
         password: hashedPassword,
         isFirstLogin: true,
-        github: github || '',
-        linkedin: linkedin || '',
-        portfolio: portfolio || '',
-        internships: []
+        github: github || "",
+        linkedin: linkedin || "",
+        portfolio: portfolio || "",
+        internships: [],
       });
     } else {
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
 
       // Fix for legacy users missing required fields
-      if (!user.name) user.name = name || 'Student';
-      if (!user.mobile) user.mobile = normalizedMobile || '0000000000';
+      if (!user.name) user.name = name || "Student";
+      if (!user.mobile) user.mobile = normalizedMobile || "0000000000";
 
       if (!user.password) {
-        const hashedPassword = await bcrypt.hash('Welcome@123', 10);
+        const hashedPassword = await bcrypt.hash("Welcome@123", 10);
         user.password = hashedPassword;
         user.isFirstLogin = true;
       }
@@ -404,7 +466,7 @@ const verifyRegistrationPayment = async (req, res) => {
     user.internships.push(applicationData);
     await user.save();
 
-    console.log('[Backend] Paid Internship saved with Student ID:', studentId);
+    console.log("[Backend] Paid Internship saved with Student ID:", studentId);
 
     // Send confirmation email
     const mailOptions = {
@@ -453,7 +515,7 @@ const verifyRegistrationPayment = async (req, res) => {
         </tr>
         <tr>
           <td style="padding: 10px 0; color: #6b7280;">Institution</td>
-          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || 'Not provided'}</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || "Not provided"}</td>
         </tr>
       </table>
       
@@ -471,7 +533,7 @@ const verifyRegistrationPayment = async (req, res) => {
           </div>
           <div>
             <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Password</span><br>
-            <strong style="font-size: 15px; color: #0f172a;">${(!user.isFirstLogin && !user.isNew) ? '(Your Existing Password)' : 'Welcome@123'}</strong>
+            <strong style="font-size: 15px; color: #0f172a;">${!user.isFirstLogin && !user.isNew ? "(Your Existing Password)" : "Welcome@123"}</strong>
           </div>
         </div>
       </div>
@@ -502,25 +564,24 @@ const verifyRegistrationPayment = async (req, res) => {
     
   </div>
 </div>
-      `
+      `,
     };
 
     await transporter.sendMail(mailOptions);
     console.log(`Paid Confirmation email sent to ${email}`);
 
-    res.status(201).json({ 
-      message: 'Application submitted successfully',
-      studentId 
+    res.status(201).json({
+      message: "Application submitted successfully",
+      studentId,
     });
-
   } catch (error) {
-    console.error('[Backend] Verify registration payment error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("[Backend] Verify registration payment error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { 
-  registerInternship, 
-  createRegistrationOrder, 
-  verifyRegistrationPayment 
+module.exports = {
+  registerInternship,
+  createRegistrationOrder,
+  verifyRegistrationPayment,
 };
