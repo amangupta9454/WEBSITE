@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import Navbar from '../Components/Navbar';
+import Footer from '../Components/Footer';
 
 const MainLayout = ({ children }) => {
   const { scrollYProgress } = useScroll();

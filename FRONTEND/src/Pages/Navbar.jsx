@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, LogIn, LogOut, User, Loader2 } from 'lucide-react';
-import logo from '../assets/LOGO.png';
+import logo from '../assets/logo.png';
 // import { toast } from 'react-toastify';
 
 function Navbar() {
