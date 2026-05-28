@@ -1,23 +1,30 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
-import Home from './Pages/Home';
-import Contact from './Pages/Contact';
-import About from './Pages/About';
-import Service from './Pages/Services';
-import Projects from './Pages/Projects';
-import Industries from './Pages/Industries';
-import Privacy from './Pages/Privacy';
-import Term from './Pages/Term';
-import Refund from './Pages/Refund';
-import ResumeEmbed from './Pages/ResumeEmbed';
-import Registration from './Components/Registration';
-import StudentLogin from './Components/StudentLogin';
-import SetupPassword from './Components/SetupPassword';
-import StudentDashboard from './Components/StudentDashboard';
-import AdminLogin from './Components/AdminLogin';
-import AdminDashboard from './Components/AdminDashboard';
-import Verify from './Components/Verify';
-import Project from './Components/Project';
-import MainLayout from './layouts/MainLayout';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+} from "react-router-dom";
+import Home from "./Pages/Home";
+import Contact from "./Pages/Contact";
+import About from "./Pages/About";
+import Service from "./Pages/Services";
+import ServiceDetails from "./Pages/ServiceDetails";
+import Projects from "./Pages/Projects";
+import Industries from "./Pages/Industries";
+import IndustryDetail from "./Pages/IndustryDetail";
+import Privacy from "./Pages/Privacy";
+import Term from "./Pages/Term";
+import Refund from "./Pages/Refund";
+import ResumeEmbed from "./Pages/ResumeEmbed";
+import Registration from "./Components/Registration";
+import StudentLogin from "./Components/StudentLogin";
+import SetupPassword from "./Components/SetupPassword";
+import StudentDashboard from "./Components/StudentDashboard";
+import AdminLogin from "./Components/AdminLogin";
+import AdminDashboard from "./Components/AdminDashboard";
+import Verify from "./Components/Verify";
+import Project from "./Components/Project";
+import MainLayout from "./layouts/MainLayout";
 
 const UnifiedLayout = () => (
   <MainLayout>
@@ -34,10 +41,26 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/services" element={<Service />} />
+        <Route path="/service/:id" element={<ServiceDetails />} />
         <Route path="/industries" element={<Industries />} />
+        <Route path="/industries/:slug" element={<IndustryDetail />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/registration" element={<MainLayout><Registration /></MainLayout>} />
-        <Route path="/internship" element={<MainLayout><Registration /></MainLayout>} />
+        <Route
+          path="/registration"
+          element={
+            <MainLayout>
+              <Registration />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/internship"
+          element={
+            <MainLayout>
+              <Registration />
+            </MainLayout>
+          }
+        />
         <Route path="/privacy-policy" element={<Privacy />} />
         <Route path="/refund-policy" element={<Refund />} />
         <Route path="/terms" element={<Term />} />

@@ -1,16 +1,17 @@
 // api/index.js
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-const registerRoutes = require('./routes/register');
-const adminRoutes = require('./routes/admin');
-const verifyRoutes = require('./routes/verify');
-const projectRoutes = require('./routes/project');
-const authRoutes = require('./routes/auth');
-const studentRoutes = require('./routes/student');
-const cronRoutes = require('./routes/cron');
+const registerRoutes = require("./routes/register");
+const adminRoutes = require("./routes/admin");
+const verifyRoutes = require("./routes/verify");
+const projectRoutes = require("./routes/project");
+const authRoutes = require("./routes/auth");
+const studentRoutes = require("./routes/student");
+const cronRoutes = require("./routes/cron");
+const contactRoutes = require("./routes/contact");
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
@@ -21,15 +22,15 @@ async function connectToDatabase() {
   try {
     const db = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 10,          // reasonable for serverless
+      maxPoolSize: 10, // reasonable for serverless
       minPoolSize: 2,
       socketTimeoutMS: 20000,
     });
     cachedDb = db;
-    console.log('MongoDB connected (cached)');
+    console.log("MongoDB connected (cached)");
     return db;
   } catch (err) {
-    console.error('MongoDB connection error:', err);
+    console.error("MongoDB connection error:", err);
     throw err;
   }
 }
@@ -46,21 +47,22 @@ app.use(async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (err) {
-    res.status(500).json({ message: 'Database connection failed' });
+    res.status(500).json({ message: "Database connection failed" });
   }
 });
 
 // Routes
-app.use('/api/register', registerRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/verify', verifyRoutes);
-app.use('/api/project', projectRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/student', studentRoutes);
-app.use('/api/cron', cronRoutes);
+app.use("/api/register", registerRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/verify", verifyRoutes);
+app.use("/api/project", projectRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/student", studentRoutes);
+app.use("/api/cron", cronRoutes);
+app.use("/api/contact", contactRoutes);
 
-app.get('/', (req, res) => {
-  res.send('API is running on Vercel...');
+app.get("/", (req, res) => {
+  res.send("API is running on Vercel...");
 });
 
 // Export for Vercel serverless
