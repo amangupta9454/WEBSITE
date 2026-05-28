@@ -1,48 +1,47 @@
 // src/components/Navbar.jsx
 
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogIn, LogOut, User, Loader2 } from 'lucide-react';
-import logo from '../assets/logo.png';
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, LogIn, LogOut, User, Loader2 } from "lucide-react";
 // import { toast } from 'react-toastify';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState("");
   const location = useLocation();
 
-  if (location.pathname.startsWith('/admin')) {
+  if (location.pathname.startsWith("/admin")) {
     return null;
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('studentToken');
-    const userData = localStorage.getItem('studentData');
+    const token = localStorage.getItem("studentToken");
+    const userData = localStorage.getItem("studentData");
     if (token && userData) {
       setIsAuthenticated(true);
-      setUserName(JSON.parse(userData).name || 'Student');
+      setUserName(JSON.parse(userData).name || "Student");
     } else {
       setIsAuthenticated(false);
-      setUserName('');
+      setUserName("");
     }
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('studentToken');
-    localStorage.removeItem('studentData');
+    localStorage.removeItem("studentToken");
+    localStorage.removeItem("studentData");
     setIsAuthenticated(false);
   };
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/about', label: 'About' },
-    { to: '/service', label: 'Our Services' },
-    { to: '/registration', label: 'Internship Registration' },
-    {to:'/project-submission', label:'Project Submission'},
-    { to: '/contact', label: 'Contact' },
+    { to: "/", label: "Home" },
+    { to: "/about", label: "About" },
+    { to: "/service", label: "Our Services" },
+    { to: "/registration", label: "Internship Registration" },
+    { to: "/project-submission", label: "Project Submission" },
+    { to: "/contact", label: "Contact" },
   ];
 
   return (
@@ -51,10 +50,6 @@ function Navbar() {
         <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-cyan-500 rounded-full blur-md opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
-              <img src={logo} alt="CodeNova Logo" className="h-10 w-10 object-contain drop-shadow-2xl relative z-10 group-hover:scale-110 transition-transform duration-300" />
-            </div>
             <span className="text-2xl font-bold tracking-tight bg-linear-to-r from-cyan-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
               Code-A-Nova
             </span>
@@ -68,7 +63,9 @@ function Navbar() {
                   <Link
                     to={link.to}
                     className={`text-base font-medium px-4 py-2 rounded-lg transition-all duration-300 relative ${
-                      location.pathname === link.to ? 'text-cyan-400' : 'text-slate-300 hover:text-white'
+                      location.pathname === link.to
+                        ? "text-cyan-400"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     {link.label}
@@ -113,7 +110,10 @@ function Navbar() {
           </div>
 
           {/* Mobile Toggle */}
-          <button onClick={toggleMenu} className="lg:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+          >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -124,20 +124,41 @@ function Navbar() {
         <div className="lg:hidden bg-slate-900/98 backdrop-blur-xl border-t border-slate-700/50">
           <div className="px-4 py-6 space-y-3">
             {navLinks.map((link) => (
-              <Link key={link.to} to={link.to} onClick={() => setIsOpen(false)} className="block px-5 py-3 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl">
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                className="block px-5 py-3 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl"
+              >
                 {link.label}
               </Link>
             ))}
             {isAuthenticated ? (
               <>
-                <Link to="/student-dashboard" onClick={() => setIsOpen(false)} className="block w-full text-center py-3 bg-cyan-600 text-white rounded-xl">Dashboard</Link>
-                <button onClick={() => { handleLogout(); setIsOpen(false); }} className="w-full py-3 bg-red-600 text-white rounded-xl flex justify-center items-center">
+                <Link
+                  to="/student-dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="block w-full text-center py-3 bg-cyan-600 text-white rounded-xl"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="w-full py-3 bg-red-600 text-white rounded-xl flex justify-center items-center"
+                >
                   <LogOut className="mr-2" size={20} />
                   Logout
                 </button>
               </>
             ) : (
-              <Link to="/student-login" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl">
+              <Link
+                to="/student-login"
+                onClick={() => setIsOpen(false)}
+                className="block w-full text-center py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl"
+              >
                 Login
               </Link>
             )}
