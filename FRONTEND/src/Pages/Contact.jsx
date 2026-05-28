@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout';
 import { motion } from 'framer-motion';
 import { fadeUp } from '../animations/variants';
 import { Mail, MapPin, Phone } from 'lucide-react';
-import Button from '../components/Button';
+import Button from '../Components/Button';
 
 const Contact = () => {
   return (

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ExternalLink, Github } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../animations/variants';
-import Button from '../components/Button';
+import Button from '../Components/Button';
 
 const projects = [
   {

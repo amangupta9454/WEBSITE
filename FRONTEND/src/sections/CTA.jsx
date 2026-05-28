@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Button from '../components/Button';
+import Button from '../Components/Button';
 import { fadeUp } from '../animations/variants';
 import { ArrowRight, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
