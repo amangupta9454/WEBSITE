@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const XLSX = require('xlsx');
 const multer = require('multer');
 const ProjectSubmission = require('../models/ProjectSubmission');
+const Settings = require('../models/Settings');
 const upload = multer({ storage: multer.memoryStorage() });
 
 const adminLogin = async (req, res) => {
@@ -399,6 +400,59 @@ const markProjectExported = async (req, res) => {
   }
 };
 
+const getPaymentSetting = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: 'paymentEnabled' });
+    if (!setting) {
+      setting = await Settings.create({ key: 'paymentEnabled', value: true });
+    }
+    res.json({ paymentEnabled: setting.value });
+  } catch (error) {
+    console.error('[Admin] Error getting payment setting:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const togglePaymentSetting = async (req, res) => {
+  try {
+    const { paymentEnabled } = req.body;
+    const setting = await Settings.findOneAndUpdate(
+      { key: 'paymentEnabled' },
+      { value: paymentEnabled },
+      { new: true, upsert: true }
+    );
+    res.json({ message: `Payment is now ${paymentEnabled ? 'enabled' : 'disabled'}`, paymentEnabled: setting.value });
+  } catch (error) {
+    console.error('[Admin] Error toggling payment setting:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+const getRegistrationSetting = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: 'registrationEnabled' });
+    if (!setting) {
+      setting = await Settings.create({ key: 'registrationEnabled', value: true });
+    }
+    res.json({ registrationEnabled: setting.value });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+const toggleRegistrationSetting = async (req, res) => {
+  try {
+    const { registrationEnabled } = req.body;
+    let setting = await Settings.findOneAndUpdate(
+      { key: 'registrationEnabled' },
+      { value: registrationEnabled },
+      { new: true, upsert: true }
+    );
+    res.json({ message: `Registration is now ${registrationEnabled ? 'enabled' : 'disabled'}`, registrationEnabled: setting.value });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = { 
   adminLogin, 
   getInternships, 
@@ -410,5 +464,9 @@ module.exports = {
   updatePaidStatus,
   updateBypassBlock,
   markPaidExported,
-  markProjectExported
+  markProjectExported,
+  getPaymentSetting,
+  togglePaymentSetting,
+  getRegistrationSetting,
+  toggleRegistrationSetting
 };

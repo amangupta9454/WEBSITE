@@ -4,6 +4,14 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const rzp = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -20,12 +28,16 @@ const transporter = nodemailer.createTransport({
 
 const registerInternship = async (req, res) => {
   try {
-    console.log('[Backend] Public internship application received:', req.body.email || 'No email');
+    console.log('[Backend] Public internship application received:', req.body?.email || 'No email');
+    console.log('[Backend] req.body keys:', req.body ? Object.keys(req.body) : []);
+    console.log('[Backend] req.file:', req.file ? req.file.originalname : 'No file');
 
-    const { email, mobile, name, domain, duration, college, github, linkedin, portfolio } = req.body;
+    const { email, whatsapp, name, course, branch, college, state, passingYear, domain, duration, github, linkedin } = req.body;
 
     const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    const normalizedMobile = mobile ? mobile.trim() : '';
+    const normalizedWhatsapp = whatsapp ? whatsapp.trim() : '';
+    // Map whatsapp to mobile for legacy checks
+    const normalizedMobile = normalizedWhatsapp;
 
     // Check duplicate by email OR mobile
     let user = await User.findOne({ $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }] });
@@ -70,11 +82,29 @@ const registerInternship = async (req, res) => {
 
     console.log('[Backend] Generated Student ID:', studentId);
 
+    let resumeUrl = '';
+    if (req.file) {
+      resumeUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'resumes', resource_type: 'auto' },
+          (error, result) => {
+            if (result) {
+              resolve(result.secure_url);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
     const applicationData = {
       ...req.body,
+      mobile: normalizedMobile, // Map whatsapp to mobile internally
       email: normalizedEmail,
-      mobile: normalizedMobile,
       studentId,
+      resume: resumeUrl,
       appliedAt: new Date()
     };
 
@@ -88,14 +118,17 @@ const registerInternship = async (req, res) => {
         isFirstLogin: true,
         github: github || '',
         linkedin: linkedin || '',
-        portfolio: portfolio || '',
+        portfolio: '', // Portfolio removed
         internships: []
       });
     } else {
       // Opt: sync the latest links if provided
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
-      if (portfolio) user.portfolio = portfolio;
+      
+      // Fix for legacy users missing required fields
+      if (!user.name) user.name = name || 'Student';
+      if (!user.mobile) user.mobile = normalizedMobile || '0000000000';
 
       // Ensure that if the existing user has no password set (legacy or imported),
       // they get assigned the default Welcome@123 hashed password.
@@ -114,189 +147,102 @@ const registerInternship = async (req, res) => {
 
     // Send confirmation email with Nodemailer
    const mailOptions = {
-  from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
-  to: email,
-  subject: `Thank You for Applying for the Internship!  ${name}`,
-  html: `
-    <div style="font-family:'Segoe UI', Arial, sans-serif; max-width:680px; margin:auto; background:#eef2ff; padding:24px;">
+      from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Registration Confirmed - CODE-A-NOVA Internship`,
+      html: `
+<div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    
+    <!-- Top Header Ribbon -->
+    <div style="height: 6px; background: linear-gradient(90deg, #2563eb, #3b82f6);"></div>
+    
+    <!-- Header -->
+    <div style="padding: 30px 40px; text-align: center; border-bottom: 1px solid #eeeeee;">
+      <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png" alt="CODE-A-NOVA" style="max-width: 160px; height: auto;">
+    </div>
+    
+    <!-- Body Content -->
+    <div style="padding: 40px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #111827; font-weight: 600; text-align: center;">Registration Confirmed</h1>
       
-      <!-- Outer Card -->
-      <div style="background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
-
-        <!-- HERO HEADER -->
-        <div style="background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9); padding:38px 25px; text-align:center; color:#ffffff;">
-          <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png"
-               alt="CODE-A-NOVA"
-               style="width:150px; background:#ffffff; padding:12px; border-radius:14px; box-shadow:0 8px 18px rgba(0,0,0,0.25); margin-bottom:14px;">
-          <h1 style="margin:0; font-size:30px; letter-spacing:1.2px;">CODE-A-NOVA</h1>
-          <p style="margin-top:6px; font-size:14px; opacity:0.95;">
-            MSME Registered Organization
-          </p>
-
-          <!-- Status Badge -->
-          <div style="margin-top:18px;">
-            <span style="background:rgba(255,255,255,0.2); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:600;">
-              ✅ Application Received Successfully
-            </span>
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+        Dear <strong>${name}</strong>,
+      </p>
+      
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 32px;">
+        Thank you for applying to the <strong>${domain}</strong> Internship Program. We are pleased to inform you that your application has been successfully received. 
+      </p>
+      
+      <!-- Application Details Section -->
+      <h2 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 16px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Application Summary</h2>
+      
+      <table style="width: 100%; margin-bottom: 32px; font-size: 15px; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb; width: 40%;">Student ID</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${studentId}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb;">Program Domain</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${domain}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb;">Duration</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${duration}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280;">Institution</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || 'Not provided'}</td>
+        </tr>
+      </table>
+      
+      <!-- Dashboard Access Section -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 24px; margin-bottom: 32px;">
+        <h2 style="font-size: 16px; color: #0f172a; margin: 0 0 12px 0; font-weight: 600;">Student Dashboard Access</h2>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 16px; line-height: 1.5;">
+          You can track your application status and access your upcoming assignments via the dashboard using the credentials below:
+        </p>
+        
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 16px;">
+          <div style="margin-bottom: 8px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">User ID</span><br>
+            <strong style="font-size: 15px; color: #0f172a;">${email}</strong>
           </div>
-        </div>
-
-        <!-- BODY -->
-        <div style="padding:35px 30px; color:#1f2937;">
-
-          <p style="font-size:17px;">Dear <strong>${name}</strong>,</p>
-
-          <p style="font-size:16.5px; line-height:1.8;">
-            We’re thrilled to see your interest in the 
-            <strong>${domain}</strong> Internship Program at 
-            <strong>CODE-A-NOVA</strong>.
-            Your application has been successfully registered.
-          </p>
-
-          <!-- DETAILS GLASS CARD -->
-          <div style="
-            margin:30px 0;
-            padding:22px;
-            border-radius:16px;
-            background:linear-gradient(135deg,#f8fafc,#eef2ff);
-            border:1px solid #c7d2fe;
-          ">
-            <h3 style="margin-top:0; font-size:20px; color:#1e3a8a;">
-              📋 Internship Registration Summary
-            </h3>
-
-            <table style="width:100%; font-size:15.5px; border-collapse:collapse;">
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#1e40af;">Student ID</td>
-                <td style="padding:8px 0; font-family:monospace;">${studentId}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#1e40af;">Domain</td>
-                <td style="padding:8px 0;">${domain}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#1e40af;">Duration</td>
-                <td style="padding:8px 0;">${duration}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#1e40af;">College</td>
-                <td style="padding:8px 0;">${college || 'Not provided'}</td>
-              </tr>
-
-            </table>
+          <div>
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Password</span><br>
+            <strong style="font-size: 15px; color: #0f172a;">${(!user.isFirstLogin && !user.isNew) ? '(Your Existing Password)' : 'Welcome@123'}</strong>
           </div>
-
-          <!-- LOGIN CREDENTIALS GLASS CARD -->
-          <div style="
-            margin:30px 0;
-            padding:22px;
-            border-radius:16px;
-            background:linear-gradient(135deg,#fffbeb,#fef3c7);
-            border:1px solid #fde68a;
-          ">
-            <h3 style="margin-top:0; font-size:20px; color:#d97706;">
-              🔐 Student Dashboard Access
-            </h3>
-            
-            <p style="font-size:15.5px; color:#92400e; margin-bottom:12px;">
-              You can track your application status, project assignments, and offer letters via your new Student Dashboard:
-            </p>
-
-            <table style="width:100%; font-size:15.5px; border-collapse:collapse;">
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#b45309;">User ID</td>
-                <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${email}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 0; font-weight:600; color:#b45309;">Password</td>
-                <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${!user.isFirstLogin && !user.isNew ? '(Your Existing Password)' : 'Welcome@123'}</td>
-              </tr>
-            </table>
-            
-            <p style="font-size:14px; color:#92400e; margin-top:12px; margin-bottom:0;">
-              <em>Note: You will be asked to update your password on your first login.</em>
-            </p>
-          </div>
-
-          <!-- NEXT STEPS -->
-          <h3 style="font-size:22px; color:#0f172a;">🚀 What’s Next?</h3>
-
-          <div style="margin-top:15px;">
-            <p style="font-size:16px; margin-bottom:10px;">
-              Our selection team will now carefully review your application.
-              If shortlisted, you will receive:
-            </p>
-
-            <ul style="line-height:1.9; padding-left:20px; font-size:16px; margin:0;">
-              <li>📄 Internship Offer Letter</li>
-              <li>📘 Onboarding & Program Guidelines</li>
-              <li>🧠 Project Tasks & Assignments</li>
-              <li>👨‍🏫 Dedicated Mentor Support</li>
-              <li>🏅 Certificate of Completion</li>
-            </ul>
-          </div>
-
-          <!-- IMPORTANT INSTRUCTIONS -->
-          <div style="
-            margin-top:30px;
-            padding:20px;
-            border-radius:14px;
-            background:linear-gradient(135deg,#ecfeff,#f0fdfa);
-            border-left:6px solid #06b6d4;
-          ">
-            <h3 style="margin-top:0; color:#0f172a;">⚠️ Important Instructions</h3>
-            <ul style="line-height:1.8; padding-left:20px; font-size:15.8px; margin:12px 0 0 0;">
-              <li>Check your email regularly (including Spam/Junk folders).</li>
-              <li>Respond promptly to official communications from CODE-A-NOVA.</li>
-              <li>Complete assigned tasks within deadlines to qualify for certification.</li>
-            </ul>
-          </div>
-
-          <!-- CTA BUTTON -->
-          <div style="text-align:center; margin:35px 0;">
-            <a href="https://code-a-nova.online/"
-               style="
-                 display:inline-block;
-                 background:linear-gradient(135deg,#4f46e5,#2563eb);
-                 color:#ffffff;
-                 text-decoration:none;
-                 padding:14px 28px;
-                 border-radius:999px;
-                 font-size:16px;
-                 font-weight:600;
-                 box-shadow:0 10px 20px rgba(79,70,229,0.35);
-               ">
-              🌐 Visit Our Official Website
-            </a>
-          </div>
-
-          <p style="font-size:16px; line-height:1.7;">
-            For any queries or assistance, simply reply to this email or contact us at  
-            <strong style="color:#2563eb;">codeanova26@gmail.com</strong>.
-          </p>
-
-          <hr style="border:none; border-top:1px solid #e5e7eb; margin:40px 0;">
-
-          <!-- FOOTER -->
-          <p style="font-weight:600; margin-bottom:4px;">Warm Regards,</p>
-          <p style="font-weight:800; font-size:18px; margin-top:0; color:#1e40af;">CODE-A-NOVA Team</p>
-
-          <p style="font-size:14px; color:#6b7280; margin:8px 0;">
-            📧 <a href="mailto:codeanova26@gmail.com" style="color:#2563eb; text-decoration:none;">codeanova26@gmail.com</a><br>
-            🌐 <a href="https://code-a-nova.online/" style="color:#2563eb; text-decoration:none;">https://code-a-nova.online/</a>
-          </p>
-
-          <p style="font-size:14px; color:#6b7280; margin-top:12px;">
-            Connect with us:
-            <a href="http://linkedin.com/company/code-a-nova" style="color:#2563eb; text-decoration:none;">LinkedIn</a> •
-            <a href="https://www.instagram.com/codenova31" style="color:#2563eb; text-decoration:none;">Instagram</a>
-          </p>
-
         </div>
       </div>
+      
+      <!-- CTA Button -->
+      <div style="text-align: center; margin-bottom: 40px;">
+        <a href="https://code-a-nova.online/student-login" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 4px; letter-spacing: 0.5px;">Login to Dashboard</a>
+      </div>
+      
+      <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0;">
+        Our selection committee is currently reviewing your profile. If shortlisted, you will receive an official offer letter and further instructions via email.<br><br>
+        For any assistance, please contact us at <a href="mailto:codeanova26@gmail.com" style="color: #2563eb; text-decoration: none;">codeanova26@gmail.com</a>.
+      </p>
     </div>
-  `
-};
+    
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 24px 40px; text-align: center; border-top: 1px solid #eeeeee;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0 0 10px 0; line-height: 1.5;">
+        &copy; ${new Date().getFullYear()} CODE-A-NOVA. All rights reserved.<br>
+        MSME Registered Organization
+      </p>
+      <div style="margin-top: 12px;">
+        <a href="https://code-a-nova.online" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">Website</a> | 
+        <a href="https://linkedin.com/company/code-a-nova" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">LinkedIn</a> | 
+        <a href="https://www.instagram.com/codenova31" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">Instagram</a>
+      </div>
+    </div>
+    
+  </div>
+</div>
+      `
+    };
 
     await transporter.sendMail(mailOptions);
     console.log(`Confirmation email sent to ${email}`);
@@ -443,7 +389,10 @@ const verifyRegistrationPayment = async (req, res) => {
     } else {
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
-      if (portfolio) user.portfolio = portfolio;
+
+      // Fix for legacy users missing required fields
+      if (!user.name) user.name = name || 'Student';
+      if (!user.mobile) user.mobile = normalizedMobile || '0000000000';
 
       if (!user.password) {
         const hashedPassword = await bcrypt.hash('Welcome@123', 10);
@@ -461,184 +410,98 @@ const verifyRegistrationPayment = async (req, res) => {
     const mailOptions = {
       from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `Thank You for Applying for the Internship!  ${name}`,
+      subject: `Registration Confirmed - CODE-A-NOVA Internship`,
       html: `
-        <div style="font-family:'Segoe UI', Arial, sans-serif; max-width:680px; margin:auto; background:#eef2ff; padding:24px;">
-          
-          <!-- Outer Card -->
-          <div style="background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
-
-            <!-- HERO HEADER -->
-            <div style="background:linear-gradient(135deg,#6366f1,#2563eb,#0ea5e9); padding:38px 25px; text-align:center; color:#ffffff;">
-              <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png"
-                   alt="CODE-A-NOVA"
-                   style="width:150px; background:#ffffff; padding:12px; border-radius:14px; box-shadow:0 8px 18px rgba(0,0,0,0.25); margin-bottom:14px;">
-              <h1 style="margin:0; font-size:30px; letter-spacing:1.2px;">CODE-A-NOVA</h1>
-              <p style="margin-top:6px; font-size:14px; opacity:0.95;">
-                MSME Registered Organization
-              </p>
-
-              <!-- Status Badge -->
-              <div style="margin-top:18px;">
-                <span style="background:rgba(255,255,255,0.2); padding:8px 18px; border-radius:999px; font-size:14px; font-weight:600;">
-                  ✅ Application Received & Fees Paid Successfully
-                </span>
-              </div>
-            </div>
-
-            <!-- BODY -->
-            <div style="padding:35px 30px; color:#1f2937;">
-
-              <p style="font-size:17px;">Dear <strong>${name}</strong>,</p>
-
-              <p style="font-size:16.5px; line-height:1.8;">
-                We’re thrilled to see your interest in the 
-                <strong>${domain}</strong> Internship Program at 
-                <strong>CODE-A-NOVA</strong>.
-                Your application has been successfully registered and internship fee payment is verified.
-              </p>
-
-              <!-- DETAILS GLASS CARD -->
-              <div style="
-                margin:30px 0;
-                padding:22px;
-                border-radius:16px;
-                background:linear-gradient(135deg,#f8fafc,#eef2ff);
-                border:1px solid #c7d2fe;
-              ">
-                <h3 style="margin-top:0; font-size:20px; color:#1e3a8a;">
-                  📋 Internship Registration Summary
-                </h3>
-
-                <table style="width:100%; font-size:15.5px; border-collapse:collapse;">
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#1e40af;">Student ID</td>
-                    <td style="padding:8px 0; font-family:monospace;">${studentId}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#1e40af;">Domain</td>
-                    <td style="padding:8px 0;">${domain}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#1e40af;">Duration</td>
-                    <td style="padding:8px 0;">${duration}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#1e40af;">College</td>
-                    <td style="padding:8px 0;">${college || 'Not provided'}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- LOGIN CREDENTIALS GLASS CARD -->
-              <div style="
-                margin:30px 0;
-                padding:22px;
-                border-radius:16px;
-                background:linear-gradient(135deg,#fffbeb,#fef3c7);
-                border:1px solid #fde68a;
-              ">
-                <h3 style="margin-top:0; font-size:20px; color:#d97706;">
-                  🔐 Student Dashboard Access
-                </h3>
-                
-                <p style="font-size:15.5px; color:#92400e; margin-bottom:12px;">
-                  You can track your application status, project assignments, and offer letters via your new Student Dashboard:
-                </p>
-
-                <table style="width:100%; font-size:15.5px; border-collapse:collapse;">
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#b45309;">User ID</td>
-                    <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${email}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 0; font-weight:600; color:#b45309;">Password</td>
-                    <td style="padding:8px 0; font-family:monospace; font-weight:bold;">${!user.isFirstLogin && !user.isNew ? '(Your Existing Password)' : 'Welcome@123'}</td>
-                  </tr>
-                </table>
-                
-                <p style="font-size:14px; color:#92400e; margin-top:12px; margin-bottom:0;">
-                  <em>Note: You will be asked to update your password on your first login.</em>
-                </p>
-              </div>
-
-              <!-- NEXT STEPS -->
-              <h3 style="font-size:22px; color:#0f172a;">🚀 What’s Next?</h3>
-
-              <div style="margin-top:15px;">
-                <p style="font-size:16px; margin-bottom:10px;">
-                  Our selection team will now carefully review your application.
-                  If shortlisted, you will receive:
-                </p>
-
-                <ul style="line-height:1.9; padding-left:20px; font-size:16px; margin:0;">
-                  <li>📄 Internship Offer Letter</li>
-                  <li>📘 Onboarding & Program Guidelines</li>
-                  <li>🧠 Project Tasks & Assignments</li>
-                  <li>👨‍🏫 Dedicated Mentor Support</li>
-                  <li>🏅 Certificate of Completion</li>
-                </ul>
-              </div>
-
-              <!-- IMPORTANT INSTRUCTIONS -->
-              <div style="
-                margin-top:30px;
-                padding:20px;
-                border-radius:14px;
-                background:linear-gradient(135deg,#ecfeff,#f0fdfa);
-                border-left:6px solid #06b6d4;
-              ">
-                <h3 style="margin-top:0; color:#0f172a;">⚠️ Important Instructions</h3>
-                <ul style="line-height:1.8; padding-left:20px; font-size:15.8px; margin:12px 0 0 0;">
-                  <li>Check your email regularly (including Spam/Junk folders).</li>
-                  <li>Respond promptly to official communications from CODE-A-NOVA.</li>
-                  <li>Complete assigned tasks within deadlines to qualify for certification.</li>
-                </ul>
-              </div>
-
-              <!-- CTA BUTTON -->
-              <div style="text-align:center; margin:35px 0;">
-                <a href="https://code-a-nova.online/"
-                   style="
-                     display:inline-block;
-                     background:linear-gradient(135deg,#4f46e5,#2563eb);
-                     color:#ffffff;
-                     text-decoration:none;
-                     padding:14px 28px;
-                     border-radius:999px;
-                     font-size:16px;
-                     font-weight:600;
-                     box-shadow:0 10px 20px rgba(79,70,229,0.35);
-                   ">
-                  🌐 Visit Our Official Website
-                </a>
-              </div>
-
-              <p style="font-size:16px; line-height:1.7;">
-                For any queries or assistance, simply reply to this email or contact us at  
-                <strong style="color:#2563eb;">codeanova26@gmail.com</strong>.
-              </p>
-
-              <hr style="border:none; border-top:1px solid #e5e7eb; margin:40px 0;">
-
-              <!-- FOOTER -->
-              <p style="font-weight:600; margin-bottom:4px;">Warm Regards,</p>
-              <p style="font-weight:800; font-size:18px; margin-top:0; color:#1e40af;">CODE-A-NOVA Team</p>
-
-              <p style="font-size:14px; color:#6b7280; margin:8px 0;">
-                📧 <a href="mailto:codeanova26@gmail.com" style="color:#2563eb; text-decoration:none;">codeanova26@gmail.com</a><br>
-                🌐 <a href="https://code-a-nova.online/" style="color:#2563eb; text-decoration:none;">https://code-a-nova.online/</a>
-              </p>
-
-              <p style="font-size:14px; color:#6b7280; margin-top:12px;">
-                Connect with us:
-                <a href="http://linkedin.com/company/code-a-nova" style="color:#2563eb; text-decoration:none;">LinkedIn</a> •
-                <a href="https://www.instagram.com/codenova31" style="color:#2563eb; text-decoration:none;">Instagram</a>
-              </p>
-
-            </div>
+<div style="background-color: #f4f7f6; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+    
+    <!-- Top Header Ribbon -->
+    <div style="height: 6px; background: linear-gradient(90deg, #2563eb, #3b82f6);"></div>
+    
+    <!-- Header -->
+    <div style="padding: 30px 40px; text-align: center; border-bottom: 1px solid #eeeeee;">
+      <img src="https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png" alt="CODE-A-NOVA" style="max-width: 160px; height: auto;">
+    </div>
+    
+    <!-- Body Content -->
+    <div style="padding: 40px;">
+      <h1 style="margin: 0 0 20px 0; font-size: 24px; color: #111827; font-weight: 600; text-align: center;">Registration Confirmed</h1>
+      
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+        Dear <strong>${name}</strong>,
+      </p>
+      
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 32px;">
+        Thank you for applying to the <strong>${domain}</strong> Internship Program. We are pleased to inform you that your application has been successfully received. 
+      </p>
+      
+      <!-- Application Details Section -->
+      <h2 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 16px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">Application Summary</h2>
+      
+      <table style="width: 100%; margin-bottom: 32px; font-size: 15px; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb; width: 40%;">Student ID</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${studentId}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb;">Program Domain</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${domain}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #f9fafb;">Duration</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500; border-bottom: 1px solid #f9fafb;">${duration}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 0; color: #6b7280;">Institution</td>
+          <td style="padding: 10px 0; color: #111827; font-weight: 500;">${college || 'Not provided'}</td>
+        </tr>
+      </table>
+      
+      <!-- Dashboard Access Section -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 24px; margin-bottom: 32px;">
+        <h2 style="font-size: 16px; color: #0f172a; margin: 0 0 12px 0; font-weight: 600;">Student Dashboard Access</h2>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 16px; line-height: 1.5;">
+          You can track your application status and access your upcoming assignments via the dashboard using the credentials below:
+        </p>
+        
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 16px;">
+          <div style="margin-bottom: 8px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">User ID</span><br>
+            <strong style="font-size: 15px; color: #0f172a;">${email}</strong>
+          </div>
+          <div>
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Password</span><br>
+            <strong style="font-size: 15px; color: #0f172a;">${(!user.isFirstLogin && !user.isNew) ? '(Your Existing Password)' : 'Welcome@123'}</strong>
           </div>
         </div>
+      </div>
+      
+      <!-- CTA Button -->
+      <div style="text-align: center; margin-bottom: 40px;">
+        <a href="https://code-a-nova.online/student-login" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 4px; letter-spacing: 0.5px;">Login to Dashboard</a>
+      </div>
+      
+      <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0;">
+        Our selection committee is currently reviewing your profile. If shortlisted, you will receive an official offer letter and further instructions via email.<br><br>
+        For any assistance, please contact us at <a href="mailto:codeanova26@gmail.com" style="color: #2563eb; text-decoration: none;">codeanova26@gmail.com</a>.
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 24px 40px; text-align: center; border-top: 1px solid #eeeeee;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0 0 10px 0; line-height: 1.5;">
+        &copy; ${new Date().getFullYear()} CODE-A-NOVA. All rights reserved.<br>
+        MSME Registered Organization
+      </p>
+      <div style="margin-top: 12px;">
+        <a href="https://code-a-nova.online" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">Website</a> | 
+        <a href="https://linkedin.com/company/code-a-nova" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">LinkedIn</a> | 
+        <a href="https://www.instagram.com/codenova31" style="color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 8px;">Instagram</a>
+      </div>
+    </div>
+    
+  </div>
+</div>
       `
     };
 

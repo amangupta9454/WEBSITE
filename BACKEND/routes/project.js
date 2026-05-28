@@ -44,9 +44,11 @@ router.get('/current-month/:studentId', async (req, res) => {
       maxMonths,
       canSubmit,
       needsPayment: (currentMonth === maxMonths) && !internship.hasPaid,
-      name: internship.name,          // ← add this
-      email: internship.email,        // ← add this
-      mobile: internship.mobile       // ← add this
+      name: internship.name,
+      email: internship.email,
+      mobile: internship.mobile,
+      domain: internship.domain,
+      duration: internship.duration
     });
   } catch (error) {
     console.error('[Current Month] Error:', error);

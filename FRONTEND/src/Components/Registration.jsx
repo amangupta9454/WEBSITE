@@ -1,573 +1,286 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import {
-  Loader2, Send, User, GraduationCap, Briefcase,
-  Link2, MessageSquare, IndianRupee, CheckCircle2,
-  ChevronDown, Sparkles, Clock, Shield, Zap, ArrowRight
-} from 'lucide-react';
+import { Loader2, Send, Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const FEES = { '1 Month': 199, '2 Months': 199, '3 Months': 399 };
+const states = [
+  'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Delhi',
+  'Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand',
+  'Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya',
+  'Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu',
+  'Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'
+].sort();
 
-const InputField = ({ label, required, children, hint }) => (
-  <div className="group flex flex-col gap-2">
-    <label className="text-sm font-medium text-gray-300 flex items-center gap-1">
-      {label}
-      {required && <span className="text-rose-400 text-lg">*</span>}
-      {hint && <span className="text-gray-500 text-xs ml-1">({hint})</span>}
-    </label>
-    {children}
-  </div>
-);
+const domains = [
+  'Frontend Development','Backend Development','Full Stack Development',
+  'C Programming','Python Development','Artificial Intelligence',
+  'Figma or UI/UX','Data Science','Machine Learning',
+  'App Development','Marketing'
+];
 
-const inputClass =
-  'w-full px-5 py-3.5 bg-gray-900/60 border border-gray-700/60 rounded-xl text-white placeholder-gray-600 ' +
-  'focus:outline-none focus:border-sky-400/80 focus:ring-2 focus:ring-sky-400/30 focus:bg-gray-900/80 ' +
-  'hover:border-gray-600/80 hover:shadow-md hover:shadow-sky-500/10 transition-all duration-300 text-sm sm:text-base ' +
-  'cursor-text caret-sky-400';
-
-const selectClass = inputClass + ' appearance-none cursor-pointer hover:cursor-pointer';
-
-const SectionHeader = ({ icon: Icon, title, subtitle, accent }) => (
-  <div className="flex items-start gap-4 mb-7 sm:mb-9 group">
-    <div className={`p-3 sm:p-4 rounded-xl border shadow-lg flex-shrink-0 transition-all duration-300 group-hover:shadow-xl ${accent} group-hover:scale-110`}>
-      <Icon size={22} className="text-white" />
-    </div>
-    <div className="flex-1">
-      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white leading-tight group-hover:text-sky-300 transition-colors duration-300">{title}</h2>
-      {subtitle && <p className="text-gray-500 text-xs sm:text-sm mt-1">{subtitle}</p>}
-    </div>
-  </div>
-);
-
-const Divider = () => (
-  <div className="flex items-center gap-4 py-3">
-    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-700/60 to-transparent" />
-  </div>
-);
-
-const FeeCard = ({ label, fee, desc, isSelected, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`relative rounded-xl border p-5 sm:p-6 transition-all duration-300 select-none transform
-      ${isSelected
-        ? 'bg-gradient-to-br from-amber-500/15 to-amber-600/10 border-amber-500/60 shadow-lg shadow-amber-500/20 scale-105 hover:scale-110'
-        : 'bg-gray-800/40 border-gray-700/60 hover:border-gray-600/80 hover:bg-gray-800/70 hover:shadow-md hover:shadow-sky-500/5 hover:scale-102'
-      }
-      group cursor-pointer active:scale-95`}
-  >
-    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 bg-gradient-to-br from-sky-400/10 to-transparent transition-opacity duration-300 pointer-events-none" />
-
-    {isSelected && (
-      <div className="absolute top-3 right-3 animate-bounce">
-        <CheckCircle2 size={18} className="text-amber-400 drop-shadow-lg" />
-      </div>
-    )}
-
-    <div className="relative z-10">
-      <div className="flex items-center gap-2.5 mb-2">
-        <Clock size={14} className={`transition-all duration-300 ${isSelected ? 'text-amber-400 scale-125' : 'text-gray-500'}`} />
-        <span className={`text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${isSelected ? 'text-amber-300' : 'text-gray-400 group-hover:text-gray-300'}`}>
-          {label}
-        </span>
-      </div>
-      <div className={`text-3xl sm:text-4xl font-black transition-all duration-300 ${isSelected ? 'text-white scale-110' : 'text-gray-300 group-hover:text-gray-200'}`}>
-        ₹{fee}
-      </div>
-      <div className={`text-xs mt-1.5 font-medium transition-colors duration-300 ${isSelected ? 'text-amber-200' : 'text-gray-600 group-hover:text-gray-500'}`}>{desc}</div>
-    </div>
-  </button>
-);
+const durations = ['1 Month', '2 Months', '3 Months'];
 
 const Registration = () => {
   const [formData, setFormData] = useState({
-    name: '', email: '', mobile: '', whatsapp: '',
-    course: '', branch: '', year: '', college: '', state: '', passingYear: '',
+    name: '', email: '', whatsapp: '',
+    course: '', branch: '', college: '', state: '', passingYear: '',
     domain: '', duration: '',
-    portfolio: '', github: '', linkedin: '',
-    whyHire: '', hearAbout: ''
+    github: '', linkedin: ''
   });
-
+  const [resume, setResume] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
-  const [hoveredField, setHoveredField] = useState(null);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [waitlistData, setWaitlistData] = useState({ name: '', email: '' });
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
-  const states = [
-    'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Delhi',
-    'Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand',
-    'Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya',
-    'Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu',
-    'Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'
-  ].sort();
-
-  const domains = [
-    'Frontend Development','Backend Development','Full Stack Development',
-    'C Programming','Python Development','Artificial Intelligence',
-    'Figma or UI/UX','Data Science','Machine Learning',
-    'App Development','Marketing'
-  ];
-  const durations = ['1 Month', '2 Months', '3 Months'];
-  const hearOptions = ['LinkedIn','College','Friends/Students','Instagram','Website'];
-
-  const currentFee = formData.duration ? FEES[formData.duration] : null;
-  const wordCount = formData.whyHire.trim().split(/\s+/).filter(Boolean).length;
-
-  useEffect(() => { setTimeout(() => setIsVisible(true), 80); }, []);
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`);
+        setRegistrationEnabled(res.data.registrationEnabled);
+      } catch (err) {
+        console.error('Failed to fetch registration status');
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setResume(e.target.files[0]);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!resume) {
+      toast.error('Please upload your resume');
+      return;
+    }
     setSubmitting(true);
+    
     try {
-      // 1. Create a registration order
-      const orderRes = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/register/create-order`,
-        {
-          email: formData.email,
-          mobile: formData.mobile,
-          domain: formData.domain,
-          duration: formData.duration
-        }
+      const data = new FormData();
+      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      data.append('resume', resume);
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/register`,
+        data
       );
-      const { order, key } = orderRes.data;
-
-      // 2. Configure Razorpay checkout options
-      const options = {
-        key: key,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'CODE-A-NOVA',
-        description: `Internship Registration Fee - ${formData.domain} (${formData.duration})`,
-        image: 'https://res.cloudinary.com/dgtyqhtor/image/upload/v1767350736/new_logo_wwgaha.png',
-        order_id: order.id,
-        handler: async function (response) {
-          try {
-            setSubmitting(true);
-            const verifyRes = await axios.post(
-              `${import.meta.env.VITE_BACKEND_URL}/api/register/verify-payment`,
-              {
-                response,
-                formData
-              }
-            );
-            toast.success(`Payment verified & Application submitted! Your Student ID: ${verifyRes.data.studentId}`, {
-              icon: '🎉',
-              autoClose: 10000
-            });
-            setFormData({
-              name:'',email:'',mobile:'',whatsapp:'',course:'',branch:'',
-              year:'',college:'',state:'',passingYear:'',domain:'',duration:'',
-              portfolio:'',github:'',linkedin:'',whyHire:'',hearAbout:''
-            });
-          } catch (verifyErr) {
-            toast.error(verifyErr.response?.data?.message || 'Payment verification failed. Please contact support.');
-          } finally {
-            setSubmitting(false);
-          }
-        },
-        prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: formData.mobile
-        },
-        theme: {
-          color: '#0ea5e9'
-        },
-        modal: {
-          ondismiss: function () {
-            toast.info('Payment cancelled');
-            setSubmitting(false);
-          }
-        }
-      };
-
-      const rzp1 = new window.Razorpay(options);
-      rzp1.open();
+      
+      toast.success(`Application submitted! Your Student ID: ${res.data.studentId}`, {
+        autoClose: 10000
+      });
+      
+      setFormData({
+        name:'',email:'',whatsapp:'',course:'',branch:'',
+        college:'',state:'',passingYear:'',domain:'',duration:'',
+        github:'',linkedin:''
+      });
+      setResume(null);
+      const fileInput = document.getElementById('resume-upload');
+      if (fileInput) fileInput.value = '';
+      
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to initiate application payment. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to submit application. Please try again.');
+    } finally {
       setSubmitting(false);
     }
   };
 
+  const handleWaitlistSubmit = async (e) => {
+    e.preventDefault();
+    setWaitlistSubmitting(true);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/register/waitlist`, waitlistData);
+      toast.success(res.data.message, { autoClose: 8000 });
+      setWaitlistData({ name: '', email: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to join waitlist. Please try again.');
+    } finally {
+      setWaitlistSubmitting(false);
+    }
+  };
+
+  const inputClasses = "w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-blue-600 transition-colors appearance-none";
+
   return (
-    <div className="min-h-screen bg-[#080c14] py-10 sm:py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden cursor-default">
-      {/* Animated background elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-sky-900/15 blur-[120px] animate-pulse" />
-        <div className="absolute top-1/3 -right-40 w-[400px] h-[400px] rounded-full bg-blue-900/12 blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-0 left-1/3 w-[350px] h-[350px] rounded-full bg-teal-900/10 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
-
-        {/* Animated grid */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(148,163,184,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.5) 1px,transparent 1px)',
-            backgroundSize: '48px 48px',
-            animation: 'drift 20s linear infinite'
-          }}
-        />
-
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-sky-400/20 blur-xl"
-            style={{
-              width: Math.random() * 100 + 50 + 'px',
-              height: Math.random() * 100 + 50 + 'px',
-              left: Math.random() * 100 + '%',
-              top: Math.random() * 100 + '%',
-              animation: `float ${15 + Math.random() * 10}s ease-in-out infinite`,
-              animationDelay: Math.random() * 5 + 's',
-              pointerEvents: 'none'
-            }}
-          />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes drift {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(48px); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          25% { transform: translateY(-20px) translateX(10px); }
-          50% { transform: translateY(-40px) translateX(0px); }
-          75% { transform: translateY(-20px) translateX(-10px); }
-        }
-        input:focus::placeholder {
-          color: rgba(148, 163, 184, 0.3);
-        }
-        select {
-          background-image: none;
-        }
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-      `}</style>
-
-      <div
-        className={`max-w-5xl mx-auto relative z-10 transition-all duration-700 ease-out ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-14 pt-10 group">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs sm:text-sm font-bold mb-5 tracking-widest
-            transition-all duration-300 hover:bg-sky-500/15 hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer hover:scale-105 active:scale-95">
-            <Sparkles size={14} className="animate-spin" style={{ animationDuration: '3s' }} />
-            NOW ACCEPTING APPLICATIONS
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-5 tracking-tight leading-tight group-hover:text-sky-200 transition-colors duration-500">
-            Internship{' '}
-            <span className="bg-gradient-to-r from-sky-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
-              Application
-            </span>
-          </h1>
-          <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
-            Begin your professional journey. Complete the form below to apply for your ideal internship opportunity.
-          </p>
+    <div className="min-h-screen bg-[#FAFAFA] pt-32 pb-24 px-6 relative">
+      <ToastContainer position="top-right" theme="light" />
+      
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-black mb-4 text-gray-900">Internship Application</h1>
+          <p className="text-gray-500 font-medium text-lg">Join our team to work on real-world projects and kickstart your career.</p>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-gray-900/40 backdrop-blur-2xl rounded-3xl sm:rounded-4xl border border-gray-800/60 shadow-2xl overflow-hidden transition-all duration-500 hover:border-gray-700/80 hover:shadow-2xl hover:shadow-sky-500/10 group">
-          {/* Top accent line with animation */}
-          <div className="h-1 w-full bg-gradient-to-r from-sky-500 via-teal-400 to-cyan-500 animate-pulse" />
-
-          <form onSubmit={handleSubmit} className="p-8 sm:p-10 lg:p-16 space-y-12 sm:space-y-14">
-
-            {/* Personal Information */}
-            <section className="transform transition-all duration-300 hover:scale-[1.01]">
-              <SectionHeader
-                icon={User}
-                title="Personal Information"
-                subtitle="We need your basic contact details"
-                accent="bg-gradient-to-br from-sky-500/15 to-sky-600/10 border-sky-500/30 hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-500/15"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                <InputField label="Full Name" required>
-                  <input name="name" value={formData.name} onChange={handleChange} required
-                    className={inputClass} placeholder="Enter your full name"
-                    onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="Email Address" required>
-                  <input name="email" type="email" value={formData.email} onChange={handleChange} required
-                    className={inputClass} placeholder="your@email.com"
-                    onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="Mobile Number" required>
-                  <input name="mobile" value={formData.mobile} onChange={handleChange} required
-                    maxLength="10" pattern="\d{10}" className={inputClass} placeholder="10-digit mobile number"
-                    onFocus={() => setFocusedField('mobile')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="WhatsApp Number" required>
-                  <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} required
-                    maxLength="10" pattern="\d{10}" className={inputClass} placeholder="10-digit WhatsApp number"
-                    onFocus={() => setFocusedField('whatsapp')} onBlur={() => setFocusedField(null)} />
-                </InputField>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8 md:p-12"
+        >
+          {checkingStatus ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="animate-spin text-blue-500" size={40} />
+            </div>
+          ) : !registrationEnabled ? (
+            <div className="text-center py-8">
+              <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Send className="w-10 h-10 text-amber-600" />
               </div>
-            </section>
-
-            <Divider />
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Registration is currently closed</h2>
+              <p className="text-gray-500 mb-8 max-w-md mx-auto">Currently there are no openings, please fill this small form and we'll notify you via email when new openings arrive.</p>
+              
+              <form onSubmit={handleWaitlistSubmit} className="max-w-md mx-auto space-y-4 text-left">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
+                  <input required name="waitlistName" value={waitlistData.name} onChange={(e) => setWaitlistData({...waitlistData, name: e.target.value})} className={inputClasses} placeholder="John Doe" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+                  <input required type="email" name="waitlistEmail" value={waitlistData.email} onChange={(e) => setWaitlistData({...waitlistData, email: e.target.value})} className={inputClasses} placeholder="john@example.com" />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={waitlistSubmitting}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-amber-500/30 hover:-translate-y-0.5 disabled:opacity-50 mt-6"
+                >
+                  {waitlistSubmitting ? <><Loader2 className="animate-spin" size={18} /> Joining Waitlist...</> : <>Notify Me</>}
+                </button>
+              </form>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* Personal Details */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2">Personal Details</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Full Name *</label>
+                  <input required name="name" value={formData.name} onChange={handleChange} className={inputClasses} placeholder="John Doe" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Email Address *</label>
+                  <input required type="email" name="email" value={formData.email} onChange={handleChange} className={inputClasses} placeholder="john@example.com" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">WhatsApp Number *</label>
+                  <input required name="whatsapp" pattern="[0-9]{10}" maxLength="10" value={formData.whatsapp} onChange={handleChange} className={inputClasses} placeholder="10-digit number" />
+                </div>
+              </div>
+            </div>
 
             {/* Academic Details */}
-            <section className="transform transition-all duration-300 hover:scale-[1.01]">
-              <SectionHeader
-                icon={GraduationCap}
-                title="Academic Details"
-                subtitle="Tell us about your educational background"
-                accent="bg-gradient-to-br from-teal-500/15 to-teal-600/10 border-teal-500/30 hover:border-teal-500/60 hover:shadow-lg hover:shadow-teal-500/15"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                <InputField label="Course" required>
-                  <input name="course" value={formData.course} onChange={handleChange} required
-                    className={inputClass} placeholder="e.g., B.Tech, BCA, MCA"
-                    onFocus={() => setFocusedField('course')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="Branch" required>
-                  <input name="branch" value={formData.branch} onChange={handleChange} required
-                    className={inputClass} placeholder="e.g., CSE, IT, ECE"
-                    onFocus={() => setFocusedField('branch')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="Current Year" required>
-                  <input name="year" value={formData.year} onChange={handleChange} required
-                    className={inputClass} placeholder="e.g., 3rd Year"
-                    onFocus={() => setFocusedField('year')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="College Name" required>
-                  <input name="college" value={formData.college} onChange={handleChange} required
-                    className={inputClass} placeholder="Full college name"
-                    onFocus={() => setFocusedField('college')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="State" required>
-                  <div className="relative group/select">
-                    <select name="state" value={formData.state} onChange={handleChange} required className={`${selectClass} group-hover/select:cursor-pointer`}>
-                      <option value="" className="bg-gray-900">Select your state</option>
-                      {states.map(s => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
-                    </select>
-                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover/select:text-gray-400 transition-colors duration-300" />
-                  </div>
-                </InputField>
-                <InputField label="Year of Passing" required>
-                  <input name="passingYear" value={formData.passingYear} onChange={handleChange} required
-                    className={inputClass} placeholder="e.g., 2026, 2027"
-                    onFocus={() => setFocusedField('passingYear')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-              </div>
-            </section>
-
-            <Divider />
-
-            {/* Internship Preferences */}
-            <section className="transform transition-all duration-300 hover:scale-[1.01]">
-              <SectionHeader
-                icon={Briefcase}
-                title="Internship Preferences"
-                subtitle="Choose your preferred domain and duration"
-                accent="bg-gradient-to-br from-amber-500/15 to-amber-600/10 border-amber-500/30 hover:border-amber-500/60 hover:shadow-lg hover:shadow-amber-500/15"
-              />
-
-              {/* Fees Info Cards */}
-               <div className="mb-8 sm:mb-10">
-                <div className="flex items-center gap-2.5 mb-4 group">
-                  <Zap size={16} className="text-amber-400 animate-pulse group-hover:animate-bounce" />
-                  <span className="text-xs font-black uppercase tracking-widest text-amber-400 group-hover:text-amber-300 transition-colors duration-300">Registration Fees</span>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Academic Details</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Course *</label>
+                  <input required name="course" value={formData.course} onChange={handleChange} className={inputClasses} placeholder="B.Tech, BCA, etc." />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {[
-                    { label: '1 Month', fee: 199, desc: 'Short-term track' },
-                    { label: '2 Months', fee: 199, desc: 'Standard track' },
-                    { label: '3 Months', fee: 399, desc: 'Extended track' },
-                  ].map(({ label, fee, desc }) => (
-                    <FeeCard
-                      key={label}
-                      label={label}
-                      fee={fee}
-                      desc={desc}
-                      isSelected={formData.duration === label}
-                      onClick={() => setFormData({ ...formData, duration: label })}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Branch *</label>
+                  <input required name="branch" value={formData.branch} onChange={handleChange} className={inputClasses} placeholder="CSE, IT, ECE" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">College Name *</label>
+                  <input required name="college" value={formData.college} onChange={handleChange} className={inputClasses} placeholder="Full college name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Passing Year *</label>
+                  <input required name="passingYear" value={formData.passingYear} onChange={handleChange} className={inputClasses} placeholder="e.g., 2026" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">State *</label>
+                  <select required name="state" value={formData.state} onChange={handleChange} className={inputClasses}>
+                    <option value="" className="bg-white">Select state</option>
+                    {states.map(s => <option key={s} value={s} className="bg-white">{s}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Program Selection */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Program Selection</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Preferred Domain *</label>
+                  <select required name="domain" value={formData.domain} onChange={handleChange} className={inputClasses}>
+                    <option value="" className="bg-white">Select domain</option>
+                    {domains.map(d => <option key={d} value={d} className="bg-white">{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Duration *</label>
+                  <select required name="duration" value={formData.duration} onChange={handleChange} className={inputClasses}>
+                    <option value="" className="bg-white">Select duration</option>
+                    {durations.map(d => <option key={d} value={d} className="bg-white">{d}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Links & Resume */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Links & Resume</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">GitHub URL *</label>
+                  <input required name="github" value={formData.github} onChange={handleChange} className={inputClasses} placeholder="https://github.com/username" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">LinkedIn URL *</label>
+                  <input required name="linkedin" value={formData.linkedin} onChange={handleChange} className={inputClasses} placeholder="https://linkedin.com/in/username" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Upload Resume (PDF) *</label>
+                  <div className="relative group cursor-pointer">
+                    <input 
+                      id="resume-upload"
+                      type="file" 
+                      accept=".pdf,.doc,.docx" 
+                      onChange={handleFileChange} 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                      required 
                     />
-                  ))}
-                </div>
-
-                {currentFee && (
-                  <div className="mt-6 rounded-xl bg-gradient-to-r from-green-500/12 via-green-600/8 to-green-500/12 border border-green-500/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transform transition-all duration-300 hover:border-green-500/50 hover:shadow-lg hover:shadow-green-500/15 hover:scale-102 cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <Shield size={19} className="text-green-400 flex-shrink-0 group-hover:scale-125 transition-transform duration-300" />
-                      <div>
-                        <p className="text-white font-bold text-sm sm:text-base">
-                          Fees for <span className="text-green-300">{formData.duration}</span>: <span className="text-green-300 font-black">₹{currentFee}</span>
-                        </p>
-                        <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable at the time of registration</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 group-hover:text-gray-400 transition-colors duration-300 flex-shrink-0">
-                      <CheckCircle2 size={13} className="text-green-500" />
-                      Secure
+                    <div className={`w-full border-2 border-dashed rounded-xl p-8 text-center transition-colors ${resume ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 group-hover:border-blue-400 group-hover:bg-blue-50/30'}`}>
+                      <Upload className={`mx-auto mb-3 ${resume ? 'text-blue-500' : 'text-gray-400'}`} size={32} />
+                      {resume ? (
+                        <p className="text-blue-700 font-bold truncate px-4">{resume.name}</p>
+                      ) : (
+                        <div>
+                          <p className="text-gray-600 font-bold mb-1">Click to upload or drag and drop</p>
+                          <p className="text-gray-400 text-sm">PDF, DOC, DOCX (Max 5MB)</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </div> 
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                <InputField label="Preferred Domain" required>
-                  <div className="relative group/select">
-                    <select name="domain" value={formData.domain} onChange={handleChange} required className={`${selectClass} group-hover/select:cursor-pointer`}>
-                      <option value="" className="bg-gray-900">Choose your domain</option>
-                      {domains.map(d => <option key={d} value={d} className="bg-gray-900">{d}</option>)}
-                    </select>
-                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover/select:text-gray-400 transition-colors duration-300" />
-                  </div>
-                </InputField>
-                <InputField label="Preferred Duration" required>
-                  <div className="relative group/select">
-                    <select name="duration" value={formData.duration} onChange={handleChange} required className={`${selectClass} group-hover/select:cursor-pointer`}>
-                      <option value="" className="bg-gray-900">Select duration</option>
-                      {durations.map(d => <option key={d} value={d} className="bg-gray-900">{d}</option>)}
-                    </select>
-                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover/select:text-gray-400 transition-colors duration-300" />
-                  </div>
-                </InputField>
-              </div>
-            </section>
-
-            <Divider />
-
-            {/* Portfolio Links */}
-            <section className="transform transition-all duration-300 hover:scale-[1.01]">
-              <SectionHeader
-                icon={Link2}
-                title="Portfolio Links"
-                subtitle="Share your work — GitHub and LinkedIn are required"
-                accent="bg-gradient-to-br from-blue-500/15 to-blue-600/10 border-blue-500/30 hover:border-blue-500/60 hover:shadow-lg hover:shadow-blue-500/15"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                <div className="sm:col-span-2">
-                  <InputField label="Portfolio URL" hint="optional">
-                    <input name="portfolio" value={formData.portfolio} onChange={handleChange}
-                      className={inputClass} placeholder="https://yourportfolio.com"
-                      onFocus={() => setFocusedField('portfolio')} onBlur={() => setFocusedField(null)} />
-                  </InputField>
-                </div>
-                <InputField label="GitHub URL" required>
-                  <input name="github" value={formData.github} onChange={handleChange} required
-                    className={inputClass} placeholder="https://github.com/username"
-                    onFocus={() => setFocusedField('github')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-                <InputField label="LinkedIn URL" required>
-                  <input name="linkedin" value={formData.linkedin} onChange={handleChange} required
-                    className={inputClass} placeholder="https://linkedin.com/in/username"
-                    onFocus={() => setFocusedField('linkedin')} onBlur={() => setFocusedField(null)} />
-                </InputField>
-              </div>
-            </section>
-
-            <Divider />
-
-            {/* Additional Information */}
-            <section className="transform transition-all duration-300 hover:scale-[1.01]">
-              <SectionHeader
-                icon={MessageSquare}
-                title="Additional Information"
-                subtitle="Help us understand you better"
-                accent="bg-gradient-to-br from-rose-500/15 to-rose-600/10 border-rose-500/30 hover:border-rose-500/60 hover:shadow-lg hover:shadow-rose-500/15"
-              />
-              <div className="space-y-6">
-                <InputField label="Why should we choose you?" required hint="min 10 words">
-                  <textarea
-                    name="whyHire" value={formData.whyHire} onChange={handleChange}
-                    rows="5" required
-                    className={`${inputClass} resize-none leading-relaxed cursor-text caret-sky-400`}
-                    placeholder="Tell us about your skills, experience, and what makes you a great candidate..."
-                    onFocus={() => setFocusedField('whyHire')} onBlur={() => setFocusedField(null)}
-                  />
-                  <div className="flex items-center justify-between mt-2">
-                    <p className={`text-xs font-medium transition-colors duration-300 ${wordCount >= 10 ? 'text-green-500' : 'text-gray-600'}`}>
-                      {wordCount} words
-                    </p>
-                    {wordCount >= 10 && <CheckCircle2 size={14} className="text-green-500 animate-bounce" />}
-                  </div>
-                </InputField>
-                <InputField label="How did you hear about us?" required>
-                  <div className="relative group/select">
-                    <select name="hearAbout" value={formData.hearAbout} onChange={handleChange} required className={`${selectClass} group-hover/select:cursor-pointer`}>
-                      <option value="" className="bg-gray-900">Select an option</option>
-                      {hearOptions.map(o => <option key={o} value={o} className="bg-gray-900">{o}</option>)}
-                    </select>
-                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover/select:text-gray-400 transition-colors duration-300" />
-                  </div>
-                </InputField>
-              </div>
-            </section>
-
-            {/* Summary strip before submit */}
-             {currentFee && (
-              <div className="rounded-xl bg-gradient-to-r from-sky-500/10 via-sky-500/8 to-teal-500/10 border border-sky-500/25 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transform transition-all duration-300 hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/20 hover:scale-102 group cursor-pointer">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-2.5 rounded-lg bg-sky-500/15 border border-sky-500/30 group-hover:border-sky-500/60 transition-all duration-300 group-hover:scale-110">
-                    <IndianRupee size={18} className="text-sky-400" />
-                  </div>
-                  <div>
-                    <p className="text-white font-black text-sm sm:text-base">
-                      Total Fees: <span className="text-sky-300">₹{currentFee}</span>
-                    </p>
-                    <p className="text-gray-500 text-xs mt-0.5 group-hover:text-gray-400 transition-colors duration-300">Payable upon registration for {formData.duration}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-bold text-sky-300 flex-shrink-0">
-                  Ready to submit
-                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
+            <button 
+              type="submit" 
               disabled={submitting}
-              className="w-full py-5 sm:py-6 rounded-xl font-black text-base sm:text-lg tracking-wide
-                bg-gradient-to-r from-sky-500 via-sky-400 to-teal-500 hover:from-sky-400 hover:via-sky-300 hover:to-teal-400
-                text-white shadow-xl shadow-sky-500/30 hover:shadow-2xl hover:shadow-sky-500/50
-                transition-all duration-300 flex items-center justify-center gap-3
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:from-sky-500
-                active:scale-95 hover:scale-105 group relative overflow-hidden"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 mt-8"
             >
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-300" />
-              {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={24} />
-                  <span>Submitting Application...</span>
-                </>
-              ) : (
-                <>
-                  <Send size={22} className="group-hover:translate-x-1 group-active:-translate-x-1 transition-transform duration-200 relative z-10" />
-                  <span className="relative z-10">Submit Application</span>
-                </>
-              )}
+              {submitting ? <><Loader2 className="animate-spin" size={20} /> Submitting Application...</> : <><Send size={20} /> Submit Application</>}
             </button>
-
-            <p className="text-center text-gray-600 text-xs sm:text-sm -mt-3 hover:text-gray-500 transition-colors duration-300 cursor-help">
-              Fields marked with <span className="text-rose-400 font-bold">*</span> are required
-            </p>
+            
           </form>
-        </div>
+          )}
+        </motion.div>
       </div>
-
-      <ToastContainer
-        position="top-center"
-        theme="dark"
-        autoClose={5000}
-        className="mt-16 sm:mt-20"
-      />
     </div>
   );
 };

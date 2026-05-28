@@ -1,813 +1,3 @@
-// import { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { toast, ToastContainer } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
-// import * as XLSX from 'xlsx';
-// import { 
-//   LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail, 
-//   Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText, 
-//   UploadCloud, Save, FileInput 
-// } from 'lucide-react';
-
-// const AdminDashboard = () => {
-//   const [applications, setApplications] = useState([]);
-//   const [filteredApplications, setFilteredApplications] = useState([]);
-//   const [domains, setDomains] = useState([]);
-//   const [selectedDomain, setSelectedDomain] = useState('');
-//   const [loading, setLoading] = useState(true);
-//   const [exporting, setExporting] = useState(false);
-//   const [updating, setUpdating] = useState({});
-//   const [forms, setForms] = useState({});
-//   const [uploadingExcel, setUploadingExcel] = useState(false);
-//   const navigate = useNavigate();
-
-//   const getUpcomingDates = () => {
-//     const dates = [];
-//     const today = new Date();
-//     today.setHours(0,0,0,0);
-//     // Gen options for rolling 3 months
-//     for (let i = 0; i < 3; i++) {
-//       const year = today.getFullYear();
-//       const month = today.getMonth() + i;
-//       [5, 15, 25].forEach(day => {
-//         const d = new Date(year, month, day);
-//         if (d >= today) {
-//            dates.push({
-//               value: d.toISOString(),
-//               label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-//            });
-//         }
-//       });
-//     }
-//     return dates.sort((a,b) => new Date(a.value) - new Date(b.value)).slice(0, 6); // Up to next 6 dates
-//   };
-//   const upcomingDateOptions = getUpcomingDates();
-
-//   useEffect(() => {
-//     const token = localStorage.getItem('adminToken');
-//     if (!token) {
-//       toast.error('Admin login required');
-//       navigate('/admin-login');
-//       return;
-//     }
-
-//     fetchApplications(token);
-
-//     const logoutTimer = setTimeout(() => {
-//       handleLogout();
-//       toast.info('Session timed out due to inactivity');
-//     }, 5 * 60 * 1000);
-
-//     return () => clearTimeout(logoutTimer);
-//   }, []);
-
-//   const fetchApplications = async (token) => {
-//     try {
-//       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internships`, {
-//         headers: { Authorization: `Bearer ${token}` }
-//       });
-
-//       const allApps = res.data;
-//       setApplications(allApps);
-//       setFilteredApplications(allApps);
-
-//       const uniqueDomains = [...new Set(allApps.map(app => app.domain))];
-//       setDomains(uniqueDomains);
-//     } catch (err) {
-//       toast.error('Failed to load applications');
-//       localStorage.removeItem('adminToken');
-//       navigate('/admin-login');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleFilter = (e) => {
-//     const domain = e.target.value;
-//     setSelectedDomain(domain);
-
-//     if (domain === '') {
-//       setFilteredApplications(applications);
-//     } else {
-//       setFilteredApplications(applications.filter(app => app.domain === domain));
-//     }
-//   };
-
-//   const handleExport = async () => {
-//     setExporting(true);
-//     const token = localStorage.getItem('adminToken');
-
-//     try {
-//       const newApps = filteredApplications.filter(app => !app.downloadedAt);
-      
-//       if (newApps.length === 0) {
-//         toast.info('No new applications to export');
-//         setExporting(false);
-//         return;
-//       }
-
-//       const data = newApps.map(app => ({
-//         StudentID: app.studentId || 'N/A',
-//         Name: app.name,
-//         Email: app.email,
-//         Domain: app.domain,
-//         Duration: app.duration,
-//         Mobile: app.mobile,
-//         WhatsApp: app.whatsapp || app.mobile,
-//         Course: app.course,
-//         Branch: app.branch,
-//         Year: app.year,
-//         College: app.college,
-//         State: app.state,
-//         PassingYear: app.passingYear,
-//         Portfolio: app.portfolio || 'N/A',
-//         GitHub: app.github || 'N/A',
-//         LinkedIn: app.linkedin || 'N/A',
-//         Batch: app.batch || 'N/A',
-//         WhyHire: app.whyHire,
-//         HearAbout: app.hearAbout,
-//         ResumeURL: app.resumeUrl,
-//         AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
-//       }));
-
-//       const ws = XLSX.utils.json_to_sheet(data, {
-//         header: [
-//           'StudentID', 'Name', 'Email', 'Domain', 'Duration','Batch',
-//           'Mobile', 'WhatsApp', 'Course', 'Branch', 'Year',
-//           'College', 'State', 'PassingYear', 'Portfolio', 'GitHub',
-//           'LinkedIn', 'WhyHire', 'HearAbout', 'ResumeURL', 'AppliedAt'
-//         ]
-//       });
-
-//       const colWidths = [
-//         { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 },{ wch: 18 }, { wch: 12 },
-//         { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
-//         { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 35 },
-//         { wch: 35 }, { wch: 60 }, { wch: 20 }, { wch: 50 }, { wch: 22 },
-//       ];
-//       ws['!cols'] = colWidths;
-
-//       const wb = XLSX.utils.book_new();
-//       XLSX.utils.book_append_sheet(wb, ws, 'Internship Applications');
-
-//       const fileName = `CodeNova_New_Internships_${new Date().toISOString().slice(0,10)}.xlsx`;
-//       XLSX.writeFile(wb, fileName);
-
-//       const applicationIds = newApps.map(app => app._id);
-//       await axios.post(
-//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-downloaded`,
-//         { applicationIds },
-//         { headers: { Authorization: `Bearer ${token}` } }
-//       );
-
-//       toast.success(`${newApps.length} new applications exported successfully!`);
-      
-//       fetchApplications(token);
-//     } catch (err) {
-//       console.error('Export error:', err);
-//       toast.error('Export failed. Please try again.');
-//     } finally {
-//       setExporting(false);
-//     }
-//   };
-
-//   const handleExportPaid = () => {
-//     try {
-//       const paidApps = applications.filter(app => app.hasPaid);
-//       if (paidApps.length === 0) {
-//         toast.info('No paid applications found.');
-//         return;
-//       }
-//       const data = paidApps.map(app => ({
-//         StudentID: app.studentId || 'N/A',
-//         Name: app.name,
-//         Email: app.email,
-//         Domain: app.domain,
-//         Duration: app.duration,
-//         Mobile: app.mobile,
-//         AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
-//         StartDate: app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A',
-//         EndDate: app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A',
-//         TotalSubmissions: app.submissions ? app.submissions.length : 0
-//       }));
-
-//       const ws = XLSX.utils.json_to_sheet(data);
-//       const wb = XLSX.utils.book_new();
-//       XLSX.utils.book_append_sheet(wb, ws, 'Paid Interns');
-//       XLSX.writeFile(wb, `CodeNova_Paid_Interns_${new Date().toISOString().slice(0,10)}.xlsx`);
-//       toast.success(`${paidApps.length} paid applications exported successfully!`);
-//     } catch (err) {
-//       console.error(err);
-//       toast.error('Failed to export paid applications');
-//     }
-//   };
-
-//   const handleLogout = () => {
-//     localStorage.removeItem('adminToken');
-//     toast.success('Admin logged out');
-//     navigate('/admin-login');
-//   };
-
-//   const handleOfferLetterChange = async (appId, newStatus) => {
-//     try {
-//       const token = localStorage.getItem('adminToken');
-//       await axios.post(
-//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-offer-status`,
-//         { applicationId: appId, status: newStatus },
-//         { headers: { Authorization: `Bearer ${token}` } }
-//       );
-//       toast.success(`Offer Letter marked as ${newStatus}`);
-//       fetchApplications(token);
-//     } catch (err) {
-//       toast.error('Failed to update Offer Letter status');
-//     }
-//   };
-
-//   const handleStartDateAssignment = async (appId, dateValue) => {
-//     if (!dateValue) return;
-//     try {
-//       const token = localStorage.getItem('adminToken');
-//       await axios.post(
-//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/set-start-date`,
-//         { applicationId: appId, startDate: dateValue },
-//         { headers: { Authorization: `Bearer ${token}` } }
-//       );
-//       toast.success('Timeline successfully activated!');
-//       fetchApplications(token);
-//     } catch (err) {
-//       toast.error('Failed to set start date');
-//     }
-//   };
-
-//   const handleFormChange = (appId, field, value) => {
-//     setForms(prev => ({
-//       ...prev,
-//       [appId]: {
-//         ...prev[appId],
-//         [field]: value
-//       }
-//     }));
-//   };
-
-//   const handleCertificateUpload = async (appId, file) => {
-//     if (!file || file.type !== 'application/pdf') {
-//       toast.error('Only PDF files allowed');
-//       return;
-//     }
-//     if (file.size > 1024 * 1024) { // 1MB limit
-//       toast.error('File too large, max 1MB');
-//       return;
-//     }
-
-//     setUpdating(prev => ({ ...prev, [appId]: true }));
-
-//     const uploadData = new FormData();
-//     uploadData.append('file', file);
-//     uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-//     uploadData.append('folder', 'internship-certificates');
-//     uploadData.append('resource_type', 'raw');
-
-//     try {
-//       const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`, {
-//         method: 'POST',
-//         body: uploadData
-//       });
-//       const data = await res.json();
-//       if (data.secure_url) {
-//         handleFormChange(appId, 'certificateUrl', data.secure_url);
-//         toast.success('Certificate uploaded!');
-//       }
-//     } catch (err) {
-//       toast.error('Upload failed');
-//     } finally {
-//       setUpdating(prev => ({ ...prev, [appId]: false }));
-//     }
-//   };
-
-//   const handleUpdateInternship = async (appId) => {
-//     const token = localStorage.getItem('adminToken');
-//     const form = forms[appId] || {};
-//     if (!form.startDate || !form.endDate || !form.certificateUrl) {
-//       toast.error('All fields required');
-//       return;
-//     }
-
-//     setUpdating(prev => ({ ...prev, [appId]: true }));
-
-//     try {
-//       await axios.post(
-//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`,
-//         {
-//           applicationId: appId,
-//           startDate: form.startDate,
-//           endDate: form.endDate,
-//           certificateUrl: form.certificateUrl
-//         },
-//         { headers: { Authorization: `Bearer ${token}` } }
-//       );
-//       toast.success('Updated successfully!');
-//       fetchApplications(token);
-//     } catch (err) {
-//       toast.error('Update failed');
-//     } finally {
-//       setUpdating(prev => ({ ...prev, [appId]: false }));
-//     }
-//   };
-
-//   const handleExcelUpload = async (e) => {
-//     const file = e.target.files[0];
-//     if (!file) return;
-
-//     if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-//       toast.error('Only Excel files (.xlsx) are allowed');
-//       return;
-//     }
-
-//     setUploadingExcel(true);
-//     const token = localStorage.getItem('adminToken');
-
-//     const formData = new FormData();
-//     formData.append('excelFile', file);
-
-//     try {
-//       const res = await axios.post(
-//         `${import.meta.env.VITE_BACKEND_URL}/api/admin/upload-certificates`,
-//         formData,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//             'Content-Type': 'multipart/form-data'
-//           }
-//         }
-//       );
-//       toast.success(res.data.message);
-//     } catch (err) {
-//       toast.error('Upload failed. Please try again.');
-//     } finally {
-//       setUploadingExcel(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-//         <div className="text-center">
-//           <Loader2 className="w-16 h-16 animate-spin text-blue-500 mx-auto mb-4" />
-//           <p className="text-white text-xl font-medium">Loading applications...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   const newApplications = filteredApplications.filter(app => !app.downloadedAt);
-//   const downloadedApplications = filteredApplications.filter(app => app.downloadedAt);
-
-//   const ApplicationCard = ({ app, isDownloaded }) => (
-//     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10">
-//       <div className="flex items-start justify-between mb-4">
-//         <div className="flex items-center gap-3">
-//           <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-//             <User className="w-6 h-6 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-semibold text-white">{app.name}</h3>
-//             <p className="text-sm text-slate-400">{app.studentId || 'N/A'}</p>
-//           </div>
-//         </div>
-//         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-//           isDownloaded 
-//             ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-//             : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-//         }`}>
-//           {isDownloaded ? 'Downloaded' : 'New'}
-//         </span>
-//       </div>
-
-//       <div className="space-y-3">
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <Mail className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm break-all">{app.email}</span>
-//         </div>
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <Briefcase className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm">{app.domain} - {app.duration}</span>
-//         </div>
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <Phone className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm">{app.mobile}</span>
-//         </div>
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <GraduationCap className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm">{app.course} - {app.branch} ({app.year})</span>
-//         </div>
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <MapPin className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm">{app.college}, {app.state}</span>
-//         </div>
-//         <div className="flex items-center gap-2 text-slate-300">
-//           <Calendar className="w-4 h-4 text-slate-500" />
-//           <span className="text-sm">Applied: {new Date(app.appliedAt).toLocaleString('en-IN')}</span>
-//         </div>
-//         {isDownloaded && app.downloadedAt && (
-//           <div className="flex items-center gap-2 text-slate-300">
-//             <CheckCircle className="w-4 h-4 text-green-500" />
-//             <span className="text-sm">Downloaded: {new Date(app.downloadedAt).toLocaleString('en-IN')}</span>
-//           </div>
-//         )}
-//       </div>
-
-//       {isDownloaded && !app.certificateUrl && (
-//         <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-//           <h4 className="text-white font-medium mb-4">Add Internship Details</h4>
-//           <div className="space-y-4">
-//             <input
-//               type="date"
-//               value={forms[app._id]?.startDate || ''}
-//               onChange={(e) => handleFormChange(app._id, 'startDate', e.target.value)}
-//               className="w-full p-2 bg-slate-800 border border-slate-600 rounded"
-//             />
-//             <input
-//               type="date"
-//               value={forms[app._id]?.endDate || ''}
-//               onChange={(e) => handleFormChange(app._id, 'endDate', e.target.value)}
-//               className="w-full p-2 bg-slate-800 border border-slate-600 rounded"
-//             />
-//             <label className="flex items-center gap-2 p-2 bg-slate-800 border border-dashed border-slate-600 rounded cursor-pointer">
-//               <UploadCloud className="w-5 h-5" />
-//               <span>Upload Certificate PDF</span>
-//               <input
-//                 type="file"
-//                 accept="application/pdf"
-//                 onChange={(e) => handleCertificateUpload(app._id, e.target.files[0])}
-//                 className="hidden"
-//               />
-//             </label>
-//             <button
-//               onClick={() => handleUpdateInternship(app._id)}
-//               disabled={updating[app._id]}
-//               className="w-full p-2 bg-green-600 text-white rounded flex items-center justify-center gap-2"
-//             >
-//               {updating[app._id] ? <Loader2 className="animate-spin" /> : <Save />}
-//               Save
-//             </button>
-//           </div>
-//         </div>
-//       )}
-
-//       {app.certificateUrl && (
-//         <div className="mt-4 p-4 bg-green-800/20 rounded-lg">
-//           <p>Start: {app.startDate ? new Date(app.startDate).toLocaleDateString() : 'N/A'}</p>
-//           <p>End: {app.endDate ? new Date(app.endDate).toLocaleDateString() : 'N/A'}</p>
-//           <p>Months: {app.totalMonths || 'N/A'}</p>
-//           <a href={app.certificateUrl} target="_blank" className="text-blue-400">View Certificate</a>
-//         </div>
-//       )}
-//     </div>
-//   );
-
-//   return (
-//     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-//         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8 pt-20">
-//           <div>
-//             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
-//               Admin Dashboard
-//             </h1>
-//             <p className="text-slate-400 text-sm sm:text-base">Manage internship applications</p>
-//           </div>
-//           <button 
-//             onClick={handleLogout} 
-//             className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 font-medium"
-//           >
-//             <LogOut size={20} /> 
-//             <span>Logout</span>
-//           </button>
-//         </div>
-
-//         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-//           <div className="bg-linear-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-slate-400 text-sm font-medium mb-1">Total Applications</p>
-//                 <p className="text-3xl font-bold text-white">{filteredApplications.length}</p>
-//               </div>
-//               <FileText className="w-12 h-12 text-blue-400 opacity-80" />
-//             </div>
-//           </div>
-
-//           <div className="bg-linear-to-br from-amber-500/20 to-amber-600/20 backdrop-blur-sm rounded-xl p-6 border border-amber-500/30">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-slate-400 text-sm font-medium mb-1">New Applications</p>
-//                 <p className="text-3xl font-bold text-white">{newApplications.length}</p>
-//               </div>
-//               <Clock className="w-12 h-12 text-amber-400 opacity-80" />
-//             </div>
-//           </div>
-
-//           <div className="bg-linear-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-slate-400 text-sm font-medium mb-1">Downloaded</p>
-//                 <p className="text-3xl font-bold text-white">{downloadedApplications.length}</p>
-//               </div>
-//               <CheckCircle className="w-12 h-12 text-green-400 opacity-80" />
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8">
-//           <div className="flex flex-col sm:flex-row gap-4">
-//             <div className="flex-1">
-//               <label className="block text-sm font-medium text-slate-400 mb-2">Filter by Domain</label>
-//               <div className="relative">
-//                 <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
-//                 <select 
-//                   value={selectedDomain} 
-//                   onChange={handleFilter} 
-//                   className="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-//                 >
-//                   <option value="">All Domains</option>
-//                   {domains.map(d => <option key={d} value={d}>{d}</option>)}
-//                 </select>
-//               </div>
-//             </div>
-
-//             <div className="flex items-end gap-3 flex-wrap sm:flex-nowrap">
-//               <button 
-//                 onClick={handleExport} 
-//                 disabled={exporting || newApplications.length === 0} 
-//                 className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 font-medium whitespace-nowrap"
-//               >
-//                 {exporting ? (
-//                   <>
-//                     <Loader2 className="animate-spin" size={20} />
-//                     <span>Exporting...</span>
-//                   </>
-//                 ) : (
-//                   <>
-//                     <Download size={20} />
-//                     <span>Export New To Excel</span>
-//                   </>
-//                 )}
-//               </button>
-
-//               <button 
-//                 onClick={handleExportPaid} 
-//                 className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/30 font-medium whitespace-nowrap"
-//               >
-//                  <Download size={20} />
-//                  <span>Export Paid Logs</span>
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* New: Excel Upload Section */}
-//         <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8">
-//           <h3 className="text-xl font-semibold text-white mb-4">Upload Certificates Excel</h3>
-//           <div className="flex items-center gap-4">
-//             <label className="flex-1 flex items-center gap-2 p-3 bg-slate-900/50 border border-slate-700 rounded-lg cursor-pointer hover:border-blue-500 transition-all">
-//               <FileInput className="w-5 h-5 text-blue-400" />
-//               <span className="text-slate-300">Choose Excel File (.xlsx)</span>
-//               <input
-//                 type="file"
-//                 accept=".xlsx"
-//                 onChange={handleExcelUpload}
-//                 className="hidden"
-//                 disabled={uploadingExcel}
-//               />
-//             </label>
-//             {uploadingExcel && (
-//               <Loader2 className="animate-spin text-blue-500" size={24} />
-//             )}
-//           </div>
-//           <p className="text-sm text-slate-500 mt-2">Expected columns: Certificate_Number, Student_Name, Domain, Start_Date, End_Date, Duration, Student_ID</p>
-//         </div>
-
-//         <div className="space-y-8">
-//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
-//             <div className="flex items-center gap-3 mb-6">
-//               <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-//                 <Clock size={24} className="text-amber-400" />
-//               </div>
-//               <div>
-//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">New Applications</h2>
-//                 <p className="text-slate-400 text-sm">{newApplications.length} pending review</p>
-//               </div>
-//             </div>
-
-//             {newApplications.length === 0 ? (
-//               <div className="text-center py-16">
-//                 <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-//                 <p className="text-slate-400 text-lg">No new applications available</p>
-//                 <p className="text-slate-500 text-sm mt-2">All applications have been downloaded</p>
-//               </div>
-//             ) : (
-//               <>
-//                 <div className="hidden lg:block overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead>
-//                       <tr className="border-b border-slate-700">
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Timeline / Start</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Tasks Done</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody>
-//                       {newApplications.map((app, i) => (
-//                         <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
-//                           <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
-//                           <td className="py-4 px-4 text-white font-medium">{app.name}</td>
-//                           <td className="py-4 px-4 text-slate-300">{app.email}</td>
-//                           <td className="py-4 px-4">
-//                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-//                               {app.domain}
-//                             </span>
-//                           </td>
-//                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
-//                           <td className="py-4 px-4">
-//                             {app.startDate ? (
-//                               <div className="text-xs">
-//                                 <span className="text-green-400 block pb-1">Start: {new Date(app.startDate).toLocaleDateString('en-IN')}</span>
-//                                 <span className="text-amber-400 block">End: {new Date(app.endDate).toLocaleDateString('en-IN')}</span>
-//                               </div>
-//                             ) : (
-//                               <select
-//                                 onChange={(e) => handleStartDateAssignment(app._id, e.target.value)}
-//                                 className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white cursor-pointer w-full"
-//                                 defaultValue=""
-//                               >
-//                                 <option value="" disabled>Select Date...</option>
-//                                 {upcomingDateOptions.map((opt, idx) => (
-//                                   <option key={idx} value={opt.value}>{opt.label}</option>
-//                                 ))}
-//                               </select>
-//                             )}
-//                           </td>
-//                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
-//                           <td className="py-4 px-4">
-//                             <select
-//                               value={app.offerLetterStatus || 'Not Sent'}
-//                               onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-//                               className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white"
-//                             >
-//                               <option value="Not Sent">Not Sent</option>
-//                               <option value="Sent">Sent</option>
-//                             </select>
-//                           </td>
-//                           <td className="py-4 px-4">
-//                             {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
-//                           </td>
-//                           <td className="py-4 px-4">
-//                              <div className="flex items-center gap-1">
-//                                 <span className="text-white font-medium text-xs">{app.submissions ? app.submissions.length : 0}</span>
-//                                 <span className="text-slate-500 text-xs">/</span>
-//                                 <span className="text-slate-400 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
-//                              </div>
-//                           </td>
-//                         </tr>
-//                       ))}
-//                     </tbody>
-//                   </table>
-//                 </div>
-
-//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
-//                   {newApplications.map((app, i) => (
-//                     <ApplicationCard key={i} app={app} isDownloaded={false} />
-//                   ))}
-//                 </div>
-//               </>
-//             )}
-//           </div>
-
-//           <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-slate-700/50">
-//             <div className="flex items-center gap-3 mb-6">
-//               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-//                 <CheckCircle size={24} className="text-green-400" />
-//               </div>
-//               <div>
-//                 <h2 className="text-2xl lg:text-3xl font-bold text-white">Already Downloaded</h2>
-//                 <p className="text-slate-400 text-sm">{downloadedApplications.length} applications processed</p>
-//               </div>
-//             </div>
-
-//             {downloadedApplications.length === 0 ? (
-//               <div className="text-center py-16">
-//                 <CheckCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-//                 <p className="text-slate-400 text-lg">No downloaded applications</p>
-//                 <p className="text-slate-500 text-sm mt-2">Export new applications to see them here</p>
-//               </div>
-//             ) : (
-//               <>
-//                 <div className="hidden lg:block overflow-x-auto">
-//                   <table className="w-full">
-//                     <thead>
-//                       <tr className="border-b border-slate-700">
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Student ID</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Name</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Email</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Domain</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Duration</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Applied At</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Batch</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Downloaded At</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Start Date</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">End Date</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Months</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Certificate</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Offer Letter</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Payment</th>
-//                         <th className="text-left py-4 px-4 text-sm font-semibold text-slate-400">Tasks Done</th>
-//                       </tr>
-//                     </thead>
-//                     <tbody>
-//                       {downloadedApplications.map((app, i) => (
-//                         <tr key={i} className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors">
-//                           <td className="py-4 px-4 text-slate-300">{app.studentId || 'N/A'}</td>
-//                           <td className="py-4 px-4 text-white font-medium">{app.name}</td>
-//                           <td className="py-4 px-4 text-slate-300">{app.email}</td>
-//                           <td className="py-4 px-4">
-//                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-//                               {app.domain}
-//                             </span>
-//                           </td>
-//                           <td className="py-4 px-4 text-slate-300">{app.duration}</td>
-//                           <td className="py-4 px-4 text-slate-300">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
-//                           <td className="py-4 px-4 text-slate-300">{app.batch || 'N/A'}</td>
-//                           <td className="py-4 px-4 text-green-400">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
-//                           <td className="py-4 px-4 text-slate-300">
-//                             {app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : (
-//                               <select
-//                                 onChange={(e) => handleStartDateAssignment(app._id, e.target.value)}
-//                                 className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white cursor-pointer w-full"
-//                                 defaultValue=""
-//                               >
-//                                 <option value="" disabled>Select Date...</option>
-//                                 {upcomingDateOptions.map((opt, idx) => (
-//                                   <option key={idx} value={opt.value}>{opt.label}</option>
-//                                 ))}
-//                               </select>
-//                             )}
-//                           </td>
-//                           <td className="py-4 px-4 text-slate-300">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</td>
-//                           <td className="py-4 px-4 text-slate-300">{app.totalMonths || 'N/A'}</td>
-//                           <td className="py-4 px-4">
-//                             {app.certificateUrl ? (
-//                               <a href={app.certificateUrl} target="_blank" className="text-blue-400">View</a>
-//                             ) : 'N/A'}
-//                           </td>
-//                           <td className="py-4 px-4">
-//                             <select
-//                               value={app.offerLetterStatus || 'Not Sent'}
-//                               onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-//                               className="bg-slate-800 border border-slate-600 rounded p-1 text-xs text-white"
-//                             >
-//                               <option value="Not Sent">Not Sent</option>
-//                               <option value="Sent">Sent</option>
-//                             </select>
-//                           </td>
-//                           <td className="py-4 px-4">
-//                             {app.hasPaid ? <span className="text-green-400 text-xs font-bold">Paid</span> : <span className="text-amber-400 text-xs font-bold">Pending</span>}
-//                           </td>
-//                           <td className="py-4 px-4">
-//                              <div className="flex items-center gap-1">
-//                                 <span className="text-white font-medium text-xs">{app.submissions ? app.submissions.length : 0}</span>
-//                                 <span className="text-slate-500 text-xs">/</span>
-//                                 <span className="text-slate-400 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
-//                              </div>
-//                           </td>
-//                         </tr>
-//                       ))}
-//                     </tbody>
-//                   </table>
-//                 </div>
-
-//                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
-//                   {downloadedApplications.map((app, i) => (
-//                     <ApplicationCard key={i} app={app} isDownloaded={true} />
-//                   ))}
-//                 </div>
-//               </>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-
-//       <ToastContainer theme="dark" position="top-center" autoClose={3000} />
-//     </div>
-//   );
-// };
-
-// export default AdminDashboard;
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -817,8 +7,8 @@ import * as XLSX from 'xlsx';
 import {
   LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail,
   Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText,
-  UploadCloud, Save, FileInput, Search, ChevronDown, ExternalLink,
-  TrendingUp, Users, AlertCircle, X
+  UploadCloud, Save, FileInput, Search, ChevronDown, ExternalLink, UserPlus,
+  TrendingUp, Users, AlertCircle, X, CreditCard, LayoutDashboard, Activity, Plus, Trash2, ListTodo
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -828,6 +18,7 @@ const AdminDashboard = () => {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('new');
+  const [activeSidebarTab, setActiveSidebarTab] = useState('interns');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState({});
@@ -835,6 +26,8 @@ const AdminDashboard = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [exportDuration, setExportDuration] = useState('1');
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -866,6 +59,8 @@ const AdminDashboard = () => {
       return;
     }
     fetchApplications(token);
+    fetchPaymentSetting(token);
+    fetchRegistrationSetting(token);
     const logoutTimer = setTimeout(() => {
       handleLogout();
       toast.info('Session timed out due to inactivity');
@@ -904,6 +99,55 @@ const AdminDashboard = () => {
       navigate('/admin-login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPaymentSetting = async (token) => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPaymentEnabled(res.data.paymentEnabled);
+    } catch (err) {
+      console.error('Failed to load payment setting:', err);
+    }
+  };
+
+  const fetchRegistrationSetting = async (token) => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`);
+      setRegistrationEnabled(res.data.registrationEnabled);
+    } catch (err) {
+      console.error('Failed to load registration setting:', err);
+    }
+  };
+
+  
+  const handleToggleRegistration = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`, 
+        { registrationEnabled: !registrationEnabled },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRegistrationEnabled(res.data.registrationEnabled);
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error('Failed to toggle registration setting');
+    }
+  };
+
+  const handleTogglePayment = async () => {
+    const token = localStorage.getItem('adminToken');
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`, 
+        { paymentEnabled: !paymentEnabled },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPaymentEnabled(res.data.paymentEnabled);
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error('Failed to toggle payment setting');
     }
   };
 
@@ -1200,13 +444,13 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-20 h-20 rounded-full border-4 border-slate-700 mx-auto" />
+            <div className="w-20 h-20 rounded-full border-4 border-slate-300 mx-auto" />
             <div className="w-20 h-20 rounded-full border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent animate-spin absolute inset-0 mx-auto" />
           </div>
-          <p className="text-white text-lg font-medium mt-6">Loading dashboard...</p>
+          <p className="text-slate-900 text-lg font-medium mt-6">Loading dashboard...</p>
           <p className="text-slate-500 text-sm mt-1">Fetching applications</p>
         </div>
       </div>
@@ -1223,7 +467,7 @@ const AdminDashboard = () => {
       <div className="flex items-start justify-between">
         <div>
           <p className={`text-sm font-medium ${color.label} mb-1`}>{label}</p>
-          <p className="text-4xl font-bold text-white tracking-tight">{value}</p>
+          <p className="text-4xl font-bold text-slate-900 tracking-tight">{value}</p>
           {sub && <p className={`text-xs mt-2 ${color.sub}`}>{sub}</p>}
         </div>
         <div className={`w-12 h-12 rounded-xl ${color.iconBg} flex items-center justify-center flex-shrink-0`}>
@@ -1236,11 +480,11 @@ const AdminDashboard = () => {
 
   const Badge = ({ children, variant = 'blue' }) => {
     const styles = {
-      blue: 'bg-blue-500/15 text-blue-400 border-blue-500/25 ring-1 ring-blue-500/20',
-      green: 'bg-green-500/15 text-green-400 border-green-500/25 ring-1 ring-green-500/20',
-      amber: 'bg-amber-500/15 text-amber-400 border-amber-500/25 ring-1 ring-amber-500/20',
-      red: 'bg-red-500/15 text-red-400 border-red-500/25 ring-1 ring-red-500/20',
-      slate: 'bg-slate-500/15 text-slate-400 border-slate-500/25 ring-1 ring-slate-500/20',
+      blue: 'bg-blue-500/15 text-blue-600 border-blue-500/25 ring-1 ring-blue-500/20',
+      green: 'bg-green-500/15 text-green-600 border-green-500/25 ring-1 ring-green-500/20',
+      amber: 'bg-amber-500/15 text-amber-600 border-amber-500/25 ring-1 ring-amber-500/20',
+      red: 'bg-red-500/15 text-red-600 border-red-500/25 ring-1 ring-red-500/20',
+      slate: 'bg-slate-500/15 text-slate-500 border-slate-500/25 ring-1 ring-slate-300/50',
     };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[variant]}`}>
@@ -1254,13 +498,13 @@ const AdminDashboard = () => {
       <select
         value={value}
         onChange={onChange}
-        className={`appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-8 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer ${className}`}
+        className={`appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-8 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer ${className}`}
       >
         {options.map((opt, i) => (
           <option key={i} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
     </div>
   );
 
@@ -1270,15 +514,15 @@ const AdminDashboard = () => {
     const totalTasks = app.duration ? parseInt(app.duration) : 1;
 
     return (
-      <div className="bg-slate-800/40 rounded-2xl border border-slate-700/40 overflow-hidden hover:border-slate-600/60 transition-all duration-200">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-slate-300 transition-all duration-200">
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-                <User className="w-5 h-5 text-white" />
+                <User className="w-5 h-5 text-slate-900" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-white font-semibold text-sm truncate">{app.name}</h3>
+                <h3 className="text-slate-900 font-semibold text-sm truncate">{app.name}</h3>
                 <p className="text-slate-500 text-xs">{app.studentId || 'No ID'}</p>
               </div>
             </div>
@@ -1286,9 +530,9 @@ const AdminDashboard = () => {
               <Badge variant={isDownloaded ? 'green' : 'amber'}>{isDownloaded ? 'Processed' : 'New'}</Badge>
               <button
                 onClick={() => setExpandedCard(isExpanded ? null : app._id)}
-                className="w-7 h-7 rounded-lg bg-slate-700/50 flex items-center justify-center hover:bg-slate-600/50 transition-colors"
+                className="w-7 h-7 rounded-lg bg-slate-200/50 flex items-center justify-center hover:bg-slate-600/50 transition-colors"
               >
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
             </div>
           </div>
@@ -1300,11 +544,11 @@ const AdminDashboard = () => {
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-1.5 text-slate-400 min-w-0">
+            <div className="flex items-center gap-1.5 text-slate-500 min-w-0">
               <Mail className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="text-xs truncate">{app.email}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-400">
+            <div className="flex items-center gap-1.5 text-slate-500">
               <Phone className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="text-xs">{app.mobile}</span>
             </div>
@@ -1312,27 +556,27 @@ const AdminDashboard = () => {
         </div>
 
         {isExpanded && (
-          <div className="border-t border-slate-700/40 p-4 space-y-4">
+          <div className="border-t border-slate-200 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <p className="text-slate-500 mb-1">Course</p>
-                <p className="text-slate-300">{app.course} - {app.branch}</p>
+                <p className="text-slate-700">{app.course} - {app.branch}</p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Year</p>
-                <p className="text-slate-300">{app.year}</p>
+                <p className="text-slate-700">{app.year}</p>
               </div>
               <div className="col-span-2">
                 <p className="text-slate-500 mb-1">College</p>
-                <p className="text-slate-300">{app.college}, {app.state}</p>
+                <p className="text-slate-700">{app.college}, {app.state}</p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Tasks Done</p>
-                <p className="text-slate-300">{taskCount} / {totalTasks}</p>
+                <p className="text-slate-700">{taskCount} / {totalTasks}</p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Applied At</p>
-                <p className="text-slate-300">{new Date(app.appliedAt).toLocaleDateString('en-IN')}</p>
+                <p className="text-slate-700">{new Date(app.appliedAt).toLocaleDateString('en-IN')}</p>
               </div>
             </div>
 
@@ -1350,8 +594,8 @@ const AdminDashboard = () => {
                 <p className="text-slate-500 text-xs mb-1.5">Timeline</p>
                 {app.startDate ? (
                   <div>
-                    <p className="text-xs text-green-400">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
-                    <p className="text-xs text-slate-400">{new Date(app.endDate).toLocaleDateString('en-IN')}</p>
+                    <p className="text-xs text-green-600">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
+                    <p className="text-xs text-slate-500">{new Date(app.endDate).toLocaleDateString('en-IN')}</p>
                   </div>
                 ) : (
                   <SelectField
@@ -1386,24 +630,24 @@ const AdminDashboard = () => {
             </div>
 
             {isDownloaded && !app.certificateUrl && (
-              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/40">
-                <p className="text-white text-xs font-medium mb-3">Add Internship Details</p>
+              <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-200">
+                <p className="text-slate-900 text-xs font-medium mb-3">Add Internship Details</p>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-slate-500 text-xs block mb-1">Start Date</label>
                       <input type="date" value={forms[app._id]?.startDate || ''} onChange={(e) => handleStartDateChange(app._id, app.duration, e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600/50 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        className="w-full bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                     </div>
                     <div>
                       <label className="text-slate-500 text-xs block mb-1">End Date</label>
                       <input type="date" value={forms[app._id]?.endDate || ''} disabled readOnly
-                        className="w-full bg-slate-900 border border-slate-700 text-slate-400 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-not-allowed" />
+                        className="w-full bg-slate-50 border border-slate-300 text-slate-500 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-not-allowed" />
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 p-2.5 bg-slate-800/80 border border-dashed border-slate-600/50 rounded-lg cursor-pointer hover:border-blue-500/50 transition-colors">
-                    <UploadCloud className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <span className="text-xs text-slate-300">{forms[app._id]?.certificateUrl ? 'Certificate uploaded' : 'Upload Certificate PDF'}</span>
+                  <label className="flex items-center gap-2 p-2.5 bg-white border border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-500/50 transition-colors">
+                    <UploadCloud className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-xs text-slate-700">{forms[app._id]?.certificateUrl ? 'Certificate uploaded' : 'Upload Certificate PDF'}</span>
                     <input type="file" accept="application/pdf" onChange={(e) => handleCertificateUpload(app._id, e.target.files[0])} className="hidden" />
                   </label>
                   <button onClick={() => handleUpdateInternship(app._id)} disabled={updating[app._id]}
@@ -1418,20 +662,20 @@ const AdminDashboard = () => {
             {app.certificateUrl && (
               <div className="bg-green-500/10 rounded-xl p-3 border border-green-500/20">
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><p className="text-slate-500">Start</p><p className="text-slate-300">{app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
-                  <div><p className="text-slate-500">End</p><p className="text-slate-300">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
-                  <div><p className="text-slate-500">Duration</p><p className="text-slate-300">{app.totalMonths || 'N/A'}</p></div>
+                  <div><p className="text-slate-500">Start</p><p className="text-slate-700">{app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
+                  <div><p className="text-slate-500">End</p><p className="text-slate-700">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
+                  <div><p className="text-slate-500">Duration</p><p className="text-slate-700">{app.totalMonths || 'N/A'}</p></div>
                 </div>
                 <a href={app.certificateUrl} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-300 transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" />View Certificate
                 </a>
               </div>
             )}
 
             {isDownloaded && (
-              <div className="bg-slate-900/40 rounded-xl p-3 border border-slate-700/40 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">Verify Certificate Status:</span>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">Verify Certificate Status:</span>
                 {app.isCertificateVerified ? (
                   <Badge variant="green">True</Badge>
                 ) : (
@@ -1445,9 +689,74 @@ const AdminDashboard = () => {
     );
   };
 
+
+  const TasksTab = () => (
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-600"/> Assign New Task</h2>
+        <form onSubmit={handleCreateTask} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input required type="text" placeholder="Task Title" value={newTask.title} onChange={e=>setNewTask({...newTask, title: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+          <input type="date" value={newTask.deadline} onChange={e=>setNewTask({...newTask, deadline: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+          <input type="text" placeholder="Student ID (Optional - target specific intern)" value={newTask.studentId} onChange={e=>setNewTask({...newTask, studentId: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+          <input type="text" placeholder="Domain (Optional - target specific domain)" value={newTask.domain} onChange={e=>setNewTask({...newTask, domain: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+          <textarea placeholder="Task Description" value={newTask.description} onChange={e=>setNewTask({...newTask, description: e.target.value})} className="md:col-span-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-24 resize-none" />
+          <button type="submit" className="md:col-span-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20">Assign Task</button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2"><ListTodo className="w-4 h-4 text-slate-500"/> Active Tasks</h3>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {tasks.length === 0 ? (
+            <p className="p-6 text-center text-slate-500 text-sm">No tasks assigned yet.</p>
+          ) : tasks.map(task => (
+            <div key={task._id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">{task.title}</h4>
+                <p className="text-xs text-slate-500 mt-1 line-clamp-1">{task.description}</p>
+                <div className="flex gap-2 mt-2">
+                  {task.studentId && <Badge variant="blue">Student: {task.studentId}</Badge>}
+                  {task.domain && <Badge variant="amber">Domain: {task.domain}</Badge>}
+                  {task.deadline && <Badge variant="slate">Due: {new Date(task.deadline).toLocaleDateString()}</Badge>}
+                </div>
+              </div>
+              <button onClick={() => handleDeleteTask(task._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const ActivityTab = () => (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+      <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+        <h3 className="font-bold text-slate-900 flex items-center gap-2"><Activity className="w-4 h-4 text-blue-600"/> Real-time Activity Feed</h3>
+        <button onClick={fetchTasksAndLogs} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Refresh</button>
+      </div>
+      <div className="divide-y divide-slate-100 max-h-[800px] overflow-y-auto p-4">
+        {activityLogs.length === 0 ? (
+          <p className="text-center text-slate-500 text-sm py-8">No recent activity.</p>
+        ) : activityLogs.map(log => (
+          <div key={log._id} className="py-4 flex gap-4">
+            <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${log.type === 'SUBMISSION' ? 'bg-green-500' : log.type === 'REGISTRATION' ? 'bg-blue-500' : log.type === 'PAYMENT' ? 'bg-amber-500' : 'bg-purple-500'}`} />
+            <div>
+              <p className="text-sm text-slate-900">{log.message}</p>
+              <p className="text-xs text-slate-400 mt-1">{new Date(log.timestamp).toLocaleString()}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/60">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -1455,36 +764,80 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-white font-bold text-base leading-tight">Admin Dashboard</h1>
+                <h1 className="text-slate-900 font-bold text-base leading-tight">Admin Dashboard</h1>
                 <p className="text-slate-500 text-xs hidden sm:block">Internship Management</p>
               </div>
             </div>
-            <button onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:text-red-300 text-sm font-medium transition-all duration-200">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
+            <div className="flex items-center gap-3">
+              
+              <button onClick={handleToggleRegistration}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${registrationEnabled 
+                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600' 
+                  : 'bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500'
+                }`}>
+                <UserPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Reg: {registrationEnabled ? 'ON' : 'OFF'}</span>
+              </button>
+              <button onClick={handleTogglePayment}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${paymentEnabled 
+                  ? 'bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600' 
+                  : 'bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500'
+                }`}>
+                <CreditCard className="w-4 h-4" />
+                <span className="hidden sm:inline">Pay: {paymentEnabled ? 'ON' : 'OFF'}</span>
+              </button>
+              <button onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 hover:text-red-300 text-sm font-medium transition-all duration-200">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-6">
+        
+        {/* Sidebar */}
+        <div className="w-full md:w-64 flex-shrink-0">
+          <div className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-row md:flex-col gap-2 overflow-x-auto">
+            <button onClick={() => setActiveSidebarTab('interns')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'interns' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+              <Users className="w-4 h-4" />
+              Interns & Apps
+            </button>
+            <button onClick={() => setActiveSidebarTab('tasks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+              <Briefcase className="w-4 h-4" />
+              Tasks & Projects
+            </button>
+            <button onClick={() => setActiveSidebarTab('activity')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'activity' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+              <Activity className="w-4 h-4" />
+              Activity Logs
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          {activeSidebarTab === 'interns' && (
+            <div className="animate-fade-in">
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard label="Total Applications" value={filteredApplications.length} icon={FileText}
-            color={{ border: 'border-blue-500/20', bg: 'bg-blue-500/5', label: 'text-slate-400', sub: 'text-blue-400', iconBg: 'bg-blue-500/20', icon: 'text-blue-400', glow: 'bg-blue-500' }}
+            color={{ border: 'border-blue-500/20', bg: 'bg-blue-500/5', label: 'text-slate-500', sub: 'text-blue-600', iconBg: 'bg-blue-500/20', icon: 'text-blue-600', glow: 'bg-blue-500' }}
             sub="Filtered results" />
           <StatCard label="New Applications" value={newApplications.length} icon={Clock}
-            color={{ border: 'border-amber-500/20', bg: 'bg-amber-500/5', label: 'text-slate-400', sub: 'text-amber-400', iconBg: 'bg-amber-500/20', icon: 'text-amber-400', glow: 'bg-amber-500' }}
+            color={{ border: 'border-amber-500/20', bg: 'bg-amber-500/5', label: 'text-slate-500', sub: 'text-amber-600', iconBg: 'bg-amber-500/20', icon: 'text-amber-600', glow: 'bg-amber-500' }}
             sub="Pending export" />
           <StatCard label="Processed" value={downloadedApplications.length} icon={CheckCircle}
-            color={{ border: 'border-green-500/20', bg: 'bg-green-500/5', label: 'text-slate-400', sub: 'text-green-400', iconBg: 'bg-green-500/20', icon: 'text-green-400', glow: 'bg-green-500' }}
+            color={{ border: 'border-green-500/20', bg: 'bg-green-500/5', label: 'text-slate-500', sub: 'text-green-600', iconBg: 'bg-green-500/20', icon: 'text-green-600', glow: 'bg-green-500' }}
             sub="Downloaded" />
           <StatCard label="Paid Interns" value={paidCount} icon={TrendingUp}
-            color={{ border: 'border-teal-500/20', bg: 'bg-teal-500/5', label: 'text-slate-400', sub: 'text-teal-400', iconBg: 'bg-teal-500/20', icon: 'text-teal-400', glow: 'bg-teal-500' }}
+            color={{ border: 'border-teal-500/20', bg: 'bg-teal-500/5', label: 'text-slate-500', sub: 'text-teal-600', iconBg: 'bg-teal-500/20', icon: 'text-teal-600', glow: 'bg-teal-500' }}
             sub="Confirmed" />
         </div>
 
-        <div className="bg-slate-800/30 rounded-2xl border border-slate-700/40 p-4 mb-6">
+        <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -1493,10 +846,10 @@ const AdminDashboard = () => {
                 placeholder="Search by name, email, student ID, or domain..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -1505,7 +858,7 @@ const AdminDashboard = () => {
             <div className="relative min-w-[180px]">
               <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
               <select value={selectedDomain} onChange={(e) => setSelectedDomain(e.target.value)}
-                className="w-full appearance-none pl-10 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/50 text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all cursor-pointer">
+                className="w-full appearance-none pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all cursor-pointer">
                 <option value="">All Domains</option>
                 {domains.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
@@ -1523,15 +876,15 @@ const AdminDashboard = () => {
                 <Download className="w-4 h-4" />
                 Export Paid
               </button>
-              <div className="flex-1 lg:flex-none flex gap-1 bg-slate-900/60 border border-slate-700/50 rounded-xl p-1 items-center">
+              <div className="flex-1 lg:flex-none flex gap-1 bg-slate-50 border border-slate-300 rounded-xl p-1 items-center">
                 <select 
                   value={exportDuration} 
                   onChange={(e) => setExportDuration(e.target.value)}
-                  className="bg-transparent text-white text-xs border-0 focus:ring-0 focus:outline-none px-2 cursor-pointer"
+                  className="bg-transparent text-slate-900 text-xs border-0 focus:ring-0 focus:outline-none px-2 cursor-pointer"
                 >
-                  <option value="1" className="bg-slate-900 text-white">1 Month</option>
-                  <option value="2" className="bg-slate-900 text-white">2 Months</option>
-                  <option value="3" className="bg-slate-900 text-white">3 Months</option>
+                  <option value="1" className="bg-slate-50 text-slate-900">1 Month</option>
+                  <option value="2" className="bg-slate-50 text-slate-900">2 Months</option>
+                  <option value="3" className="bg-slate-50 text-slate-900">3 Months</option>
                 </select>
                 <button 
                   onClick={() => handleExportProjectSubmitted(exportDuration)}
@@ -1545,13 +898,13 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-slate-800/30 rounded-2xl border border-slate-700/40 p-4 mb-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-white font-semibold text-sm">Bulk Certificate Upload</h3>
+              <h3 className="text-slate-900 font-semibold text-sm">Bulk Certificate Upload</h3>
               <p className="text-slate-500 text-xs mt-0.5">Upload Excel with columns: Certificate_Number, Student_Name, Domain, Start_Date, End_Date, Duration, Student_ID</p>
             </div>
-            <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${uploadingExcel ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-slate-600/50 bg-slate-900/50 text-slate-300 hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10'}`}>
+            <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${uploadingExcel ? 'border-blue-500/30 bg-blue-500/10 text-blue-600' : 'border-slate-300 bg-slate-50/50 text-slate-700 hover:border-blue-500/50 hover:text-blue-600 hover:bg-blue-500/10'}`}>
               {uploadingExcel ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /><span>Uploading...</span></>
               ) : (
@@ -1562,47 +915,47 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-800/40 p-1 rounded-xl border border-slate-700/40 mb-6 w-fit">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-fit">
           <button
             onClick={() => setActiveTab('new')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'new' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'new' ? 'bg-slate-200 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             <Clock className="w-4 h-4" />
             New Applications
             {newApplications.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'new' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400'}`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'new' ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
                 {newApplications.length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('downloaded')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'downloaded' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'downloaded' ? 'bg-slate-200 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             <CheckCircle className="w-4 h-4" />
             Processed
             {downloadedApplications.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'downloaded' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'downloaded' ? 'bg-green-500/20 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
                 {downloadedApplications.length}
               </span>
             )}
           </button>
         </div>
 
-        <div className="bg-slate-800/30 rounded-2xl border border-slate-700/40 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
           {displayedApps.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 px-4">
-              <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
                 {activeTab === 'new' ? <Clock className="w-8 h-8 text-slate-600" /> : <CheckCircle className="w-8 h-8 text-slate-600" />}
               </div>
-              <p className="text-white font-medium text-lg">
+              <p className="text-slate-900 font-medium text-lg">
                 {activeTab === 'new' ? 'No new applications' : 'No processed applications'}
               </p>
               <p className="text-slate-500 text-sm mt-1">
                 {activeTab === 'new' ? 'All applications have been exported.' : 'Export new applications to see them here.'}
               </p>
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="mt-4 flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm transition-colors">
+                <button onClick={() => setSearchQuery('')} className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-300 text-sm transition-colors">
                   <X className="w-4 h-4" />Clear search
                 </button>
               )}
@@ -1612,108 +965,108 @@ const AdminDashboard = () => {
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-700/60 bg-slate-900/40">
+                    <tr className="border-b border-slate-300/60 bg-slate-50">
                       {activeTab === 'new' ? (
                         <>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Student ID</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Domain</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Timeline</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Applied At</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tasks</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Student ID</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Domain</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Timeline</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied At</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
                         </>
                       ) : (
                         <>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Student ID</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Domain</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Batch</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Downloaded At</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Start Date</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">End Date</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Months</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Certificate</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tasks</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Student ID</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Domain</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Downloaded At</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Start Date</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">End Date</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Months</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Certificate</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Dashboard Access</th>
+                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
                         </>
                       )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/30">
                     {displayedApps.map((app, i) => (
-                      <tr key={app._id || i} className="hover:bg-slate-700/20 transition-colors duration-150 group">
-                        <td className="py-3.5 px-4 text-slate-400 text-sm font-mono">{app.studentId || '—'}</td>
+                      <tr key={app._id || i} className="hover:bg-slate-200/20 transition-colors duration-150 group">
+                        <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">{app.studentId || '—'}</td>
                         <td className="py-3.5 px-4">
-                          <span className="text-white font-medium text-sm group-hover:text-blue-300 transition-colors">{app.name}</span>
+                          <span className="text-slate-900 font-medium text-sm group-hover:text-blue-300 transition-colors">{app.name}</span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400 text-sm">{app.email}</td>
+                        <td className="py-3.5 px-4 text-slate-500 text-sm">{app.email}</td>
                         <td className="py-3.5 px-4">
                           <Badge variant="blue">{app.domain}</Badge>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400 text-sm whitespace-nowrap">{app.duration}</td>
+                        <td className="py-3.5 px-4 text-slate-500 text-sm whitespace-nowrap">{app.duration}</td>
 
                         {activeTab === 'new' ? (
                           <>
                             <td className="py-3.5 px-4">
                               {app.startDate ? (
                                 <div className="space-y-0.5">
-                                  <p className="text-xs text-green-400 whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
+                                  <p className="text-xs text-green-600 whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
                                   <p className="text-xs text-slate-500 whitespace-nowrap">{new Date(app.endDate).toLocaleDateString('en-IN')}</p>
                                 </div>
                               ) : (
                                 <div className="relative min-w-[130px]">
                                   <select onChange={(e) => handleStartDateAssignment(app._id, e.target.value)} defaultValue=""
-                                    className="w-full appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                    className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                     <option value="" disabled>Set date...</option>
                                     {upcomingDateOptions.map((opt, idx) => <option key={idx} value={opt.value}>{opt.label}</option>)}
                                   </select>
-                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                                 </div>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-slate-400 text-xs whitespace-nowrap">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
+                            <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="Not Sent">Not Sent</option>
                                   <option value="Sent">Sent</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="No">No</option>
                                   <option value="Yes">Yes</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="Strict">Strict</option>
                                   <option value="Give Access">Give Access</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1">
-                                <span className="text-white text-xs font-medium">{app.submissions?.length || 0}</span>
+                                <span className="text-slate-900 text-xs font-medium">{app.submissions?.length || 0}</span>
                                 <span className="text-slate-600 text-xs">/</span>
                                 <span className="text-slate-500 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
                               </div>
@@ -1721,24 +1074,24 @@ const AdminDashboard = () => {
                           </>
                         ) : (
                           <>
-                            <td className="py-3.5 px-4 text-slate-400 text-sm">{app.batch || '—'}</td>
-                            <td className="py-3.5 px-4 text-green-400 text-xs whitespace-nowrap">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
+                            <td className="py-3.5 px-4 text-slate-500 text-sm">{app.batch || '—'}</td>
+                            <td className="py-3.5 px-4 text-green-600 text-xs whitespace-nowrap">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
                             <td className="py-3.5 px-4">
                               {app.startDate ? (
-                                <span className="text-slate-300 text-xs whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</span>
+                                <span className="text-slate-700 text-xs whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</span>
                               ) : (
                                 <div className="relative min-w-[130px]">
                                   <select onChange={(e) => handleStartDateAssignment(app._id, e.target.value)} defaultValue=""
-                                    className="w-full appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                    className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                     <option value="" disabled>Set date...</option>
                                     {upcomingDateOptions.map((opt, idx) => <option key={idx} value={opt.value}>{opt.label}</option>)}
                                   </select>
-                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                                 </div>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-slate-400 text-xs whitespace-nowrap">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : '—'}</td>
-                            <td className="py-3.5 px-4 text-slate-400 text-sm">{app.totalMonths || '—'}</td>
+                            <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : '—'}</td>
+                            <td className="py-3.5 px-4 text-slate-500 text-sm">{app.totalMonths || '—'}</td>
                             <td className="py-3.5 px-4">
                               {app.isCertificateVerified ? (
                                 <Badge variant="green">True</Badge>
@@ -1749,36 +1102,36 @@ const AdminDashboard = () => {
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="Not Sent">Not Sent</option>
                                   <option value="Sent">Sent</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="No">No</option>
                                   <option value="Yes">Yes</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="relative">
                                 <select value={app.bypassBlock ? 'Give Access' : 'Strict'} onChange={() => handleToggleBypassBlock(app._id, app.bypassBlock)}
-                                  className="appearance-none bg-slate-800/80 border border-slate-600/50 text-white rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                                   <option value="Strict">Strict</option>
                                   <option value="Give Access">Give Access</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1">
-                                <span className="text-white text-xs font-medium">{app.submissions?.length || 0}</span>
+                                <span className="text-slate-900 text-xs font-medium">{app.submissions?.length || 0}</span>
                                 <span className="text-slate-600 text-xs">/</span>
                                 <span className="text-slate-500 text-xs">{app.duration ? parseInt(app.duration) : 1}</span>
                               </div>
@@ -1800,10 +1153,10 @@ const AdminDashboard = () => {
           )}
 
           {displayedApps.length > 0 && (
-            <div className="border-t border-slate-700/40 px-4 py-3 flex items-center justify-between bg-slate-900/20">
-              <p className="text-slate-500 text-xs">Showing <span className="text-slate-300 font-medium">{displayedApps.length}</span> {activeTab === 'new' ? 'new' : 'processed'} applications</p>
+            <div className="border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50/20">
+              <p className="text-slate-500 text-xs">Showing <span className="text-slate-700 font-medium">{displayedApps.length}</span> {activeTab === 'new' ? 'new' : 'processed'} applications</p>
               {(searchQuery || selectedDomain) && (
-                <button onClick={() => { setSearchQuery(''); setSelectedDomain(''); }} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+                <button onClick={() => { setSearchQuery(''); setSelectedDomain(''); }} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors">
                   <X className="w-3.5 h-3.5" />Clear filters
                 </button>
               )}
@@ -1811,12 +1164,17 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
+      )}
+      {activeSidebarTab === 'tasks' && <TasksTab />}
+      {activeSidebarTab === 'activity' && <ActivityTab />}
+    </div>
+  </div>
 
       <ToastContainer
         theme="dark"
         position="top-right"
         autoClose={3000}
-        toastClassName="!bg-slate-800 !border !border-slate-700 !text-white"
+        toastClassName="!bg-slate-100 !border !border-slate-300 !text-slate-900"
         progressClassName="!bg-blue-500"
       />
     </div>

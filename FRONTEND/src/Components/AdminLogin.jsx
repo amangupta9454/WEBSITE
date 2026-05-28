@@ -35,37 +35,45 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800 flex items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-white/20">
-          <h2 className="text-3xl font-bold text-center text-white mb-8">Admin Login</h2>
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans flex items-center justify-center py-12 px-4 sm:px-6">
+      {/* Dynamic Background Elements matching Project.jsx */}
+      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent"></div>
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute top-48 -left-24 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl opacity-50"></div>
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 sm:p-10 border border-slate-200">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Admin Portal</h2>
+            <p className="text-slate-500 mt-2 text-sm font-medium">Secure access to management dashboard</p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-white mb-2">Email</label>
+              <label className="block text-slate-700 mb-2 text-sm font-semibold">Email Address</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Admin email"
+                placeholder="admin@codeanova.com"
                 required
-                className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition"
+                className="w-full px-5 py-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
               />
             </div>
 
             <div className="relative">
-              <label className="block text-white mb-2">Password</label>
+              <label className="block text-slate-700 mb-2 text-sm font-semibold">Password</label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Admin password"
+                placeholder="••••••••"
                 required
-                className="w-full px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition pr-12"
+                className="w-full px-5 py-3.5 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm pr-12"
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-400 hover:text-white">
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-9 text-slate-400 hover:text-slate-600 transition-colors p-2">
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
@@ -73,22 +81,22 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-linear-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl transition-all duration-300 shadow-xl hover:shadow-cyan-500/50 disabled:opacity-70 flex items-center justify-center"
+              className="w-full mt-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-blue-600/20 disabled:opacity-70 flex items-center justify-center text-lg"
             >
               {loading ? (
                 <>
                   <Loader2 className="animate-spin mr-2" size={24} />
-                  Logging in...
+                  Authenticating...
                 </>
               ) : (
-                'Login as Admin'
+                'Log In'
               )}
             </button>
           </form>
         </div>
       </div>
 
-      <ToastContainer theme="dark" position="top-center" />
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 };

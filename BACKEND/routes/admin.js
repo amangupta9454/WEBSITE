@@ -13,8 +13,11 @@ const {
   updatePaidStatus,
   updateBypassBlock,
   markPaidExported,
-  markProjectExported
+  markProjectExported,
+  getPaymentSetting,
+  togglePaymentSetting
 } = require('../controllers/adminController');
+const { getRegistrationSetting, toggleRegistrationSetting } = require('../controllers/adminController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -30,5 +33,9 @@ router.post('/update-paid-status', auth, updatePaidStatus);
 router.post('/update-bypass-block', auth, updateBypassBlock);
 router.post('/mark-paid-exported', auth, markPaidExported);
 router.post('/mark-project-exported', auth, markProjectExported);
+router.get('/settings/payment', auth, getPaymentSetting);
+router.post('/settings/payment', auth, togglePaymentSetting);
+router.get('/settings/registration', getRegistrationSetting);
+router.post('/settings/registration', auth, toggleRegistrationSetting);
 
 module.exports = router;

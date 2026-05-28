@@ -1,17 +1,17 @@
 import React from 'react';
 import MainLayout from '../layouts/MainLayout';
-import ServicesOverview from '../sections/ServicesOverview';
+import PortfolioPreview from '../sections/PortfolioPreview';
 import CTA from '../sections/CTA';
 
-const Services = () => {
+const Projects = () => {
   return (
     <MainLayout>
       <div className="pt-16">
-        <ServicesOverview />
+        <PortfolioPreview />
       </div>
       <CTA />
     </MainLayout>
   );
 };
 
-export default Services;
+export default Projects;

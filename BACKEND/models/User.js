@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
     passingYear: String,
     domain: String,
     duration: String, // "1", "2", or "3" (Months)
+    resume: String,
     portfolio: String, // Keeping legacy for past apps
     github: String,    // Keeping legacy for past apps
     linkedin: String,  // Keeping legacy for past apps

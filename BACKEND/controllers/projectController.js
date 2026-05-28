@@ -2,6 +2,7 @@
 
 const User = require('../models/User');
 const ProjectSubmission = require('../models/ProjectSubmission');
+const Settings = require('../models/Settings');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -26,7 +27,7 @@ const submitProject = async (req, res) => {
     }
 
     // Validate provided details match registered (basic check)
-    if (name !== internship.name || email !== internship.email || mobile !== internship.mobile || domain !== internship.domain) {
+    if (name !== internship.name || email !== internship.email || domain !== internship.domain) {
       return res.status(400).json({ message: 'Details do not match registered information' });
     }
 
@@ -42,7 +43,15 @@ const submitProject = async (req, res) => {
     }
 
     const currentMonth = previousCount + 1;
-    const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid);
+    
+    // Check global payment setting
+    let isPaymentEnabled = true; // Default to true
+    const paymentSetting = await Settings.findOne({ key: 'paymentEnabled' });
+    if (paymentSetting) {
+      isPaymentEnabled = paymentSetting.value;
+    }
+    
+    const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid && isPaymentEnabled);
 
     if (paymentRequired) {
       // Create Razorpay order
@@ -65,10 +74,10 @@ const submitProject = async (req, res) => {
         studentId,
         name,
         email,
-        mobile,
+        mobile: internship.mobile,
         domain,
         duration: registeredDuration,
-        assignments: assignments || [], // Optional
+        assignments: assignments || [],
         month: currentMonth
       });
 
@@ -120,7 +129,7 @@ const verifyPayment = async (req, res) => {
       studentId,
       name,
       email,
-      mobile,
+      mobile: internship.mobile,
       domain,
       duration: registeredDuration,
       assignments: assignments || [],
