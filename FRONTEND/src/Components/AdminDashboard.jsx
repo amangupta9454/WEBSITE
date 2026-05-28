@@ -1,26 +1,54 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import * as XLSX from 'xlsx';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import * as XLSX from "xlsx";
 import {
-  LogOut, Loader2, Filter, Download, CheckCircle, Clock, User, Mail,
-  Briefcase, Calendar, Phone, GraduationCap, MapPin, FileText,
-  UploadCloud, Save, FileInput, Search, ChevronDown, ExternalLink, UserPlus,
-  TrendingUp, Users, AlertCircle, X, CreditCard, LayoutDashboard, Activity, Plus, Trash2, ListTodo, BookOpen
-} from 'lucide-react';
-import SummerProjectsAdmin from './SummerProjectsAdmin';
-import NormalTasksAdmin from './NormalTasksAdmin';
+  LogOut,
+  Loader2,
+  Filter,
+  Download,
+  CheckCircle,
+  Clock,
+  User,
+  Mail,
+  Briefcase,
+  Calendar,
+  Phone,
+  GraduationCap,
+  MapPin,
+  FileText,
+  UploadCloud,
+  Save,
+  FileInput,
+  Search,
+  ChevronDown,
+  ExternalLink,
+  UserPlus,
+  TrendingUp,
+  Users,
+  AlertCircle,
+  X,
+  CreditCard,
+  LayoutDashboard,
+  Activity,
+  Plus,
+  Trash2,
+  ListTodo,
+  BookOpen,
+} from "lucide-react";
+import SummerProjectsAdmin from "./SummerProjectsAdmin";
+import NormalTasksAdmin from "./NormalTasksAdmin";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [domains, setDomains] = useState([]);
-  const [selectedDomain, setSelectedDomain] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('new');
-  const [activeSidebarTab, setActiveSidebarTab] = useState('interns');
+  const [selectedDomain, setSelectedDomain] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("new");
+  const [activeSidebarTab, setActiveSidebarTab] = useState("interns");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState({});
@@ -28,10 +56,15 @@ const AdminDashboard = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [selectedSubmissionsApp, setSelectedSubmissionsApp] = useState(null);
-  const [exportDuration, setExportDuration] = useState('1');
+  const [exportDuration, setExportDuration] = useState("1");
   const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
-  const [assignTasksModal, setAssignTasksModal] = useState({ isOpen: false, appId: null, duration: 1, tasks: [] });
+  const [assignTasksModal, setAssignTasksModal] = useState({
+    isOpen: false,
+    appId: null,
+    duration: 1,
+    tasks: [],
+  });
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -41,47 +74,58 @@ const AdminDashboard = () => {
     for (let i = 0; i < 3; i++) {
       const year = today.getFullYear();
       const month = today.getMonth() + i;
-      [5, 15, 25].forEach(day => {
+      [5, 15, 25].forEach((day) => {
         const d = new Date(year, month, day);
         if (d >= today) {
           dates.push({
             value: d.toISOString(),
-            label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+            label: d.toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
           });
         }
       });
     }
-    return dates.sort((a, b) => new Date(a.value) - new Date(b.value)).slice(0, 6);
+    return dates
+      .sort((a, b) => new Date(a.value) - new Date(b.value))
+      .slice(0, 6);
   };
   const upcomingDateOptions = getUpcomingDates();
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     if (!token) {
-      toast.error('Admin login required');
-      navigate('/admin-login');
+      toast.error("Admin login required");
+      navigate("/admin-login");
       return;
     }
     fetchApplications(token);
     fetchPaymentSetting(token);
     fetchRegistrationSetting(token);
-    const logoutTimer = setTimeout(() => {
-      handleLogout();
-      toast.info('Session timed out due to inactivity');
-    }, 5 * 60 * 1000);
+    const logoutTimer = setTimeout(
+      () => {
+        handleLogout();
+        toast.info("Session timed out due to inactivity");
+      },
+      5 * 60 * 1000,
+    );
     return () => clearTimeout(logoutTimer);
   }, []);
 
   useEffect(() => {
     let result = applications;
-    if (selectedDomain) result = result.filter(app => app.domain === selectedDomain);
+    if (selectedDomain)
+      result = result.filter((app) => app.domain === selectedDomain);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(app =>
-        app.name?.toLowerCase().includes(q) ||
-        app.email?.toLowerCase().includes(q) ||
-        app.studentId?.toLowerCase().includes(q) ||
-        app.domain?.toLowerCase().includes(q)
+      result = result.filter(
+        (app) =>
+          app.name?.toLowerCase().includes(q) ||
+          app.email?.toLowerCase().includes(q) ||
+          app.studentId?.toLowerCase().includes(q) ||
+          app.domain?.toLowerCase().includes(q),
       );
     }
     setFilteredApplications(result);
@@ -89,27 +133,41 @@ const AdminDashboard = () => {
 
   const fetchApplications = async (token) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internships`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/internships`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const allApps = res.data;
       setApplications(allApps);
       setFilteredApplications(allApps);
-      
+
       const baseDomains = [
-        'Frontend Development','Backend Development','Full Stack Development',
-        'C Programming','Python Development','Artificial Intelligence',
-        'Figma or UI/UX','Data Science','Machine Learning',
-        'App Development','Marketing'
+        "Frontend Development",
+        "Backend Development",
+        "Full Stack Development",
+        "C Programming",
+        "Python Development",
+        "Artificial Intelligence",
+        "Figma or UI/UX",
+        "Data Science",
+        "Machine Learning",
+        "App Development",
+        "Marketing",
       ];
-      const uniqueDynamicDomains = [...new Set(allApps.map(app => app.domain))].filter(Boolean);
-      const allDomains = [...new Set([...baseDomains, ...uniqueDynamicDomains])].sort();
-      
+      const uniqueDynamicDomains = [
+        ...new Set(allApps.map((app) => app.domain)),
+      ].filter(Boolean);
+      const allDomains = [
+        ...new Set([...baseDomains, ...uniqueDynamicDomains]),
+      ].sort();
+
       setDomains(allDomains);
     } catch (err) {
-      toast.error('Failed to load applications');
-      localStorage.removeItem('adminToken');
-      navigate('/admin-login');
+      toast.error("Failed to load applications");
+      localStorage.removeItem("adminToken");
+      navigate("/admin-login");
     } finally {
       setLoading(false);
     }
@@ -117,57 +175,78 @@ const AdminDashboard = () => {
 
   const fetchPaymentSetting = async (token) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       setPaymentEnabled(res.data.paymentEnabled);
     } catch (err) {
-      console.error('Failed to load payment setting:', err);
+      console.error("Failed to load payment setting:", err);
     }
   };
 
   const fetchRegistrationSetting = async (token) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`);
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`,
+      );
       setRegistrationEnabled(res.data.registrationEnabled);
     } catch (err) {
-      console.error('Failed to load registration setting:', err);
+      console.error("Failed to load registration setting:", err);
     }
   };
 
-  
   const handleToggleRegistration = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`, 
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`,
         { registrationEnabled: !registrationEnabled },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setRegistrationEnabled(res.data.registrationEnabled);
       toast.success(res.data.message);
     } catch (err) {
-      toast.error('Failed to toggle registration setting');
+      toast.error("Failed to toggle registration setting");
     }
   };
 
   const openAssignTasksModal = (appId, durationStr, existingTasks = []) => {
     const totalMonths = parseInt(durationStr.split(" ")[0], 10) || 1;
-    const initialTasks = Array.from({ length: totalMonths }).map((_, i) => existingTasks[i] || '');
-    setAssignTasksModal({ isOpen: true, appId, duration: totalMonths, tasks: initialTasks });
+    const initialTasks = Array.from({ length: totalMonths }).map(
+      (_, i) => existingTasks[i] || "",
+    );
+    setAssignTasksModal({
+      isOpen: true,
+      appId,
+      duration: totalMonths,
+      tasks: initialTasks,
+    });
   };
 
   const handleAssignTasksSubmit = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem("adminToken");
       const { appId, tasks } = assignTasksModal;
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-normal-tasks`, {
-        applicationId: appId,
-        tasks
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-normal-tasks`,
+        {
+          applicationId: appId,
+          tasks,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       toast.success("Tasks assigned successfully");
-      setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] });
+      setAssignTasksModal({
+        isOpen: false,
+        appId: null,
+        duration: 1,
+        tasks: [],
+      });
       fetchApplications(token);
     } catch (err) {
       toast.error("Failed to assign tasks");
@@ -175,31 +254,32 @@ const AdminDashboard = () => {
   };
 
   const handleTogglePayment = async () => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`, 
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`,
         { paymentEnabled: !paymentEnabled },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setPaymentEnabled(res.data.paymentEnabled);
       toast.success(res.data.message);
     } catch (err) {
-      toast.error('Failed to toggle payment setting');
+      toast.error("Failed to toggle payment setting");
     }
   };
 
   const handleExport = async () => {
     setExporting(true);
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     try {
-      const newApps = filteredApplications.filter(app => !app.downloadedAt);
+      const newApps = filteredApplications.filter((app) => !app.downloadedAt);
       if (newApps.length === 0) {
-        toast.info('No new applications to export');
+        toast.info("No new applications to export");
         setExporting(false);
         return;
       }
-      const data = newApps.map(app => ({
-        StudentID: app.studentId || 'N/A',
+      const data = newApps.map((app) => ({
+        StudentID: app.studentId || "N/A",
         Name: app.name,
         Email: app.email,
         Domain: app.domain,
@@ -212,30 +292,79 @@ const AdminDashboard = () => {
         College: app.college,
         State: app.state,
         PassingYear: app.passingYear,
-        Portfolio: app.portfolio || 'N/A',
-        GitHub: app.github || 'N/A',
-        LinkedIn: app.linkedin || 'N/A',
-        Batch: app.batch || 'N/A',
+        Portfolio: app.portfolio || "N/A",
+        GitHub: app.github || "N/A",
+        LinkedIn: app.linkedin || "N/A",
+        Batch: app.batch || "N/A",
         WhyHire: app.whyHire,
         HearAbout: app.hearAbout,
         ResumeURL: app.resumeUrl,
-        AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
+        AppliedAt: new Date(app.appliedAt).toLocaleString("en-IN"),
       }));
       const ws = XLSX.utils.json_to_sheet(data, {
-        header: ['StudentID', 'Name', 'Email', 'Domain', 'Duration', 'Batch', 'Mobile', 'WhatsApp', 'Course', 'Branch', 'Year', 'College', 'State', 'PassingYear', 'Portfolio', 'GitHub', 'LinkedIn', 'WhyHire', 'HearAbout', 'ResumeURL', 'AppliedAt']
+        header: [
+          "StudentID",
+          "Name",
+          "Email",
+          "Domain",
+          "Duration",
+          "Batch",
+          "Mobile",
+          "WhatsApp",
+          "Course",
+          "Branch",
+          "Year",
+          "College",
+          "State",
+          "PassingYear",
+          "Portfolio",
+          "GitHub",
+          "LinkedIn",
+          "WhyHire",
+          "HearAbout",
+          "ResumeURL",
+          "AppliedAt",
+        ],
       });
-      const colWidths = [{ wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 35 }, { wch: 35 }, { wch: 60 }, { wch: 20 }, { wch: 50 }, { wch: 22 }];
-      ws['!cols'] = colWidths;
+      const colWidths = [
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 35 },
+        { wch: 35 },
+        { wch: 35 },
+        { wch: 60 },
+        { wch: 20 },
+        { wch: 50 },
+        { wch: 22 },
+      ];
+      ws["!cols"] = colWidths;
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Internship Applications');
+      XLSX.utils.book_append_sheet(wb, ws, "Internship Applications");
       const fileName = `CodeNova_New_Internships_${new Date().toISOString().slice(0, 10)}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      const applicationIds = newApps.map(app => app._id);
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-downloaded`, { applicationIds }, { headers: { Authorization: `Bearer ${token}` } });
+      const applicationIds = newApps.map((app) => app._id);
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-downloaded`,
+        { applicationIds },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       toast.success(`${newApps.length} new applications exported!`);
-      fetchApplications(token);
+      await fetchApplications(token);
+      setActiveTab("downloaded");
     } catch (err) {
-      toast.error('Export failed. Please try again.');
+      toast.error("Export failed. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -243,34 +372,53 @@ const AdminDashboard = () => {
 
   const handleExportPaid = async () => {
     try {
-      const paidApps = applications.filter(app => app.hasPaid && !app.paidExported);
+      const paidApps = applications.filter(
+        (app) => app.hasPaid && !app.paidExported,
+      );
       if (paidApps.length === 0) {
-        toast.info('No newly paid applications found to export.');
+        toast.info("No newly paid applications found to export.");
         return;
       }
-      const data = paidApps.map(app => ({
-        StudentID: app.studentId || 'N/A', Name: app.name, Email: app.email,
-        Domain: app.domain, Duration: app.duration, Mobile: app.mobile,
-        AppliedAt: new Date(app.appliedAt).toLocaleString('en-IN'),
-        StartDate: app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A',
-        EndDate: app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A',
-        TotalSubmissions: app.submissions ? app.submissions.length : 0
+      const data = paidApps.map((app) => ({
+        StudentID: app.studentId || "N/A",
+        Name: app.name,
+        Email: app.email,
+        Domain: app.domain,
+        Duration: app.duration,
+        Mobile: app.mobile,
+        AppliedAt: new Date(app.appliedAt).toLocaleString("en-IN"),
+        StartDate: app.startDate
+          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          : "N/A",
+        EndDate: app.endDate
+          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          : "N/A",
+        TotalSubmissions: app.submissions ? app.submissions.length : 0,
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Paid Interns');
-      XLSX.writeFile(wb, `CodeNova_Paid_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Paid Interns");
+      XLSX.writeFile(
+        wb,
+        `CodeNova_Paid_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      );
 
-      const token = localStorage.getItem('adminToken');
-      const applicationIds = paidApps.map(app => app._id);
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-paid-exported`, { applicationIds }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("adminToken");
+      const applicationIds = paidApps.map((app) => app._id);
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-paid-exported`,
+        { applicationIds },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
-      toast.success(`${paidApps.length} newly paid applications exported and marked!`);
+      toast.success(
+        `${paidApps.length} newly paid applications exported and marked!`,
+      );
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to export paid applications');
+      toast.error("Failed to export paid applications");
       console.error(err);
     }
   };
@@ -278,213 +426,298 @@ const AdminDashboard = () => {
   const handleExportProjectSubmitted = async (durationVal) => {
     try {
       if (!durationVal) {
-        toast.info('Please select an internship duration to export.');
+        toast.info("Please select an internship duration to export.");
         return;
       }
 
-      const targetDurationStr = `${durationVal} Month${parseInt(durationVal) > 1 ? 's' : ''}`;
-      
-      const completedApps = applications.filter(app => {
-        const regDuration = parseInt(app.duration?.split(' ')[0], 10) || 1;
+      const targetDurationStr = `${durationVal} Month${parseInt(durationVal) > 1 ? "s" : ""}`;
+
+      const completedApps = applications.filter((app) => {
+        const regDuration = parseInt(app.duration?.split(" ")[0], 10) || 1;
         const subCount = app.submissions ? app.submissions.length : 0;
         const isTargetDuration = regDuration === parseInt(durationVal, 10);
-        return isTargetDuration && subCount >= regDuration && !app.projectExported;
+        return (
+          isTargetDuration && subCount >= regDuration && !app.projectExported
+        );
       });
 
       if (completedApps.length === 0) {
-        toast.info(`No newly completed project submissions found for ${targetDurationStr}.`);
+        toast.info(
+          `No newly completed project submissions found for ${targetDurationStr}.`,
+        );
         return;
       }
 
-      const data = completedApps.map(app => ({
-        'Student Name': app.name,
-        'Email ID': app.email,
-        'Student ID': app.studentId || 'N/A',
-        'Project Submitted': app.submissions ? app.submissions.length : 0,
-        'Mobile Number': app.mobile,
-        'Internship Start Date': app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A',
-        'End Date': app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A',
-        'Project Submission Duration': app.duration || targetDurationStr
+      const data = completedApps.map((app) => ({
+        "Student Name": app.name,
+        "Email ID": app.email,
+        "Student ID": app.studentId || "N/A",
+        "Project Submitted": app.submissions ? app.submissions.length : 0,
+        "Mobile Number": app.mobile,
+        "Internship Start Date": app.startDate
+          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          : "N/A",
+        "End Date": app.endDate
+          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          : "N/A",
+        "Project Submission Duration": app.duration || targetDurationStr,
       }));
 
       const ws = XLSX.utils.json_to_sheet(data, {
-        header: ['Student Name', 'Email ID', 'Student ID', 'Project Submitted', 'Mobile Number', 'Internship Start Date', 'End Date', 'Project Submission Duration']
+        header: [
+          "Student Name",
+          "Email ID",
+          "Student ID",
+          "Project Submitted",
+          "Mobile Number",
+          "Internship Start Date",
+          "End Date",
+          "Project Submission Duration",
+        ],
       });
-      const colWidths = [{ wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 25 }];
-      ws['!cols'] = colWidths;
+      const colWidths = [
+        { wch: 25 },
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 25 },
+      ];
+      ws["!cols"] = colWidths;
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, `Completed Interns ${durationVal}M`);
-      XLSX.writeFile(wb, `CodeNova_Completed_${durationVal}Month_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(
+        wb,
+        `CodeNova_Completed_${durationVal}Month_Interns_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      );
 
-      const token = localStorage.getItem('adminToken');
-      const applicationIds = completedApps.map(app => app._id);
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-project-exported`, { applicationIds }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("adminToken");
+      const applicationIds = completedApps.map((app) => app._id);
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/mark-project-exported`,
+        { applicationIds },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
-      toast.success(`${completedApps.length} completed students (${targetDurationStr}) exported!`);
+      toast.success(
+        `${completedApps.length} completed students (${targetDurationStr}) exported!`,
+      );
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to export completed student projects');
+      toast.error("Failed to export completed student projects");
       console.error(err);
     }
   };
 
   const handleTogglePaidStatus = async (appId, currentStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-paid-status`,
         { applicationId: appId, hasPaid: !currentStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      toast.success(`Paid status updated to ${!currentStatus ? 'Yes' : 'No'}`);
+      toast.success(`Paid status updated to ${!currentStatus ? "Yes" : "No"}`);
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to update paid status');
+      toast.error("Failed to update paid status");
       console.error(err);
     }
   };
 
   const handleToggleCertificateSent = async (appId, currentStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-certificate-sent`,
         { applicationId: appId, isCertificateSent: !currentStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      toast.success(`Certificate Sent status updated to ${!currentStatus ? 'Yes' : 'No'}`);
+      toast.success(
+        `Certificate Sent status updated to ${!currentStatus ? "Yes" : "No"}`,
+      );
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to update Certificate Sent status');
+      toast.error("Failed to update Certificate Sent status");
       console.error(err);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    toast.success('Admin logged out');
-    navigate('/admin-login');
+    localStorage.removeItem("adminToken");
+    toast.success("Admin logged out");
+    navigate("/admin-login");
   };
 
   const handleOfferLetterChange = async (appId, newStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/update-offer-status`, { applicationId: appId, status: newStatus }, { headers: { Authorization: `Bearer ${token}` } });
+      const token = localStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-offer-status`,
+        { applicationId: appId, status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       toast.success(`Offer Letter marked as ${newStatus}`);
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to update Offer Letter status');
+      toast.error("Failed to update Offer Letter status");
     }
   };
 
   const handleInternshipTypeChange = async (appId, newType) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship-type`, { applicationId: appId, internshipType: newType }, { headers: { Authorization: `Bearer ${token}` } });
+      const token = localStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship-type`,
+        { applicationId: appId, internshipType: newType },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       toast.success(`Internship type marked as ${newType}`);
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to update Internship Type');
+      toast.error("Failed to update Internship Type");
     }
   };
 
   const handleStartDateAssignment = async (appId, dateValue) => {
     if (!dateValue) return;
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/set-start-date`, { applicationId: appId, startDate: dateValue }, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success('Timeline activated!');
+      const token = localStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/set-start-date`,
+        { applicationId: appId, startDate: dateValue },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      toast.success("Timeline activated!");
       fetchApplications(token);
     } catch (err) {
-      toast.error('Failed to set start date');
+      toast.error("Failed to set start date");
     }
   };
 
   const handleFormChange = (appId, field, value) => {
-    setForms(prev => ({ ...prev, [appId]: { ...prev[appId], [field]: value } }));
+    setForms((prev) => ({
+      ...prev,
+      [appId]: { ...prev[appId], [field]: value },
+    }));
   };
 
   const handleCertificateUpload = async (appId, file) => {
-    if (!file || file.type !== 'application/pdf') { toast.error('Only PDF files allowed'); return; }
-    if (file.size > 1024 * 1024) { toast.error('File too large, max 1MB'); return; }
-    setUpdating(prev => ({ ...prev, [appId]: true }));
+    if (!file || file.type !== "application/pdf") {
+      toast.error("Only PDF files allowed");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast.error("File too large, max 1MB");
+      return;
+    }
+    setUpdating((prev) => ({ ...prev, [appId]: true }));
     const uploadData = new FormData();
-    uploadData.append('file', file);
-    uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-    uploadData.append('folder', 'internship-certificates');
-    uploadData.append('resource_type', 'raw');
+    uploadData.append("file", file);
+    uploadData.append(
+      "upload_preset",
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+    );
+    uploadData.append("folder", "internship-certificates");
+    uploadData.append("resource_type", "raw");
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`, { method: 'POST', body: uploadData });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
+        { method: "POST", body: uploadData },
+      );
       const data = await res.json();
-      if (data.secure_url) { handleFormChange(appId, 'certificateUrl', data.secure_url); toast.success('Certificate uploaded!'); }
+      if (data.secure_url) {
+        handleFormChange(appId, "certificateUrl", data.secure_url);
+        toast.success("Certificate uploaded!");
+      }
     } catch (err) {
-      toast.error('Upload failed');
+      toast.error("Upload failed");
     } finally {
-      setUpdating(prev => ({ ...prev, [appId]: false }));
+      setUpdating((prev) => ({ ...prev, [appId]: false }));
     }
   };
 
   const handleStartDateChange = (appId, durationStr, val) => {
     const months = parseInt(durationStr, 10) || 1;
-    let endVal = '';
+    let endVal = "";
     if (val) {
       const date = new Date(val);
       if (!isNaN(date.getTime())) {
         date.setMonth(date.getMonth() + months);
-        endVal = date.toISOString().split('T')[0];
+        endVal = date.toISOString().split("T")[0];
       }
     }
-    setForms(prev => ({
+    setForms((prev) => ({
       ...prev,
       [appId]: {
         ...prev[appId],
         startDate: val,
-        endDate: endVal
-      }
+        endDate: endVal,
+      },
     }));
   };
 
   const handleUpdateInternship = async (appId) => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     const form = forms[appId] || {};
-    if (!form.startDate || !form.endDate) { toast.error('Start date is required'); return; }
-    setUpdating(prev => ({ ...prev, [appId]: true }));
+    if (!form.startDate || !form.endDate) {
+      toast.error("Start date is required");
+      return;
+    }
+    setUpdating((prev) => ({ ...prev, [appId]: true }));
     try {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship`,
-        { 
-          applicationId: appId, 
-          startDate: form.startDate, 
-          endDate: form.endDate, 
-          certificateUrl: form.certificateUrl || '' 
+        {
+          applicationId: appId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          certificateUrl: form.certificateUrl || "",
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      toast.success('Updated successfully!');
+      toast.success("Updated successfully!");
       fetchApplications(token);
     } catch (err) {
-      toast.error('Update failed');
+      toast.error("Update failed");
     } finally {
-      setUpdating(prev => ({ ...prev, [appId]: false }));
+      setUpdating((prev) => ({ ...prev, [appId]: false }));
     }
   };
 
   const handleExcelUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') { toast.error('Only Excel files (.xlsx) are allowed'); return; }
+    if (
+      file.type !==
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ) {
+      toast.error("Only Excel files (.xlsx) are allowed");
+      return;
+    }
     setUploadingExcel(true);
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     const formData = new FormData();
-    formData.append('excelFile', file);
+    formData.append("excelFile", file);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/upload-certificates`, formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/upload-certificates`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
       toast.success(res.data.message);
     } catch (err) {
-      toast.error('Upload failed. Please try again.');
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploadingExcel(false);
     }
@@ -498,50 +731,70 @@ const AdminDashboard = () => {
             <div className="w-20 h-20 rounded-full border-4 border-slate-300 mx-auto" />
             <div className="w-20 h-20 rounded-full border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent animate-spin absolute inset-0 mx-auto" />
           </div>
-          <p className="text-slate-900 text-lg font-medium mt-6">Loading dashboard...</p>
+          <p className="text-slate-900 text-lg font-medium mt-6">
+            Loading dashboard...
+          </p>
           <p className="text-slate-500 text-sm mt-1">Fetching applications</p>
         </div>
       </div>
     );
   }
 
-  const newApplications = filteredApplications.filter(app => !app.downloadedAt);
-  const downloadedApplications = filteredApplications.filter(app => app.downloadedAt);
-  const paidCount = applications.filter(app => app.hasPaid).length;
-  const displayedApps = activeTab === 'new' ? newApplications : downloadedApplications;
+  const newApplications = filteredApplications.filter(
+    (app) => !app.downloadedAt,
+  );
+  const downloadedApplications = filteredApplications.filter(
+    (app) => app.downloadedAt,
+  );
+  const paidCount = applications.filter((app) => app.hasPaid).length;
+  const displayedApps =
+    activeTab === "new" ? newApplications : downloadedApplications;
 
   const StatCard = ({ label, value, icon: Icon, color, sub }) => (
-    <div className={`relative overflow-hidden rounded-2xl p-6 border ${color.border} ${color.bg} backdrop-blur-sm`}>
+    <div
+      className={`relative overflow-hidden rounded-2xl p-6 border ${color.border} ${color.bg} backdrop-blur-sm`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className={`text-sm font-medium ${color.label} mb-1`}>{label}</p>
-          <p className="text-4xl font-bold text-slate-900 tracking-tight">{value}</p>
+          <p className="text-4xl font-bold text-slate-900 tracking-tight">
+            {value}
+          </p>
           {sub && <p className={`text-xs mt-2 ${color.sub}`}>{sub}</p>}
         </div>
-        <div className={`w-12 h-12 rounded-xl ${color.iconBg} flex items-center justify-center flex-shrink-0`}>
+        <div
+          className={`w-12 h-12 rounded-xl ${color.iconBg} flex items-center justify-center flex-shrink-0`}
+        >
           <Icon className={`w-6 h-6 ${color.icon}`} />
         </div>
       </div>
-      <div className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full ${color.glow} opacity-20`} />
+      <div
+        className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full ${color.glow} opacity-20`}
+      />
     </div>
   );
 
-  const Badge = ({ children, variant = 'blue' }) => {
+  const Badge = ({ children, variant = "blue" }) => {
     const styles = {
-      blue: 'bg-blue-500/15 text-blue-600 border-blue-500/25 ring-1 ring-blue-500/20',
-      green: 'bg-green-500/15 text-green-600 border-green-500/25 ring-1 ring-green-500/20',
-      amber: 'bg-amber-500/15 text-amber-600 border-amber-500/25 ring-1 ring-amber-500/20',
-      red: 'bg-red-500/15 text-red-600 border-red-500/25 ring-1 ring-red-500/20',
-      slate: 'bg-slate-500/15 text-slate-500 border-slate-500/25 ring-1 ring-slate-300/50',
+      blue: "bg-blue-500/15 text-blue-600 border-blue-500/25 ring-1 ring-blue-500/20",
+      green:
+        "bg-green-500/15 text-green-600 border-green-500/25 ring-1 ring-green-500/20",
+      amber:
+        "bg-amber-500/15 text-amber-600 border-amber-500/25 ring-1 ring-amber-500/20",
+      red: "bg-red-500/15 text-red-600 border-red-500/25 ring-1 ring-red-500/20",
+      slate:
+        "bg-slate-500/15 text-slate-500 border-slate-500/25 ring-1 ring-slate-300/50",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[variant]}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[variant]}`}
+      >
         {children}
       </span>
     );
   };
 
-  const SelectField = ({ value, onChange, options, className = '' }) => (
+  const SelectField = ({ value, onChange, options, className = "" }) => (
     <div className="relative">
       <select
         value={value}
@@ -549,7 +802,9 @@ const AdminDashboard = () => {
         className={`appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-8 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer ${className}`}
       >
         {options.map((opt, i) => (
-          <option key={i} value={opt.value}>{opt.label}</option>
+          <option key={i} value={opt.value}>
+            {opt.label}
+          </option>
         ))}
       </select>
       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
@@ -570,17 +825,25 @@ const AdminDashboard = () => {
                 <User className="w-5 h-5 text-slate-900" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-slate-900 font-semibold text-sm truncate">{app.name}</h3>
-                <p className="text-slate-500 text-xs">{app.studentId || 'No ID'}</p>
+                <h3 className="text-slate-900 font-semibold text-sm truncate">
+                  {app.name}
+                </h3>
+                <p className="text-slate-500 text-xs">
+                  {app.studentId || "No ID"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Badge variant={isDownloaded ? 'green' : 'amber'}>{isDownloaded ? 'Processed' : 'New'}</Badge>
+              <Badge variant={isDownloaded ? "green" : "amber"}>
+                {isDownloaded ? "Processed" : "New"}
+              </Badge>
               <button
                 onClick={() => setExpandedCard(isExpanded ? null : app._id)}
                 className="w-7 h-7 rounded-lg bg-slate-200/50 flex items-center justify-center hover:bg-slate-600/50 transition-colors"
               >
-                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                />
               </button>
             </div>
           </div>
@@ -588,7 +851,11 @@ const AdminDashboard = () => {
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="blue">{app.domain}</Badge>
             <Badge variant="slate">{app.duration}</Badge>
-            {app.hasPaid ? <Badge variant="green">Paid</Badge> : <Badge variant="amber">Pending</Badge>}
+            {app.hasPaid ? (
+              <Badge variant="green">Paid</Badge>
+            ) : (
+              <Badge variant="amber">Pending</Badge>
+            )}
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -608,7 +875,9 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <p className="text-slate-500 mb-1">Course</p>
-                <p className="text-slate-700">{app.course} - {app.branch}</p>
+                <p className="text-slate-700">
+                  {app.course} - {app.branch}
+                </p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Year</p>
@@ -616,15 +885,21 @@ const AdminDashboard = () => {
               </div>
               <div className="col-span-2">
                 <p className="text-slate-500 mb-1">College</p>
-                <p className="text-slate-700">{app.college}, {app.state}</p>
+                <p className="text-slate-700">
+                  {app.college}, {app.state}
+                </p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Tasks Done</p>
-                <p className="text-slate-700">{taskCount} / {totalTasks}</p>
+                <p className="text-slate-700">
+                  {taskCount} / {totalTasks}
+                </p>
               </div>
               <div>
                 <p className="text-slate-500 mb-1">Applied At</p>
-                <p className="text-slate-700">{new Date(app.appliedAt).toLocaleDateString('en-IN')}</p>
+                <p className="text-slate-700">
+                  {new Date(app.appliedAt).toLocaleDateString("en-IN")}
+                </p>
               </div>
             </div>
 
@@ -632,18 +907,28 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-slate-500 text-xs mb-1.5">Internship Type</p>
                 <SelectField
-                  value={app.internshipType || app.mode || 'Normal Intern'}
-                  onChange={(e) => handleInternshipTypeChange(app._id, e.target.value)}
-                  options={[{ value: 'Normal Intern', label: 'Normal Intern' }, { value: 'Summer/Winter Intern', label: 'Summer/Winter' }]}
+                  value={app.internshipType || app.mode || "Normal Intern"}
+                  onChange={(e) =>
+                    handleInternshipTypeChange(app._id, e.target.value)
+                  }
+                  options={[
+                    { value: "Normal Intern", label: "Normal Intern" },
+                    { value: "Summer/Winter Intern", label: "Summer/Winter" },
+                  ]}
                   className="w-full"
                 />
               </div>
               <div>
                 <p className="text-slate-500 text-xs mb-1.5">Offer Letter</p>
                 <SelectField
-                  value={app.offerLetterStatus || 'Not Sent'}
-                  onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-                  options={[{ value: 'Not Sent', label: 'Not Sent' }, { value: 'Sent', label: 'Sent' }]}
+                  value={app.offerLetterStatus || "Not Sent"}
+                  onChange={(e) =>
+                    handleOfferLetterChange(app._id, e.target.value)
+                  }
+                  options={[
+                    { value: "Not Sent", label: "Not Sent" },
+                    { value: "Sent", label: "Sent" },
+                  ]}
                   className="w-full"
                 />
               </div>
@@ -651,14 +936,23 @@ const AdminDashboard = () => {
                 <p className="text-slate-500 text-xs mb-1.5">Timeline</p>
                 {app.startDate ? (
                   <div>
-                    <p className="text-xs text-green-600">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
-                    <p className="text-xs text-slate-500">{new Date(app.endDate).toLocaleDateString('en-IN')}</p>
+                    <p className="text-xs text-green-600">
+                      {new Date(app.startDate).toLocaleDateString("en-IN")}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(app.endDate).toLocaleDateString("en-IN")}
+                    </p>
                   </div>
                 ) : (
                   <SelectField
                     value=""
-                    onChange={(e) => handleStartDateAssignment(app._id, e.target.value)}
-                    options={[{ value: '', label: 'Set date...' }, ...upcomingDateOptions]}
+                    onChange={(e) =>
+                      handleStartDateAssignment(app._id, e.target.value)
+                    }
+                    options={[
+                      { value: "", label: "Set date..." },
+                      ...upcomingDateOptions,
+                    ]}
                     className="w-full"
                   />
                 )}
@@ -669,18 +963,28 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-slate-500 text-xs mb-1.5">Paid Status</p>
                 <SelectField
-                  value={app.hasPaid ? 'Yes' : 'No'}
+                  value={app.hasPaid ? "Yes" : "No"}
                   onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
-                  options={[{ value: 'No', label: 'No' }, { value: 'Yes', label: 'Yes' }]}
+                  options={[
+                    { value: "No", label: "No" },
+                    { value: "Yes", label: "Yes" },
+                  ]}
                   className="w-full"
                 />
               </div>
               <div>
-                <p className="text-slate-500 text-xs mb-1.5">Certificate Sent</p>
+                <p className="text-slate-500 text-xs mb-1.5">
+                  Certificate Sent
+                </p>
                 <SelectField
-                  value={app.isCertificateSent ? 'Yes' : 'No'}
-                  onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
-                  options={[{ value: 'No', label: 'No' }, { value: 'Yes', label: 'Yes' }]}
+                  value={app.isCertificateSent ? "Yes" : "No"}
+                  onChange={() =>
+                    handleToggleCertificateSent(app._id, app.isCertificateSent)
+                  }
+                  options={[
+                    { value: "No", label: "No" },
+                    { value: "Yes", label: "Yes" },
+                  ]}
                   className="w-full"
                 />
               </div>
@@ -688,28 +992,67 @@ const AdminDashboard = () => {
 
             {isDownloaded && !app.certificateUrl && (
               <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-200">
-                <p className="text-slate-900 text-xs font-medium mb-3">Add Internship Details</p>
+                <p className="text-slate-900 text-xs font-medium mb-3">
+                  Add Internship Details
+                </p>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-slate-500 text-xs block mb-1">Start Date</label>
-                      <input type="date" value={forms[app._id]?.startDate || ''} onChange={(e) => handleStartDateChange(app._id, app.duration, e.target.value)}
-                        className="w-full bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      <label className="text-slate-500 text-xs block mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={forms[app._id]?.startDate || ""}
+                        onChange={(e) =>
+                          handleStartDateChange(
+                            app._id,
+                            app.duration,
+                            e.target.value,
+                          )
+                        }
+                        className="w-full bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
                     </div>
                     <div>
-                      <label className="text-slate-500 text-xs block mb-1">End Date</label>
-                      <input type="date" value={forms[app._id]?.endDate || ''} disabled readOnly
-                        className="w-full bg-slate-50 border border-slate-300 text-slate-500 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-not-allowed" />
+                      <label className="text-slate-500 text-xs block mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={forms[app._id]?.endDate || ""}
+                        disabled
+                        readOnly
+                        className="w-full bg-slate-50 border border-slate-300 text-slate-500 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-not-allowed"
+                      />
                     </div>
                   </div>
                   <label className="flex items-center gap-2 p-2.5 bg-white border border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-500/50 transition-colors">
                     <UploadCloud className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                    <span className="text-xs text-slate-700">{forms[app._id]?.certificateUrl ? 'Certificate uploaded' : 'Upload Certificate PDF'}</span>
-                    <input type="file" accept="application/pdf" onChange={(e) => handleCertificateUpload(app._id, e.target.files[0])} className="hidden" />
+                    <span className="text-xs text-slate-700">
+                      {forms[app._id]?.certificateUrl
+                        ? "Certificate uploaded"
+                        : "Upload Certificate PDF"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) =>
+                        handleCertificateUpload(app._id, e.target.files[0])
+                      }
+                      className="hidden"
+                    />
                   </label>
-                  <button onClick={() => handleUpdateInternship(app._id)} disabled={updating[app._id]}
-                    className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
-                    {updating[app._id] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <button
+                    onClick={() => handleUpdateInternship(app._id)}
+                    disabled={updating[app._id]}
+                    className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {updating[app._id] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
                     Save Details
                   </button>
                 </div>
@@ -719,13 +1062,35 @@ const AdminDashboard = () => {
             {app.certificateUrl && (
               <div className="bg-green-500/10 rounded-xl p-3 border border-green-500/20">
                 <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-                  <div><p className="text-slate-500">Start</p><p className="text-slate-700">{app.startDate ? new Date(app.startDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
-                  <div><p className="text-slate-500">End</p><p className="text-slate-700">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : 'N/A'}</p></div>
-                  <div><p className="text-slate-500">Duration</p><p className="text-slate-700">{app.totalMonths || 'N/A'}</p></div>
+                  <div>
+                    <p className="text-slate-500">Start</p>
+                    <p className="text-slate-700">
+                      {app.startDate
+                        ? new Date(app.startDate).toLocaleDateString("en-IN")
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">End</p>
+                    <p className="text-slate-700">
+                      {app.endDate
+                        ? new Date(app.endDate).toLocaleDateString("en-IN")
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Duration</p>
+                    <p className="text-slate-700">{app.totalMonths || "N/A"}</p>
+                  </div>
                 </div>
-                <a href={app.certificateUrl} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-300 transition-colors">
-                  <ExternalLink className="w-3.5 h-3.5" />View Certificate
+                <a
+                  href={app.certificateUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-300 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Certificate
                 </a>
               </div>
             )}
@@ -735,7 +1100,8 @@ const AdminDashboard = () => {
                 <p className="text-slate-500 text-xs mb-1.5 flex items-center justify-between">
                   <span>Task Submissions</span>
                   <span className="font-bold text-slate-700">
-                    {app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1}
+                    {app.submissions?.length || 0}/
+                    {app.duration ? parseInt(app.duration) : 1}
                   </span>
                 </p>
                 <button
@@ -744,7 +1110,6 @@ const AdminDashboard = () => {
                 >
                   <ExternalLink size={14} /> View GitHub Links
                 </button>
-
               </div>
             )}
           </div>
@@ -753,44 +1118,112 @@ const AdminDashboard = () => {
     );
   };
 
-
   const TasksTab = () => (
     <div className="space-y-6 animate-fade-in">
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-600"/> Assign New Task</h2>
-        <form onSubmit={handleCreateTask} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input required type="text" placeholder="Task Title" value={newTask.title} onChange={e=>setNewTask({...newTask, title: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-          <input type="date" value={newTask.deadline} onChange={e=>setNewTask({...newTask, deadline: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-          <input type="text" placeholder="Student ID (Optional - target specific intern)" value={newTask.studentId} onChange={e=>setNewTask({...newTask, studentId: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-          <input type="text" placeholder="Domain (Optional - target specific domain)" value={newTask.domain} onChange={e=>setNewTask({...newTask, domain: e.target.value})} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
-          <textarea placeholder="Task Description" value={newTask.description} onChange={e=>setNewTask({...newTask, description: e.target.value})} className="md:col-span-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-24 resize-none" />
-          <button type="submit" className="md:col-span-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20">Assign Task</button>
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Plus className="w-5 h-5 text-blue-600" /> Assign New Task
+        </h2>
+        <form
+          onSubmit={handleCreateTask}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          <input
+            required
+            type="text"
+            placeholder="Task Title"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+          <input
+            type="date"
+            value={newTask.deadline}
+            onChange={(e) =>
+              setNewTask({ ...newTask, deadline: e.target.value })
+            }
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+          <input
+            type="text"
+            placeholder="Student ID (Optional - target specific intern)"
+            value={newTask.studentId}
+            onChange={(e) =>
+              setNewTask({ ...newTask, studentId: e.target.value })
+            }
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+          <input
+            type="text"
+            placeholder="Domain (Optional - target specific domain)"
+            value={newTask.domain}
+            onChange={(e) => setNewTask({ ...newTask, domain: e.target.value })}
+            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+          <textarea
+            placeholder="Task Description"
+            value={newTask.description}
+            onChange={(e) =>
+              setNewTask({ ...newTask, description: e.target.value })
+            }
+            className="md:col-span-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-24 resize-none"
+          />
+          <button
+            type="submit"
+            className="md:col-span-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20"
+          >
+            Assign Task
+          </button>
         </form>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="p-4 border-b border-slate-200 bg-slate-50/50">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2"><ListTodo className="w-4 h-4 text-slate-500"/> Active Tasks</h3>
+          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+            <ListTodo className="w-4 h-4 text-slate-500" /> Active Tasks
+          </h3>
         </div>
         <div className="divide-y divide-slate-100">
           {tasks.length === 0 ? (
-            <p className="p-6 text-center text-slate-500 text-sm">No tasks assigned yet.</p>
-          ) : tasks.map(task => (
-            <div key={task._id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-              <div>
-                <h4 className="font-bold text-slate-900 text-sm">{task.title}</h4>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-1">{task.description}</p>
-                <div className="flex gap-2 mt-2">
-                  {task.studentId && <Badge variant="blue">Student: {task.studentId}</Badge>}
-                  {task.domain && <Badge variant="amber">Domain: {task.domain}</Badge>}
-                  {task.deadline && <Badge variant="slate">Due: {new Date(task.deadline).toLocaleDateString()}</Badge>}
+            <p className="p-6 text-center text-slate-500 text-sm">
+              No tasks assigned yet.
+            </p>
+          ) : (
+            tasks.map((task) => (
+              <div
+                key={task._id}
+                className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    {task.title}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                    {task.description}
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    {task.studentId && (
+                      <Badge variant="blue">Student: {task.studentId}</Badge>
+                    )}
+                    {task.domain && (
+                      <Badge variant="amber">Domain: {task.domain}</Badge>
+                    )}
+                    {task.deadline && (
+                      <Badge variant="slate">
+                        Due: {new Date(task.deadline).toLocaleDateString()}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={() => handleDeleteTask(task._id)}
+                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={() => handleDeleteTask(task._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -799,31 +1232,45 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                <Briefcase className="text-blue-600" size={20} /> Assign Monthly Tasks
+                <Briefcase className="text-blue-600" size={20} /> Assign Monthly
+                Tasks
               </h3>
-              <button 
-                onClick={() => setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] })}
+              <button
+                onClick={() =>
+                  setAssignTasksModal({
+                    isOpen: false,
+                    appId: null,
+                    duration: 1,
+                    tasks: [],
+                  })
+                }
                 className="text-slate-400 hover:text-slate-600"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto space-y-4">
               <p className="text-sm text-slate-500 mb-4">
-                Assign a specific task topic for each month of the internship. These will unlock automatically for the student.
+                Assign a specific task topic for each month of the internship.
+                These will unlock automatically for the student.
               </p>
-              
+
               {assignTasksModal.tasks.map((task, idx) => (
                 <div key={idx}>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Month {idx + 1} Task</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Month {idx + 1} Task
+                  </label>
                   <input
                     type="text"
                     value={task}
                     onChange={(e) => {
                       const newTasks = [...assignTasksModal.tasks];
                       newTasks[idx] = e.target.value;
-                      setAssignTasksModal({ ...assignTasksModal, tasks: newTasks });
+                      setAssignTasksModal({
+                        ...assignTasksModal,
+                        tasks: newTasks,
+                      });
                     }}
                     placeholder="e.g. Build a Calculator"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
@@ -831,15 +1278,22 @@ const AdminDashboard = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button 
-                onClick={() => setAssignTasksModal({ isOpen: false, appId: null, duration: 1, tasks: [] })}
+              <button
+                onClick={() =>
+                  setAssignTasksModal({
+                    isOpen: false,
+                    appId: null,
+                    duration: 1,
+                    tasks: [],
+                  })
+                }
                 className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleAssignTasksSubmit}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
               >
@@ -855,21 +1309,36 @@ const AdminDashboard = () => {
   const ActivityTab = () => (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
       <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-        <h3 className="font-bold text-slate-900 flex items-center gap-2"><Activity className="w-4 h-4 text-blue-600"/> Real-time Activity Feed</h3>
-        <button onClick={fetchTasksAndLogs} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Refresh</button>
+        <h3 className="font-bold text-slate-900 flex items-center gap-2">
+          <Activity className="w-4 h-4 text-blue-600" /> Real-time Activity Feed
+        </h3>
+        <button
+          onClick={fetchTasksAndLogs}
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Refresh
+        </button>
       </div>
       <div className="divide-y divide-slate-100 max-h-[800px] overflow-y-auto p-4">
         {activityLogs.length === 0 ? (
-          <p className="text-center text-slate-500 text-sm py-8">No recent activity.</p>
-        ) : activityLogs.map(log => (
-          <div key={log._id} className="py-4 flex gap-4">
-            <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${log.type === 'SUBMISSION' ? 'bg-green-500' : log.type === 'REGISTRATION' ? 'bg-blue-500' : log.type === 'PAYMENT' ? 'bg-amber-500' : 'bg-purple-500'}`} />
-            <div>
-              <p className="text-sm text-slate-900">{log.message}</p>
-              <p className="text-xs text-slate-400 mt-1">{new Date(log.timestamp).toLocaleString()}</p>
+          <p className="text-center text-slate-500 text-sm py-8">
+            No recent activity.
+          </p>
+        ) : (
+          activityLogs.map((log) => (
+            <div key={log._id} className="py-4 flex gap-4">
+              <div
+                className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${log.type === "SUBMISSION" ? "bg-green-500" : log.type === "REGISTRATION" ? "bg-blue-500" : log.type === "PAYMENT" ? "bg-amber-500" : "bg-purple-500"}`}
+              />
+              <div>
+                <p className="text-sm text-slate-900">{log.message}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {new Date(log.timestamp).toLocaleString()}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
@@ -884,30 +1353,45 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-slate-900 font-bold text-base leading-tight">Admin Dashboard</h1>
-                <p className="text-slate-500 text-xs hidden sm:block">Internship Management</p>
+                <h1 className="text-slate-900 font-bold text-base leading-tight">
+                  Admin Dashboard
+                </h1>
+                <p className="text-slate-500 text-xs hidden sm:block">
+                  Internship Management
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              
-              <button onClick={handleToggleRegistration}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${registrationEnabled 
-                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600' 
-                  : 'bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500'
-                }`}>
+              <button
+                onClick={handleToggleRegistration}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                  registrationEnabled
+                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600"
+                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                }`}
+              >
                 <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Reg: {registrationEnabled ? 'ON' : 'OFF'}</span>
+                <span className="hidden sm:inline">
+                  Reg: {registrationEnabled ? "ON" : "OFF"}
+                </span>
               </button>
-              <button onClick={handleTogglePayment}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${paymentEnabled 
-                  ? 'bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600' 
-                  : 'bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500'
-                }`}>
+              <button
+                onClick={handleTogglePayment}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                  paymentEnabled
+                    ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                }`}
+              >
                 <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">Pay: {paymentEnabled ? 'ON' : 'OFF'}</span>
+                <span className="hidden sm:inline">
+                  Pay: {paymentEnabled ? "ON" : "OFF"}
+                </span>
               </button>
-              <button onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 hover:text-red-300 text-sm font-medium transition-all duration-200">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 hover:text-red-300 text-sm font-medium transition-all duration-200"
+              >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
               </button>
@@ -916,21 +1400,28 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-6">
-        
         {/* Sidebar */}
         <div className="w-full md:w-64 flex-shrink-0">
           <div className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-row md:flex-col gap-2 overflow-x-auto">
-            <button onClick={() => setActiveSidebarTab('interns')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'interns' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+            <button
+              onClick={() => setActiveSidebarTab("interns")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "interns" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
               <Users className="w-4 h-4" />
               Interns & Apps
             </button>
-            <button onClick={() => setActiveSidebarTab('monthly_tasks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'monthly_tasks' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+            <button
+              onClick={() => setActiveSidebarTab("monthly_tasks")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "monthly_tasks" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
               <Calendar className="w-4 h-4" />
               Monthly Tasks
             </button>
-            <button onClick={() => setActiveSidebarTab('summer_projects')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === 'summer_projects' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+            <button
+              onClick={() => setActiveSidebarTab("summer_projects")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "summer_projects" ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
               <BookOpen className="w-4 h-4" />
               Summer Projects
             </button>
@@ -939,369 +1430,761 @@ const AdminDashboard = () => {
 
         {/* Main Content Area */}
         <div className="flex-1 min-w-0">
-          {activeSidebarTab === 'interns' && (
+          {activeSidebarTab === "interns" && (
             <div className="animate-fade-in">
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Applications" value={filteredApplications.length} icon={FileText}
-            color={{ border: 'border-blue-500/20', bg: 'bg-blue-500/5', label: 'text-slate-500', sub: 'text-blue-600', iconBg: 'bg-blue-500/20', icon: 'text-blue-600', glow: 'bg-blue-500' }}
-            sub="Filtered results" />
-          <StatCard label="New Applications" value={newApplications.length} icon={Clock}
-            color={{ border: 'border-amber-500/20', bg: 'bg-amber-500/5', label: 'text-slate-500', sub: 'text-amber-600', iconBg: 'bg-amber-500/20', icon: 'text-amber-600', glow: 'bg-amber-500' }}
-            sub="Pending export" />
-          <StatCard label="Processed" value={downloadedApplications.length} icon={CheckCircle}
-            color={{ border: 'border-green-500/20', bg: 'bg-green-500/5', label: 'text-slate-500', sub: 'text-green-600', iconBg: 'bg-green-500/20', icon: 'text-green-600', glow: 'bg-green-500' }}
-            sub="Downloaded" />
-          <StatCard label="Paid Interns" value={paidCount} icon={TrendingUp}
-            color={{ border: 'border-teal-500/20', bg: 'bg-teal-500/5', label: 'text-slate-500', sub: 'text-teal-600', iconBg: 'bg-teal-500/20', icon: 'text-teal-600', glow: 'bg-teal-500' }}
-            sub="Confirmed" />
-        </div>
-
-        <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm shadow-slate-200/50">
-          <div className="flex flex-col lg:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search by name, email, student ID, or domain..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="relative min-w-[180px]">
-              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-              <select value={selectedDomain} onChange={(e) => setSelectedDomain(e.target.value)}
-                className="w-full appearance-none pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all cursor-pointer">
-                <option value="">All Domains</option>
-                {domains.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-            </div>
-
-            <div className="flex gap-2 flex-wrap lg:flex-nowrap">
-              <button onClick={handleExport} disabled={exporting || newApplications.length === 0}
-                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-green-800 disabled:to-green-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-green-500/20 whitespace-nowrap">
-                {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Export New
-              </button>
-              <button onClick={handleExportPaid}
-                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-teal-500/20 whitespace-nowrap">
-                <Download className="w-4 h-4" />
-                Export Paid
-              </button>
-              <div className="flex-1 lg:flex-none flex gap-1 bg-slate-50 border border-slate-300 rounded-xl p-1 items-center">
-                <select 
-                  value={exportDuration} 
-                  onChange={(e) => setExportDuration(e.target.value)}
-                  className="bg-transparent text-slate-900 text-xs border-0 focus:ring-0 focus:outline-none px-2 cursor-pointer"
-                >
-                  <option value="1" className="bg-slate-50 text-slate-900">1 Month</option>
-                  <option value="2" className="bg-slate-50 text-slate-900">2 Months</option>
-                  <option value="3" className="bg-slate-50 text-slate-900">3 Months</option>
-                </select>
-                <button 
-                  onClick={() => handleExportProjectSubmitted(exportDuration)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Export Completed
-                </button>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <StatCard
+                  label="Total Applications"
+                  value={filteredApplications.length}
+                  icon={FileText}
+                  color={{
+                    border: "border-blue-500/20",
+                    bg: "bg-blue-500/5",
+                    label: "text-slate-500",
+                    sub: "text-blue-600",
+                    iconBg: "bg-blue-500/20",
+                    icon: "text-blue-600",
+                    glow: "bg-blue-500",
+                  }}
+                  sub="Filtered results"
+                />
+                <StatCard
+                  label="New Applications"
+                  value={newApplications.length}
+                  icon={Clock}
+                  color={{
+                    border: "border-amber-500/20",
+                    bg: "bg-amber-500/5",
+                    label: "text-slate-500",
+                    sub: "text-amber-600",
+                    iconBg: "bg-amber-500/20",
+                    icon: "text-amber-600",
+                    glow: "bg-amber-500",
+                  }}
+                  sub="Pending export"
+                />
+                <StatCard
+                  label="Processed"
+                  value={downloadedApplications.length}
+                  icon={CheckCircle}
+                  color={{
+                    border: "border-green-500/20",
+                    bg: "bg-green-500/5",
+                    label: "text-slate-500",
+                    sub: "text-green-600",
+                    iconBg: "bg-green-500/20",
+                    icon: "text-green-600",
+                    glow: "bg-green-500",
+                  }}
+                  sub="Downloaded"
+                />
+                <StatCard
+                  label="Paid Interns"
+                  value={paidCount}
+                  icon={TrendingUp}
+                  color={{
+                    border: "border-teal-500/20",
+                    bg: "bg-teal-500/5",
+                    label: "text-slate-500",
+                    sub: "text-teal-600",
+                    iconBg: "bg-teal-500/20",
+                    icon: "text-teal-600",
+                    glow: "bg-teal-500",
+                  }}
+                  sub="Confirmed"
+                />
               </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h3 className="text-slate-900 font-semibold text-sm">Bulk Certificate Upload</h3>
-              <p className="text-slate-500 text-xs mt-0.5">Upload Excel with columns: Certificate_Number, Student_Name, Domain, Start_Date, End_Date, Duration, Student_ID</p>
-            </div>
-            <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${uploadingExcel ? 'border-blue-500/30 bg-blue-500/10 text-blue-600' : 'border-slate-300 bg-slate-50/50 text-slate-700 hover:border-blue-500/50 hover:text-blue-600 hover:bg-blue-500/10'}`}>
-              {uploadingExcel ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /><span>Uploading...</span></>
-              ) : (
-                <><FileInput className="w-4 h-4" /><span>Choose Excel File</span></>
-              )}
-              <input type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" disabled={uploadingExcel} />
-            </label>
-          </div>
-        </div>
+              <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm shadow-slate-200/50">
+                <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Search by name, email, student ID, or domain..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
 
-        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-fit">
-          <button
-            onClick={() => setActiveTab('new')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'new' ? 'bg-slate-200 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <Clock className="w-4 h-4" />
-            New Applications
-            {newApplications.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'new' ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
-                {newApplications.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('downloaded')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'downloaded' ? 'bg-slate-200 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <CheckCircle className="w-4 h-4" />
-            Processed
-            {downloadedApplications.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === 'downloaded' ? 'bg-green-500/20 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
-                {downloadedApplications.length}
-              </span>
-            )}
-          </button>
-        </div>
+                  <div className="relative min-w-[180px]">
+                    <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                    <select
+                      value={selectedDomain}
+                      onChange={(e) => setSelectedDomain(e.target.value)}
+                      className="w-full appearance-none pl-10 pr-10 py-2.5 bg-white border border-slate-200 text-slate-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all cursor-pointer"
+                    >
+                      <option value="">All Domains</option>
+                      {domains.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                  </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          {displayedApps.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 px-4">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-                {activeTab === 'new' ? <Clock className="w-8 h-8 text-slate-600" /> : <CheckCircle className="w-8 h-8 text-slate-600" />}
-              </div>
-              <p className="text-slate-900 font-medium text-lg">
-                {activeTab === 'new' ? 'No new applications' : 'No processed applications'}
-              </p>
-              <p className="text-slate-500 text-sm mt-1">
-                {activeTab === 'new' ? 'All applications have been exported.' : 'Export new applications to see them here.'}
-              </p>
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-300 text-sm transition-colors">
-                  <X className="w-4 h-4" />Clear search
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-300/60 bg-slate-50">
-                      {activeTab === 'new' ? (
-                        <>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Student ID</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Domain</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Timeline</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied At</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Internship Type</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Certificate Sent</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
-                        </>
+                  <div className="flex gap-2 flex-wrap lg:flex-nowrap">
+                    <button
+                      onClick={handleExport}
+                      disabled={exporting || newApplications.length === 0}
+                      className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-green-800 disabled:to-green-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-green-500/20 whitespace-nowrap"
+                    >
+                      {exporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Student ID</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Domain</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Downloaded At</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Start Date</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">End Date</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Months</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Offer Letter</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Certificate Sent</th>
-                          <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks</th>
-                        </>
+                        <Download className="w-4 h-4" />
                       )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700/30">
-                    {displayedApps.map((app, i) => (
-                      <tr key={app._id || i} className="hover:bg-slate-200/20 transition-colors duration-150 group">
-                        <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">{app.studentId || '—'}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="text-slate-900 font-medium text-sm group-hover:text-blue-300 transition-colors">{app.name}</span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-500 text-sm">{app.email}</td>
-                        <td className="py-3.5 px-4">
-                          <Badge variant="blue">{app.domain}</Badge>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-500 text-sm whitespace-nowrap">{app.duration}</td>
-
-                        {activeTab === 'new' ? (
-                          <>
-                            <td className="py-3.5 px-4">
-                              {app.startDate ? (
-                                <div className="space-y-0.5">
-                                  <p className="text-xs text-green-600 whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</p>
-                                  <p className="text-xs text-slate-500 whitespace-nowrap">{new Date(app.endDate).toLocaleDateString('en-IN')}</p>
-                                </div>
-                              ) : (
-                                <div className="relative min-w-[130px]">
-                                  <select onChange={(e) => handleStartDateAssignment(app._id, e.target.value)} defaultValue=""
-                                    className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                    <option value="" disabled>Set date...</option>
-                                    {upcomingDateOptions.map((opt, idx) => <option key={idx} value={opt.value}>{opt.label}</option>)}
-                                  </select>
-                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{new Date(app.appliedAt).toLocaleString('en-IN')}</td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.internshipType || app.mode || 'Normal Intern'} onChange={(e) => handleInternshipTypeChange(app._id, e.target.value)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="Normal Intern">Normal Intern</option>
-                                  <option value="Summer/Winter Intern">Summer/Winter Intern</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="Not Sent">Not Sent</option>
-                                  <option value="Sent">Sent</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="No">No</option>
-                                  <option value="Yes">Yes</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.isCertificateSent ? 'Yes' : 'No'} onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="No">No</option>
-                                  <option value="Yes">Yes</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <button
-                                onClick={() => setSelectedSubmissionsApp(app)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
-                              >
-                                View ({app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1})
-                              </button>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="py-3.5 px-4 text-slate-500 text-sm">{app.batch || '—'}</td>
-                            <td className="py-3.5 px-4 text-green-600 text-xs whitespace-nowrap">{new Date(app.downloadedAt).toLocaleString('en-IN')}</td>
-                            <td className="py-3.5 px-4">
-                              {app.startDate ? (
-                                <span className="text-slate-700 text-xs whitespace-nowrap">{new Date(app.startDate).toLocaleDateString('en-IN')}</span>
-                              ) : (
-                                <div className="relative min-w-[130px]">
-                                  <select onChange={(e) => handleStartDateAssignment(app._id, e.target.value)} defaultValue=""
-                                    className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                    <option value="" disabled>Set date...</option>
-                                    {upcomingDateOptions.map((opt, idx) => <option key={idx} value={opt.value}>{opt.label}</option>)}
-                                  </select>
-                                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">{app.endDate ? new Date(app.endDate).toLocaleDateString('en-IN') : '—'}</td>
-                            <td className="py-3.5 px-4 text-slate-500 text-sm">{app.totalMonths || '—'}</td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.offerLetterStatus || 'Not Sent'} onChange={(e) => handleOfferLetterChange(app._id, e.target.value)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="Not Sent">Not Sent</option>
-                                  <option value="Sent">Sent</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.hasPaid ? 'Yes' : 'No'} onChange={() => handleTogglePaidStatus(app._id, app.hasPaid)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="No">No</option>
-                                  <option value="Yes">Yes</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="relative">
-                                <select value={app.isCertificateSent ? 'Yes' : 'No'} onChange={() => handleToggleCertificateSent(app._id, app.isCertificateSent)}
-                                  className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                                  <option value="No">No</option>
-                                  <option value="Yes">Yes</option>
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <button
-                                onClick={() => setSelectedSubmissionsApp(app)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
-                              >
-                                View ({app.submissions?.length || 0}/{app.duration ? parseInt(app.duration) : 1})
-                              </button>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      Export New
+                    </button>
+                    <button
+                      onClick={handleExportPaid}
+                      className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-teal-500/20 whitespace-nowrap"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Paid
+                    </button>
+                    <div className="flex-1 lg:flex-none flex gap-1 bg-slate-50 border border-slate-300 rounded-xl p-1 items-center">
+                      <select
+                        value={exportDuration}
+                        onChange={(e) => setExportDuration(e.target.value)}
+                        className="bg-transparent text-slate-900 text-xs border-0 focus:ring-0 focus:outline-none px-2 cursor-pointer"
+                      >
+                        <option
+                          value="1"
+                          className="bg-slate-50 text-slate-900"
+                        >
+                          1 Month
+                        </option>
+                        <option
+                          value="2"
+                          className="bg-slate-50 text-slate-900"
+                        >
+                          2 Months
+                        </option>
+                        <option
+                          value="3"
+                          className="bg-slate-50 text-slate-900"
+                        >
+                          3 Months
+                        </option>
+                      </select>
+                      <button
+                        onClick={() =>
+                          handleExportProjectSubmitted(exportDuration)
+                        }
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Export Completed
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="lg:hidden p-4 space-y-3">
-                {displayedApps.map((app, i) => (
-                  <MobileCard key={app._id || i} app={app} isDownloaded={activeTab === 'downloaded'} />
-                ))}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h3 className="text-slate-900 font-semibold text-sm">
+                      Bulk Certificate Upload
+                    </h3>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Upload Excel with columns: Certificate_Number,
+                      Student_Name, Domain, Start_Date, End_Date, Duration,
+                      Student_ID
+                    </p>
+                  </div>
+                  <label
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${uploadingExcel ? "border-blue-500/30 bg-blue-500/10 text-blue-600" : "border-slate-300 bg-slate-50/50 text-slate-700 hover:border-blue-500/50 hover:text-blue-600 hover:bg-blue-500/10"}`}
+                  >
+                    {uploadingExcel ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileInput className="w-4 h-4" />
+                        <span>Choose Excel File</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".xlsx"
+                      onChange={handleExcelUpload}
+                      className="hidden"
+                      disabled={uploadingExcel}
+                    />
+                  </label>
+                </div>
               </div>
-            </>
-          )}
 
-          {displayedApps.length > 0 && (
-            <div className="border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50/20">
-              <p className="text-slate-500 text-xs">Showing <span className="text-slate-700 font-medium">{displayedApps.length}</span> {activeTab === 'new' ? 'new' : 'processed'} applications</p>
-              {(searchQuery || selectedDomain) && (
-                <button onClick={() => { setSearchQuery(''); setSelectedDomain(''); }} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors">
-                  <X className="w-3.5 h-3.5" />Clear filters
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 mb-6 w-fit">
+                <button
+                  onClick={() => setActiveTab("new")}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "new" ? "bg-slate-200 text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <Clock className="w-4 h-4" />
+                  New Applications
+                  {newApplications.length > 0 && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "new" ? "bg-amber-500/20 text-amber-600" : "bg-slate-200 text-slate-500"}`}
+                    >
+                      {newApplications.length}
+                    </span>
+                  )}
                 </button>
-              )}
+                <button
+                  onClick={() => setActiveTab("downloaded")}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "downloaded" ? "bg-slate-200 text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Processed
+                  {downloadedApplications.length > 0 && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "downloaded" ? "bg-green-500/20 text-green-600" : "bg-slate-200 text-slate-500"}`}
+                    >
+                      {downloadedApplications.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {displayedApps.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 px-4">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                      {activeTab === "new" ? (
+                        <Clock className="w-8 h-8 text-slate-600" />
+                      ) : (
+                        <CheckCircle className="w-8 h-8 text-slate-600" />
+                      )}
+                    </div>
+                    <p className="text-slate-900 font-medium text-lg">
+                      {activeTab === "new"
+                        ? "No new applications"
+                        : "No processed applications"}
+                    </p>
+                    <p className="text-slate-500 text-sm mt-1">
+                      {activeTab === "new"
+                        ? "All applications have been exported."
+                        : "Export new applications to see them here."}
+                    </p>
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-300 text-sm transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-300/60 bg-slate-50">
+                            {activeTab === "new" ? (
+                              <>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Student ID
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Name
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Email
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Domain
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Duration
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Timeline
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Applied At
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Internship Type
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Offer Letter
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Payment
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Certificate Sent
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Tasks
+                                </th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Student ID
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Name
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Email
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Domain
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Duration
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Batch
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Downloaded At
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Start Date
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  End Date
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Total Months
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Internship Type
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Offer Letter
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Payment
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                  Certificate Sent
+                                </th>
+                                <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Tasks
+                                </th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/30">
+                          {displayedApps.map((app, i) => (
+                            <tr
+                              key={app._id || i}
+                              className="hover:bg-slate-200/20 transition-colors duration-150 group"
+                            >
+                              <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">
+                                {app.studentId || "—"}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="text-slate-900 font-medium text-sm group-hover:text-blue-300 transition-colors">
+                                  {app.name}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-500 text-sm">
+                                {app.email}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <Badge variant="blue">{app.domain}</Badge>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-500 text-sm whitespace-nowrap">
+                                {app.duration}
+                              </td>
+
+                              {activeTab === "new" ? (
+                                <>
+                                  <td className="py-3.5 px-4">
+                                    {app.startDate ? (
+                                      <div className="space-y-0.5">
+                                        <p className="text-xs text-green-600 whitespace-nowrap">
+                                          {new Date(
+                                            app.startDate,
+                                          ).toLocaleDateString("en-IN")}
+                                        </p>
+                                        <p className="text-xs text-slate-500 whitespace-nowrap">
+                                          {new Date(
+                                            app.endDate,
+                                          ).toLocaleDateString("en-IN")}
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div className="relative min-w-[130px]">
+                                        <select
+                                          onChange={(e) =>
+                                            handleStartDateAssignment(
+                                              app._id,
+                                              e.target.value,
+                                            )
+                                          }
+                                          defaultValue=""
+                                          className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                        >
+                                          <option value="" disabled>
+                                            Set date...
+                                          </option>
+                                          {upcomingDateOptions.map(
+                                            (opt, idx) => (
+                                              <option
+                                                key={idx}
+                                                value={opt.value}
+                                              >
+                                                {opt.label}
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">
+                                    {new Date(app.appliedAt).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.internshipType ||
+                                          app.mode ||
+                                          "Normal Intern"
+                                        }
+                                        onChange={(e) =>
+                                          handleInternshipTypeChange(
+                                            app._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="Normal Intern">
+                                          Normal Intern
+                                        </option>
+                                        <option value="Summer/Winter Intern">
+                                          Summer/Winter Intern
+                                        </option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.offerLetterStatus || "Not Sent"
+                                        }
+                                        onChange={(e) =>
+                                          handleOfferLetterChange(
+                                            app._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="Not Sent">
+                                          Not Sent
+                                        </option>
+                                        <option value="Sent">Sent</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={app.hasPaid ? "Yes" : "No"}
+                                        onChange={() =>
+                                          handleTogglePaidStatus(
+                                            app._id,
+                                            app.hasPaid,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.isCertificateSent ? "Yes" : "No"
+                                        }
+                                        onChange={() =>
+                                          handleToggleCertificateSent(
+                                            app._id,
+                                            app.isCertificateSent,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <button
+                                      onClick={() =>
+                                        setSelectedSubmissionsApp(app)
+                                      }
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                                    >
+                                      View ({app.submissions?.length || 0}/
+                                      {app.duration
+                                        ? parseInt(app.duration)
+                                        : 1}
+                                      )
+                                    </button>
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="py-3.5 px-4 text-slate-500 text-sm">
+                                    {app.batch || "—"}
+                                  </td>
+                                  <td className="py-3.5 px-4 text-green-600 text-xs whitespace-nowrap">
+                                    {new Date(app.downloadedAt).toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    {app.startDate ? (
+                                      <span className="text-slate-700 text-xs whitespace-nowrap">
+                                        {new Date(
+                                          app.startDate,
+                                        ).toLocaleDateString("en-IN")}
+                                      </span>
+                                    ) : (
+                                      <div className="relative min-w-[130px]">
+                                        <select
+                                          onChange={(e) =>
+                                            handleStartDateAssignment(
+                                              app._id,
+                                              e.target.value,
+                                            )
+                                          }
+                                          defaultValue=""
+                                          className="w-full appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                        >
+                                          <option value="" disabled>
+                                            Set date...
+                                          </option>
+                                          {upcomingDateOptions.map(
+                                            (opt, idx) => (
+                                              <option
+                                                key={idx}
+                                                value={opt.value}
+                                              >
+                                                {opt.label}
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap">
+                                    {app.endDate
+                                      ? new Date(
+                                          app.endDate,
+                                        ).toLocaleDateString("en-IN")
+                                      : "—"}
+                                  </td>
+                                  <td className="py-3.5 px-4 text-slate-500 text-sm">
+                                    {app.totalMonths || "—"}
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.internshipType ||
+                                          app.mode ||
+                                          "Normal Intern"
+                                        }
+                                        onChange={(e) =>
+                                          handleInternshipTypeChange(
+                                            app._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="Normal Intern">
+                                          Normal Intern
+                                        </option>
+                                        <option value="Summer/Winter Intern">
+                                          Summer/Winter Intern
+                                        </option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.offerLetterStatus || "Not Sent"
+                                        }
+                                        onChange={(e) =>
+                                          handleOfferLetterChange(
+                                            app._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="Not Sent">
+                                          Not Sent
+                                        </option>
+                                        <option value="Sent">Sent</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={app.hasPaid ? "Yes" : "No"}
+                                        onChange={() =>
+                                          handleTogglePaidStatus(
+                                            app._id,
+                                            app.hasPaid,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="relative">
+                                      <select
+                                        value={
+                                          app.isCertificateSent ? "Yes" : "No"
+                                        }
+                                        onChange={() =>
+                                          handleToggleCertificateSent(
+                                            app._id,
+                                            app.isCertificateSent,
+                                          )
+                                        }
+                                        className="appearance-none bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                      >
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <button
+                                      onClick={() =>
+                                        setSelectedSubmissionsApp(app)
+                                      }
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                                    >
+                                      View ({app.submissions?.length || 0}/
+                                      {app.duration
+                                        ? parseInt(app.duration)
+                                        : 1}
+                                      )
+                                    </button>
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="lg:hidden p-4 space-y-3">
+                      {displayedApps.map((app, i) => (
+                        <MobileCard
+                          key={app._id || i}
+                          app={app}
+                          isDownloaded={activeTab === "downloaded"}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {displayedApps.length > 0 && (
+                  <div className="border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50/20">
+                    <p className="text-slate-500 text-xs">
+                      Showing{" "}
+                      <span className="text-slate-700 font-medium">
+                        {displayedApps.length}
+                      </span>{" "}
+                      {activeTab === "new" ? "new" : "processed"} applications
+                    </p>
+                    {(searchQuery || selectedDomain) && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSelectedDomain("");
+                        }}
+                        className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+          )}
+          {activeSidebarTab === "monthly_tasks" && (
+            <NormalTasksAdmin domains={domains} />
+          )}
+          {activeSidebarTab === "summer_projects" && (
+            <SummerProjectsAdmin applications={applications} />
           )}
         </div>
       </div>
-      )}
-      {activeSidebarTab === 'monthly_tasks' && <NormalTasksAdmin domains={domains} />}
-      {activeSidebarTab === 'summer_projects' && <SummerProjectsAdmin applications={applications} />}
-    </div>
-  </div>
 
       {selectedSubmissionsApp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
-                <h3 className="font-bold text-slate-900 text-lg">Project Submissions</h3>
-                <p className="text-sm text-slate-500">{selectedSubmissionsApp.name}</p>
+                <h3 className="font-bold text-slate-900 text-lg">
+                  Project Submissions
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {selectedSubmissionsApp.name}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedSubmissionsApp(null)}
@@ -1311,20 +2194,26 @@ const AdminDashboard = () => {
               </button>
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto">
-              {!selectedSubmissionsApp.submissions || selectedSubmissionsApp.submissions.length === 0 ? (
+              {!selectedSubmissionsApp.submissions ||
+              selectedSubmissionsApp.submissions.length === 0 ? (
                 <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   No projects submitted yet.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {selectedSubmissionsApp.submissions.map((sub, idx) => (
-                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div
+                      key={idx}
+                      className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md">
                           Task Phase {idx + 1}
                         </span>
                         <span className="text-xs text-slate-500">
-                          {new Date(sub.submittedAt).toLocaleDateString('en-IN')}
+                          {new Date(sub.submittedAt).toLocaleDateString(
+                            "en-IN",
+                          )}
                         </span>
                       </div>
                       <a
