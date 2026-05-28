@@ -36,7 +36,7 @@ const Footer = () => {
             >
               Get Your Free Proposal <ArrowRight size={18} />
             </button>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <a
                 href="https://www.linkedin.com/company/code-a-nova/"
                 target="_blank"
@@ -137,11 +137,11 @@ const Footer = () => {
             </div>
 
             {/* Contact forces full width on extra small screens, 1 column on sm */}
-            <div className="col-span-2 sm:col-span-1">
+            <div className="col-span-2 sm:col-span-1 flex flex-col h-full">
               <h4 className="text-gray-900 font-black text-lg mb-6">
                 Contact Us
               </h4>
-              <ul className="flex flex-col gap-4">
+              <ul className="flex flex-col gap-4 mb-4">
                 <li className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 font-bold text-sm hover:border-blue-200 transition-colors">
                   <Mail size={18} className="text-blue-600 shrink-0" />
                   <a href="mailto:codeanova26@gmail.com" className="truncate">
@@ -149,16 +149,26 @@ const Footer = () => {
                   </a>
                 </li>
               </ul>
+              
+              <div className="mt-auto flex justify-end">
+                <button
+                  onClick={() => navigate('/student-login')}
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-xs rounded-full hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105"
+                >
+                  Intern Login <ArrowRight size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-gray-100 text-gray-400 font-medium text-xs md:text-sm gap-4 text-center md:text-left">
           <p>
             &copy; {new Date().getFullYear()} Code-A-Nova. All rights reserved.
           </p>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
             <Link
               to="/privacy-policy"
               className="hover:text-blue-600 transition-colors"
@@ -174,6 +184,7 @@ const Footer = () => {
             >
               Refund Policy
             </Link>
+
           </div>
         </div>
       </div>
