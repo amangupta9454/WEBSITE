@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import {
   Linkedin,
   Github,
@@ -8,34 +8,44 @@ import {
   Phone,
   MapPin,
   Code2,
-} from 'lucide-react';
-import logo from '../assets/logo.png';
+} from "lucide-react";
 
 function Footer() {
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const quickLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/about', label: 'About' },
-    { to: '/resume-builder', label: 'Resume Builder' },
-    { to: '/service', label: 'Service' },
-    { to: '/contact', label: 'Contact' },
-    { to: '/registration', label: 'Registration' },
+    { to: "/", label: "Home" },
+    { to: "/about", label: "About" },
+    { to: "/resume-builder", label: "Resume Builder" },
+    { to: "/service", label: "Service" },
+    { to: "/contact", label: "Contact" },
+    { to: "/registration", label: "Registration" },
   ];
 
   const legalLinks = [
-    { to: '/terms', label: 'Terms & Conditions' },
+    { to: "/terms", label: "Terms & Conditions" },
     // { to: '/privacy', label: 'Privacy Policy' },
-    { to: '/verify', label: 'Verify Certificate' },
+    { to: "/verify", label: "Verify Certificate" },
   ];
 
   const socialLinks = [
-    { href: 'https://www.linkedin.com/company/code-a-nova/', icon: <Linkedin size={24} />, label: 'LinkedIn' },
-    { href: 'https://www.instagram.com/codenova31/', icon: <Instagram size={24} />, label: 'Instagram' },
-    { href: 'mailto:codeanova26@gmail.com', icon: <Mail size={24} />, label: 'Email' },
-    
+    {
+      href: "https://www.linkedin.com/company/code-a-nova/",
+      icon: <Linkedin size={24} />,
+      label: "LinkedIn",
+    },
+    {
+      href: "https://www.instagram.com/codenova31/",
+      icon: <Instagram size={24} />,
+      label: "Instagram",
+    },
+    {
+      href: "mailto:codeanova26@gmail.com",
+      icon: <Mail size={24} />,
+      label: "Email",
+    },
   ];
 
   return (
@@ -51,24 +61,23 @@ function Footer() {
 
         {/* Main Grid */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-6 relative z-10 mb-16">
-          
           {/* Column 1: Brand & Info */}
           <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-all hover:scale-[1.02] hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] duration-500">
             <Link to="/" className="flex items-center space-x-3 mb-6">
-              <img src={logo} alt="CodeNova Logo" className="h-12 w-12 object-contain drop-shadow-md" />
               <span className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-blue-300 tracking-tight">
                 Code-A-Nova
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400 mb-4">
-              Empowering students with real-world tech internships and expert mentorship.
+              Empowering students with real-world tech internships and expert
+              mentorship.
             </p>
             <div className="space-y-2 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Mail size={16} />
                 <span>codeanova26@gmail.com</span>
               </div>
-             
+
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
                 <span>India</span>
@@ -78,7 +87,9 @@ function Footer() {
 
           {/* Column 2: Quick Links */}
           <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-transform hover:scale-[1.02] duration-500">
-            <h4 className="text-xl font-semibold text-cyan-300 mb-6">Quick Links</h4>
+            <h4 className="text-xl font-semibold text-cyan-300 mb-6">
+              Quick Links
+            </h4>
             <ul className="space-y-3 text-sm">
               {quickLinks.map((link) => (
                 <li key={link.to} className="group">
@@ -96,7 +107,9 @@ function Footer() {
 
           {/* Column 3: Legal */}
           <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-transform hover:scale-[1.02] duration-500">
-            <h4 className="text-xl font-semibold text-purple-400 mb-6">Legal</h4>
+            <h4 className="text-xl font-semibold text-purple-400 mb-6">
+              Legal
+            </h4>
             <ul className="space-y-3 text-sm">
               {legalLinks.map((link) => (
                 <li key={link.to} className="group">
@@ -114,7 +127,9 @@ function Footer() {
 
           {/* Column 4: Follow Us */}
           <div className="relative p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition-transform hover:scale-[1.02] duration-500">
-            <h4 className="text-xl font-semibold text-pink-400 mb-6">Follow Us</h4>
+            <h4 className="text-xl font-semibold text-pink-400 mb-6">
+              Follow Us
+            </h4>
             <div className="flex gap-5 text-2xl mb-8">
               {socialLinks.map((social, i) => (
                 <a
@@ -148,11 +163,15 @@ function Footer() {
         <div className="bg-black py-8 px-6">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-sm">
             <p className="text-gray-500">
-              © {new Date().getFullYear()} <span className="text-white font-bold">Code-A-Nova</span>. All rights reserved.
+              © {new Date().getFullYear()}{" "}
+              <span className="text-white font-bold">Code-A-Nova</span>. All
+              rights reserved.
             </p>
 
             <button className="group flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">
-              <span className="text-gray-400 group-hover:text-white transition-colors">Created by</span>
+              <span className="text-gray-400 group-hover:text-white transition-colors">
+                Created by
+              </span>
               <span className="font-bold bg-linear-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent tracking-wide group-hover:brightness-125 transition-all">
                 CODE-A-NOVA
               </span>

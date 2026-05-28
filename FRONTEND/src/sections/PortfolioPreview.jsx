@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ExternalLink, Github } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../animations/variants';
 import Button from '../Components/Button';
 
