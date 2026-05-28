@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Monitor, ShoppingCart, CalendarCheck, LayoutDashboard, Cpu, Database, 
   CheckCircle, ArrowLeft, Zap, Target, BarChart, ShieldCheck, 
-  Trophy, Users, Clock, ChevronDown, ChevronUp, Star
+  Trophy, Users, Clock, ChevronDown, ChevronUp
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import CTA from '../sections/CTA';
@@ -14,8 +14,8 @@ const serviceDetailsData = {
   'business-websites': {
     title: 'Business Websites',
     subtitle: 'Premium, fast, and modern websites that convert visitors into customers.',
-    icon: <Monitor className="w-12 h-12 md:w-16 md:h-16 text-blue-500" />,
-    gradient: 'from-blue-500 to-cyan-400',
+    icon: <Monitor className="w-12 h-12 md:w-16 md:h-16 text-brand-emerald" />,
+    gradient: 'from-brand-emerald to-brand-mint',
     description: 'We build high-performance business websites tailored for your specific industry. Whether you run a restaurant, clinic, gym, or local shop, our websites are designed to instantly build trust and establish a premium online presence.',
     features: [
       'Responsive Mobile-First Design',
@@ -50,8 +50,8 @@ const serviceDetailsData = {
   'ecommerce-stores': {
     title: 'E-commerce Stores',
     subtitle: 'Powerful online stores with seamless checkout and beautiful product displays.',
-    icon: <ShoppingCart className="w-12 h-12 md:w-16 md:h-16 text-purple-500" />,
-    gradient: 'from-purple-500 to-pink-500',
+    icon: <ShoppingCart className="w-12 h-12 md:w-16 md:h-16 text-brand-mint" />,
+    gradient: 'from-brand-mint to-brand-emerald',
     description: 'Start selling your products online with a robust e-commerce platform. We create customized online stores with seamless checkout, inventory management, and stunning product showcases that drive sales.',
     features: [
       'Secure Payment Gateway Integration',
@@ -86,8 +86,8 @@ const serviceDetailsData = {
   'booking-systems': {
     title: 'Booking Systems',
     subtitle: 'Automated scheduling and appointment systems for seamless operations.',
-    icon: <CalendarCheck className="w-12 h-12 md:w-16 md:h-16 text-indigo-500" />,
-    gradient: 'from-indigo-500 to-blue-500',
+    icon: <CalendarCheck className="w-12 h-12 md:w-16 md:h-16 text-brand-emerald" />,
+    gradient: 'from-brand-emerald to-brand-mint',
     description: 'Perfect for salons, schools, colleges, and consultants. Eliminate back-and-forth emails and phone calls with our automated scheduling and appointment booking systems.',
     features: [
       'Real-Time Availability Calendar',
@@ -122,8 +122,8 @@ const serviceDetailsData = {
   'admin-dashboards': {
     title: 'Admin Dashboards',
     subtitle: 'Custom internal tools to track sales, manage customers, and monitor growth.',
-    icon: <LayoutDashboard className="w-12 h-12 md:w-16 md:h-16 text-emerald-500" />,
-    gradient: 'from-emerald-500 to-teal-400',
+    icon: <LayoutDashboard className="w-12 h-12 md:w-16 md:h-16 text-brand-mint" />,
+    gradient: 'from-brand-mint to-brand-emerald',
     description: 'Bring all your business data into one centralized location. We develop custom internal tools and admin dashboards to help you track performance, manage your team, and make data-driven decisions.',
     features: [
       'Real-Time Analytics & Charts',
@@ -158,8 +158,8 @@ const serviceDetailsData = {
   'ai-automation': {
     title: 'AI Automation',
     subtitle: 'Save hundreds of hours by automating repetitive manual tasks.',
-    icon: <Cpu className="w-12 h-12 md:w-16 md:h-16 text-orange-500" />,
-    gradient: 'from-orange-500 to-red-500',
+    icon: <Cpu className="w-12 h-12 md:w-16 md:h-16 text-brand-emerald" />,
+    gradient: 'from-brand-emerald to-brand-mint',
     description: 'Leverage the power of Artificial Intelligence to automate your customer support, invoicing, lead generation, and other repetitive tasks. Work smarter, not harder.',
     features: [
       'AI Chatbots for Customer Support',
@@ -194,8 +194,8 @@ const serviceDetailsData = {
   'erp-systems': {
     title: 'ERP Systems',
     subtitle: 'Comprehensive business management systems tailored to your workflow.',
-    icon: <Database className="w-12 h-12 md:w-16 md:h-16 text-rose-500" />,
-    gradient: 'from-rose-500 to-pink-600',
+    icon: <Database className="w-12 h-12 md:w-16 md:h-16 text-brand-mint" />,
+    gradient: 'from-brand-mint to-brand-emerald',
     description: 'Enterprise Resource Planning systems designed specifically for your organizational needs. Connect your finance, HR, supply chain, and operations in one unified system.',
     features: [
       'Financial Management & Accounting',
@@ -247,13 +247,13 @@ const staggerContainer = {
 const FAQItem = ({ faq }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border border-gray-200 rounded-2xl mb-4 bg-white overflow-hidden hover:border-blue-200 transition-colors">
+    <div className="border border-zinc-150 rounded-2xl mb-4 bg-white overflow-hidden hover:border-brand-emerald/20 transition-all shadow-sm">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex justify-between items-center p-5 text-left font-semibold text-gray-900 focus:outline-none"
+        className="w-full flex justify-between items-center p-5 text-left font-bold text-zinc-900 focus:outline-none"
       >
         <span>{faq.q}</span>
-        {isOpen ? <ChevronUp className="w-5 h-5 text-blue-500" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+        {isOpen ? <ChevronUp className="w-5 h-5 text-brand-emerald" /> : <ChevronDown className="w-5 h-5 text-zinc-400" />}
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -261,7 +261,7 @@ const FAQItem = ({ faq }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-5 pb-5 text-gray-600"
+            className="px-5 pb-5 text-zinc-500 font-medium text-sm md:text-base leading-relaxed"
           >
             {faq.a}
           </motion.div>
@@ -283,9 +283,9 @@ const ServiceDetails = () => {
     return (
       <MainLayout>
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Service Not Found</h1>
-          <p className="text-gray-500 mb-8">The service you are looking for does not exist or has been removed.</p>
-          <Link to="/services" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition">
+          <h1 className="text-4xl font-bold text-zinc-900 mb-4 tracking-tight">Service Not Found</h1>
+          <p className="text-zinc-500 mb-8 font-medium">The service you are looking for does not exist or has been removed.</p>
+          <Link to="/services" className="px-6 py-3 bg-brand-emerald text-zinc-950 font-black rounded-full hover:bg-brand-mint transition shadow-lg shadow-brand-emerald/10 cursor-pointer">
             View All Services
           </Link>
         </div>
@@ -296,29 +296,29 @@ const ServiceDetails = () => {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-[#FAFAFA]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-[#FAFAFA] to-[#FAFAFA] pointer-events-none" />
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-[#F9FBF9]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50/40 via-[#F9FBF9] to-[#F9FBF9] pointer-events-none" />
         
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-          <Link to="/services" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 mb-8 transition-colors">
+          <Link to="/services" className="inline-flex items-center gap-2 text-xs font-bold text-brand-emerald hover:text-brand-mint mb-8 transition-colors uppercase font-mono tracking-widest">
             <ArrowLeft className="w-4 h-4" /> Back to Services
           </Link>
 
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
-              <motion.div variants={fadeUp} className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${service.gradient} bg-opacity-10 mb-6`}>
+              <motion.div variants={fadeUp} className={`inline-flex p-4 rounded-2xl bg-emerald-50 border border-emerald-100/50 mb-6`}>
                 <div className="p-3 bg-white rounded-xl shadow-sm">
                   {service.icon}
                 </div>
               </motion.div>
-              <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight text-gray-900 leading-tight">
+              <motion.h1 variants={fadeUp} className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight text-zinc-950 leading-tight">
                 {service.title}
               </motion.h1>
-              <motion.p variants={fadeUp} className="text-xl text-gray-600 mb-8 leading-relaxed">
+              <motion.p variants={fadeUp} className="text-xl text-zinc-500 mb-8 leading-relaxed font-medium">
                 {service.subtitle}
               </motion.p>
               <motion.div variants={fadeUp} className="flex flex-wrap gap-4">
-                <Link to="/contact" className={`px-8 py-4 rounded-full text-white font-bold text-lg bg-gradient-to-r ${service.gradient} shadow-lg shadow-blue-500/30 hover:scale-105 transition-transform duration-300`}>
+                <Link to="/contact" className={`px-8 py-4 rounded-full text-zinc-950 font-black text-lg bg-gradient-to-r ${service.gradient} shadow-lg shadow-brand-emerald/10 hover:-translate-y-0.5 transition-all cursor-pointer`}>
                   Get Started Today
                 </Link>
               </motion.div>
@@ -330,20 +330,20 @@ const ServiceDetails = () => {
               transition={{ duration: 0.7, ease: "easeOut" }}
               className="relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-purple-50 rounded-[3rem] transform rotate-3 scale-105 -z-10"></div>
-              <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-xl border border-gray-100 relative z-10">
-                <h3 className="text-2xl font-bold mb-6 text-gray-900">About this service</h3>
-                <p className="text-gray-600 leading-relaxed text-lg mb-8">
+              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-50 to-brand-emerald/5 rounded-[3rem] transform rotate-3 scale-105 -z-10"></div>
+              <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-zinc-200/30 border border-zinc-150 relative z-10">
+                <h3 className="text-2xl font-bold mb-6 text-zinc-900 tracking-tight">About this service</h3>
+                <p className="text-zinc-500 leading-relaxed text-lg mb-8 font-medium">
                   {service.description}
                 </p>
                 
                 <div className="space-y-4">
                   {service.features.slice(0, 3).map((feature, idx) => (
                     <div key={idx} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                        <CheckCircle className="w-5 h-5 text-brand-emerald" />
                       </div>
-                      <span className="font-medium text-gray-700">{feature}</span>
+                      <span className="font-bold text-zinc-800">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -354,8 +354,7 @@ const ServiceDetails = () => {
       </section>
 
       {/* Results / Impact Section */}
-      <section className="py-16 bg-gray-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-gray-900 to-gray-900 pointer-events-none" />
+      <section className="py-16 bg-[#F9FBF9] border-t border-zinc-100 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
           <motion.div 
             initial="hidden"
@@ -364,8 +363,8 @@ const ServiceDetails = () => {
             variants={staggerContainer}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Results We Delivered</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Real numbers and real impact we have generated for businesses through our {service.title.toLowerCase()}.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-zinc-950 tracking-tight">Results We Delivered</h2>
+            <p className="text-zinc-500 max-w-2xl mx-auto font-medium">Real numbers and real impact we have generated for businesses through our {service.title.toLowerCase()}.</p>
           </motion.div>
 
           <motion.div 
@@ -376,12 +375,12 @@ const ServiceDetails = () => {
             className="grid md:grid-cols-3 gap-8 text-center"
           >
             {service.results.map((result, idx) => (
-              <motion.div key={idx} variants={fadeUp} className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
-                <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-4" />
-                <h3 className="text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+              <motion.div key={idx} variants={fadeUp} className="p-8 rounded-3xl bg-white border border-zinc-100 shadow-sm shadow-zinc-200/20">
+                <Trophy className="w-10 h-10 text-brand-gold mx-auto mb-4" />
+                <h3 className="text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-mint">
                   {result.metric}
                 </h3>
-                <p className="text-gray-300 font-medium">{result.label}</p>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest font-mono text-xs md:text-sm">{result.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -389,7 +388,7 @@ const ServiceDetails = () => {
       </section>
 
       {/* Features & Benefits */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white border-t border-zinc-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div 
             initial="hidden"
@@ -398,8 +397,8 @@ const ServiceDetails = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Everything You Need</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto text-lg">A comprehensive suite of features designed to maximize your business potential and streamline your operations.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-zinc-950 tracking-tight">Everything You Need</h2>
+            <p className="text-zinc-500 max-w-2xl mx-auto text-lg font-medium">A comprehensive suite of features designed to maximize your business potential and streamline your operations.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
@@ -410,14 +409,14 @@ const ServiceDetails = () => {
               viewport={{ once: true }}
               variants={staggerContainer}
             >
-              <h3 className="text-2xl font-bold mb-8 flex items-center gap-2 text-gray-900">
-                <Zap className="text-yellow-500" /> Core Features
+              <h3 className="text-2xl font-bold mb-8 flex items-center gap-2 text-zinc-900 tracking-tight">
+                <Zap className="text-brand-gold" /> Core Features
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 {service.features.map((feature, index) => (
-                  <motion.div key={index} variants={fadeUp} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors">
-                    <CheckCircle className="w-5 h-5 text-blue-500 mb-2" />
-                    <h4 className="font-semibold text-gray-800 text-sm md:text-base">{feature}</h4>
+                  <motion.div key={index} variants={fadeUp} className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100 hover:border-brand-emerald/20 transition-all duration-300">
+                    <CheckCircle className="w-5 h-5 text-brand-emerald mb-2" />
+                    <h4 className="font-bold text-zinc-800 text-sm md:text-base">{feature}</h4>
                   </motion.div>
                 ))}
               </div>
@@ -430,20 +429,20 @@ const ServiceDetails = () => {
               viewport={{ once: true }}
               variants={staggerContainer}
             >
-              <h3 className="text-2xl font-bold mb-8 flex items-center gap-2 text-gray-900">
-                <Target className="text-red-500" /> Key Benefits
+              <h3 className="text-2xl font-bold mb-8 flex items-center gap-2 text-zinc-900 tracking-tight">
+                <Target className="text-brand-emerald" /> Key Benefits
               </h3>
               <div className="space-y-6">
                 {service.benefits.map((benefit, index) => (
-                  <motion.div key={index} variants={fadeUp} className="flex gap-4 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-                      {index === 0 && <BarChart className="w-6 h-6 text-purple-600" />}
-                      {index === 1 && <Zap className="w-6 h-6 text-purple-600" />}
-                      {index === 2 && <ShieldCheck className="w-6 h-6 text-purple-600" />}
+                  <motion.div key={index} variants={fadeUp} className="flex gap-4 p-5 rounded-2xl bg-white border border-zinc-100 shadow-sm hover:shadow-md hover:border-brand-emerald/10 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/50 flex items-center justify-center shrink-0">
+                      {index === 0 && <BarChart className="w-6 h-6 text-brand-emerald" />}
+                      {index === 1 && <Zap className="w-6 h-6 text-brand-emerald" />}
+                      {index === 2 && <ShieldCheck className="w-6 h-6 text-brand-emerald" />}
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-gray-900 mb-1">{benefit.title}</h4>
-                      <p className="text-gray-600 text-sm md:text-base">{benefit.desc}</p>
+                      <h4 className="text-lg font-bold text-zinc-900 mb-1 tracking-tight">{benefit.title}</h4>
+                      <p className="text-zinc-500 text-sm md:text-base font-medium">{benefit.desc}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -454,7 +453,7 @@ const ServiceDetails = () => {
       </section>
 
       {/* Our Process Section */}
-      <section className="py-20 bg-[#FAFAFA] border-t border-gray-100">
+      <section className="py-20 bg-[#F9FBF9] border-t border-zinc-100">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div 
             initial="hidden"
@@ -463,8 +462,8 @@ const ServiceDetails = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Our Process</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto text-lg">A simple, transparent, and proven workflow to ensure your project's success from day one.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-zinc-950 tracking-tight">Our Process</h2>
+            <p className="text-zinc-500 max-w-2xl mx-auto text-lg font-medium">A simple, transparent, and proven workflow to ensure your project's success from day one.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-4 gap-8">
@@ -477,15 +476,15 @@ const ServiceDetails = () => {
                 variants={fadeUp}
                 className="relative"
               >
-                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow relative z-10 h-full flex flex-col items-center text-center">
-                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${service.gradient} text-white font-black text-xl flex items-center justify-center mb-6 shadow-md`}>
+                <div className="bg-white p-8 rounded-3xl border border-zinc-105 shadow-sm hover:shadow-xl hover:border-brand-emerald/20 transition-all duration-300 relative z-10 h-full flex flex-col items-center text-center">
+                  <div className={`w-14 h-14 rounded-full bg-brand-emerald text-zinc-950 font-black text-xl flex items-center justify-center mb-6 shadow-md`}>
                     {idx + 1}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-gray-600">{step.desc}</p>
+                  <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
+                  <p className="text-zinc-500 text-sm leading-relaxed font-medium">{step.desc}</p>
                 </div>
                 {idx < service.process.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 border-t-2 border-dashed border-gray-300 z-0"></div>
+                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 border-t-2 border-dashed border-zinc-300 z-0"></div>
                 )}
               </motion.div>
             ))}
@@ -494,7 +493,7 @@ const ServiceDetails = () => {
       </section>
 
       {/* FAQs Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white border-t border-zinc-100">
         <div className="max-w-3xl mx-auto px-6 md:px-12">
           <motion.div 
             initial="hidden"
@@ -503,8 +502,8 @@ const ServiceDetails = () => {
             variants={fadeUp}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Frequently Asked Questions</h2>
-            <p className="text-gray-500 text-lg">Got questions? We've got answers.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-zinc-950 tracking-tight">Frequently Asked Questions</h2>
+            <p className="text-zinc-500 text-lg font-medium">Got questions? We've got answers.</p>
           </motion.div>
 
           <motion.div 
@@ -521,11 +520,10 @@ const ServiceDetails = () => {
           </motion.div>
         </div>
       </section>
-
-
-
+      <CTA />
     </MainLayout>
   );
 };
 
 export default ServiceDetails;
+export { serviceDetailsData };

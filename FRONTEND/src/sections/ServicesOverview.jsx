@@ -3,85 +3,62 @@ import { motion } from 'framer-motion';
 import { Monitor, ShoppingCart, CalendarCheck, LayoutDashboard, Cpu, Database, ArrowRight } from 'lucide-react';
 import { staggerContainer, fadeUp } from '../animations/variants';
 import { Link } from 'react-router-dom';
+import GlitchTitle from "../Components/GlitchTitle";
+import FlipCard from "../Components/FlipCard";
+import TiltSpotlightCard from "../Components/TiltSpotlightCard";
 
 const services = [
   {
     id: 'business-websites',
-    icon: <Monitor className="text-blue-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <Monitor className="text-brand-emerald w-6 h-6 md:w-8 md:h-8" />,
     title: 'Business Websites',
-    description: 'Premium, fast, and modern websites for restaurants, clinics, gyms, and local shops that instantly build trust.'
+    description: 'Premium, fast, and modern websites for restaurants, clinics, gyms, and local shops that instantly build trust.',
+    features: ['Custom SaaS Design', 'Local SEO & Maps Setup', 'Speed Optimized (>95 Score)', 'WhatsApp Chat Integration']
   },
   {
     id: 'ecommerce-stores',
-    icon: <ShoppingCart className="text-purple-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <ShoppingCart className="text-brand-mint w-6 h-6 md:w-8 md:h-8" />,
     title: 'E-commerce Stores',
-    description: 'Powerful online stores with seamless checkout, inventory management, and beautiful product displays.'
+    description: 'Powerful online stores with seamless checkout, inventory management, and beautiful product displays.',
+    features: ['Payment Gateway Setup', 'Smart Product Management', 'Automated Invoices', 'Discount Code Framework']
   },
   {
     id: 'booking-systems',
-    icon: <CalendarCheck className="text-indigo-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <CalendarCheck className="text-brand-emerald w-6 h-6 md:w-8 md:h-8" />,
     title: 'Booking Systems',
-    description: 'Automated scheduling and appointment systems perfect for salons, schools, colleges, and consultants.'
+    description: 'Automated scheduling and appointment systems perfect for salons, schools, colleges, and consultants.',
+    features: ['Dynamic Client Calendars', 'SMS / Email Alerts', 'Trainer or Stylist Slots', 'Advanced Reminders Flow']
   },
   {
     id: 'admin-dashboards',
-    icon: <LayoutDashboard className="text-blue-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <LayoutDashboard className="text-brand-mint w-6 h-6 md:w-8 md:h-8" />,
     title: 'Admin Dashboards',
-    description: 'Custom internal tools to track your sales, manage customers, and monitor growth from one place.'
+    description: 'Custom internal tools to track your sales, manage customers, and monitor growth from one place.',
+    features: ['Realtime Analytics Grid', 'CRM & User Tracking', 'CSV / Excel Data Export', 'Interactive Sales Charts']
   },
   {
     id: 'ai-automation',
-    icon: <Cpu className="text-purple-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <Cpu className="text-brand-emerald w-6 h-6 md:w-8 md:h-8" />,
     title: 'AI Automation',
-    description: 'Save hundreds of hours by automating customer replies, invoicing, and repetitive manual tasks.'
+    description: 'Save hundreds of hours by automating customer replies, invoicing, and repetitive manual tasks.',
+    features: ['Automated Email Campaigns', 'AI Support Chatbots', 'Zapier & Webhooks API', 'Intelligent Lead Profiler']
   },
   {
     id: 'erp-systems',
-    icon: <Database className="text-indigo-500 w-6 h-6 md:w-8 md:h-8" />,
+    icon: <Database className="text-brand-mint w-6 h-6 md:w-8 md:h-8" />,
     title: 'ERP Systems',
-    description: 'Comprehensive business management systems tailored exactly to your organizational workflow.'
+    description: 'Comprehensive business management systems tailored exactly to your organizational workflow.',
+    features: ['Inventory & Stock Hubs', 'Employee Performance Hub', 'Tailored Database Queries', 'Centralized Billing']
   }
 ];
 
-const SpotlightCard = ({ children, className = "" }) => {
-  const divRef = useRef(null);
-  const [isFocused, setIsFocused] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
-
-  const handleMouseMove = (e) => {
-    if (!divRef.current || isFocused) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onFocus={() => { setIsFocused(true); setOpacity(1); }}
-      onBlur={() => { setIsFocused(false); setOpacity(0); }}
-      onMouseEnter={() => setOpacity(1)}
-      onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-500 ${className}`}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-300 ease-in-out"
-        style={{
-          opacity,
-          background: `radial-gradient(400px circle at ${position.x}px ${position.y}px, rgba(99, 102, 241, 0.08), transparent 40%)`,
-        }}
-      />
-      <div className="relative z-10">{children}</div>
-    </div>
-  );
-};
+// Centralized TiltSpotlightCard imported from src/Components/TiltSpotlightCard.jsx
 
 const ServicesOverview = () => {
   return (
-    <section className="py-12 md:py-24 relative overflow-hidden bg-[#FAFAFA]">
-      {/* Subtle Background Elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-[#FAFAFA] to-[#FAFAFA] pointer-events-none" />
+    <section className="py-12 md:py-24 relative overflow-hidden bg-white/80 backdrop-blur-[2px]">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-brand-emerald/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <motion.div 
@@ -91,8 +68,13 @@ const ServicesOverview = () => {
           variants={fadeUp}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight text-gray-900">Digital <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Solutions</span> For Growth</h2>
-          <p className="text-gray-500 max-w-2xl mx-auto text-lg font-medium">Everything your business needs to establish a premium online presence, automate tasks, and get more customers.</p>
+          <GlitchTitle
+            text="Digital Solutions For Growth"
+            highlight="Solutions"
+            className="text-3xl md:text-5xl font-black mb-6 tracking-tight text-zinc-950 font-sans"
+            tag="h2"
+          />
+          <p className="text-zinc-500 max-w-2xl mx-auto text-lg font-medium">Everything your business needs to establish a premium online presence, automate tasks, and get more customers.</p>
         </motion.div>
 
         <motion.div 
@@ -103,20 +85,47 @@ const ServicesOverview = () => {
           className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {services.map((service, index) => (
-            <motion.div key={index} variants={fadeUp}>
-              <SpotlightCard className="h-full p-4 md:p-8 group hover:border-purple-200 transition-colors duration-500 flex flex-col">
-                <div className="flex justify-between items-start mb-3 md:mb-6">
-                  <h3 className="text-base md:text-xl font-bold text-gray-900 tracking-wide mt-1 pr-3 leading-tight">{service.title}</h3>
-                  <div className="p-2.5 md:p-4 rounded-xl bg-gray-50 shrink-0 border border-gray-100 group-hover:border-purple-100 group-hover:bg-purple-50 transition-all duration-300">
-                    {service.icon}
+            <motion.div key={index} variants={fadeUp} className="h-full">
+              <FlipCard
+                heightClass="h-[340px]"
+                front={
+                  <div className="h-full p-6 md:p-8 flex flex-col justify-between relative">
+                    <div>
+                      <div className="flex justify-between items-start mb-6">
+                        <h3 className="text-xl font-bold text-zinc-900 tracking-tight mt-1 pr-3 leading-snug">{service.title}</h3>
+                        <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100 transition-all duration-300">
+                          {service.icon}
+                        </div>
+                      </div>
+                      <p className="text-sm md:text-base text-zinc-500 mb-8 leading-relaxed font-medium">{service.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase font-mono tracking-widest mt-auto border-t border-zinc-100 pt-4">
+                      <span className="w-2 h-2 rounded-full bg-brand-emerald animate-pulse" /> Hover to expand
+                    </div>
                   </div>
-                </div>
-                <p className="text-[13px] md:text-base text-gray-600 mb-5 md:mb-8 leading-relaxed font-medium flex-1">{service.description}</p>
-                
-                <Link to={`/service/${service.id}`} className="flex items-center gap-2 text-[13px] md:text-sm font-bold text-blue-600 group-hover:text-purple-600 transition-colors mt-auto w-fit">
-                  Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </SpotlightCard>
+                }
+                back={
+                  <div className="h-full p-6 md:p-8 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-sm uppercase tracking-widest font-mono font-bold text-brand-emerald mb-4 border-b border-zinc-200/60 pb-2">Included Features</h4>
+                      <ul className="space-y-3 mb-6">
+                        {service.features.map((feat, fIdx) => (
+                          <li key={fIdx} className="flex items-center gap-2.5 text-sm font-medium text-zinc-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald shrink-0" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <Link 
+                      to={`/service/${service.id}`} 
+                      className="flex items-center gap-2 text-xs font-bold text-brand-emerald hover:text-brand-mint transition-colors w-fit uppercase font-mono tracking-widest border-b border-transparent hover:border-brand-mint pb-0.5"
+                    >
+                      Explore Service <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                }
+              />
             </motion.div>
           ))}
         </motion.div>
@@ -126,3 +135,4 @@ const ServicesOverview = () => {
 };
 
 export default ServicesOverview;
+export { TiltSpotlightCard };

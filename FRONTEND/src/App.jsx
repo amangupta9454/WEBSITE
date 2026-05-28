@@ -1,9 +1,12 @@
+import React, { useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Outlet,
 } from "react-router-dom";
+import { AnimatePresence } from 'framer-motion';
+import Loader from "./Components/Loader";
 import Home from "./Pages/Home";
 import Contact from "./Pages/Contact";
 import About from "./Pages/About";
@@ -33,8 +36,14 @@ const UnifiedLayout = () => (
 );
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
-    <Router>
+    <>
+      <AnimatePresence mode="wait">
+        {isLoading && <Loader finishLoading={() => setIsLoading(false)} />}
+      </AnimatePresence>
+      <Router>
       <Routes>
         {/* New Marketing Pages (Navbar & Footer handled by MainLayout internally) */}
         <Route path="/" element={<Home />} />
@@ -80,6 +89,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </>
   );
 }
 export default App;

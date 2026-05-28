@@ -36,7 +36,7 @@ const Privacy = () => {
     <MainLayout>
       <div className="pt-32 pb-24 bg-[#FAFAFA] min-h-screen relative overflow-hidden">
         {/* Subtle Background Glow */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-50 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-emerald/5 rounded-full blur-[100px] pointer-events-none" />
         
         <div className="max-w-4xl mx-auto px-6 relative z-10">
           <motion.div 
@@ -45,7 +45,7 @@ const Privacy = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl mb-6 shadow-sm border border-blue-100">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-brand-emerald rounded-2xl mb-6 shadow-sm border border-emerald-100">
               <Shield size={32} />
             </div>
             <h1 className="text-4xl md:text-6xl font-black mb-6 text-gray-900 tracking-tight">Privacy Policy</h1>
