@@ -111,12 +111,6 @@ const PortfolioPreview = () => {
                     alt={project.title} 
                     className="w-full h-40 md:h-56 object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   />
-                  {/* Subtle View Live Overlay */}
-                  <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    <div className="bg-blue-600 text-white font-bold px-4 py-2 rounded-full shadow-xl flex items-center gap-2">
-                      <ExternalLink size={16} /> View Live
-                    </div>
-                  </div>
                 </div>
               </div>
             </motion.div>

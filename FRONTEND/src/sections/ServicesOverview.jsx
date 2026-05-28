@@ -2,34 +2,41 @@ import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Monitor, ShoppingCart, CalendarCheck, LayoutDashboard, Cpu, Database, ArrowRight } from 'lucide-react';
 import { staggerContainer, fadeUp } from '../animations/variants';
+import { Link } from 'react-router-dom';
 
 const services = [
   {
+    id: 'business-websites',
     icon: <Monitor className="text-blue-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'Business Websites',
     description: 'Premium, fast, and modern websites for restaurants, clinics, gyms, and local shops that instantly build trust.'
   },
   {
+    id: 'ecommerce-stores',
     icon: <ShoppingCart className="text-purple-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'E-commerce Stores',
     description: 'Powerful online stores with seamless checkout, inventory management, and beautiful product displays.'
   },
   {
+    id: 'booking-systems',
     icon: <CalendarCheck className="text-indigo-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'Booking Systems',
     description: 'Automated scheduling and appointment systems perfect for salons, schools, colleges, and consultants.'
   },
   {
+    id: 'admin-dashboards',
     icon: <LayoutDashboard className="text-blue-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'Admin Dashboards',
     description: 'Custom internal tools to track your sales, manage customers, and monitor growth from one place.'
   },
   {
+    id: 'ai-automation',
     icon: <Cpu className="text-purple-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'AI Automation',
     description: 'Save hundreds of hours by automating customer replies, invoicing, and repetitive manual tasks.'
   },
   {
+    id: 'erp-systems',
     icon: <Database className="text-indigo-500 w-6 h-6 md:w-8 md:h-8" />,
     title: 'ERP Systems',
     description: 'Comprehensive business management systems tailored exactly to your organizational workflow.'
@@ -106,9 +113,9 @@ const ServicesOverview = () => {
                 </div>
                 <p className="text-[13px] md:text-base text-gray-600 mb-5 md:mb-8 leading-relaxed font-medium flex-1">{service.description}</p>
                 
-                <button className="flex items-center gap-2 text-[13px] md:text-sm font-bold text-blue-600 group-hover:text-purple-600 transition-colors mt-auto">
+                <Link to={`/service/${service.id}`} className="flex items-center gap-2 text-[13px] md:text-sm font-bold text-blue-600 group-hover:text-purple-600 transition-colors mt-auto w-fit">
                   Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
               </SpotlightCard>
             </motion.div>
           ))}
