@@ -19,8 +19,12 @@ const solutions = [
 
 const ProblemSolution = () => {
   return (
-    <section className="py-12 md:py-24 bg-[#FAFAFA]">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
+    <section className="py-12 md:py-24 bg-[#F9FBF9]/80 backdrop-blur-[2px] relative overflow-hidden">
+      {/* Subtle light ambient glows */}
+      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-rose-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-brand-emerald/5 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <motion.div 
           variants={staggerContainer}
           initial="hidden"
@@ -28,32 +32,35 @@ const ProblemSolution = () => {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-16"
         >
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black text-zinc-950 mb-6 leading-tight tracking-tight">
               Stop Losing Customers <br className="hidden sm:block" /> to Your Competitors
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-lg text-gray-500 max-w-2xl mx-auto font-medium">
+          <motion.p variants={fadeUp} className="text-lg text-zinc-500 max-w-2xl mx-auto font-medium leading-relaxed">
             In today's digital world, your business is judged by how it looks online. 
-            We fix outdated digital footprints.
+            We fix outdated digital footprints and automate operations.
           </motion.p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto">
           {/* Pain Points Card */}
           <motion.div 
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="bg-red-500/10 border border-red-200/50 rounded-3xl p-6 md:p-8 shadow-sm"
+            className="bg-rose-50/70 border border-rose-100 rounded-3xl p-6 md:p-8 shadow-sm hover:border-rose-300 hover:bg-rose-50/90 transition-all duration-300 relative group overflow-hidden"
           >
-            <h3 className="text-2xl md:text-3xl font-bold text-red-600 mb-4 md:mb-6">
-              The Problem
+            {/* Soft hover glow */}
+            <div className="absolute -top-12 -right-12 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+            
+            <h3 className="text-xl md:text-2xl font-black text-rose-700 mb-6 font-mono uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> The Problem
             </h3>
-            <ul className="space-y-3 md:space-y-5">
+            <ul className="space-y-4">
               {painPoints.map((point, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <XCircle className="text-red-400 shrink-0 mt-0.5" size={20} />
-                  <span className="text-sm md:text-base text-gray-700 font-medium">{point}</span>
+                  <XCircle className="text-rose-500 shrink-0 mt-0.5" size={20} />
+                  <span className="text-sm md:text-base text-zinc-700 font-semibold leading-normal">{point}</span>
                 </li>
               ))}
             </ul>
@@ -61,23 +68,23 @@ const ProblemSolution = () => {
 
           {/* Solutions Card */}
           <motion.div 
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="bg-sky-500/10 border border-sky-200/50 rounded-3xl p-6 md:p-8 shadow-xl shadow-sky-900/5 relative overflow-hidden"
+            className="bg-emerald-50/70 border border-emerald-100 rounded-3xl p-6 md:p-8 shadow-xl shadow-zinc-200/40 hover:border-brand-emerald/30 hover:bg-emerald-50/90 transition-all duration-300 relative overflow-hidden group"
           >
-            {/* Subtle glow */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-100 rounded-full blur-3xl opacity-50" />
+            {/* Glowing solution highlight */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-emerald/10 rounded-full blur-[80px] group-hover:scale-110 transition-transform duration-500" />
             
-            <h3 className="text-2xl md:text-3xl font-bold text-blue-600 mb-4 md:mb-6 relative z-10">
-              The Solution
+            <h3 className="text-xl md:text-2xl font-black text-brand-emerald mb-6 font-mono uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-emerald animate-pulse" /> The Solution
             </h3>
-            <ul className="space-y-3 md:space-y-5 relative z-10">
+            <ul className="space-y-4 relative z-10">
               {solutions.map((solution, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                  <span className="text-sm md:text-base text-gray-800 font-medium">{solution}</span>
+                  <CheckCircle2 className="text-brand-emerald shrink-0 mt-0.5" size={20} />
+                  <span className="text-sm md:text-base text-zinc-900 font-bold leading-normal">{solution}</span>
                 </li>
               ))}
             </ul>

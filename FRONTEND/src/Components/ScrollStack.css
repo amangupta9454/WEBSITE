@@ -1,0 +1,62 @@
+.scroll-stack-scroller {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: visible;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Hide scrollbar for clean presentation */
+.scroll-stack-scroller::-webkit-scrollbar {
+  display: none;
+}
+.scroll-stack-scroller {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-stack-inner {
+  padding: 10vh 2rem 30rem;
+  min-height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.scroll-stack-card-wrapper {
+  position: relative;
+}
+
+.scroll-stack-card {
+  transform-origin: top center;
+  will-change: transform, filter;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  min-height: 22rem;
+  width: 100%;
+  margin: 40px 0;
+  padding: 0; /* Let GlassSurface handle padding and borders */
+  border-radius: 32px;
+  background-color: transparent;
+  border: none;
+  box-sizing: border-box;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.scroll-stack-card:hover {
+  border-color: #10B981; /* brand-emerald */
+}
+
+.scroll-stack-end {
+  width: 100%;
+  height: 100px;
+}

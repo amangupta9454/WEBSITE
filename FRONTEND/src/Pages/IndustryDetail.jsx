@@ -205,15 +205,15 @@ const IndustryDetail = () => {
     return (
       <MainLayout>
         <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
-          <h1 className="text-4xl font-black text-gray-900 mb-4">
+          <h1 className="text-4xl font-black text-zinc-900 mb-4 tracking-tight">
             Industry Not Found
           </h1>
-          <p className="text-gray-500 mb-8">
+          <p className="text-zinc-500 mb-8 font-medium">
             This industry page is not available right now.
           </p>
           <Link
             to="/industries"
-            className="px-6 py-3 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+            className="px-6 py-3 rounded-full bg-brand-emerald text-zinc-950 font-black hover:bg-brand-mint transition duration-300 shadow-lg shadow-brand-emerald/10 cursor-pointer"
           >
             Back to Industries
           </Link>
@@ -228,7 +228,7 @@ const IndustryDetail = () => {
         <div className="max-w-6xl mx-auto px-6 md:px-12">
           <Link
             to="/industries"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 mb-8 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-bold text-brand-emerald hover:text-brand-mint mb-8 transition-colors uppercase font-mono tracking-widest"
           >
             <ArrowLeft className="w-4 h-4" /> Back to industries
           </Link>
@@ -240,23 +240,23 @@ const IndustryDetail = () => {
             className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start"
           >
             <motion.div variants={fadeUp} className="space-y-6">
-              <p className="text-sm uppercase tracking-[0.25em] text-blue-600 font-semibold">
+              <p className="text-xs uppercase tracking-[0.25em] text-brand-emerald font-bold font-mono">
                 {industry.eyebrow}
               </p>
-              <h1 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">
+              <h1 className="text-4xl md:text-5xl font-black text-zinc-950 leading-tight tracking-tight">
                 How we help {industry.name.toLowerCase()} grow
               </h1>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <p className="text-lg text-zinc-500 leading-relaxed font-medium">
                 {industry.intro}
               </p>
               <div className="flex flex-wrap gap-3">
-                <span className="rounded-full bg-blue-50 text-blue-700 px-4 py-2 text-sm font-semibold">
+                <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-xs font-bold border border-emerald-100/50">
                   Growth-focused
                 </span>
-                <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-sm font-semibold">
+                <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-xs font-bold border border-emerald-100/50">
                   Custom website + automation
                 </span>
-                <span className="rounded-full bg-purple-50 text-purple-700 px-4 py-2 text-sm font-semibold">
+                <span className="rounded-full bg-amber-50 text-amber-700 px-4 py-2 text-xs font-bold border border-amber-100/50">
                   Local + online leads
                 </span>
               </div>
@@ -264,15 +264,15 @@ const IndustryDetail = () => {
 
             <motion.div
               variants={fadeUp}
-              className="rounded-3xl border border-gray-200 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 shadow-xl"
+              className="rounded-3xl border border-zinc-100 bg-white p-6 md:p-8 shadow-xl shadow-zinc-200/30"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <h2 className="text-xl font-bold text-zinc-900 mb-6 tracking-tight">
                 What we can build for your business
               </h2>
-              <ul className="space-y-4 text-gray-700">
+              <ul className="space-y-4 text-zinc-700 font-medium">
                 {industry.whatWeDo.map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <BadgeCheck className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                    <BadgeCheck className="w-5 h-5 text-brand-emerald mt-0.5 shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -286,18 +286,18 @@ const IndustryDetail = () => {
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
-              className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm"
             >
               <div className="flex items-center gap-3 mb-5">
-                <TrendingUp className="w-6 h-6 text-emerald-600" />
-                <h2 className="text-2xl font-bold text-gray-900">
+                <TrendingUp className="w-6 h-6 text-brand-emerald animate-pulse" />
+                <h2 className="text-2xl font-bold text-zinc-950 tracking-tight">
                   Growth ideas we can implement
                 </h2>
               </div>
-              <ul className="space-y-4 text-gray-700">
+              <ul className="space-y-4 text-zinc-700 font-medium">
                 {industry.growthIdeas.map((item, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
+                    <Sparkles className="w-5 h-5 text-brand-gold mt-0.5 shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -309,29 +309,31 @@ const IndustryDetail = () => {
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
-              className="rounded-3xl border border-gray-200 bg-gray-900 text-white p-6 shadow-sm"
+              className="rounded-3xl border border-zinc-150 bg-white text-zinc-900 p-6 shadow-xl shadow-zinc-200/30 relative overflow-hidden group"
             >
-              <div className="flex items-center gap-3 mb-5">
-                <ShieldCheck className="w-6 h-6 text-blue-300" />
-                <h2 className="text-2xl font-bold">Why this works</h2>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-emerald/5 rounded-full blur-2xl" />
+              
+              <div className="flex items-center gap-3 mb-5 relative z-10">
+                <ShieldCheck className="w-6 h-6 text-brand-emerald shrink-0" />
+                <h2 className="text-2xl font-bold text-zinc-950 tracking-tight">Why this works</h2>
               </div>
-              <p className="text-gray-200 leading-relaxed mb-5">
+              <p className="text-zinc-500 leading-relaxed mb-6 font-medium relative z-10">
                 We combine beautiful design, smart automation, and
                 lead-generation systems so your business gets more enquiries,
                 better trust, and smoother operations.
               </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-white/8 p-4 border border-white/10">
-                  <Globe className="w-5 h-5 text-cyan-300 mb-2" />
-                  <h3 className="font-semibold mb-1">Online visibility</h3>
-                  <p className="text-sm text-gray-300">
+              <div className="grid gap-4 sm:grid-cols-2 relative z-10">
+                <div className="rounded-2xl bg-zinc-50 p-4 border border-zinc-150 hover:border-brand-emerald/20 transition-colors">
+                  <Globe className="w-5 h-5 text-brand-emerald mb-2" />
+                  <h3 className="font-semibold text-zinc-900 mb-1">Online visibility</h3>
+                  <p className="text-xs text-zinc-500 font-medium leading-normal">
                     Better search presence and stronger local discovery.
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/8 p-4 border border-white/10">
-                  <CalendarCheck className="w-5 h-5 text-cyan-300 mb-2" />
-                  <h3 className="font-semibold mb-1">Automated bookings</h3>
-                  <p className="text-sm text-gray-300">
+                <div className="rounded-2xl bg-zinc-50 p-4 border border-zinc-150 hover:border-brand-mint/20 transition-colors">
+                  <CalendarCheck className="w-5 h-5 text-brand-emerald mb-2" />
+                  <h3 className="font-semibold text-zinc-900 mb-1">Automated bookings</h3>
+                  <p className="text-xs text-zinc-500 font-medium leading-normal">
                     Reduce manual follow-up and convert faster.
                   </p>
                 </div>
@@ -344,22 +346,26 @@ const IndustryDetail = () => {
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeUp}
-            className="mt-10 rounded-3xl bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 shadow-xl"
+            className="mt-10 rounded-3xl bg-gradient-to-br from-white to-[#F4F9F6] text-zinc-950 p-8 md:p-12 shadow-xl shadow-zinc-200/30 border border-zinc-150 relative overflow-hidden"
           >
-            <h2 className="text-2xl md:text-3xl font-black mb-3">
-              Ready to grow your {industry.name.toLowerCase()} business?
-            </h2>
-            <p className="text-blue-100 max-w-2xl mb-6">
-              Let us turn your industry-specific opportunities into a modern
-              website, smart workflow, and growth engine that brings real
-              customers.
-            </p>
-            <Link
-              to="/contact"
-              className="inline-flex rounded-full bg-white text-blue-700 px-6 py-3 font-semibold hover:bg-blue-50 transition"
-            >
-              Start your growth plan
-            </Link>
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand-emerald/5 rounded-full blur-[80px]" />
+            
+            <div className="relative z-10">
+              <h2 className="text-2xl md:text-3xl font-black mb-3 tracking-tight">
+                Ready to grow your {industry.name.toLowerCase()} business?
+              </h2>
+              <p className="text-zinc-500 max-w-2xl mb-8 leading-relaxed font-medium">
+                Let us turn your industry-specific opportunities into a modern
+                website, smart workflow, and growth engine that brings real
+                customers.
+              </p>
+              <Link
+                to="/contact"
+                className="inline-flex rounded-full bg-zinc-950 text-white px-8 py-3.5 font-black hover:bg-brand-emerald hover:text-zinc-950 transition shadow-lg shadow-zinc-950/10 cursor-pointer"
+              >
+                Start your growth plan
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

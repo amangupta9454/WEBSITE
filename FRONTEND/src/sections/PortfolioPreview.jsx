@@ -1,19 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../animations/variants';
 import Button from '../Components/Button';
+import TiltSpotlightCard from '../Components/TiltSpotlightCard';
 
 const projects = [
   {
     title: 'The Golden Spoon',
     category: 'Restaurant & Ordering',
     tech: ['Menu Sync', 'Reservations'],
-    bgColor: 'bg-gradient-to-br from-orange-50 to-orange-100',
-    borderColor: 'border-orange-200',
-    titleColor: 'text-orange-900',
-    categoryColor: 'text-orange-700',
-    tagColor: 'text-orange-800 bg-orange-200/60',
+    bgColor: 'bg-gradient-to-br from-amber-50 to-amber-100/30',
+    borderColor: 'border-amber-100/60 hover:border-brand-amber/30',
+    titleColor: 'text-zinc-900',
+    categoryColor: 'text-brand-amber',
+    tagColor: 'text-amber-700 bg-amber-50 border border-amber-100/30',
     image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800',
     results: '+45% Online Orders'
   },
@@ -21,11 +22,11 @@ const projects = [
     title: 'Luxe Aesthetics Clinic',
     category: 'Healthcare & Wellness',
     tech: ['Patient Portal', 'SEO'],
-    bgColor: 'bg-gradient-to-br from-teal-50 to-teal-100',
-    borderColor: 'border-teal-200',
-    titleColor: 'text-teal-900',
-    categoryColor: 'text-teal-700',
-    tagColor: 'text-teal-800 bg-teal-200/60',
+    bgColor: 'bg-gradient-to-br from-emerald-50 to-emerald-100/30',
+    borderColor: 'border-emerald-100/60 hover:border-brand-emerald/30',
+    titleColor: 'text-zinc-900',
+    categoryColor: 'text-brand-emerald',
+    tagColor: 'text-brand-emerald bg-emerald-50 border border-emerald-100/30',
     image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800',
     results: 'Fully Booked Calendar'
   },
@@ -33,11 +34,11 @@ const projects = [
     title: 'Iron Core Fitness',
     category: 'Gym & Subscriptions',
     tech: ['Member Portal', 'Payments'],
-    bgColor: 'bg-gradient-to-br from-slate-800 to-slate-900',
-    borderColor: 'border-slate-700',
-    titleColor: 'text-white',
-    categoryColor: 'text-slate-400',
-    tagColor: 'text-slate-300 bg-slate-700/50',
+    bgColor: 'bg-gradient-to-br from-zinc-50 to-zinc-100/50',
+    borderColor: 'border-zinc-200/60 hover:border-zinc-300',
+    titleColor: 'text-zinc-900',
+    categoryColor: 'text-zinc-500',
+    tagColor: 'text-zinc-600 bg-zinc-100 border border-zinc-200/30',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
     results: '3x Member Signups'
   }
@@ -45,9 +46,9 @@ const projects = [
 
 const PortfolioPreview = () => {
   return (
-    <section className="py-12 md:py-24 bg-[#FAFAFA]">
+    <section className="py-12 md:py-24 bg-[#F9FBF9]/80 backdrop-blur-[2px]">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 md:mb-16 gap-4 md:gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 md:mb-16 gap-6">
           <motion.div 
             initial="hidden"
             whileInView="visible"
@@ -55,8 +56,8 @@ const PortfolioPreview = () => {
             variants={fadeUp}
             className="max-w-2xl"
           >
-            <h2 className="text-3xl md:text-5xl font-black mb-4 text-gray-900">Featured Business Websites</h2>
-            <p className="text-gray-500 text-lg font-medium">Explore some of the stunning digital experiences we've crafted for local businesses.</p>
+            <h2 className="text-3xl md:text-5xl font-black mb-4 text-zinc-950 tracking-tight">Featured Business Websites</h2>
+            <p className="text-zinc-500 text-lg font-medium leading-relaxed">Explore some of the stunning digital experiences we've crafted for local businesses.</p>
           </motion.div>
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
@@ -64,7 +65,7 @@ const PortfolioPreview = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Button variant="secondary" className="!px-4 !py-2 text-sm">
+            <Button variant="secondary" className="!px-5 !py-3 text-sm !bg-zinc-50 !text-zinc-800 !border-zinc-200 hover:!bg-zinc-100 transition-colors">
               View All Projects <ArrowRight size={16} />
             </Button>
           </motion.div>
@@ -81,38 +82,40 @@ const PortfolioPreview = () => {
             <motion.div 
               key={idx}
               variants={fadeUp}
-              className={`group rounded-[2rem] overflow-hidden ${project.bgColor} border ${project.borderColor} shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative flex flex-col h-[24rem] md:h-[32rem]`}
+              className="h-[26rem] md:h-[34rem]"
             >
-              {/* Content Top */}
-              <div className="p-5 md:p-8 relative z-10 flex-1">
-                <div className="flex flex-col items-start gap-2 mb-3 md:mb-4">
-                  <div className={`${project.categoryColor} text-xs font-black uppercase tracking-wider`}>{project.category}</div>
-                  <div className="inline-flex items-center gap-1 bg-white/30 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-bold shadow-sm border border-white/20">
-                    🚀 {project.results}
+              <TiltSpotlightCard className={`h-full border ${project.borderColor} bg-white flex flex-col justify-between group overflow-hidden shadow-sm shadow-zinc-200/30 hover:shadow-xl hover:shadow-zinc-300/30`}>
+                {/* Content Top */}
+                <div className="p-6 md:p-8 z-10">
+                  <div className="flex flex-col items-start gap-2 mb-4">
+                    <div className={`${project.categoryColor} text-xs font-bold tracking-widest uppercase font-mono`}>{project.category}</div>
+                    <div className="inline-flex items-center gap-1.5 bg-zinc-50 px-3 py-1 rounded-full text-xs font-bold border border-zinc-150 text-zinc-700 font-mono shadow-sm">
+                      🔥 {project.results}
+                    </div>
+                  </div>
+                  <h3 className={`text-2xl md:text-3xl font-black ${project.titleColor} mb-4 leading-tight`}>{project.title}</h3>
+                  
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {project.tech.map((t, i) => (
+                      <span key={i} className={`text-[10px] md:text-[11px] font-bold ${project.tagColor} px-2.5 py-1 rounded-lg font-mono`}>
+                        {t}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <h3 className={`text-xl md:text-3xl font-black ${project.titleColor} mb-3 md:mb-4 leading-tight`}>{project.title}</h3>
                 
-                <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
-                  {project.tech.map((t, i) => (
-                    <span key={i} className={`text-[10px] md:text-[11px] font-bold ${project.tagColor} px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg`}>
-                      {t}
-                    </span>
-                  ))}
+                {/* Image Bottom */}
+                <div className="px-6 md:px-8 pb-6 md:pb-8 w-full translate-y-0 group-hover:-translate-y-4 transition-transform duration-700 ease-out">
+                  <div className="rounded-[1.5rem] overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.05)] border border-zinc-100 relative">
+                    <div className="absolute inset-0 bg-zinc-950/5 group-hover:bg-transparent transition-colors duration-500 z-10" />
+                    <img 
+                      src={project.image} 
+                      alt={project.title} 
+                      className="w-full h-44 md:h-60 object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              {/* Image Bottom (Floating Device Style) */}
-              <div className="px-3 md:px-8 absolute bottom-4 md:bottom-8 left-0 w-full translate-y-0 group-hover:-translate-y-4 transition-transform duration-700 ease-out">
-                <div className="rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/20 relative">
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors z-10" />
-                  <img 
-                    src={project.image} 
-                    alt={project.title} 
-                    className="w-full h-40 md:h-56 object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                  />
-                </div>
-              </div>
+              </TiltSpotlightCard>
             </motion.div>
           ))}
         </motion.div>
