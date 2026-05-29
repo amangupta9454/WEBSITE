@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 const loginStudent = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, internId } = req.body;
     
     const normalizedEmail = email ? email.trim().toLowerCase() : '';
     const user = await User.findOne({ email: normalizedEmail });
@@ -21,20 +21,12 @@ const loginStudent = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    let isMatch = false;
+    // Check if the user has an internship with the provided internId
+    const hasMatchingInternId = user.internships && user.internships.some(app => 
+      app.studentId && app.studentId.trim().toLowerCase() === internId.trim().toLowerCase()
+    );
 
-    // Handle legacy users without a stored password hash
-    if (!user.password) {
-      if (password === 'Welcome@123') {
-        isMatch = true;
-      } else {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-    } else {
-      isMatch = await bcrypt.compare(password, user.password);
-    }
-
-    if (!isMatch) {
+    if (!hasMatchingInternId) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -50,7 +42,7 @@ const loginStudent = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isFirstLogin: user.isFirstLogin === undefined ? true : user.isFirstLogin
+        isFirstLogin: false // no longer needed
       }
     });
 

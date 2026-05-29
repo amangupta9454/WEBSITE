@@ -11,10 +11,7 @@ function Navbar() {
   const [userName, setUserName] = useState("");
   const location = useLocation();
 
-  if (location.pathname.startsWith("/admin")) {
-    return null;
-  }
-
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const token = localStorage.getItem("studentToken");
     const userData = localStorage.getItem("studentData");
@@ -26,6 +23,11 @@ function Navbar() {
       setUserName("");
     }
   }, [location.pathname]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("studentToken");

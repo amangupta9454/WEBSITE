@@ -214,23 +214,28 @@ const assignNormalTasks = async (req, res) => {
 
 const updateOfferStatus = async (req, res) => {
   try {
-    const { applicationId, status } = req.body;
-    if (!applicationId || !status) {
+    const { applicationId, applicationIds, status } = req.body;
+    const ids = applicationIds || (applicationId ? [applicationId] : []);
+    if (ids.length === 0 || !status) {
       return res
         .status(400)
-        .json({ message: "Application ID and status required" });
+        .json({ message: "Application ID(s) and status required" });
     }
 
-    const result = await User.updateOne(
-      { "internships._id": applicationId },
-      { $set: { "internships.$.offerLetterStatus": status } },
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Application not found" });
+    let modifiedCount = 0;
+    for (const appId of ids) {
+      const result = await User.updateOne(
+        { "internships._id": appId },
+        { $set: { "internships.$.offerLetterStatus": status } },
+      );
+      if (result.matchedCount > 0) modifiedCount++;
     }
 
-    res.json({ message: `Offer letter marked as ${status}` });
+    if (modifiedCount === 0) {
+      return res.status(404).json({ message: "No applications found" });
+    }
+
+    res.json({ message: `Offer letter marked as ${status} for ${modifiedCount} application(s)` });
   } catch (error) {
     console.error("[Admin] Error updating offer status:", error);
     res.status(500).json({ message: "Server error" });
@@ -378,21 +383,26 @@ const setStartDate = async (req, res) => {
 
 const updateBatch = async (req, res) => {
   try {
-    const { applicationId, batch } = req.body;
-    if (!applicationId) {
-      return res.status(400).json({ message: "Application ID required" });
+    const { applicationId, applicationIds, batch } = req.body;
+    const ids = applicationIds || (applicationId ? [applicationId] : []);
+    if (ids.length === 0) {
+      return res.status(400).json({ message: "Application ID(s) required" });
     }
 
-    const result = await User.updateOne(
-      { "internships._id": applicationId },
-      { $set: { "internships.$.batch": batch || "" } },
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Application not found" });
+    let modifiedCount = 0;
+    for (const appId of ids) {
+      const result = await User.updateOne(
+        { "internships._id": appId },
+        { $set: { "internships.$.batch": batch || "" } },
+      );
+      if (result.matchedCount > 0) modifiedCount++;
     }
 
-    res.json({ message: "Batch updated successfully" });
+    if (modifiedCount === 0) {
+      return res.status(404).json({ message: "No applications found" });
+    }
+
+    res.json({ message: `Batch updated successfully for ${modifiedCount} application(s)` });
   } catch (error) {
     console.error("[Admin] Error updating batch:", error);
     res.status(500).json({ message: "Server error" });
@@ -401,27 +411,30 @@ const updateBatch = async (req, res) => {
 
 const updateInternshipType = async (req, res) => {
   try {
-    const { applicationId, internshipType } = req.body;
-    console.log("[DEBUG] updateInternshipType called with:", { applicationId, internshipType });
-    if (!applicationId) {
-      console.log("[DEBUG] No applicationId provided");
-      return res.status(400).json({ message: "Application ID required" });
+    const { applicationId, applicationIds, internshipType } = req.body;
+    const ids = applicationIds || (applicationId ? [applicationId] : []);
+    if (ids.length === 0) {
+      return res.status(400).json({ message: "Application ID(s) required" });
     }
 
-    const result = await User.updateOne(
-      { "internships._id": applicationId },
-      {
-        $set: {
-          "internships.$.internshipType": internshipType || "Normal Intern",
+    let modifiedCount = 0;
+    for (const appId of ids) {
+      const result = await User.updateOne(
+        { "internships._id": appId },
+        {
+          $set: {
+            "internships.$.internshipType": internshipType || "Normal Intern",
+          },
         },
-      },
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Application not found" });
+      );
+      if (result.matchedCount > 0) modifiedCount++;
     }
 
-    res.json({ message: "Internship type updated successfully" });
+    if (modifiedCount === 0) {
+      return res.status(404).json({ message: "No applications found" });
+    }
+
+    res.json({ message: `Internship type updated successfully for ${modifiedCount} application(s)` });
   } catch (error) {
     console.error("[Admin] Error updating internship type:", error);
     res.status(500).json({ message: "Server error" });
@@ -458,22 +471,27 @@ const updatePaidStatus = async (req, res) => {
 
 const updateCertificateSent = async (req, res) => {
   try {
-    const { applicationId, isCertificateSent } = req.body;
-    if (!applicationId) {
-      return res.status(400).json({ message: "Application ID required" });
+    const { applicationId, applicationIds, isCertificateSent } = req.body;
+    const ids = applicationIds || (applicationId ? [applicationId] : []);
+    if (ids.length === 0) {
+      return res.status(400).json({ message: "Application ID(s) required" });
     }
 
-    const result = await User.updateOne(
-      { "internships._id": applicationId },
-      { $set: { "internships.$.isCertificateSent": isCertificateSent } },
-    );
+    let modifiedCount = 0;
+    for (const appId of ids) {
+      const result = await User.updateOne(
+        { "internships._id": appId },
+        { $set: { "internships.$.isCertificateSent": isCertificateSent } },
+      );
+      if (result.matchedCount > 0) modifiedCount++;
+    }
 
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Application not found" });
+    if (modifiedCount === 0) {
+      return res.status(404).json({ message: "No applications found" });
     }
 
     res.json({
-      message: `Certificate sent status updated to ${isCertificateSent ? "Yes" : "No"}`,
+      message: `Certificate sent status updated for ${modifiedCount} application(s)`,
     });
   } catch (error) {
     console.error("[Admin] Error updating certificate sent status:", error);

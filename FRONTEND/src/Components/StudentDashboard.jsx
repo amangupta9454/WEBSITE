@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -374,9 +375,13 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   // Simulated array for multiple projects support based on domain
   const projects = internship.projects?.length > 0 ? internship.projects : [];
 
+  const startDate = internship.startDate ? new Date(internship.startDate) : null;
+  const isStarted = startDate && startDate <= new Date();
+  const visibleProjects = isStarted ? projects : [];
+
   let currentStage = 0;
   if (internship.offerLetterStatus === "Sent") {
-    currentStage = 1;
+    currentStage = 2; // Jump to Project Assigned
     if (projects.length > 0) {
       currentStage = 3; // "jaise hi summer intern ko project assigned ho jaye then step review pe aa jaye"
 
@@ -581,7 +586,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           </ul>
         </div>
 
-        {projects.length === 0 ? (
+        {visibleProjects.length === 0 ? (
           <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-200 mb-4">
               <BookOpen size={32} className="text-slate-500" />
@@ -596,7 +601,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           </div>
         ) : (
           <div className="grid gap-5">
-            {projects.map((proj, idx) => (
+            {visibleProjects.map((proj, idx) => (
               <div
                 key={idx}
                 className="border border-slate-200 rounded-2xl p-6 transition-colors bg-slate-50"

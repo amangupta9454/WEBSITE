@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -43,6 +44,7 @@ import NormalTasksAdmin from "./NormalTasksAdmin";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
+  const [selectedApps, setSelectedApps] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [domains, setDomains] = useState([]);
   const [selectedDomain, setSelectedDomain] = useState("");
@@ -533,19 +535,57 @@ const AdminDashboard = () => {
   const handleToggleCertificateSent = async (appId, currentStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
+      const isBulk = Array.isArray(appId);
+      const payload = isBulk 
+        ? { applicationIds: appId, isCertificateSent: currentStatus } 
+        : { applicationId: appId, isCertificateSent: !currentStatus };
+
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-certificate-sent`,
-        { applicationId: appId, isCertificateSent: !currentStatus },
-        { headers: { Authorization: `Bearer ${token}` } },
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(
-        `Certificate Sent status updated to ${!currentStatus ? "Yes" : "No"}`,
+        `Certificate Sent status updated successfully`
       );
+      if (isBulk) setSelectedApps([]);
       fetchApplications(token);
     } catch (err) {
       toast.error("Failed to update Certificate Sent status");
       console.error(err);
     }
+  };
+
+  
+  const handleBulkBatchChange = async (batchValue) => {
+    if (!batchValue) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-batch`,
+        { applicationIds: selectedApps, batch: batchValue },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Batch updated successfully`);
+      setSelectedApps([]);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error("Failed to update batch");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedApps.length === displayedApps.length) {
+      setSelectedApps([]);
+    } else {
+      setSelectedApps(displayedApps.map(app => app._id));
+    }
+  };
+
+  const toggleSelectRow = (appId) => {
+    setSelectedApps(prev => 
+      prev.includes(appId) ? prev.filter(id => id !== appId) : [...prev, appId]
+    );
   };
 
   const handleLogout = () => {
@@ -557,12 +597,18 @@ const AdminDashboard = () => {
   const handleOfferLetterChange = async (appId, newStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
+      const isBulk = Array.isArray(appId);
+      const payload = isBulk 
+        ? { applicationIds: appId, status: newStatus } 
+        : { applicationId: appId, status: newStatus };
+
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-offer-status`,
-        { applicationId: appId, status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } },
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(`Offer Letter marked as ${newStatus}`);
+      if (isBulk) setSelectedApps([]);
       fetchApplications(token);
     } catch (err) {
       toast.error("Failed to update Offer Letter status");
@@ -572,12 +618,18 @@ const AdminDashboard = () => {
   const handleInternshipTypeChange = async (appId, newType) => {
     try {
       const token = localStorage.getItem("adminToken");
+      const isBulk = Array.isArray(appId);
+      const payload = isBulk 
+        ? { applicationIds: appId, internshipType: newType } 
+        : { applicationId: appId, internshipType: newType };
+
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/update-internship-type`,
-        { applicationId: appId, internshipType: newType },
-        { headers: { Authorization: `Bearer ${token}` } },
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(`Internship type marked as ${newType}`);
+      if (isBulk) setSelectedApps([]);
       fetchApplications(token);
     } catch (err) {
       toast.error("Failed to update Internship Type");
@@ -1118,231 +1170,6 @@ const AdminDashboard = () => {
     );
   };
 
-  const TasksTab = () => (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-blue-600" /> Assign New Task
-        </h2>
-        <form
-          onSubmit={handleCreateTask}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <input
-            required
-            type="text"
-            placeholder="Task Title"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-          />
-          <input
-            type="date"
-            value={newTask.deadline}
-            onChange={(e) =>
-              setNewTask({ ...newTask, deadline: e.target.value })
-            }
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-          />
-          <input
-            type="text"
-            placeholder="Student ID (Optional - target specific intern)"
-            value={newTask.studentId}
-            onChange={(e) =>
-              setNewTask({ ...newTask, studentId: e.target.value })
-            }
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-          />
-          <input
-            type="text"
-            placeholder="Domain (Optional - target specific domain)"
-            value={newTask.domain}
-            onChange={(e) => setNewTask({ ...newTask, domain: e.target.value })}
-            className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-          />
-          <textarea
-            placeholder="Task Description"
-            value={newTask.description}
-            onChange={(e) =>
-              setNewTask({ ...newTask, description: e.target.value })
-            }
-            className="md:col-span-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 h-24 resize-none"
-          />
-          <button
-            type="submit"
-            className="md:col-span-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20"
-          >
-            Assign Task
-          </button>
-        </form>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-slate-200 bg-slate-50/50">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2">
-            <ListTodo className="w-4 h-4 text-slate-500" /> Active Tasks
-          </h3>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {tasks.length === 0 ? (
-            <p className="p-6 text-center text-slate-500 text-sm">
-              No tasks assigned yet.
-            </p>
-          ) : (
-            tasks.map((task) => (
-              <div
-                key={task._id}
-                className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
-              >
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">
-                    {task.title}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-                    {task.description}
-                  </p>
-                  <div className="flex gap-2 mt-2">
-                    {task.studentId && (
-                      <Badge variant="blue">Student: {task.studentId}</Badge>
-                    )}
-                    {task.domain && (
-                      <Badge variant="amber">Domain: {task.domain}</Badge>
-                    )}
-                    {task.deadline && (
-                      <Badge variant="slate">
-                        Due: {new Date(task.deadline).toLocaleDateString()}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteTask(task._id)}
-                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {assignTasksModal.isOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                <Briefcase className="text-blue-600" size={20} /> Assign Monthly
-                Tasks
-              </h3>
-              <button
-                onClick={() =>
-                  setAssignTasksModal({
-                    isOpen: false,
-                    appId: null,
-                    duration: 1,
-                    tasks: [],
-                  })
-                }
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-4">
-              <p className="text-sm text-slate-500 mb-4">
-                Assign a specific task topic for each month of the internship.
-                These will unlock automatically for the student.
-              </p>
-
-              {assignTasksModal.tasks.map((task, idx) => (
-                <div key={idx}>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Month {idx + 1} Task
-                  </label>
-                  <input
-                    type="text"
-                    value={task}
-                    onChange={(e) => {
-                      const newTasks = [...assignTasksModal.tasks];
-                      newTasks[idx] = e.target.value;
-                      setAssignTasksModal({
-                        ...assignTasksModal,
-                        tasks: newTasks,
-                      });
-                    }}
-                    placeholder="e.g. Build a Calculator"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button
-                onClick={() =>
-                  setAssignTasksModal({
-                    isOpen: false,
-                    appId: null,
-                    duration: 1,
-                    tasks: [],
-                  })
-                }
-                className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAssignTasksSubmit}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
-              >
-                Save Tasks
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const ActivityTab = () => (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
-      <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-        <h3 className="font-bold text-slate-900 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-blue-600" /> Real-time Activity Feed
-        </h3>
-        <button
-          onClick={fetchTasksAndLogs}
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-        >
-          Refresh
-        </button>
-      </div>
-      <div className="divide-y divide-slate-100 max-h-[800px] overflow-y-auto p-4">
-        {activityLogs.length === 0 ? (
-          <p className="text-center text-slate-500 text-sm py-8">
-            No recent activity.
-          </p>
-        ) : (
-          activityLogs.map((log) => (
-            <div key={log._id} className="py-4 flex gap-4">
-              <div
-                className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${log.type === "SUBMISSION" ? "bg-green-500" : log.type === "REGISTRATION" ? "bg-blue-500" : log.type === "PAYMENT" ? "bg-amber-500" : "bg-purple-500"}`}
-              />
-              <div>
-                <p className="text-sm text-slate-900">{log.message}</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  {new Date(log.timestamp).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200">
@@ -1692,12 +1519,84 @@ const AdminDashboard = () => {
                   </div>
                 ) : (
                   <>
+                    
+                    {selectedApps.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex items-center justify-between shadow-sm animate-fade-in flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-blue-700 text-sm">
+                            {selectedApps.length} selected
+                          </span>
+                          <button
+                            onClick={() => setSelectedApps([])}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <select
+                            onChange={(e) => handleInternshipTypeChange(selectedApps, e.target.value)}
+                            className=""
+                            value=""
+                          >
+                            <option value="" disabled>Change Intern Type</option>
+                            <option value="Normal Intern">Normal Intern</option>
+                            <option value="Summer/Winter Intern">Summer/Winter Intern</option>
+                          </select>
+
+                          <select
+                            onChange={(e) => handleOfferLetterChange(selectedApps, e.target.value)}
+                            className=""
+                            value=""
+                          >
+                            <option value="" disabled>Change Offer Status</option>
+                            <option value="Sent">Sent</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Not Sent">Not Sent</option>
+                          </select>
+
+                          <select
+                            onChange={(e) => handleToggleCertificateSent(selectedApps, e.target.value === "true")}
+                            className=""
+                            value=""
+                          >
+                            <option value="" disabled>Change Certificate Status</option>
+                            <option value="true">Sent</option>
+                            <option value="false">Not Sent</option>
+                          </select>
+
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              placeholder="Batch name..."
+                              className="text-xs border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
+                              id="bulk-batch-input"
+                            />
+                            <button
+                              onClick={() => handleBulkBatchChange(document.getElementById('bulk-batch-input').value)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              Set Batch
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="hidden lg:block overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="border-b border-slate-300/60 bg-slate-50">
                             {activeTab === "new" ? (
                               <>
+                                <th className="w-10 px-4 py-3.5">
+                                  <input 
+                                    type="checkbox" 
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    checked={displayedApps.length > 0 && selectedApps.length === displayedApps.length}
+                                    onChange={toggleSelectAll}
+                                  />
+                                </th>
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                                   Student ID
                                 </th>
@@ -1737,6 +1636,14 @@ const AdminDashboard = () => {
                               </>
                             ) : (
                               <>
+                                <th className="w-10 px-4 py-3.5">
+                                  <input 
+                                    type="checkbox" 
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    checked={displayedApps.length > 0 && selectedApps.length === displayedApps.length}
+                                    onChange={toggleSelectAll}
+                                  />
+                                </th>
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                                   Student ID
                                 </th>
@@ -1792,6 +1699,14 @@ const AdminDashboard = () => {
                               key={app._id || i}
                               className="hover:bg-slate-200/20 transition-colors duration-150 group"
                             >
+                              <td className="px-4 py-3.5">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  checked={selectedApps.includes(app._id)}
+                                  onChange={() => toggleSelectRow(app._id)}
+                                />
+                              </td>
                               <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">
                                 {app.studentId || "—"}
                               </td>
