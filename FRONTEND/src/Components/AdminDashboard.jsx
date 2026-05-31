@@ -77,6 +77,7 @@ const AdminDashboard = () => {
     isCertificateSent: ""
   });
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [syncingRefunds, setSyncingRefunds] = useState(false);
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -277,6 +278,24 @@ const AdminDashboard = () => {
       toast.success(res.data.message);
     } catch (err) {
       toast.error("Failed to toggle payment setting");
+    }
+  };
+
+  const handleSyncRefunds = async () => {
+    const token = localStorage.getItem("adminToken");
+    setSyncingRefunds(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/sync-refunds`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message);
+      fetchApplications(token);
+    } catch (err) {
+      toast.error("Failed to sync refunds");
+    } finally {
+      setSyncingRefunds(false);
     }
   };
 
@@ -869,6 +888,7 @@ const AdminDashboard = () => {
     (app) => app.downloadedAt,
   );
   const paidCount = applications.filter((app) => app.hasPaid).length;
+  const totalRevenue = applications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
   const displayedApps =
     activeTab === "new" ? newApplications : downloadedApplications;
 
@@ -1511,6 +1531,16 @@ const AdminDashboard = () => {
                 </span>
               </button>
               <button
+                onClick={handleSyncRefunds}
+                disabled={syncingRefunds}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-600 transition-all duration-200 disabled:opacity-50"
+              >
+                {syncingRefunds ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                <span className="hidden sm:inline">
+                  Sync Refunds
+                </span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 hover:text-red-300 text-sm font-medium transition-all duration-200"
               >
@@ -1561,7 +1591,7 @@ const AdminDashboard = () => {
         <div className="flex-1 min-w-0">
           {activeSidebarTab === "interns" && (
             <div className="animate-fade-in">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <StatCard
                   label="Total Applications"
                   value={filteredApplications.length}
@@ -1621,6 +1651,21 @@ const AdminDashboard = () => {
                     glow: "bg-teal-500",
                   }}
                   sub="Confirmed"
+                />
+                <StatCard
+                  label="Total Revenue"
+                  value={`₹${totalRevenue}`}
+                  icon={CreditCard}
+                  color={{
+                    border: "border-purple-500/20",
+                    bg: "bg-purple-500/5",
+                    label: "text-slate-500",
+                    sub: "text-purple-600",
+                    iconBg: "bg-purple-500/20",
+                    icon: "text-purple-600",
+                    glow: "bg-purple-500",
+                  }}
+                  sub="Real Payments"
                 />
               </div>
 

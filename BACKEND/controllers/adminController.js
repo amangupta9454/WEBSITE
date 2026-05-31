@@ -18,6 +18,11 @@ cloudinary.config({
 const multer = require("multer");
 const ProjectSubmission = require("../models/ProjectSubmission");
 const Settings = require("../models/Settings");
+const Razorpay = require("razorpay");
+const rzp = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 const upload = multer({ storage: multer.memoryStorage() });
 
 const adminLogin = async (req, res) => {
@@ -868,6 +873,40 @@ const deleteNotification = async (req, res) => {
   }
 };
 
+const syncRefunds = async (req, res) => {
+  try {
+    let allRefunds = [];
+    let skip = 0;
+    while (true) {
+      const refunds = await rzp.refunds.all({ count: 100, skip });
+      if (!refunds || !refunds.items || refunds.items.length === 0) break;
+      allRefunds = allRefunds.concat(refunds.items);
+      if (refunds.items.length < 100) break;
+      skip += 100;
+    }
+
+    let updatedCount = 0;
+    for (const refund of allRefunds) {
+      if (refund.status === 'processed') {
+        const paymentId = refund.payment_id;
+        const amountRefunded = refund.amount / 100;
+
+        const result = await User.updateOne(
+          { "internships.razorpayPaymentId": paymentId },
+          { $set: { "internships.$.refundAmount": amountRefunded } }
+        );
+        if (result.modifiedCount > 0) {
+          updatedCount++;
+        }
+      }
+    }
+    res.json({ message: `Successfully synced refunds. Updated ${updatedCount} records.` });
+  } catch (error) {
+    console.error("[Admin] Error syncing refunds:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -898,4 +937,5 @@ module.exports = {
   createNotification,
   getAdminNotifications,
   deleteNotification,
+  syncRefunds,
 };

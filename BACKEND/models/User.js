@@ -53,6 +53,9 @@ const userSchema = new mongoose.Schema(
           default: "Not Sent",
         },
         hasPaid: { type: Boolean, default: false }, // New: tracks if final payment done
+        paymentAmount: { type: Number, default: 0 },
+        refundAmount: { type: Number, default: 0 },
+        razorpayPaymentId: { type: String },
         paidExported: { type: Boolean, default: false },
         projectExported: { type: Boolean, default: false },
         isCertificateSent: { type: Boolean, default: false },

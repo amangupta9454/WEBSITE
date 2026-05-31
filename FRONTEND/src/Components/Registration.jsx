@@ -32,6 +32,7 @@ const Registration = () => {
   const [resume, setResume] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [waitlistData, setWaitlistData] = useState({ name: '', email: '' });
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
@@ -43,6 +44,12 @@ const Registration = () => {
         setRegistrationEnabled(res.data.registrationEnabled);
       } catch (err) {
         console.error('Failed to fetch registration status');
+      }
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/payment`);
+        setPaymentEnabled(res.data.paymentEnabled);
+      } catch (err) {
+        console.error('Failed to fetch payment status');
       } finally {
         setCheckingStatus(false);
       }
@@ -67,32 +74,113 @@ const Registration = () => {
     setSubmitting(true);
     
     try {
-      const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
-      data.append('resume', resume);
+      if (!paymentEnabled) {
+        const data = new FormData();
+        Object.keys(formData).forEach(key => data.append(key, formData[key]));
+        data.append('resume', resume);
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/register`,
-        data
+        const res = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/register`,
+          data
+        );
+        
+        toast.success(`Application submitted! Your Student ID: ${res.data.studentId}`, {
+          autoClose: 10000
+        });
+        
+        setFormData({
+          name:'',email:'',whatsapp:'',course:'',branch:'',
+          college:'',state:'',passingYear:'',domain:'',duration:'',
+          github:'',linkedin:''
+        });
+        setResume(null);
+        const fileInput = document.getElementById('resume-upload');
+        if (fileInput) fileInput.value = '';
+        setSubmitting(false);
+        return;
+      }
+
+      // 1. Create Order
+      const orderRes = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/register/create-order`,
+        {
+          email: formData.email,
+          mobile: formData.whatsapp,
+          domain: formData.domain,
+          duration: formData.duration
+        }
       );
       
-      toast.success(`Application submitted! Your Student ID: ${res.data.studentId}`, {
-        autoClose: 10000
+      const { order, key } = orderRes.data;
+
+      // 2. Initialize Razorpay
+      const options = {
+        key: key,
+        amount: order.amount,
+        currency: "INR",
+        name: "CODE-A-NOVA",
+        description: `Internship Registration - ${formData.duration}`,
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            toast.info("Verifying payment... Please wait.");
+            
+            const submitData = new FormData();
+            Object.keys(formData).forEach(k => submitData.append(k, formData[k]));
+            submitData.append('resume', resume);
+            submitData.append('razorpay_payment_id', response.razorpay_payment_id);
+            submitData.append('razorpay_order_id', response.razorpay_order_id);
+            submitData.append('razorpay_signature', response.razorpay_signature);
+
+            const verifyRes = await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL}/api/register/verify-payment`,
+              submitData
+            );
+            
+            toast.success(`Application submitted! Your Student ID: ${verifyRes.data.studentId}`, {
+              autoClose: 10000
+            });
+            
+            setFormData({
+              name:'',email:'',whatsapp:'',course:'',branch:'',
+              college:'',state:'',passingYear:'',domain:'',duration:'',
+              github:'',linkedin:''
+            });
+            setResume(null);
+            const fileInput = document.getElementById('resume-upload');
+            if (fileInput) fileInput.value = '';
+            setSubmitting(false);
+          } catch (verifyErr) {
+            toast.error(verifyErr.response?.data?.message || 'Payment verification failed. Please contact support.');
+            setSubmitting(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.whatsapp
+        },
+        theme: {
+          color: "#2563eb"
+        },
+        modal: {
+          ondismiss: function() {
+            setSubmitting(false);
+            toast.error("Payment cancelled");
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response){
+        setSubmitting(false);
+        toast.error(response.error.description || 'Payment failed');
       });
-      
-      setFormData({
-        name:'',email:'',whatsapp:'',course:'',branch:'',
-        college:'',state:'',passingYear:'',domain:'',duration:'',
-        github:'',linkedin:''
-      });
-      setResume(null);
-      const fileInput = document.getElementById('resume-upload');
-      if (fileInput) fileInput.value = '';
+      rzp.open();
       
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to submit application. Please try again.');
-    } finally {
       setSubmitting(false);
+      toast.error(err.response?.data?.message || 'Failed to initiate application. Please try again.');
     }
   };
 
@@ -269,12 +357,24 @@ const Registration = () => {
               </div>
             </div>
 
+            {paymentEnabled && formData.duration && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-8 flex items-center justify-between">
+                <div>
+                  <h4 className="text-blue-900 font-bold text-lg">Registration Fee</h4>
+                  <p className="text-blue-700 text-sm">One-time payment for {formData.duration} internship</p>
+                </div>
+                <div className="text-3xl font-black text-blue-900">
+                  ₹{formData.duration.includes('3') ? '399' : '199'}
+                </div>
+              </div>
+            )}
+
             <button 
               type="submit" 
               disabled={submitting}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 mt-8"
             >
-              {submitting ? <><Loader2 className="animate-spin" size={20} /> Submitting Application...</> : <><Send size={20} /> Submit Application</>}
+              {submitting ? <><Loader2 className="animate-spin" size={20} /> Submitting Application...</> : <><Send size={20} /> {paymentEnabled ? `Pay ₹${formData.duration.includes('3') ? '399' : (formData.duration ? '199' : '')} & ` : ''}Submit Application</>}
             </button>
             
           </form>

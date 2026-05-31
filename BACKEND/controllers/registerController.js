@@ -2,8 +2,7 @@ const User = require("../models/User");
 const Counter = require("../models/Counter");
 
 const getInternshipType = (duration) => {
-  const months = parseInt(String(duration || "").match(/\d+/)?.[0] || "1", 10);
-  return months > 1 ? "Summer/Winter Intern" : "Normal Intern";
+  return "Normal Intern";
 };
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
@@ -301,9 +300,23 @@ const createRegistrationOrder = async (req, res) => {
 
 const verifyRegistrationPayment = async (req, res) => {
   try {
-    const { response, formData } = req.body;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      response;
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature,
+      email,
+      whatsapp,
+      name,
+      domain,
+      duration,
+      course,
+      branch,
+      college,
+      state,
+      passingYear,
+      github,
+      linkedin
+    } = req.body;
 
     // 1. Verify Payment Signature
     const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
@@ -314,21 +327,8 @@ const verifyRegistrationPayment = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment signature" });
     }
 
-    // 2. Perform the exact internship registration logic
-    const {
-      email,
-      mobile,
-      name,
-      domain,
-      duration,
-      college,
-      github,
-      linkedin,
-      portfolio,
-    } = formData;
-
     const normalizedEmail = email ? email.trim().toLowerCase() : "";
-    const normalizedMobile = mobile ? mobile.trim() : "";
+    const normalizedMobile = whatsapp ? whatsapp.trim() : "";
 
     // Extra safety duplicate check
     let user = await User.findOne({
@@ -365,14 +365,43 @@ const verifyRegistrationPayment = async (req, res) => {
 
     console.log("[Backend] Generated Student ID for Paid Reg:", studentId);
 
+    let resumeUrl = "";
+    if (req.file) {
+      resumeUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "resumes", resource_type: "auto" },
+          (error, result) => {
+            if (result) {
+              resolve(result.secure_url);
+            } else {
+              reject(error);
+            }
+          },
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
     const applicationData = {
-      ...formData,
+      name,
       email: normalizedEmail,
       mobile: normalizedMobile,
-      internshipType: getInternshipType(formData.duration),
+      course,
+      branch,
+      college,
+      state,
+      passingYear,
+      domain,
+      duration,
+      github,
+      linkedin,
+      resume: resumeUrl,
+      internshipType: getInternshipType(duration),
       studentId,
       appliedAt: new Date(),
       hasPaid: true, // Mark paid instantly!
+      paymentAmount: duration && duration.includes("3") ? 399 : 199,
+      razorpayPaymentId: razorpay_payment_id,
     };
 
     if (!user) {

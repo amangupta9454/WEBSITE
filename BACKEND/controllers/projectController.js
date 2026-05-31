@@ -44,14 +44,9 @@ const submitProject = async (req, res) => {
 
     const currentMonth = previousCount + 1;
     
-    // Check global payment setting
-    let isPaymentEnabled = true; // Default to true
-    const paymentSetting = await Settings.findOne({ key: 'paymentEnabled' });
-    if (paymentSetting) {
-      isPaymentEnabled = paymentSetting.value;
-    }
-    
-    const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid && isPaymentEnabled);
+    // Old unpaid students must always pay at their final month submission
+    // This is independent of the admin payment toggle (which only controls registration form payment)
+    const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid);
 
     if (paymentRequired) {
       // Create Razorpay order
@@ -138,10 +133,16 @@ const verifyPayment = async (req, res) => {
 
     await submission.save();
 
-    // Update hasPaid
+    // Update hasPaid and store actual payment details
     await User.updateOne(
       { 'internships.studentId': studentId },
-      { $set: { 'internships.$.hasPaid': true } }
+      { 
+        $set: { 
+          'internships.$.hasPaid': true,
+          'internships.$.paymentAmount': registeredDuration === 3 ? 99 : 69,
+          'internships.$.razorpayPaymentId': razorpay_payment_id
+        } 
+      }
     );
 
     res.json({ message: 'Payment verified and project submitted successfully' });

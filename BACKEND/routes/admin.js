@@ -33,6 +33,7 @@ const {
   createNotification,
   getAdminNotifications,
   deleteNotification,
+  syncRefunds,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -71,10 +72,11 @@ router.get("/normal-tasks", auth, getNormalTasks);
 router.post("/normal-tasks", auth, upload.single("pdf"), createNormalTask);
 router.delete("/normal-tasks/:id", auth, deleteNormalTask);
 
-router.get("/settings/payment", auth, getPaymentSetting);
+router.get("/settings/payment", getPaymentSetting);
 router.post("/settings/payment", auth, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
+router.post("/sync-refunds", auth, syncRefunds);
 
 // Admin Notification Routes
 router.post("/notifications", auth, createNotification);

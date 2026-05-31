@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post('/', upload.single('resume'), registerInternship); // Legacy route
 router.post('/create-order', createRegistrationOrder);
-router.post('/verify-payment', verifyRegistrationPayment);
+router.post('/verify-payment', upload.single('resume'), verifyRegistrationPayment);
 
 // Waitlist - join when registration is closed
 router.post('/waitlist', async (req, res) => {
