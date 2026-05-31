@@ -219,8 +219,13 @@ const registerInternship = async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Confirmation email sent to ${email}`);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Confirmation email sent to ${email}`);
+    } catch (mailErr) {
+      console.error(`Failed to send confirmation email to ${email}:`, mailErr);
+      // We still return 201 success because registration is complete
+    }
 
     res.status(201).json({
       message: "Application submitted successfully",
@@ -476,8 +481,13 @@ const verifyRegistrationPayment = async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Paid Confirmation email sent to ${email}`);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Paid Confirmation email sent to ${email}`);
+    } catch (mailErr) {
+      console.error(`Failed to send paid confirmation email to ${email}:`, mailErr);
+      // We still return 201 success because registration and payment are complete
+    }
 
     res.status(201).json({
       message: "Application submitted successfully",
