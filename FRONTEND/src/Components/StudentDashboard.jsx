@@ -922,7 +922,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                Student Portal
+              Intern Portal
               </p>
               <h1 className="text-xl font-black text-slate-800 leading-tight">
                 {data?.user?.name}
