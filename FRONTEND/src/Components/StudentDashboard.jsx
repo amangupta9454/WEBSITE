@@ -809,6 +809,24 @@ const StudentDashboard = () => {
     navigate("/student-login");
   };
 
+  const handleDismissNotification = async (notificationId) => {
+    try {
+      const token = localStorage.getItem("studentToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/dismiss-notification`,
+        { notificationId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Remove from UI immediately
+      setData(prev => ({
+        ...prev,
+        notifications: prev.notifications.filter(n => n._id !== notificationId)
+      }));
+    } catch (error) {
+      toast.error("Failed to dismiss notification");
+    }
+  };
+
   const getInternshipMode = (internship) => {
     const explicitType = internship?.internshipType || internship?.mode;
     if (explicitType) return explicitType;
@@ -846,7 +864,26 @@ const StudentDashboard = () => {
           }}
         />
       )}
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {data?.notifications?.length > 0 && (
+          <div className="space-y-3 mb-6">
+            {data.notifications.map((notif) => (
+              <div key={notif._id} className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3 shadow-sm relative">
+                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div className="flex-1 pr-6">
+                  <h4 className="font-bold text-blue-900 text-sm mb-1">Important Update</h4>
+                  <p className="text-blue-800 text-sm">{notif.message}</p>
+                </div>
+                <button 
+                  onClick={() => handleDismissNotification(notif._id)}
+                  className="text-blue-400 hover:text-blue-700 hover:bg-blue-100 p-1 rounded-md transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {/* Header section */}
         <header className="flex flex-col sm:flex-row justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-8 gap-4">
           <div className="flex items-center gap-4">

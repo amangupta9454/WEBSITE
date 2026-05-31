@@ -4,6 +4,7 @@ const User = require("../models/User");
 const ProjectSubmission = require("../models/ProjectSubmission");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
+const Notification = require("../models/Notification");
 
 const getInternshipType = (duration) => {
   const months = parseInt(String(duration || "").match(/\d+/)?.[0] || "1", 10);
@@ -167,6 +168,18 @@ const getDashboardInfo = async (req, res) => {
       })),
     };
 
+    // Fetch notifications
+    const allNotifications = await Notification.find({
+      $or: [
+        { audience: 'All' },
+        { audience: internshipType }
+      ]
+    }).sort({ createdAt: -1 });
+
+    const activeNotifications = allNotifications.filter(
+      (n) => !user.dismissedNotifications.includes(n._id)
+    );
+
     res.json({
       isBlocked,
       user: {
@@ -180,6 +193,7 @@ const getDashboardInfo = async (req, res) => {
         portfolio: user.portfolio,
       },
       internships: [enrichedInternship],
+      notifications: activeNotifications,
     });
   } catch (error) {
     console.error("[Backend] Get dashboard info error:", error);
@@ -338,12 +352,33 @@ const finalSubmitProjectRepo = async (req, res) => {
   }
 };
 
+const dismissNotification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { notificationId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.dismissedNotifications.includes(notificationId)) {
+      user.dismissedNotifications.push(notificationId);
+      await user.save();
+    }
+
+    res.json({ message: "Notification dismissed successfully" });
+  } catch (error) {
+    console.error("[Backend] Dismiss notification error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
   markAlertRead,
   submitProjectRepo,
   finalSubmitProjectRepo,
+  dismissNotification,
 };
 
 exports.getRegistrationStatus = async (req, res) => {

@@ -28,7 +28,11 @@ const {
   assignNormalTasks,
   getNormalTasks,
   createNormalTask,
-  deleteNormalTask
+  deleteNormalTask,
+  bulkUpdate,
+  createNotification,
+  getAdminNotifications,
+  deleteNotification,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -52,6 +56,7 @@ router.post("/update-paid-status", auth, updatePaidStatus);
 router.post("/update-certificate-sent", auth, updateCertificateSent);
 router.post("/mark-paid-exported", auth, markPaidExported);
 router.post("/mark-project-exported", auth, markProjectExported);
+router.post("/bulk-update", auth, bulkUpdate);
 
 // Summer Projects management routes
 router.get("/summer-projects", auth, getSummerProjects);
@@ -70,5 +75,10 @@ router.get("/settings/payment", auth, getPaymentSetting);
 router.post("/settings/payment", auth, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
+
+// Admin Notification Routes
+router.post("/notifications", auth, createNotification);
+router.get("/notifications", auth, getAdminNotifications);
+router.delete("/notifications/:id", auth, deleteNotification);
 
 module.exports = router;

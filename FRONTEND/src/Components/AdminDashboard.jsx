@@ -65,6 +65,16 @@ const AdminDashboard = () => {
     duration: 1,
     tasks: [],
   });
+  const [selectedApplications, setSelectedApplications] = useState([]);
+  const [showBulkActionModal, setShowBulkActionModal] = useState(false);
+  const [bulkActionForm, setBulkActionForm] = useState({
+    internshipType: "",
+    startDate: "",
+    offerLetterStatus: "",
+    hasPaid: "",
+    isCertificateSent: ""
+  });
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const navigate = useNavigate();
 
   const getUpcomingDates = () => {
@@ -720,6 +730,61 @@ const AdminDashboard = () => {
       toast.error("Upload failed. Please try again.");
     } finally {
       setUploadingExcel(false);
+    }
+  };
+
+  const handleSelectAll = (e, currentApps) => {
+    if (e.target.checked) {
+      const newSelections = [...selectedApplications];
+      currentApps.forEach(app => {
+        if (!newSelections.includes(app._id)) {
+          newSelections.push(app._id);
+        }
+      });
+      setSelectedApplications(newSelections);
+    } else {
+      const currentAppIds = currentApps.map(app => app._id);
+      setSelectedApplications(selectedApplications.filter(id => !currentAppIds.includes(id)));
+    }
+  };
+
+  const handleSelectToggle = (appId) => {
+    if (selectedApplications.includes(appId)) {
+      setSelectedApplications(selectedApplications.filter(id => id !== appId));
+    } else {
+      setSelectedApplications([...selectedApplications, appId]);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedApplications.length === 0) return;
+    
+    setBulkUpdating(true);
+    const token = localStorage.getItem("adminToken");
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/bulk-update`,
+        {
+          applicationIds: selectedApplications,
+          updates: bulkActionForm
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Successfully updated ${selectedApplications.length} applications`);
+      setShowBulkActionModal(false);
+      setSelectedApplications([]);
+      setBulkActionForm({
+        internshipType: "",
+        startDate: "",
+        offerLetterStatus: "",
+        hasPaid: "",
+        isCertificateSent: ""
+      });
+      fetchApplications(token);
+    } catch (err) {
+      toast.error("Bulk update failed");
+    } finally {
+      setBulkUpdating(false);
     }
   };
 
@@ -1588,6 +1653,15 @@ const AdminDashboard = () => {
                         Export Completed
                       </button>
                     </div>
+                    {selectedApplications.length > 0 && (
+                      <button
+                        onClick={() => setShowBulkActionModal(true)}
+                        className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-blue-500/20 whitespace-nowrap animate-fade-in"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Bulk Actions ({selectedApplications.length})
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1698,6 +1772,14 @@ const AdminDashboard = () => {
                           <tr className="border-b border-slate-300/60 bg-slate-50">
                             {activeTab === "new" ? (
                               <>
+                                <th className="text-left py-3.5 px-4 w-12">
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    onChange={(e) => handleSelectAll(e, displayedApps)}
+                                    checked={displayedApps.length > 0 && selectedApplications.length === displayedApps.length}
+                                  />
+                                </th>
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                                   Student ID
                                 </th>
@@ -1737,6 +1819,14 @@ const AdminDashboard = () => {
                               </>
                             ) : (
                               <>
+                                <th className="text-left py-3.5 px-4 w-12">
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    onChange={(e) => handleSelectAll(e, displayedApps)}
+                                    checked={displayedApps.length > 0 && selectedApplications.length === displayedApps.length}
+                                  />
+                                </th>
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                                   Student ID
                                 </th>
@@ -1792,6 +1882,14 @@ const AdminDashboard = () => {
                               key={app._id || i}
                               className="hover:bg-slate-200/20 transition-colors duration-150 group"
                             >
+                              <td className="py-3.5 px-4 w-12">
+                                <input 
+                                  type="checkbox" 
+                                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  onChange={() => handleSelectToggle(app._id)}
+                                  checked={selectedApplications.includes(app._id)}
+                                />
+                              </td>
                               <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">
                                 {app.studentId || "—"}
                               </td>
@@ -2173,6 +2271,126 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
+
+      {showBulkActionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">
+                  Bulk Actions ({selectedApplications.length} Selected)
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Update multiple applications at once
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBulkActionModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Internship Type
+                </label>
+                <select
+                  value={bulkActionForm.internshipType}
+                  onChange={(e) => setBulkActionForm({...bulkActionForm, internshipType: e.target.value})}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Leave Unchanged</option>
+                  <option value="Normal Intern">Normal Intern</option>
+                  <option value="Summer/Winter Intern">Summer/Winter Intern</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Start Date
+                </label>
+                <select
+                  value={bulkActionForm.startDate}
+                  onChange={(e) => setBulkActionForm({...bulkActionForm, startDate: e.target.value})}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Leave Unchanged</option>
+                  {upcomingDateOptions.map((opt, idx) => (
+                    <option key={idx} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">End date will be calculated automatically based on duration.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Offer Letter Status
+                </label>
+                <select
+                  value={bulkActionForm.offerLetterStatus}
+                  onChange={(e) => setBulkActionForm({...bulkActionForm, offerLetterStatus: e.target.value})}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Leave Unchanged</option>
+                  <option value="Not Sent">Not Sent</option>
+                  <option value="Sent">Sent</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Payment Status
+                </label>
+                <select
+                  value={bulkActionForm.hasPaid}
+                  onChange={(e) => setBulkActionForm({...bulkActionForm, hasPaid: e.target.value})}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Leave Unchanged</option>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                  Certificate Sent Status
+                </label>
+                <select
+                  value={bulkActionForm.isCertificateSent}
+                  onChange={(e) => setBulkActionForm({...bulkActionForm, isCertificateSent: e.target.value})}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Leave Unchanged</option>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowBulkActionModal(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                disabled={bulkUpdating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkUpdate}
+                disabled={bulkUpdating}
+                className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {bulkUpdating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Apply Updates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedSubmissionsApp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">

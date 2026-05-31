@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Certificate = require("../models/Certificate");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
+const Notification = require("../models/Notification");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -757,6 +758,116 @@ const deleteNormalTask = async (req, res) => {
   }
 };
 
+const bulkUpdate = async (req, res) => {
+  try {
+    const { applicationIds, updates } = req.body;
+    
+    if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({ message: "No application IDs provided" });
+    }
+
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: "No updates provided" });
+    }
+
+    let modifiedCount = 0;
+
+    for (const appId of applicationIds) {
+      const user = await User.findOne({ "internships._id": appId });
+      if (!user) continue;
+
+      const internship = user.internships.id(appId);
+      if (!internship) continue;
+
+      let needsSave = false;
+
+      if (updates.internshipType !== undefined && updates.internshipType !== "") {
+        internship.internshipType = updates.internshipType;
+        needsSave = true;
+      }
+
+      if (updates.startDate !== undefined && updates.startDate !== "") {
+        const durationStr = internship.duration || "1 Month";
+        const totalMonths = parseInt(durationStr.split(" ")[0], 10) || 1;
+
+        const start = new Date(updates.startDate);
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + totalMonths);
+
+        internship.startDate = start;
+        internship.endDate = end;
+        internship.totalMonths = totalMonths;
+        needsSave = true;
+      }
+
+      if (updates.offerLetterStatus !== undefined && updates.offerLetterStatus !== "") {
+        internship.offerLetterStatus = updates.offerLetterStatus;
+        needsSave = true;
+      }
+
+      if (updates.hasPaid !== undefined && updates.hasPaid !== "") {
+        internship.hasPaid = updates.hasPaid === "Yes" || updates.hasPaid === true;
+        internship.paidExported = false; 
+        needsSave = true;
+      }
+
+      if (updates.isCertificateSent !== undefined && updates.isCertificateSent !== "") {
+        internship.isCertificateSent = updates.isCertificateSent === "Yes" || updates.isCertificateSent === true;
+        needsSave = true;
+      }
+
+      if (needsSave) {
+        await user.save();
+        modifiedCount++;
+      }
+    }
+
+    res.json({
+      message: `Successfully updated ${modifiedCount} application(s).`,
+      modifiedCount,
+    });
+  } catch (error) {
+    console.error("[Admin] Error in bulk update:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const createNotification = async (req, res) => {
+  try {
+    const { message, audience } = req.body;
+    if (!message || !audience) {
+      return res.status(400).json({ message: "Message and audience are required" });
+    }
+    const notification = new Notification({ message, audience });
+    await notification.save();
+    res.status(201).json({ message: "Notification created", notification });
+  } catch (error) {
+    console.error("[Admin] Error creating notification:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getAdminNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find().sort({ createdAt: -1 });
+    res.json(notifications);
+  } catch (error) {
+    console.error("[Admin] Error getting notifications:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Notification.findByIdAndDelete(id);
+    res.json({ message: "Notification deleted" });
+  } catch (error) {
+    console.error("[Admin] Error deleting notification:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -783,4 +894,8 @@ module.exports = {
   getSummerProjects,
   deleteSummerProject,
   updateAssignedRepo,
+  bulkUpdate,
+  createNotification,
+  getAdminNotifications,
+  deleteNotification,
 };
