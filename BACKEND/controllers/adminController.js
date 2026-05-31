@@ -98,6 +98,8 @@ const getInternships = async (req, res) => {
           paidExported: app.paidExported || false,
           projectExported: app.projectExported || false,
           isCertificateSent: app.isCertificateSent || false,
+          paymentAmount: app.paymentAmount || 0,
+          refundAmount: app.refundAmount || 0,
           isCertificateVerified: isVerified,
           assignedRepos: app.assignedRepos || [],
           submissions: allSubmissions.filter(
