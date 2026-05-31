@@ -435,6 +435,61 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExportSelected = () => {
+    try {
+      if (selectedApplications.length === 0) {
+        toast.info("Please select applications to export.");
+        return;
+      }
+
+      const selectedAppsData = applications.filter((app) =>
+        selectedApplications.includes(app._id)
+      );
+
+      const data = selectedAppsData.map((app) => ({
+        "Student Name": app.name,
+        "Email ID": app.email,
+        "Student ID": app.studentId || "N/A",
+        "Domain": app.domain,
+        "Mobile Number": app.mobile,
+        "Internship Type": app.internshipType || "Normal Intern",
+        "Internship Start Date": app.startDate
+          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          : "N/A",
+        "End Date": app.endDate
+          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          : "N/A",
+        "Duration": app.duration || "N/A",
+        "Offer Letter Status": app.offerLetterStatus || "Pending",
+        "Paid Status": app.hasPaid ? "Yes" : "No",
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const colWidths = [
+        { wch: 25 },
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 15 },
+      ];
+      ws["!cols"] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Selected Interns");
+      XLSX.writeFile(wb, "Selected_Interns_Export.xlsx");
+      toast.success("Selected rows exported successfully!");
+    } catch (err) {
+      toast.error("Failed to export selected rows");
+      console.error(err);
+    }
+  };
+
   const handleExportProjectSubmitted = async (durationVal) => {
     try {
       if (!durationVal) {
@@ -1663,13 +1718,22 @@ const AdminDashboard = () => {
                       </button>
                     </div>
                     {selectedApplications.length > 0 && (
-                      <button
-                        onClick={() => setShowBulkActionModal(true)}
-                        className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-blue-500/20 whitespace-nowrap animate-fade-in"
-                      >
-                        <LayoutDashboard className="w-4 h-4" />
-                        Bulk Actions ({selectedApplications.length})
-                      </button>
+                      <div className="flex items-center gap-3 w-full lg:w-auto">
+                        <button
+                          onClick={handleExportSelected}
+                          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-emerald-500/20 whitespace-nowrap animate-fade-in"
+                        >
+                          <Download className="w-4 h-4" />
+                          Export Selected
+                        </button>
+                        <button
+                          onClick={() => setShowBulkActionModal(true)}
+                          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-blue-500/20 whitespace-nowrap animate-fade-in"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Bulk Actions ({selectedApplications.length})
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -2475,3 +2539,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
