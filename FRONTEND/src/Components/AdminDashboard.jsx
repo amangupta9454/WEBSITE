@@ -888,7 +888,7 @@ const AdminDashboard = () => {
     (app) => app.downloadedAt,
   );
   const paidCount = applications.filter((app) => app.hasPaid).length;
-  const realPayerCount = applications.filter((app) => app.paymentAmount > 0).length;
+  const realPayerCount = applications.filter((app) => (app.paymentAmount || 0) - (app.refundAmount || 0) > 0).length;
   const totalRevenue = applications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
   const displayedApps =
     activeTab === "new" ? newApplications : downloadedApplications;
