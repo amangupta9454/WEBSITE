@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -13,35 +13,26 @@ const transporter = nodemailer.createTransport({
 
 const loginStudent = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
+    const { email, studentId } = req.body;
+
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid email or Student ID" });
     }
 
-    let isMatch = false;
-
-    // Handle legacy users without a stored password hash
-    if (!user.password) {
-      if (password === 'Welcome@123') {
-        isMatch = true;
-      } else {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-    } else {
-      isMatch = await bcrypt.compare(password, user.password);
-    }
-
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // Find the specific internship by studentId
+    const internship = user.internships.find(
+      (app) => app.studentId === studentId,
+    );
+    if (!internship) {
+      return res.status(401).json({ message: "Invalid email or Student ID" });
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, studentId: internship.studentId },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" },
     );
 
     res.json({
@@ -50,13 +41,14 @@ const loginStudent = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isFirstLogin: user.isFirstLogin === undefined ? true : user.isFirstLogin
-      }
+        studentId: internship.studentId,
+        isFirstLogin:
+          user.isFirstLogin === undefined ? true : user.isFirstLogin,
+      },
     });
-
   } catch (err) {
-    console.error('[Backend] Login error:', err);
-    res.status(500).json({ message: 'Server configuration error or downtime' });
+    console.error("[Backend] Login error:", err);
+    res.status(500).json({ message: "Server configuration error or downtime" });
   }
 };
 
@@ -66,34 +58,33 @@ const setupPassword = async (req, res) => {
     const userId = req.user.id;
 
     if (!newPassword || newPassword !== confirmPassword) {
-      return res.status(400).json({ message: 'Passwords do not match' });
+      return res.status(400).json({ message: "Passwords do not match" });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     user.isFirstLogin = false;
     await user.save();
 
-    res.json({ message: 'Password updated successfully' });
-
+    res.json({ message: "Password updated successfully" });
   } catch (err) {
-    console.error('[Backend] Setup password error:', err);
-    res.status(500).json({ message: 'Server configuration error or downtime' });
+    console.error("[Backend] Setup password error:", err);
+    res.status(500).json({ message: "Server configuration error or downtime" });
   }
 };
 
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -106,14 +97,14 @@ const forgotPassword = async (req, res) => {
     // Verify transporter connection before sending email
     transporter.verify(function (error, success) {
       if (error) {
-        console.error('[Backend] Email transporter verification error:', error);
+        console.error("[Backend] Email transporter verification error:", error);
       } else {
-        console.log('[Backend] Email transporter is ready to send messages');
+        console.log("[Backend] Email transporter is ready to send messages");
       }
     });
 
     // Generate OTP and log it for debugging
-    console.log('[Backend] Generated OTP for', email, ':', otp);
+    console.log("[Backend] Generated OTP for", email, ":", otp);
 
     // Prepare mail options
     const mailOptions = {
@@ -132,29 +123,29 @@ const forgotPassword = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ message: 'OTP sent to email successfully' });
+    res.json({ message: "OTP sent to email successfully" });
   } catch (err) {
-    console.error('[Backend] Forgot password error:', err);
-    res.status(500).json({ message: 'Error sending OTP' });
+    console.error("[Backend] Forgot password error:", err);
+    res.status(500).json({ message: "Error sending OTP" });
   }
 };
 
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    const normalizedEmail = email ? email.trim().toLowerCase() : '';
-    
+    const normalizedEmail = email ? email.trim().toLowerCase() : "";
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (!user.resetPasswordOTP || user.resetPasswordOTP !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     if (new Date() > user.resetPasswordExpires) {
-      return res.status(400).json({ message: 'OTP has expired' });
+      return res.status(400).json({ message: "OTP has expired" });
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
@@ -163,10 +154,10 @@ const resetPassword = async (req, res) => {
     user.isFirstLogin = false;
     await user.save();
 
-    res.json({ message: 'Password reset successfully' });
+    res.json({ message: "Password reset successfully" });
   } catch (err) {
-    console.error('[Backend] Reset password error:', err);
-    res.status(500).json({ message: 'Error resetting password' });
+    console.error("[Backend] Reset password error:", err);
+    res.status(500).json({ message: "Error resetting password" });
   }
 };
 
@@ -174,5 +165,5 @@ module.exports = {
   loginStudent,
   setupPassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
 };
