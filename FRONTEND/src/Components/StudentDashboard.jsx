@@ -20,6 +20,7 @@ import {
   Eye,
   Award,
   Briefcase,
+  X,
   CheckSquare,
   FileText,
   AlertCircle,
@@ -374,6 +375,9 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   // Simulated array for multiple projects support based on domain
   const projects = internship.projects?.length > 0 ? internship.projects : [];
 
+  const startDate = internship.startDate ? new Date(internship.startDate) : null;
+  const isStarted = startDate && startDate <= new Date();
+
   let currentStage = 0;
   if (internship.offerLetterStatus === "Sent") {
     currentStage = 1;
@@ -581,7 +585,18 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           </ul>
         </div>
 
-        {projects.length === 0 ? (
+        {!isStarted ? (
+          <div className="py-12 px-6 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+            <Clock className="mx-auto text-slate-400 mb-3" size={40} />
+            <p className="font-medium text-slate-600">
+              Projects will be visible once your internship starts.
+            </p>
+            <p className="text-sm mt-1">
+              Scheduled Start Date:{" "}
+              {startDate ? startDate.toLocaleDateString() : "Pending"}
+            </p>
+          </div>
+        ) : projects.length === 0 ? (
           <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-200 mb-4">
               <BookOpen size={32} className="text-slate-500" />

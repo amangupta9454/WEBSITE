@@ -40,6 +40,8 @@ import {
 } from "lucide-react";
 import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
+import NotificationsAdmin from "./NotificationsAdmin";
+import { Bell } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -1490,6 +1492,13 @@ const AdminDashboard = () => {
               <BookOpen className="w-4 h-4" />
               Summer Projects
             </button>
+            <button
+              onClick={() => setActiveSidebarTab("notifications")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "notifications" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Bell className="w-4 h-4" />
+              Notifications
+            </button>
           </div>
         </div>
 
@@ -2268,6 +2277,9 @@ const AdminDashboard = () => {
           )}
           {activeSidebarTab === "summer_projects" && (
             <SummerProjectsAdmin applications={applications} />
+          )}
+          {activeSidebarTab === "notifications" && (
+            <NotificationsAdmin />
           )}
         </div>
       </div>
