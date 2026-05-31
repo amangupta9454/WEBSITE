@@ -38,11 +38,7 @@ const StudentLogin = () => {
       toast.success("Login Successful!");
 
       setTimeout(() => {
-        if (response.data.user.isFirstLogin) {
-          navigate("/setup-password");
-        } else {
-          navigate("/student-dashboard");
-        }
+        navigate("/student-dashboard");
       }, 1500);
     } catch (err) {
       toast.error(
