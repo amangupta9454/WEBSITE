@@ -378,21 +378,26 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   const startDate = internship.startDate ? new Date(internship.startDate) : null;
   const isStarted = startDate && startDate <= new Date();
 
-  let currentStage = 0;
+  let currentStage = 1; // Shortlisted is ticked by default
+  
   if (internship.offerLetterStatus === "Sent") {
-    currentStage = 1;
-    if (projects.length > 0) {
-      currentStage = 3; // "jaise hi summer intern ko project assigned ho jaye then step review pe aa jaye"
+    currentStage = 2; // Offer Letter is ticked
+
+    const isStartDateReached =
+      internship.startDate && new Date() >= new Date(new Date(internship.startDate).setHours(0, 0, 0, 0));
+
+    if (isStartDateReached) {
+      currentStage = 3; // Project Assigned ticked, active is Review
 
       const isEndDateReached =
-        internship.endDate && new Date() >= new Date(internship.endDate);
+        internship.endDate && new Date() > new Date(new Date(internship.endDate).setHours(23, 59, 59, 999));
 
       if (isEndDateReached) {
-        currentStage = 4; // "only last date ko hi wo completed pe jaye"
+        currentStage = 5; // Review & Completed ticked, active is Certificate
       }
 
       if (internship.isCertificateSent) {
-        currentStage = stages.length; // Certificate ticked
+        currentStage = stages.length; // All ticked
       }
     }
   }
