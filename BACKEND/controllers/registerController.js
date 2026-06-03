@@ -419,7 +419,7 @@ const verifyRegistrationPayment = async (req, res) => {
         isFirstLogin: true,
         github: github || "",
         linkedin: linkedin || "",
-        portfolio: portfolio || "",
+        portfolio: "",
         internships: [],
       });
     } else {
