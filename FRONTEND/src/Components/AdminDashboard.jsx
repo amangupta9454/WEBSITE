@@ -37,7 +37,6 @@ import {
   Trash2,
   ListTodo,
   BookOpen,
-  DollarSign,
 } from "lucide-react";
 import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
@@ -1487,194 +1486,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const PayoutTab = () => {
-    const [timeframe, setTimeframe] = useState("all");
-
-    const getSettlementStatus = (app) => {
-      const isRealPayment = app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "";
-      if (!isRealPayment) return "Failed";
-      
-      const paymentDate = new Date(app.appliedAt);
-      const diffDays = (new Date() - paymentDate) / (1000 * 60 * 60 * 24);
-      return diffDays > 2 ? "Settled" : "Pending";
-    };
-
-    const filteredPayoutApps = applications.filter((app) => {
-      const isRealPayment = app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "";
-      if (!isRealPayment) return false;
-
-      if (timeframe === "all") return true;
-
-      const paymentDate = new Date(app.appliedAt); // proxy for payment date
-      const today = new Date();
-      
-      if (timeframe === "today") {
-        return paymentDate.toDateString() === today.toDateString();
-      }
-      
-      if (timeframe === "week") {
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return paymentDate >= weekAgo;
-      }
-      
-      if (timeframe === "month") {
-        return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
-      }
-      
-      if (timeframe === "year") {
-        return paymentDate.getFullYear() === today.getFullYear();
-      }
-
-      return true;
-    }).sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
-
-    const paidApplications = applications.filter(app => app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "");
-    const totalGlobalEarnings = paidApplications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
-    
-    // Settlement amounts based on all applications that have a real payment
-    const totalSettledAmount = paidApplications.filter(app => getSettlementStatus(app) === "Settled").reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
-    const totalPendingAmount = paidApplications.filter(app => getSettlementStatus(app) === "Pending").reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
-    
-    const timeframeEarnings = filteredPayoutApps.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
-
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-4">
-            <StatCard
-              label="Total Earnings (Global)"
-              value={`₹${totalGlobalEarnings}`}
-              icon={DollarSign}
-              color={{
-                border: "border-emerald-500/20",
-                bg: "bg-emerald-500/5",
-                label: "text-slate-500",
-                sub: "text-emerald-600",
-                iconBg: "bg-emerald-500/20",
-                icon: "text-emerald-600",
-                glow: "bg-emerald-500",
-              }}
-              sub="All-time revenue"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex flex-col items-center justify-center">
-                <p className="text-xs text-emerald-600 font-medium mb-1">Settled Amount</p>
-                <p className="text-lg font-bold text-emerald-700">₹{totalSettledAmount}</p>
-              </div>
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex flex-col items-center justify-center">
-                <p className="text-xs text-amber-600 font-medium mb-1">Pending Amount</p>
-                <p className="text-lg font-bold text-amber-700">₹{totalPendingAmount}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-medium text-slate-500">Filtered Earnings</h3>
-              <SelectField 
-                value={timeframe} 
-                onChange={(e) => setTimeframe(e.target.value)}
-                options={[
-                  { value: "all", label: "All Time" },
-                  { value: "year", label: "This Year" },
-                  { value: "month", label: "This Month" },
-                  { value: "week", label: "This Week" },
-                  { value: "today", label: "Today" }
-                ]}
-                className="w-32"
-              />
-            </div>
-            <div>
-              <p className="text-4xl font-bold text-slate-900 tracking-tight">₹{timeframeEarnings}</p>
-              <p className="text-xs mt-2 text-slate-500">{filteredPayoutApps.length} transactions</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-slate-200 bg-slate-50/50">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <ListTodo className="w-4 h-4 text-slate-500" /> Recent Transactions
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Intern Details</th>
-                  <th className="px-6 py-3 font-medium">Amount Paid</th>
-                  <th className="px-6 py-3 font-medium">Date & Time</th>
-                  <th className="px-6 py-3 font-medium">Txn ID / Status</th>
-                  <th className="px-6 py-3 font-medium">Settlement Status</th>
-                  <th className="px-6 py-3 font-medium">Domain</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredPayoutApps.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
-                      No transactions found for the selected timeframe.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPayoutApps.map((app) => {
-                    const amount = (app.paymentAmount || 0) - (app.refundAmount || 0);
-                    return (
-                      <tr key={app._id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
-                              {app.name ? app.name.charAt(0) : "U"}
-                            </div>
-                            <div>
-                              <p className="font-medium text-slate-900">{app.name}</p>
-                              <p className="text-xs text-slate-500">{app.email || app.studentId}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-medium text-slate-900">
-                          ₹{amount}
-                        </td>
-                        <td className="px-6 py-4 text-xs">
-                          {new Date(app.appliedAt).toLocaleString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs font-mono text-slate-500 truncate max-w-[120px]" title={app.razorpayPaymentId || "Manual/N/A"}>
-                              {app.razorpayPaymentId || "Manual/N/A"}
-                            </span>
-                            <Badge variant={amount > 0 ? "green" : "red"}>
-                              {amount > 0 ? "Success" : "Failed"}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant={getSettlementStatus(app) === "Settled" ? "green" : "amber"}>
-                            {getSettlementStatus(app)}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-xs">
-                          {app.domain}
-                          <div className="text-slate-400 mt-0.5">{app.course}</div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200">
@@ -1774,13 +1585,6 @@ const AdminDashboard = () => {
               <Bell className="w-4 h-4" />
               Notifications
             </button>
-            <button
-              onClick={() => setActiveSidebarTab("payout")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "payout" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
-            >
-              <DollarSign className="w-4 h-4" />
-              Payout
-            </button>
           </div>
         </div>
 
@@ -1788,7 +1592,7 @@ const AdminDashboard = () => {
         <div className="flex-1 min-w-0">
           {activeSidebarTab === "interns" && (
             <div className="animate-fade-in">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <StatCard
                   label="Total Applications"
                   value={filteredApplications.length}
@@ -1802,7 +1606,22 @@ const AdminDashboard = () => {
                     icon: "text-blue-600",
                     glow: "bg-blue-500",
                   }}
-                  sub="All domains"
+                  sub="Filtered results"
+                />
+                <StatCard
+                  label="New Applications"
+                  value={newApplications.length}
+                  icon={Clock}
+                  color={{
+                    border: "border-amber-500/20",
+                    bg: "bg-amber-500/5",
+                    label: "text-slate-500",
+                    sub: "text-amber-600",
+                    iconBg: "bg-amber-500/20",
+                    icon: "text-amber-600",
+                    glow: "bg-amber-500",
+                  }}
+                  sub="Pending export"
                 />
                 <StatCard
                   label="Processed"
@@ -1817,22 +1636,7 @@ const AdminDashboard = () => {
                     icon: "text-green-600",
                     glow: "bg-green-500",
                   }}
-                  sub="Downloaded apps"
-                />
-                <StatCard
-                  label="Pending"
-                  value={newApplications.length}
-                  icon={Clock}
-                  color={{
-                    border: "border-amber-500/20",
-                    bg: "bg-amber-500/5",
-                    label: "text-slate-500",
-                    sub: "text-amber-600",
-                    iconBg: "bg-amber-500/20",
-                    icon: "text-amber-600",
-                    glow: "bg-amber-500",
-                  }}
-                  sub="New apps"
+                  sub="Downloaded"
                 />
                 <StatCard
                   label="Paid Interns"
@@ -1848,6 +1652,21 @@ const AdminDashboard = () => {
                     glow: "bg-teal-500",
                   }}
                   sub="Confirmed"
+                />
+                <StatCard
+                  label="Total Revenue"
+                  value={`₹${totalRevenue}`}
+                  icon={CreditCard}
+                  color={{
+                    border: "border-purple-500/20",
+                    bg: "bg-purple-500/5",
+                    label: "text-slate-500",
+                    sub: "text-purple-600",
+                    iconBg: "bg-purple-500/20",
+                    icon: "text-purple-600",
+                    glow: "bg-purple-500",
+                  }}
+                  sub={`Real Payments (${realPayerCount} applicants)`}
                 />
               </div>
 
@@ -2572,9 +2391,6 @@ const AdminDashboard = () => {
           {activeSidebarTab === "notifications" && (
             <NotificationsAdmin />
           )}
-          {activeSidebarTab === "payout" && (
-            <PayoutTab />
-          )}
         </div>
       </div>
 
@@ -2769,4 +2585,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
