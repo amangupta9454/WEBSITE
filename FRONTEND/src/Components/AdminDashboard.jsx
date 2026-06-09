@@ -1491,17 +1491,17 @@ const AdminDashboard = () => {
     const [timeframe, setTimeframe] = useState("all");
 
     const getSettlementStatus = (app) => {
-      const isPaid = app.hasPaid || (app.paymentAmount || 0) > 0;
-      if (!isPaid) return "Failed";
+      const isRealPayment = app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "";
+      if (!isRealPayment) return "Failed";
       
       const paymentDate = new Date(app.appliedAt);
       const diffDays = (new Date() - paymentDate) / (1000 * 60 * 60 * 24);
-      return diffDays > 3 ? "Settled" : "Pending";
+      return diffDays > 2 ? "Settled" : "Pending";
     };
 
     const filteredPayoutApps = applications.filter((app) => {
-      const isPaid = app.hasPaid || (app.paymentAmount || 0) > 0;
-      if (!isPaid) return false;
+      const isRealPayment = app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "";
+      if (!isRealPayment) return false;
 
       if (timeframe === "all") return true;
 
@@ -1528,10 +1528,10 @@ const AdminDashboard = () => {
       return true;
     }).sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
 
-    const totalGlobalEarnings = applications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
+    const paidApplications = applications.filter(app => app.razorpayPaymentId && app.razorpayPaymentId.trim() !== "");
+    const totalGlobalEarnings = paidApplications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
     
-    // Settlement amounts based on all applications that have paid
-    const paidApplications = applications.filter(app => app.hasPaid || (app.paymentAmount || 0) > 0);
+    // Settlement amounts based on all applications that have a real payment
     const totalSettledAmount = paidApplications.filter(app => getSettlementStatus(app) === "Settled").reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
     const totalPendingAmount = paidApplications.filter(app => getSettlementStatus(app) === "Pending").reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
     
