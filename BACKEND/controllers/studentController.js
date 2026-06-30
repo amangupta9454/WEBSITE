@@ -486,9 +486,12 @@ const getPublicLeaderboard = async (req, res) => {
 const updateProjectLink = async (req, res) => {
   try {
     const { internshipType, projectId, assignmentId, newRepoLink } = req.body;
-    const user = req.user; // from auth middleware
-
     const studentId = req.user.studentId;
+    
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     
     if (!newRepoLink || !newRepoLink.startsWith('https://github.com/')) {
       return res.status(400).json({ message: 'Valid GitHub repository link is required' });
