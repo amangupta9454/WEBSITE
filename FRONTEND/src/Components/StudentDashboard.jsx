@@ -1074,8 +1074,15 @@ const StudentDashboard = () => {
               </div>
               <p className="text-xs text-slate-500">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
             </div>
-            <div className={`px-4 py-2 rounded-lg border ${currentTier.color} font-bold text-sm text-center min-w-[120px]`}>
-              {currentTier.title}
+            <div className="flex flex-col gap-2">
+              <div className={`px-4 py-2 rounded-lg border ${currentTier.color} font-bold text-sm text-center min-w-[120px]`}>
+                {currentTier.title}
+              </div>
+              {data?.internships?.[0]?.globalRank && (
+                <div className="px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold text-sm text-center min-w-[120px] shadow-sm flex items-center justify-center gap-1">
+                  Global Rank: <span className="text-lg">#{data.internships[0].globalRank}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

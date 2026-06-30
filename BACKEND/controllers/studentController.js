@@ -154,6 +154,21 @@ const getDashboardInfo = async (req, res) => {
       }
     }
 
+    // Calculate global rank
+    const allUsers = await User.find({});
+    let allInterns = [];
+    allUsers.forEach(u => {
+      u.internships.forEach(int => {
+        if (int.synergyPoints > 0) {
+          allInterns.push({ studentId: int.studentId, sp: int.synergyPoints });
+        }
+      });
+    });
+    
+    allInterns.sort((a, b) => b.sp - a.sp);
+    const rankIndex = allInterns.findIndex(i => i.studentId === studentId);
+    const globalRank = rankIndex !== -1 ? rankIndex + 1 : null;
+
     const enrichedInternship = {
       ...targetInternship.toObject(),
       internshipType,
@@ -163,6 +178,7 @@ const getDashboardInfo = async (req, res) => {
       blockReason,
       activeAlert,
       daysElapsed,
+      globalRank,
       submissions: submissions.map((sub) => ({
         month: sub.month,
         submittedAt: sub.submittedAt,

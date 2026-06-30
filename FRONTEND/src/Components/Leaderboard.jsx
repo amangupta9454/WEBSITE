@@ -87,7 +87,16 @@ const Leaderboard = () => {
               {leaderboard.map((user, idx) => {
                 const tier = getTier(user.synergyPoints);
                 return (
-                  <div key={idx} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-colors hover:bg-slate-50 ${idx < 3 ? 'bg-gradient-to-r from-amber-50/30 to-transparent' : ''}`}>
+                  <div key={idx} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-colors hover:bg-slate-50 relative overflow-hidden ${
+                    idx < 3 ? 'bg-gradient-to-r from-amber-50 to-transparent border-l-4 border-amber-400' : 
+                    idx < 10 ? 'bg-gradient-to-r from-blue-50/50 to-transparent border-l-4 border-blue-400' : 
+                    'border-l-4 border-transparent'
+                  }`}>
+                    {idx < 10 && idx >= 3 && (
+                      <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold rounded-bl-lg shadow-sm opacity-90">
+                        TOP 10
+                      </div>
+                    )}
                     <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
                       {getRankBadge(idx)}
                     </div>

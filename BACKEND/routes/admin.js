@@ -38,6 +38,8 @@ const {
   getLeaderboardSetting,
   toggleLeaderboardSetting,
   manualAcceptAssignment,
+  getAllSubmissions,
+  overrideSP
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -82,8 +84,13 @@ router.get("/settings/payment", getPaymentSetting);
 router.post("/settings/payment", auth, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
-router.get("/settings/leaderboard", getLeaderboardSetting);
-router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
+router.get("/leaderboard-setting", getLeaderboardSetting);
+router.post("/toggle-leaderboard-setting", auth, toggleLeaderboardSetting);
+
+// Submissions
+router.get("/all-submissions", auth, getAllSubmissions);
+router.post("/override-sp", auth, overrideSP);
+
 router.post("/sync-refunds", auth, syncRefunds);
 
 // Admin Notification Routes

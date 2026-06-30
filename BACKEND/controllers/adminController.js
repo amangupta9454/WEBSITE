@@ -1063,6 +1063,149 @@ const manualAcceptAssignment = async (req, res) => {
   }
 };
 
+// --- Submissions & SP Override ---
+const ProjectSubmission = require('../models/ProjectSubmission');
+
+const getAllSubmissions = async (req, res) => {
+  try {
+    const normalSubmissions = await ProjectSubmission.find({}).sort({ submittedAt: -1 }).lean();
+    const users = await User.find({'internships.assignedRepos': { $exists: true, $not: {$size: 0} }}).lean();
+    
+    let allSubmissions = [];
+
+    // Map Normal Submissions
+    for (let sub of normalSubmissions) {
+      if (sub.assignments && sub.assignments.length > 0) {
+        sub.assignments.forEach(assignment => {
+          allSubmissions.push({
+            id: assignment._id?.toString() || Math.random().toString(),
+            studentId: sub.studentId,
+            name: sub.name,
+            email: sub.email,
+            internshipType: 'Normal Intern',
+            projectName: assignment.projectName,
+            githubLink: assignment.github,
+            hostedLink: assignment.hosted,
+            aiStatus: assignment.aiStatus,
+            aiFeedback: assignment.aiFeedback,
+            spAwarded: assignment.spAwarded || 0,
+            submittedAt: sub.submittedAt,
+            // For overriding SP
+            modelRef: 'ProjectSubmission',
+            docId: sub._id.toString(),
+            assignmentId: assignment._id?.toString()
+          });
+        });
+      }
+    }
+
+    // Map Summer/Winter Submissions
+    for (let user of users) {
+      for (let internship of user.internships) {
+        if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+          for (let repo of internship.assignedRepos) {
+            allSubmissions.push({
+              id: repo._id?.toString() || Math.random().toString(),
+              studentId: internship.studentId,
+              name: user.name,
+              email: user.email,
+              internshipType: internship.internshipType || 'Summer Intern',
+              projectName: 'Summer Project',
+              githubLink: repo.githubLink,
+              hostedLink: repo.hostedLink,
+              aiStatus: repo.reviewStatus || 'Pending',
+              aiFeedback: repo.feedback || '',
+              spAwarded: repo.pointsAwarded ? 50 : 0, // currently fixed at 50 if awarded
+              submittedAt: repo.submittedAt,
+              // For overriding SP
+              modelRef: 'User',
+              docId: user._id.toString(),
+              internshipId: internship._id.toString(),
+              assignmentId: repo._id?.toString()
+            });
+          }
+        }
+      }
+    }
+
+    // Sort by submittedAt descending
+    allSubmissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+    res.json({ submissions: allSubmissions });
+  } catch (error) {
+    console.error('[Admin] Get all submissions error:', error);
+    res.status(500).json({ message: 'Server error retrieving submissions' });
+  }
+};
+
+const overrideSP = async (req, res) => {
+  try {
+    const { modelRef, docId, internshipId, assignmentId, newSpAwarded, reason } = req.body;
+    
+    if (modelRef === 'ProjectSubmission') {
+      const sub = await ProjectSubmission.findById(docId);
+      if (!sub) return res.status(404).json({ message: 'Submission not found' });
+      
+      const assignment = sub.assignments.id(assignmentId);
+      if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+      
+      const oldSp = assignment.spAwarded || 0;
+      const difference = newSpAwarded - oldSp;
+      
+      assignment.spAwarded = newSpAwarded;
+      await sub.save();
+      
+      // Update User Synergy Points
+      const user = await User.findOne({ 'internships.studentId': sub.studentId });
+      if (user) {
+        const internship = user.internships.find(app => app.studentId === sub.studentId);
+        if (internship) {
+          internship.synergyPoints = (internship.synergyPoints || 0) + difference;
+          if (!internship.pointsHistory) internship.pointsHistory = [];
+          internship.pointsHistory.push({
+            reason: `Admin SP Override for ${assignment.projectName}: ${reason || 'Manual adjustment'}`,
+            pointsAdded: difference,
+            date: new Date()
+          });
+          await user.save();
+        }
+      }
+    } else if (modelRef === 'User') {
+      const user = await User.findById(docId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+      
+      const internship = user.internships.id(internshipId);
+      if (!internship) return res.status(404).json({ message: 'Internship not found' });
+      
+      const repo = internship.assignedRepos.id(assignmentId);
+      if (!repo) return res.status(404).json({ message: 'Repo not found' });
+      
+      const oldSp = repo.pointsAwarded ? 50 : 0; // For summer/winter
+      const difference = newSpAwarded - oldSp;
+      
+      if (newSpAwarded > 0) {
+         repo.pointsAwarded = true;
+      } else {
+         repo.pointsAwarded = false;
+      }
+      
+      internship.synergyPoints = (internship.synergyPoints || 0) + difference;
+      if (!internship.pointsHistory) internship.pointsHistory = [];
+      internship.pointsHistory.push({
+        reason: `Admin SP Override for Summer/Winter Project: ${reason || 'Manual adjustment'}`,
+        pointsAdded: difference,
+        date: new Date()
+      });
+      await user.save();
+    }
+    
+    res.json({ message: 'SP updated successfully' });
+  } catch (error) {
+    console.error('[Admin] Override SP error:', error);
+    res.status(500).json({ message: 'Server error updating SP' });
+  }
+};
+
 const getLeaderboardSetting = async (req, res) => {
   try {
     const setting = await Settings.findOne({ key: "showLeaderboard" });
@@ -1118,6 +1261,8 @@ module.exports = {
   deleteSummerProject,
   updateAssignedRepo,
   reviewSummerProject,
+  getAllSubmissions,
+  overrideSP,
   bulkUpdate,
   createNotification,
   getAdminNotifications,

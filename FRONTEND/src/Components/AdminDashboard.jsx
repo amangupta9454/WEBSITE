@@ -42,6 +42,7 @@ import {
 import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
 import NotificationsAdmin from "./NotificationsAdmin";
+import SubmissionsAdmin from "./SubmissionsAdmin";
 import { Bell } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -1661,8 +1662,13 @@ const AdminDashboard = () => {
               onClick={() => setActiveSidebarTab("notifications")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "notifications" ? "bg-purple-50 text-purple-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
-              <Bell className="w-4 h-4" />
-              Notifications
+              <Bell size={18} /> Notifications
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("submissions")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "submissions" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <FileText size={18} /> Submissions & SP
             </button>
             <button
               onClick={() => setActiveSidebarTab("leaderboard")}
@@ -2476,6 +2482,9 @@ const AdminDashboard = () => {
           )}
           {activeSidebarTab === "notifications" && (
             <NotificationsAdmin />
+          )}
+          {activeSidebarTab === "submissions" && (
+            <SubmissionsAdmin />
           )}
           {activeSidebarTab === "leaderboard" && (() => {
             const isActive = (app) => {

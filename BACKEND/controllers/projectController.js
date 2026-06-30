@@ -63,8 +63,9 @@ ${readmeText}
 
 Evaluate if this repository looks like a valid submission for "${projectName}". 
 Does the file structure and README indicate they actually built the project, or is it blank/irrelevant/spam?
+Also, evaluate the project's quality (0-10) based on structure and README, and complexity (0-10) based on the files present.
 Respond ONLY with a valid JSON object in the exact format:
-{"status": "Accepted" or "Rejected", "reason": "A brief 1-sentence reason."}
+{"status": "Accepted" or "Rejected", "reason": "A brief 1-sentence reason.", "codeQualityScore": number, "complexityScore": number}
     `;
 
     const response = await ai.models.generateContent({
@@ -76,10 +77,15 @@ Respond ONLY with a valid JSON object in the exact format:
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const result = JSON.parse(text);
 
-    return { aiStatus: result.status, aiFeedback: result.reason };
+    return { 
+      aiStatus: result.status, 
+      aiFeedback: result.reason,
+      codeQualityScore: result.codeQualityScore || 0,
+      complexityScore: result.complexityScore || 0
+    };
   } catch (error) {
     console.error('AI Eval error:', error);
-    return { aiStatus: 'Pending', aiFeedback: 'AI evaluation failed. Please review manually.' };
+    return { aiStatus: 'Pending', aiFeedback: 'AI evaluation failed. Please review manually.', codeQualityScore: 0, complexityScore: 0 };
   }
 }
 
@@ -92,11 +98,18 @@ async function processAssignmentsWithAI(assignments, internship, user) {
       assignment.aiFeedback = evaluation.aiFeedback;
 
       if (evaluation.aiStatus === 'Accepted') {
-        totalPointsToAdd += 50;
+        const baseSP = 20;
+        const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+        const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+        const awardedSP = baseSP + qualitySP + complexitySP;
+
+        assignment.spAwarded = awardedSP;
+        totalPointsToAdd += awardedSP;
+        
         if (!internship.pointsHistory) internship.pointsHistory = [];
         internship.pointsHistory.push({
-          reason: `AI Verified Project: ${assignment.projectName}`,
-          pointsAdded: 50,
+          reason: `AI Verified Project: ${assignment.projectName} (Quality: ${evaluation.codeQualityScore}/10, Complexity: ${evaluation.complexityScore}/10)`,
+          pointsAdded: awardedSP,
           date: new Date()
         });
       }
