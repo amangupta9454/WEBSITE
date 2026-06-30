@@ -98,7 +98,8 @@ async function evaluateRepoWithAI(githubLink, projectName) {
       return { aiStatus: 'Rejected', aiFeedback: 'Repository not found or is private.' };
     }
 
-    const files = (treeData.tree || []).map(t => t.path).slice(0, 100);
+    const filesList = treeData.tree || [];
+    const files = filesList.map(t => t.path).slice(0, 100);
     if (files.length === 0) {
       return { aiStatus: 'Rejected', aiFeedback: 'Repository is completely empty.' };
     }
@@ -110,8 +111,31 @@ async function evaluateRepoWithAI(githubLink, projectName) {
       readmeText = Buffer.from(readmeData.content, 'base64').toString('utf-8').slice(0, 1500);
     }
 
+    // Fetch key source code files to allow AI to deeply evaluate and "soft run"
+    const sourceNodes = filesList.filter(t => t.type === 'blob' && !t.path.includes('node_modules') && !t.path.includes('package-lock') && !t.path.includes('.min.') && !t.path.includes('.png') && !t.path.includes('.jpg'));
+    sourceNodes.sort((a, b) => {
+      const isAImportant = /main|index|app|server/i.test(a.path) ? 1 : 0;
+      const isBImportant = /main|index|app|server/i.test(b.path) ? 1 : 0;
+      return isBImportant - isAImportant;
+    });
+
+    const topSourceFiles = sourceNodes.slice(0, 4);
+    let codeSnippets = '';
+    for (const node of topSourceFiles) {
+      try {
+        const fileRes = await fetch(node.url);
+        const fileData = await fileRes.json();
+        if (fileData.content) {
+          const textContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
+          codeSnippets += `\n--- FILE: ${node.path} ---\n${textContent.slice(0, 2500)}\n`;
+        }
+      } catch (e) {
+        console.error('Error fetching file content', node.path, e);
+      }
+    }
+
     const prompt = `
-You are an expert code evaluator. 
+You are an expert, strict code evaluator. 
 A student has submitted a project repository for the assignment titled: "${projectName}".
 Here is the file structure of their repository:
 ${files.join('\n')}
@@ -119,11 +143,15 @@ ${files.join('\n')}
 Here is a snippet of their README.md:
 ${readmeText}
 
-Evaluate if this repository looks like a valid submission for "${projectName}". 
-Does the file structure and README indicate they actually built the project, or is it blank/irrelevant/spam?
-Also, evaluate the project's quality (0-10) based on structure and README, and complexity (0-10) based on the files present.
+Here are the contents of key source files from the project for you to deeply evaluate and simulate ("soft run") in your mind:
+${codeSnippets}
+
+Evaluate deeply if this repository is a valid, working, and correct submission for "${projectName}". 
+DO NOT judge superficially based only on filenames or README. You MUST read the provided source code snippets.
+Does the code contain actual logic, correct implementation, and required functionality? Reject empty templates, boilerplate, or spam.
+Also, evaluate the project's code quality (0-10) based on clean code practices, and complexity (0-10) based on the algorithms/logic used in the code.
 Respond ONLY with a valid JSON object in the exact format:
-{"status": "Accepted" or "Rejected", "reason": "A brief 1-sentence reason.", "codeQualityScore": number, "complexityScore": number}
+{"status": "Accepted" or "Rejected", "reason": "A brief 1-2 sentence reason detailing your findings in the code.", "codeQualityScore": number, "complexityScore": number}
     `;
 
     if (!process.env.GROQ_API_KEY) {
