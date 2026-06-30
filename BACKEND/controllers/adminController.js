@@ -1019,6 +1019,50 @@ const reviewSummerProject = async (req, res) => {
   }
 };
 
+const manualAcceptAssignment = async (req, res) => {
+  try {
+    const { submissionId, assignmentId } = req.body;
+    if (!submissionId || !assignmentId) {
+      return res.status(400).json({ message: "Submission ID and Assignment ID required" });
+    }
+
+    const ProjectSubmission = require('../models/ProjectSubmission');
+    const submission = await ProjectSubmission.findById(submissionId);
+    if (!submission) return res.status(404).json({ message: "Submission not found" });
+
+    const assignment = submission.assignments.id(assignmentId);
+    if (!assignment) return res.status(404).json({ message: "Assignment not found" });
+
+    if (assignment.aiStatus === 'Accepted') {
+      return res.status(400).json({ message: "Assignment is already accepted" });
+    }
+
+    assignment.aiStatus = 'Accepted';
+    assignment.aiFeedback = 'Manually Accepted by Admin';
+    await submission.save();
+
+    const user = await User.findOne({ 'internships.studentId': submission.studentId });
+    if (user) {
+      const internship = user.internships.find(app => app.studentId === submission.studentId);
+      if (internship) {
+        internship.synergyPoints = (internship.synergyPoints || 0) + 50;
+        if (!internship.pointsHistory) internship.pointsHistory = [];
+        internship.pointsHistory.push({
+          reason: `Admin Manually Accepted Project: ${assignment.projectName}`,
+          pointsAdded: 50,
+          date: new Date()
+        });
+        await user.save();
+      }
+    }
+
+    res.json({ message: "Assignment manually accepted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error manually accepting assignment:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const getLeaderboardSetting = async (req, res) => {
   try {
     const setting = await Settings.findOne({ key: "showLeaderboard" });
@@ -1052,6 +1096,7 @@ module.exports = {
   uploadCertificates,
   updateOfferStatus,
   getLeaderboardSetting,
+  manualAcceptAssignment,
   toggleLeaderboardSetting,
   setStartDate,
   updateBatch,

@@ -861,7 +861,43 @@ const AdminDashboard = () => {
       setSelectedApplications([...selectedApplications, appId]);
     }
   };
-
+  const handleManualAcceptAssignment = async (submissionId, assignmentId) => {
+    if (!window.confirm("Are you sure you want to manually accept this assignment? This will award 50 SP to the student.")) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/manual-accept-assignment`,
+        { submissionId, assignmentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Assignment manually accepted! 50 SP awarded.");
+      
+      // Update the local state so the UI reflects the change immediately
+      if (selectedSubmissionsApp) {
+        const updatedSubmissions = selectedSubmissionsApp.submissions.map(sub => {
+          if (sub._id === submissionId) {
+            return {
+              ...sub,
+              assignments: sub.assignments.map(a => 
+                a._id === assignmentId 
+                  ? { ...a, aiStatus: 'Accepted', aiFeedback: 'Manually Accepted by Admin' } 
+                  : a
+              )
+            };
+          }
+          return sub;
+        });
+        setSelectedSubmissionsApp({ ...selectedSubmissionsApp, submissions: updatedSubmissions });
+      }
+      fetchApplications(token);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to manually accept assignment.");
+    }
+  };
   const handleBulkUpdate = async () => {
     if (selectedApplications.length === 0) return;
     
@@ -2693,7 +2729,7 @@ const AdminDashboard = () => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md">
-                          Task Phase {idx + 1}
+                          Submission Month {sub.month}
                         </span>
                         <span className="text-xs text-slate-500">
                           {new Date(sub.submittedAt).toLocaleDateString(
@@ -2701,14 +2737,51 @@ const AdminDashboard = () => {
                           )}
                         </span>
                       </div>
-                      <a
-                        href={sub.repoLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium break-all flex items-center gap-1.5"
-                      >
-                        <ExternalLink size={14} /> {sub.repoLink}
-                      </a>
+                      
+                      {sub.assignments && sub.assignments.length > 0 ? (
+                        <div className="space-y-3 mt-3">
+                          {sub.assignments.map((assignment, aIdx) => (
+                            <div key={aIdx} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                              <div className="flex justify-between items-start mb-1">
+                                <h4 className="font-semibold text-sm text-slate-800">{assignment.projectName}</h4>
+                                {assignment.aiStatus === 'Accepted' && (
+                                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">AI Accepted (+50 SP)</span>
+                                )}
+                                {assignment.aiStatus === 'Rejected' && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">AI Rejected</span>
+                                )}
+                                {(!assignment.aiStatus || assignment.aiStatus === 'Pending') && (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">Pending</span>
+                                )}
+                              </div>
+                              <a
+                                href={assignment.github}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 break-all flex items-center gap-1 mb-2"
+                              >
+                                <ExternalLink size={12} /> {assignment.github}
+                              </a>
+                              {assignment.aiStatus === 'Rejected' && (
+                                <div className="mt-2 text-xs">
+                                  <p className="text-red-600 mb-2"><strong>Reason:</strong> {assignment.aiFeedback}</p>
+                                  <button 
+                                    onClick={() => handleManualAcceptAssignment(sub._id, assignment._id)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                                  >
+                                    Manually Accept (+50 SP)
+                                  </button>
+                                </div>
+                              )}
+                              {assignment.aiStatus === 'Accepted' && assignment.aiFeedback && assignment.aiFeedback !== 'Accepted' && (
+                                <p className="text-xs text-emerald-700 mt-1"><strong>Note:</strong> {assignment.aiFeedback}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500 italic mt-2">No assignments found in this submission.</p>
+                      )}
                     </div>
                   ))}
                 </div>

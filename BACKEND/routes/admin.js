@@ -37,6 +37,7 @@ const {
   syncRefunds,
   getLeaderboardSetting,
   toggleLeaderboardSetting,
+  manualAcceptAssignment,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -71,6 +72,7 @@ router.delete("/summer-projects/:id", auth, deleteSummerProject);
 router.post("/update-assigned-repo", auth, updateAssignedRepo);
 router.post("/review-summer-project", auth, reviewSummerProject);
 router.post("/assign-normal-tasks", auth, assignNormalTasks);
+router.post("/manual-accept-assignment", auth, manualAcceptAssignment);
 
 router.get("/normal-tasks", auth, getNormalTasks);
 router.post("/normal-tasks", auth, upload.single("pdf"), createNormalTask);

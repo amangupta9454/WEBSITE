@@ -5,7 +5,9 @@ const mongoose = require('mongoose');
 const assignmentSchema = new mongoose.Schema({
   projectName: { type: String },
   github: { type: String },
-  hosted: { type: String }
+  hosted: { type: String },
+  aiStatus: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
+  aiFeedback: { type: String, default: '' }
 });
 
 const projectSubmissionSchema = new mongoose.Schema({
