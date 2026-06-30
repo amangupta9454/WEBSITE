@@ -1380,7 +1380,7 @@ const getRecentPayments = async (req, res) => {
 
     users.forEach(user => {
       user.internships.forEach(internship => {
-        if (internship.hasPaid) {
+        if (internship.hasPaid && internship.razorpayPaymentId) {
           let pDate = internship.paymentDate;
           
           if (!pDate) {
