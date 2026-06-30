@@ -531,30 +531,46 @@ const updateProjectLink = async (req, res) => {
       projectName = project ? project.name : 'Summer Project';
       
       targetInternship.assignedRepos[repoIndex].repoLink = newRepoLink;
-      
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
-      targetInternship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
-      targetInternship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
-
-      if (evaluation.aiStatus === 'Accepted') {
-        const penalty = targetInternship.assignedRepos[repoIndex].pointsAwarded ? 5 : 0;
-        const awardedSP = Math.max(0, 50 - penalty);
-        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) + (awardedSP - (targetInternship.assignedRepos[repoIndex].pointsAwarded ? 50 : 0));
-        targetInternship.assignedRepos[repoIndex].pointsAwarded = true;
-        
-        targetInternship.assignedRepos[repoIndex].emailSent = false;
-        
-        if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
-        targetInternship.pointsHistory.push({
-          reason: `AI Re-verified Summer Project: ${projectName} (Penalty: -${penalty} SP)`,
-          pointsAdded: awardedSP,
-          date: new Date()
-        });
-      } else {
-        targetInternship.assignedRepos[repoIndex].emailSent = false;
-      }
-      
+      targetInternship.assignedRepos[repoIndex].reviewStatus = 'Pending';
       await user.save();
+
+      res.json({ message: 'Project link updated! AI evaluation started in background.' });
+
+      // Fire and forget
+      setTimeout(async () => {
+        try {
+          const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+          const bgUser = await User.findById(user._id);
+          if (!bgUser) return;
+          const bgInternship = bgUser.internships.find(app => app.status === "Approved" && (app.domain.toLowerCase().includes(internshipType.toLowerCase()) || (internshipType === 'Summer Intern' && app.duration.includes('15 Days'))));
+          if (!bgInternship) return;
+          const bgRepoIndex = bgInternship.assignedRepos.findIndex(r => r.projectId.toString() === projectId);
+          if (bgRepoIndex === -1) return;
+
+          bgInternship.assignedRepos[bgRepoIndex].reviewStatus = evaluation.aiStatus;
+          bgInternship.assignedRepos[bgRepoIndex].feedback = evaluation.aiFeedback;
+
+          if (evaluation.aiStatus === 'Accepted') {
+            const penalty = bgInternship.assignedRepos[bgRepoIndex].pointsAwarded ? 5 : 0;
+            const awardedSP = Math.max(0, 50 - penalty);
+            bgInternship.synergyPoints = (bgInternship.synergyPoints || 0) + (awardedSP - (bgInternship.assignedRepos[bgRepoIndex].pointsAwarded ? 50 : 0));
+            bgInternship.assignedRepos[bgRepoIndex].pointsAwarded = true;
+            bgInternship.assignedRepos[bgRepoIndex].emailSent = false;
+            
+            if (!bgInternship.pointsHistory) bgInternship.pointsHistory = [];
+            bgInternship.pointsHistory.push({
+              reason: `AI Re-verified Summer Project: ${projectName} (Penalty: -${penalty} SP)`,
+              pointsAdded: awardedSP,
+              date: new Date()
+            });
+          } else {
+            bgInternship.assignedRepos[bgRepoIndex].emailSent = false;
+          }
+          await bgUser.save();
+        } catch (err) {
+          console.error("Background AI eval error (Summer Intern update):", err);
+        }
+      }, 0);
 
     } else {
       const submission = await ProjectSubmission.findById(projectId);
@@ -568,44 +584,55 @@ const updateProjectLink = async (req, res) => {
       projectName = submission.assignments[assignmentIndex].projectName;
       previousSP = submission.assignments[assignmentIndex].spAwarded || 0;
       submission.assignments[assignmentIndex].github = newRepoLink;
-
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
-      
-      submission.assignments[assignmentIndex].aiStatus = evaluation.aiStatus;
-      submission.assignments[assignmentIndex].aiFeedback = evaluation.aiFeedback;
-
-      if (evaluation.aiStatus === 'Accepted') {
-        const baseSP = 20;
-        const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
-        const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
-        let awardedSP = baseSP + qualitySP + complexitySP;
-        
-        // Apply 5 SP penalty for updating
-        awardedSP = Math.max(0, awardedSP - 5);
-        
-        submission.assignments[assignmentIndex].spAwarded = awardedSP;
-        
-        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP + awardedSP;
-        
-        submission.assignments[assignmentIndex].emailSent = false;
-        
-        if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
-        targetInternship.pointsHistory.push({
-          reason: `AI Re-verified Project: ${projectName} (Penalty: -5 SP for Resubmission)`,
-          pointsAdded: awardedSP,
-          date: new Date()
-        });
-      } else {
-        submission.assignments[assignmentIndex].spAwarded = 0;
-        submission.assignments[assignmentIndex].emailSent = false;
-        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP;
-      }
-      
+      submission.assignments[assignmentIndex].aiStatus = 'Pending';
       await submission.save();
-      await user.save();
-    }
 
-    res.json({ message: 'Project link updated and evaluated successfully.' });
+      res.json({ message: 'Project link updated! AI evaluation started in background.' });
+
+      // Fire and forget
+      setTimeout(async () => {
+        try {
+          const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+          const bgSubmission = await ProjectSubmission.findById(projectId);
+          if (!bgSubmission) return;
+          const bgUser = await User.findById(user._id);
+          if (!bgUser) return;
+          const bgInternship = bgUser.internships.find(app => app.status === "Approved" && app.domain.toLowerCase().includes(internshipType.toLowerCase()));
+          if (!bgInternship) return;
+
+          bgSubmission.assignments[assignmentIndex].aiStatus = evaluation.aiStatus;
+          bgSubmission.assignments[assignmentIndex].aiFeedback = evaluation.aiFeedback;
+
+          if (evaluation.aiStatus === 'Accepted') {
+            const baseSP = 20;
+            const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+            const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+            let awardedSP = baseSP + qualitySP + complexitySP;
+            
+            awardedSP = Math.max(0, awardedSP - 5);
+            bgSubmission.assignments[assignmentIndex].spAwarded = awardedSP;
+            bgInternship.synergyPoints = (bgInternship.synergyPoints || 0) - previousSP + awardedSP;
+            bgSubmission.assignments[assignmentIndex].emailSent = false;
+            
+            if (!bgInternship.pointsHistory) bgInternship.pointsHistory = [];
+            bgInternship.pointsHistory.push({
+              reason: `AI Re-verified Project: ${projectName} (Penalty: -5 SP for Resubmission)`,
+              pointsAdded: awardedSP,
+              date: new Date()
+            });
+          } else {
+            bgSubmission.assignments[assignmentIndex].spAwarded = 0;
+            bgSubmission.assignments[assignmentIndex].emailSent = false;
+            bgInternship.synergyPoints = (bgInternship.synergyPoints || 0) - previousSP;
+          }
+          
+          await bgSubmission.save();
+          await bgUser.save();
+        } catch (err) {
+          console.error("Background AI eval error (Normal Intern update):", err);
+        }
+      }, 0);
+    }
   } catch (error) {
     console.error("[Backend] Update project link error:", error);
     res.status(500).json({ message: "Server error during project update" });
