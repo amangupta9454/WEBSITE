@@ -1026,7 +1026,6 @@ const manualAcceptAssignment = async (req, res) => {
       return res.status(400).json({ message: "Submission ID and Assignment ID required" });
     }
 
-    const ProjectSubmission = require('../models/ProjectSubmission');
     const submission = await ProjectSubmission.findById(submissionId);
     if (!submission) return res.status(404).json({ message: "Submission not found" });
 
@@ -1064,7 +1063,6 @@ const manualAcceptAssignment = async (req, res) => {
 };
 
 // --- Submissions & SP Override ---
-const ProjectSubmission = require('../models/ProjectSubmission');
 
 const getAllSubmissions = async (req, res) => {
   try {
