@@ -6,6 +6,10 @@ const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
 const ProjectSubmission = require("../models/ProjectSubmission");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
+
+// Global flag for background batch evaluation
+let isBackgroundEvaluationRunning = false;
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -1365,6 +1369,142 @@ const evaluatePendingAI = async (req, res) => {
   }
 };
 
+const getBackgroundEvaluationStatus = (req, res) => {
+  res.json({ isRunning: isBackgroundEvaluationRunning });
+};
+
+const stopBackgroundEvaluations = (req, res) => {
+  isBackgroundEvaluationRunning = false;
+  res.json({ message: "Background evaluation stopped successfully." });
+};
+
+const startBackgroundEvaluations = async (req, res) => {
+  if (isBackgroundEvaluationRunning) {
+    return res.status(400).json({ message: "Background evaluation is already running." });
+  }
+
+  isBackgroundEvaluationRunning = true;
+  res.json({ message: "Background evaluation started on the server. You may close this tab." });
+
+  // Fire and forget background daemon loop
+  setTimeout(async () => {
+    try {
+      while (isBackgroundEvaluationRunning) {
+        let processedCount = 0;
+
+        // Process Normal Projects
+        const normalSubmissions = await ProjectSubmission.find({});
+        for (let sub of normalSubmissions) {
+          if (!isBackgroundEvaluationRunning) break;
+          
+          const user = await User.findOne({ 'internships.studentId': sub.studentId });
+          if (!user) continue;
+          
+          const internship = user.internships.find(app => app.studentId === sub.studentId);
+          if (!internship) continue;
+
+          let subUpdated = false;
+          for (let assignment of sub.assignments) {
+            if (!isBackgroundEvaluationRunning) break;
+            
+            if (assignment.aiStatus === 'Pending' && assignment.github) {
+              const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName);
+              assignment.aiStatus = evaluation.aiStatus;
+              assignment.aiFeedback = evaluation.aiFeedback;
+
+              if (evaluation.aiStatus === 'Accepted') {
+                const baseSP = 20;
+                const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+                const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+                const awardedSP = baseSP + qualitySP + complexitySP;
+
+                assignment.spAwarded = awardedSP;
+                internship.synergyPoints = (internship.synergyPoints || 0) + awardedSP;
+                
+                if (!internship.pointsHistory) internship.pointsHistory = [];
+                internship.pointsHistory.push({
+                  reason: `AI Verified Project (Batch): ${assignment.projectName}`,
+                  pointsAdded: awardedSP,
+                  date: new Date()
+                });
+              }
+              assignment.emailSent = false;
+              subUpdated = true;
+              processedCount++;
+              
+              if (processedCount >= 2) break; // Small batches to avoid memory bloat
+            }
+          }
+          if (subUpdated) {
+            await sub.save();
+            await user.save();
+          }
+          if (processedCount >= 2) break;
+        }
+
+        // Process Summer Projects if we haven't hit limit
+        if (isBackgroundEvaluationRunning && processedCount < 2) {
+          const users = await User.find({ 'internships.assignedRepos': { $exists: true, $not: {$size: 0} } });
+          for (let user of users) {
+            if (!isBackgroundEvaluationRunning) break;
+            let userUpdated = false;
+            for (let internship of user.internships) {
+              if (!isBackgroundEvaluationRunning) break;
+              if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+                for (let repo of internship.assignedRepos) {
+                  if (!isBackgroundEvaluationRunning) break;
+                  if (repo.reviewStatus === 'Pending' && repo.repoLink) {
+                    const project = await SummerProject.findById(repo.projectId);
+                    const projectName = project ? project.name : 'Summer Project';
+                    const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName);
+                    
+                    repo.reviewStatus = evaluation.aiStatus;
+                    repo.feedback = evaluation.aiFeedback;
+                    
+                    if (evaluation.aiStatus === 'Accepted' && !repo.pointsAwarded) {
+                      repo.pointsAwarded = true;
+                      internship.synergyPoints = (internship.synergyPoints || 0) + 50;
+                      if (!internship.pointsHistory) internship.pointsHistory = [];
+                      internship.pointsHistory.push({
+                        reason: `AI Verified Summer Project (Batch): ${projectName}`,
+                        pointsAdded: 50,
+                        date: new Date()
+                      });
+                    }
+                    repo.emailSent = false;
+                    userUpdated = true;
+                    processedCount++;
+                    
+                    if (processedCount >= 2) break;
+                  }
+                }
+              }
+              if (processedCount >= 2) break;
+            }
+            if (userUpdated) {
+              await user.save();
+            }
+            if (processedCount >= 2) break;
+          }
+        }
+
+        // If no pending projects found, stop loop
+        if (processedCount === 0) {
+          isBackgroundEvaluationRunning = false;
+          console.log("[Admin] Background AI evaluation finished cleanly.");
+          break;
+        }
+
+        // Pause for 1 second between batches to yield event loop
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.error("[Admin] Fatal error in background AI loop:", error);
+      isBackgroundEvaluationRunning = false;
+    }
+  }, 0);
+};
+
 const getRecentPayments = async (req, res) => {
   try {
     const sevenDaysAgo = new Date();
@@ -1603,5 +1743,8 @@ module.exports = {
   syncRefunds,
   getRecentPayments,
   sendEvaluationEmails,
-  resetAIEvaluations
+  resetAIEvaluations,
+  startBackgroundEvaluations,
+  stopBackgroundEvaluations,
+  getBackgroundEvaluationStatus
 };

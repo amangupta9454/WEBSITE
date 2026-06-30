@@ -112,25 +112,46 @@ async function evaluateRepoWithAI(githubLink, projectName) {
     }
 
     // Fetch key source code files to allow AI to deeply evaluate and "soft run"
-    const sourceNodes = filesList.filter(t => t.type === 'blob' && !t.path.includes('node_modules') && !t.path.includes('package-lock') && !t.path.includes('.min.') && !t.path.includes('.png') && !t.path.includes('.jpg'));
+    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c', '.cs', '.html', '.css', '.php', '.go', '.rb', '.rs'];
+    const sourceNodes = filesList.filter(t => {
+      if (t.type !== 'blob') return false;
+      const lowerPath = t.path.toLowerCase();
+      if (lowerPath.includes('node_modules') || lowerPath.includes('package-lock') || lowerPath.includes('.min.') || lowerPath.includes('dist/') || lowerPath.includes('build/')) return false;
+      return validExtensions.some(ext => lowerPath.endsWith(ext));
+    });
+
     sourceNodes.sort((a, b) => {
       const isAImportant = /main|index|app|server/i.test(a.path) ? 1 : 0;
       const isBImportant = /main|index|app|server/i.test(b.path) ? 1 : 0;
       return isBImportant - isAImportant;
     });
 
-    const topSourceFiles = sourceNodes.slice(0, 4);
+    const topSourceFiles = sourceNodes.slice(0, 15); // Up to 15 files
     let codeSnippets = '';
-    for (const node of topSourceFiles) {
-      try {
-        const fileRes = await fetch(node.url);
-        const fileData = await fileRes.json();
-        if (fileData.content) {
-          const textContent = Buffer.from(fileData.content, 'base64').toString('utf-8');
-          codeSnippets += `\n--- FILE: ${node.path} ---\n${textContent.slice(0, 2500)}\n`;
+    let totalChars = 0;
+    const MAX_CHARS = 40000;
+
+    const fetchPromises = topSourceFiles.map(async (node) => {
+      const fileRes = await fetch(node.url);
+      const fileData = await fileRes.json();
+      if (fileData.content) {
+        return { path: node.path, content: Buffer.from(fileData.content, 'base64').toString('utf-8') };
+      }
+      return null;
+    });
+
+    const results = await Promise.allSettled(fetchPromises);
+    
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        const textContent = result.value.content;
+        const snippet = `\n--- FILE: ${result.value.path} ---\n${textContent.slice(0, 3000)}\n`;
+        if (totalChars + snippet.length > MAX_CHARS) {
+          codeSnippets += snippet.slice(0, MAX_CHARS - totalChars) + '\n...[TRUNCATED TO FIT CONTEXT]...';
+          break;
         }
-      } catch (e) {
-        console.error('Error fetching file content', node.path, e);
+        codeSnippets += snippet;
+        totalChars += snippet.length;
       }
     }
 
@@ -281,8 +302,7 @@ const submitProject = async (req, res) => {
         message: 'Payment required for final submission'
       });
     } else {
-      const processedAssignments = await processAssignmentsWithAI(assignments || [], internship, user);
-
+      // Create empty submission first to return instantly
       const submission = new ProjectSubmission({
         studentId,
         name,
@@ -290,12 +310,30 @@ const submitProject = async (req, res) => {
         mobile: internship.mobile,
         domain,
         duration: registeredDuration,
-        assignments: processedAssignments,
+        assignments: assignments || [],
         month: currentMonth
       });
-
       await submission.save();
-      return res.json({ message: 'Project submitted and AI-evaluated successfully' });
+      
+      res.json({ message: 'Project submitted successfully! AI evaluation started in background.' });
+
+      // Fire and forget AI background evaluation
+      setTimeout(async () => {
+        try {
+          // Re-fetch user in background to ensure latest state
+          const bgUser = await User.findOne({ 'internships.studentId': studentId });
+          if (!bgUser) return;
+          const bgInternship = bgUser.internships.find(app => app.studentId === studentId);
+          if (!bgInternship) return;
+          
+          const processedAssignments = await processAssignmentsWithAI(submission.assignments, bgInternship, bgUser);
+          
+          submission.assignments = processedAssignments;
+          await submission.save();
+        } catch (err) {
+          console.error("Background AI eval error (normal submission):", err);
+        }
+      }, 0);
     }
   } catch (error) {
     console.error('[Project] Submit error:', error);
@@ -376,6 +414,6 @@ const verifyPayment = async (req, res) => {
 module.exports = {
   submitProject,
   verifyPayment,
-  evaluateRepoWithAI,
-  sendAIEvaluationEmail
+  processAssignmentsWithAI,
+  evaluateRepoWithAI
 };

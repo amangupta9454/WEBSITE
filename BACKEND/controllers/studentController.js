@@ -367,9 +367,46 @@ const finalSubmitProjectRepo = async (req, res) => {
 
     await user.save();
     res.json({
-      message: "Project final submitted successfully",
+      message: "Project final submitted successfully. AI evaluation started.",
       assignedRepos: internship.assignedRepos,
     });
+    
+    // Background execution (fire and forget)
+    setTimeout(async () => {
+      try {
+        const repo = internship.assignedRepos[repoIndex];
+        const project = await SummerProject.findById(repo.projectId);
+        const projectName = project ? project.name : 'Summer Project';
+        const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName);
+        
+        // Re-fetch user in background to avoid race conditions
+        const bgUser = await User.findById(userId);
+        if (!bgUser) return;
+        const bgInternship = bgUser.internships.find(app => app.studentId === studentId);
+        if (!bgInternship) return;
+        const bgRepo = bgInternship.assignedRepos?.find(r => r.projectId.toString() === projectId);
+        if (!bgRepo) return;
+
+        bgRepo.reviewStatus = evaluation.aiStatus;
+        bgRepo.feedback = evaluation.aiFeedback;
+        bgRepo.emailSent = false;
+        
+        if (evaluation.aiStatus === 'Accepted' && !bgRepo.pointsAwarded) {
+          bgRepo.pointsAwarded = true;
+          bgInternship.synergyPoints = (bgInternship.synergyPoints || 0) + 50;
+          if (!bgInternship.pointsHistory) bgInternship.pointsHistory = [];
+          bgInternship.pointsHistory.push({
+            reason: `AI Verified Summer Project: ${projectName} (Quality: ${evaluation.codeQualityScore}/10, Complexity: ${evaluation.complexityScore}/10)`,
+            pointsAdded: 50,
+            date: new Date()
+          });
+        }
+        await bgUser.save();
+      } catch (err) {
+        console.error("Background AI eval error:", err);
+      }
+    }, 0);
+
   } catch (error) {
     console.error("[Backend] Error final submitting project:", error);
     res.status(500).json({ message: "Server error" });

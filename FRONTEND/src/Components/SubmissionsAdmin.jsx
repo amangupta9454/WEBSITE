@@ -18,7 +18,26 @@ const SubmissionsAdmin = () => {
 
   useEffect(() => {
     fetchSubmissions();
+    const statusInterval = setInterval(checkBackgroundStatus, 5000);
+    checkBackgroundStatus();
+    
+    return () => clearInterval(statusInterval);
   }, []);
+
+  const checkBackgroundStatus = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/background-evaluation-status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsAutoRunning(res.data.isRunning);
+      if (res.data.isRunning) {
+        fetchSubmissions(); // passively update UI if running
+      }
+    } catch (err) {
+      console.error("Failed to check status", err);
+    }
+  };
 
   const fetchSubmissions = async () => {
     try {
@@ -119,44 +138,37 @@ const SubmissionsAdmin = () => {
   };
 
   const handleEvaluateAI = async () => {
-    if (!window.confirm("Are you sure you want to run AI evaluation on all pending submissions? Do not close this tab until finished.")) return;
+    if (!window.confirm("Are you sure you want to run AI evaluation on all pending submissions? The server will process them in the background, you may close this tab.")) return;
     
-    setIsAutoRunning(true);
-    autoRunRef.current = true;
-    
-    let totalProcessed = 0;
     try {
-      while(autoRunRef.current) {
-        setLoading(true);
-        const token = localStorage.getItem('adminToken');
-        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/evaluate-pending-ai`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        await fetchSubmissions();
-        const count = res.data.processedCount || 0;
-        totalProcessed += count;
-        
-        if (count === 0) {
-          autoRunRef.current = false;
-          setIsAutoRunning(false);
-          toast.success(`AI evaluation completed. Total processed: ${totalProcessed}`);
-          break;
-        }
-      }
+      setLoading(true);
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/start-background-evaluations`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setIsAutoRunning(true);
+      toast.success(res.data.message);
+      fetchSubmissions();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to run AI evaluation. Auto-run stopped.');
-      autoRunRef.current = false;
-      setIsAutoRunning(false);
+      toast.error(err.response?.data?.message || 'Failed to start AI evaluation.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const stopAutoRun = () => {
-    autoRunRef.current = false;
-    setIsAutoRunning(false);
-    toast('Auto-run stopped by user', { icon: '🛑' });
+  const stopAutoRun = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/stop-background-evaluations`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsAutoRunning(false);
+      toast('Background auto-run stopped', { icon: '🛑' });
+    } catch (err) {
+      toast.error('Failed to stop background evaluation');
+    }
   };
 
   const handleSendEmails = async () => {
