@@ -2436,7 +2436,7 @@ const AdminDashboard = () => {
             <NormalTasksAdmin domains={domains} />
           )}
           {activeSidebarTab === "summer_projects" && (
-            <SummerProjectsAdmin applications={applications} />
+            <SummerProjectsAdmin applications={applications} refreshApplications={() => fetchApplications(localStorage.getItem("adminToken"))} />
           )}
           {activeSidebarTab === "notifications" && (
             <NotificationsAdmin />

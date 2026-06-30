@@ -128,7 +128,8 @@ const SummerProjectsAdmin = ({ applications }) => {
         { applicationId, projectId, reviewStatus: status, feedback },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(`Project ${status} successfully. Please refresh to see updated status.`);
+      toast.success(`Project ${status} successfully.`);
+      if (refreshApplications) refreshApplications();
     } catch (err) {
       toast.error("Failed to update project review");
     }
