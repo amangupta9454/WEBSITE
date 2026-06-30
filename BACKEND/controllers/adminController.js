@@ -972,15 +972,36 @@ const reviewSummerProject = async (req, res) => {
         to: user.email,
         subject: `Update on your Summer Project Submission - ${projectName}`,
         html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <h2>Project Review Update</h2>
-            <p>Hi ${user.name},</p>
-            <p>Your submission for <strong>${projectName}</strong> has been reviewed.</p>
-            <p><strong>Status:</strong> ${reviewStatus}</p>
-            ${feedback ? `<p><strong>Feedback:</strong> ${feedback}</p>` : ''}
-            <p>Keep up the great work!</p>
-            <br/>
-            <p>Best regards,<br/>CODE-A-NOVA Internships Team</p>
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+            <div style="text-align: center; margin-bottom: 0;">
+              <img src="https://drive.google.com/uc?export=view&id=18wSzAAQJE8LkxQDfI6RCfUmWfyqlQ_uc" alt="CODE-A-NOVA Banner" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 10px 10px 0 0;" />
+            </div>
+            <div style="padding: 20px; background-color: #ffffff; border-radius: 0 0 8px 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+              <h2 style="color: #333333; text-align: center; border-bottom: 2px solid #6c63ff; padding-bottom: 10px;">Project Review Update</h2>
+              <p style="font-size: 16px; color: #555555;">Dear <strong>${user.name}</strong>,</p>
+              <p style="font-size: 15px; color: #666666; line-height: 1.6;">
+                Your recent project submission for <strong>${projectName}</strong> has been carefully reviewed by our evaluation team.
+              </p>
+              
+              <div style="background-color: #f0f4f8; padding: 15px; border-left: 4px solid #6c63ff; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 5px 0;"><strong>Student ID:</strong> ${internship.studentId || "N/A"}</p>
+                <p style="margin: 5px 0;"><strong>Registered Email:</strong> ${user.email}</p>
+                <p style="margin: 5px 0;"><strong>Review Status:</strong> <span style="color: ${reviewStatus === 'Accepted' ? '#28a745' : '#dc3545'}; font-weight: bold;">${reviewStatus}</span></p>
+                ${feedback ? `<p style="margin: 5px 0;"><strong>Feedback/Remarks:</strong> ${feedback}</p>` : ''}
+              </div>
+
+              <p style="font-size: 15px; color: #666666; line-height: 1.6;">
+                ${reviewStatus === 'Accepted' 
+                  ? 'Congratulations! Your project meets our standards and has been successfully accepted. Keep up the excellent work and continue building your skills!' 
+                  : 'Please review the feedback provided above and make the necessary changes to your project repository. Once updated, our team will re-evaluate your submission.'}
+              </p>
+
+              <p style="font-size: 14px; color: #999999; margin-top: 30px; text-align: center;">
+                Best regards,<br/>
+                <strong style="color: #333333;">CODE-A-NOVA Internships Team</strong><br/>
+                <a href="https://code-a-nova.online" style="color: #6c63ff; text-decoration: none;">www.code-a-nova.online</a>
+              </p>
+            </div>
           </div>
         `,
       };
