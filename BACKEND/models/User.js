@@ -54,6 +54,7 @@ const userSchema = new mongoose.Schema(
         },
         hasPaid: { type: Boolean, default: false }, // New: tracks if final payment done
         paymentAmount: { type: Number, default: 0 },
+        paymentDate: { type: Date }, // Tracks when the payment was made
         refundAmount: { type: Number, default: 0 },
         razorpayPaymentId: { type: String },
         paidExported: { type: Boolean, default: false },

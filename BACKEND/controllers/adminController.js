@@ -1367,6 +1367,54 @@ const evaluatePendingAI = async (req, res) => {
   }
 };
 
+const getRecentPayments = async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const users = await User.find({
+      'internships.hasPaid': true
+    });
+
+    let recentPayments = [];
+
+    users.forEach(user => {
+      user.internships.forEach(internship => {
+        if (internship.hasPaid) {
+          let pDate = internship.paymentDate;
+          
+          if (!pDate) {
+             // Fallback for old records
+             pDate = user.updatedAt;
+          }
+
+          if (pDate >= sevenDaysAgo) {
+            recentPayments.push({
+              _id: user._id,
+              name: user.name,
+              email: user.email,
+              studentId: internship.studentId,
+              paymentAmount: internship.paymentAmount || 0,
+              paymentDate: pDate,
+              internshipType: internship.internshipType,
+              domain: internship.domain,
+              razorpayPaymentId: internship.razorpayPaymentId
+            });
+          }
+        }
+      });
+    });
+
+    // Sort descending by date
+    recentPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+
+    res.json(recentPayments);
+  } catch (error) {
+    console.error('[Backend] getRecentPayments error:', error);
+    res.status(500).json({ message: 'Server error fetching recent payments' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -1405,4 +1453,5 @@ module.exports = {
   getAdminNotifications,
   deleteNotification,
   syncRefunds,
+  getRecentPayments,
 };

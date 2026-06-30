@@ -58,6 +58,7 @@ const AdminDashboard = () => {
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState({});
   const [forms, setForms] = useState({});
+  const [recentPayments, setRecentPayments] = useState([]);
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [selectedSubmissionsApp, setSelectedSubmissionsApp] = useState(null);
@@ -122,6 +123,7 @@ const AdminDashboard = () => {
     fetchPaymentSetting(token);
     fetchRegistrationSetting(token);
     fetchLeaderboardSetting(token);
+    fetchRecentPayments(token);
     const logoutTimer = setTimeout(
       () => {
         handleLogout();
@@ -202,6 +204,20 @@ const AdminDashboard = () => {
       setPaymentEnabled(res.data.paymentEnabled);
     } catch (err) {
       console.error("Failed to load payment setting:", err);
+    }
+  };
+
+  const fetchRecentPayments = async (token) => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/recent-payments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      setRecentPayments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch recent payments:", err);
     }
   };
 
@@ -1677,6 +1693,13 @@ const AdminDashboard = () => {
               <Trophy className="w-4 h-4" />
               Leaderboard
             </button>
+            <button
+              onClick={() => setActiveSidebarTab("recent_paid")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "recent_paid" ? "bg-teal-50 text-teal-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <CreditCard className="w-4 h-4" />
+              Recent Paid
+            </button>
           </div>
         </div>
 
@@ -2485,6 +2508,62 @@ const AdminDashboard = () => {
           )}
           {activeSidebarTab === "submissions" && (
             <SubmissionsAdmin />
+          )}
+
+          {activeSidebarTab === "recent_paid" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-teal-500" />
+                Recent Payments (Last 7 Days)
+              </h2>
+              
+              {recentPayments.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <CreditCard className="w-12 h-12 mx-auto mb-4 text-slate-300 opacity-50" />
+                  <p>No recent payments found in the last 7 days.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="p-4 font-semibold text-slate-600">Student Details</th>
+                        <th className="p-4 font-semibold text-slate-600">Amount Paid</th>
+                        <th className="p-4 font-semibold text-slate-600">Date</th>
+                        <th className="p-4 font-semibold text-slate-600">Payment ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentPayments.map((payment, index) => (
+                        <tr key={index} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4">
+                            <div className="font-medium text-slate-900">{payment.name}</div>
+                            <div className="text-sm text-slate-500">{payment.email}</div>
+                            <div className="text-xs text-slate-400 mt-1">ID: {payment.studentId} • {payment.internshipType}</div>
+                          </td>
+                          <td className="p-4">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+                              ₹{payment.paymentAmount}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-slate-600">
+                            {new Date(payment.paymentDate).toLocaleDateString('en-IN', {
+                              day: 'numeric', month: 'short', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="p-4">
+                            <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                              {payment.razorpayPaymentId || 'N/A'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           )}
           {activeSidebarTab === "leaderboard" && (() => {
             const isActive = (app) => {

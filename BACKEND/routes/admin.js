@@ -40,7 +40,8 @@ const {
   manualAcceptAssignment,
   getAllSubmissions,
   overrideSP,
-  evaluatePendingAI
+  evaluatePendingAI,
+  getRecentPayments
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -48,6 +49,7 @@ const router = express.Router();
 
 router.post("/login", adminLogin);
 router.get("/internships", auth, getInternships);
+router.get("/recent-payments", auth, getRecentPayments);
 router.post("/mark-downloaded", auth, markDownloaded);
 router.post("/update-internship", auth, updateInternshipDetails);
 router.post(
