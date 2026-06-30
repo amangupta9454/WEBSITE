@@ -542,15 +542,16 @@ const updateProjectLink = async (req, res) => {
         targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) + (awardedSP - (targetInternship.assignedRepos[repoIndex].pointsAwarded ? 50 : 0));
         targetInternship.assignedRepos[repoIndex].pointsAwarded = true;
         
+        targetInternship.assignedRepos[repoIndex].emailSent = false;
+        
         if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
         targetInternship.pointsHistory.push({
           reason: `AI Re-verified Summer Project: ${projectName} (Penalty: -${penalty} SP)`,
           pointsAdded: awardedSP,
           date: new Date()
         });
-        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
       } else {
-        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
+        targetInternship.assignedRepos[repoIndex].emailSent = false;
       }
       
       await user.save();
@@ -586,20 +587,20 @@ const updateProjectLink = async (req, res) => {
         
         targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP + awardedSP;
         
+        submission.assignments[assignmentIndex].emailSent = false;
+        
         if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
         targetInternship.pointsHistory.push({
           reason: `AI Re-verified Project: ${projectName} (Penalty: -5 SP for Resubmission)`,
           pointsAdded: awardedSP,
           date: new Date()
         });
-        
-        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
       } else {
         submission.assignments[assignmentIndex].spAwarded = 0;
+        submission.assignments[assignmentIndex].emailSent = false;
         targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP;
-        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
       }
-
+      
       await submission.save();
       await user.save();
     }
