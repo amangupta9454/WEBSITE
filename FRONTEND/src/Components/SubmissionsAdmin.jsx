@@ -18,7 +18,7 @@ const SubmissionsAdmin = () => {
 
   const fetchSubmissions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/all-submissions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -40,7 +40,7 @@ const SubmissionsAdmin = () => {
   const handleSaveSp = async (sub) => {
     try {
       setSubmittingSp(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/override-sp`, {
         modelRef: sub.modelRef,
         docId: sub.docId,
