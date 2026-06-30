@@ -17,11 +17,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Secondary transporter specifically for status emails to avoid rate limits
+const statusEmailTransporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER_2 || process.env.EMAIL_USER, // fallback to primary if not set
+    pass: process.env.EMAIL_APP_PASSWORD_2 || process.env.EMAIL_APP_PASSWORD,
+  },
+});
+
 const sendAIEvaluationEmail = async (email, name, projectName, aiStatus, aiFeedback, spAwarded, maxSp = 50) => {
   try {
     const bannerUrl = "https://res.cloudinary.com/dwyxsqxvt/image/upload/v1738743128/f3056093-9c84-4861-bb38-4b7264883d6a_p2hixp.png";
+    const senderEmail = process.env.EMAIL_USER_2 || process.env.EMAIL_USER;
     const mailOptions = {
-      from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
+      from: `"Code-A-Nova" <${senderEmail}>`,
       to: email,
       subject: `Project AI Evaluation Result - ${projectName}`,
       html: `
@@ -49,8 +59,8 @@ const sendAIEvaluationEmail = async (email, name, projectName, aiStatus, aiFeedb
         </div>
       `
     };
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${email} for ${projectName}`);
+    await statusEmailTransporter.sendMail(mailOptions);
+    console.log(`Email sent to ${email} for ${projectName} using ${senderEmail}`);
   } catch (err) {
     console.error("Failed to send AI evaluation email:", err);
   }
