@@ -356,6 +356,7 @@ const finalSubmitProjectRepo = async (req, res) => {
 
     if (repoIndex !== undefined && repoIndex > -1) {
       internship.assignedRepos[repoIndex].isFinalSubmitted = true;
+      internship.assignedRepos[repoIndex].submittedAt = new Date();
     } else {
       return res
         .status(400)

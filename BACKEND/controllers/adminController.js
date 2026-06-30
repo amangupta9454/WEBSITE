@@ -1115,7 +1115,7 @@ const getAllSubmissions = async (req, res) => {
               aiStatus: repo.reviewStatus || 'Pending',
               aiFeedback: repo.feedback || '',
               spAwarded: repo.pointsAwarded ? 50 : 0, 
-              submittedAt: user.updatedAt,
+              submittedAt: repo.submittedAt || null,
               // For overriding SP
               modelRef: 'User',
               docId: user._id.toString(),

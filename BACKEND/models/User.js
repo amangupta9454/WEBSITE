@@ -75,7 +75,8 @@ const userSchema = new mongoose.Schema(
             isFinalSubmitted: { type: Boolean, default: false },
             reviewStatus: { type: String, enum: ['Pending', 'pending', 'Changes Requested', 'Accepted', 'Rejected'], default: 'Pending' },
             feedback: { type: String, default: "" },
-            pointsAwarded: { type: Boolean, default: false }
+            pointsAwarded: { type: Boolean, default: false },
+            submittedAt: { type: Date }
           }
         ],
         assignedNormalTasks: [{ type: String }],
