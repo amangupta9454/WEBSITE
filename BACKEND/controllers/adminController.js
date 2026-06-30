@@ -1378,13 +1378,19 @@ const getRecentPayments = async (req, res) => {
 
     let recentPayments = [];
 
-    users.forEach(user => {
-      user.internships.forEach(internship => {
+    for (const user of users) {
+      for (const internship of user.internships) {
         if (internship.hasPaid && internship.razorpayPaymentId) {
           let pDate = internship.paymentDate;
           
           if (!pDate) {
-             return; // Skip old records that don't have an explicit paymentDate
+             // Fallback to ProjectSubmission date for payments made before paymentDate feature
+             const submission = await ProjectSubmission.findOne({ studentId: internship.studentId }).sort({ submittedAt: -1 });
+             if (submission && submission.submittedAt) {
+                pDate = submission.submittedAt;
+             } else {
+                continue; // Skip if no valid date found
+             }
           }
 
           if (pDate >= sevenDaysAgo) {
@@ -1401,8 +1407,8 @@ const getRecentPayments = async (req, res) => {
             });
           }
         }
-      });
-    });
+      }
+    }
 
     // Sort descending by date
     recentPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
