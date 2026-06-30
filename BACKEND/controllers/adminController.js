@@ -5,7 +5,7 @@ const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
 const ProjectSubmission = require("../models/ProjectSubmission");
-const { evaluateRepoWithAI } = require("./projectController");
+const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -1279,8 +1279,10 @@ const evaluatePendingAI = async (req, res) => {
               pointsAdded: awardedSP,
               date: new Date()
             });
+            await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
           } else {
              assignment.spAwarded = 0;
+             await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
           }
           subUpdated = true;
           processedCount++;
@@ -1325,6 +1327,9 @@ const evaluatePendingAI = async (req, res) => {
                   pointsAdded: 50,
                   date: new Date()
                 });
+                await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 50);
+              } else if (evaluation.aiStatus === 'Rejected') {
+                await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
               }
               userUpdated = true;
               processedCount++;

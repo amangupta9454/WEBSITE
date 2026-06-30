@@ -32,8 +32,10 @@ import {
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
-const NormalInternDashboard = ({ internship }) => {
+const NormalInternDashboard = ({ internship, onRefresh }) => {
   const navigate = useNavigate();
+  const [updatingLinkProjectId, setUpdatingLinkProjectId] = useState(null);
+  const [updateLinkInputs, setUpdateLinkInputs] = useState({});
   const totalMonths = parseInt(internship.duration) || 1;
 
   const stages = [
@@ -111,6 +113,39 @@ const NormalInternDashboard = ({ internship }) => {
         taskName: finalTaskName,
       },
     });
+  };
+
+  const handleUpdateLink = async (projectId, assignmentId) => {
+    const link = updateLinkInputs[assignmentId];
+    if (!link || !link.startsWith("https://github.com/")) {
+      toast.error("Please enter a valid GitHub repository link.");
+      return;
+    }
+    if (!window.confirm("Updating the link will deduct 5 SP as penalty and re-evaluate your project. Are you sure?")) return;
+    
+    try {
+      setUpdatingLinkProjectId(assignmentId);
+      const token = localStorage.getItem("studentToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/update-project-link`,
+        {
+          internshipType: 'Normal Intern',
+          projectId: projectId,
+          assignmentId: assignmentId,
+          newRepoLink: link,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      toast.success("Project link updated and evaluated successfully!");
+      setUpdateLinkInputs({...updateLinkInputs, [assignmentId]: ''});
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error("Failed to update project link.");
+    } finally {
+      setUpdatingLinkProjectId(null);
+    }
   };
 
   return (
@@ -279,8 +314,69 @@ const NormalInternDashboard = ({ internship }) => {
                     </div>
                   )}
                   {isSubmitted && (
-                    <div className="px-6 py-3 bg-emerald-200/50 text-emerald-800 rounded-xl font-bold flex items-center gap-2 justify-center shrink-0">
-                      <CheckCircle size={18} /> Submitted
+                    <div className="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                      <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-3">
+                        <CheckCircle size={18} className="text-emerald-500" />
+                        <span className="font-bold text-emerald-700">Submitted Successfully</span>
+                      </div>
+                      
+                      {internship.submissions[idx]?.assignments?.map((assignment, aIdx) => (
+                        <div key={assignment._id || aIdx} className="mb-4 last:mb-0 p-4 border rounded-lg bg-slate-50">
+                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
+                            <h5 className="font-bold text-slate-800">{assignment.projectName}</h5>
+                            <a href={assignment.github} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-600 hover:underline inline-flex items-center gap-1">
+                              <Github size={14} /> View Repository
+                            </a>
+                          </div>
+                          
+                          <div className={`mt-3 p-3 rounded-lg border flex flex-col gap-2 ${assignment.aiStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200' : assignment.aiStatus === 'Rejected' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                            <div className="flex justify-between items-center">
+                              <span className={`text-xs font-bold uppercase tracking-wider ${assignment.aiStatus === 'Accepted' ? 'text-emerald-700' : assignment.aiStatus === 'Rejected' ? 'text-rose-700' : 'text-amber-700'}`}>
+                                AI Status: {assignment.aiStatus || 'Pending'}
+                              </span>
+                              {assignment.spAwarded > 0 && (
+                                <span className="text-xs font-black bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                                  {assignment.spAwarded} SP
+                                </span>
+                              )}
+                            </div>
+                            
+                            {assignment.aiFeedback && (
+                              <p className="text-sm text-slate-700">
+                                <strong>Feedback:</strong> {assignment.aiFeedback}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="mt-3 border-t border-slate-200 pt-3">
+                            <button 
+                              onClick={() => setUpdateLinkInputs({...updateLinkInputs, [assignment._id]: assignment.github})}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors mb-2"
+                            >
+                              Update Project Link (Warning: -5 SP Penalty)
+                            </button>
+                            
+                            {updateLinkInputs[assignment._id] !== undefined && (
+                               <div className="flex flex-col sm:flex-row gap-2 max-w-lg mt-1">
+                                 <input
+                                   type="url"
+                                   placeholder="https://github.com/..."
+                                   value={updateLinkInputs[assignment._id]}
+                                   onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [assignment._id]: e.target.value })}
+                                   className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                 />
+                                 <button
+                                   onClick={() => handleUpdateLink(internship.submissions[idx].id, assignment._id)}
+                                   disabled={updatingLinkProjectId === assignment._id}
+                                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                                 >
+                                   {updatingLinkProjectId === assignment._id ? "Updating..." : "Update & Evaluate"}
+                                 </button>
+                               </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -310,6 +406,8 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   const [repoInputs, setRepoInputs] = useState({});
   const [submittingRepo, setSubmittingRepo] = useState(null);
   const [finalSubmitting, setFinalSubmitting] = useState(null);
+  const [updatingLinkProjectId, setUpdatingLinkProjectId] = useState(null);
+  const [updateLinkInputs, setUpdateLinkInputs] = useState({});
 
   const handleSubmitRepo = async (projectId) => {
     const link = repoInputs[projectId];
@@ -366,6 +464,38 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
       toast.error("Failed to final submit project.");
     } finally {
       setFinalSubmitting(null);
+    }
+  };
+
+  const handleUpdateLink = async (projectId) => {
+    const link = updateLinkInputs[projectId];
+    if (!link || !link.startsWith("https://github.com/")) {
+      toast.error("Please enter a valid GitHub repository link.");
+      return;
+    }
+    if (!window.confirm("Updating the link will deduct 5 SP as penalty and re-evaluate your project. Are you sure?")) return;
+    
+    try {
+      setUpdatingLinkProjectId(projectId);
+      const token = localStorage.getItem("studentToken");
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/update-project-link`,
+        {
+          internshipType: 'Summer Intern',
+          projectId: projectId,
+          newRepoLink: link,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      toast.success("Project link updated and evaluated successfully!");
+      setUpdateLinkInputs({...updateLinkInputs, [projectId]: ''});
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error("Failed to update project link.");
+    } finally {
+      setUpdatingLinkProjectId(null);
     }
   };
 
@@ -716,13 +846,42 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                             </h5>
                             {proj.feedback && (
                               <div className={`text-sm leading-relaxed font-medium mt-2 p-3 rounded-lg border ${proj.reviewStatus === 'Accepted' ? 'text-emerald-800 bg-emerald-100/50 border-emerald-200' : 'text-rose-800 bg-rose-100/50 border-rose-200'}`}>
-                                <strong className="block text-[10px] uppercase tracking-wider mb-1 opacity-70">Feedback</strong>
+                                <strong className="block text-[10px] uppercase tracking-wider mb-1 opacity-70">AI Feedback</strong>
                                 {proj.feedback}
                               </div>
                             )}
                           </div>
                         </div>
                       )}
+                      
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2 mb-3">
+                           <button 
+                             onClick={() => setUpdateLinkInputs({...updateLinkInputs, [proj.id]: proj.repoLink})}
+                             className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors"
+                           >
+                             Update Project Link (Warning: -5 SP Penalty)
+                           </button>
+                        </div>
+                        {updateLinkInputs[proj.id] !== undefined && (
+                           <div className="flex flex-col sm:flex-row gap-2 max-w-lg mt-2">
+                             <input
+                               type="url"
+                               placeholder="https://github.com/..."
+                               value={updateLinkInputs[proj.id]}
+                               onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [proj.id]: e.target.value })}
+                               className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                             />
+                             <button
+                               onClick={() => handleUpdateLink(proj.id)}
+                               disabled={updatingLinkProjectId === proj.id}
+                               className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                             >
+                               {updatingLinkProjectId === proj.id ? "Updating..." : "Update & Evaluate"}
+                             </button>
+                           </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 flex flex-col gap-4 shadow-sm shadow-amber-100/50 mt-4">

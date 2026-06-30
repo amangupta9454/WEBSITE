@@ -7,6 +7,54 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+});
+
+const sendAIEvaluationEmail = async (email, name, projectName, aiStatus, aiFeedback, spAwarded, maxSp = 50) => {
+  try {
+    const bannerUrl = "https://res.cloudinary.com/dwyxsqxvt/image/upload/v1738743128/f3056093-9c84-4861-bb38-4b7264883d6a_p2hixp.png";
+    const mailOptions = {
+      from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Project AI Evaluation Result - ${projectName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+          <img src="${bannerUrl}" alt="Code-A-Nova" style="width: 100%; height: auto;" />
+          <div style="padding: 20px;">
+            <h2 style="color: #1e293b;">Hi ${name},</h2>
+            <p style="color: #475569; font-size: 16px;">Your project <strong>"${projectName}"</strong> has been evaluated by our AI.</p>
+            
+            <div style="background-color: ${aiStatus === 'Accepted' ? '#f0fdf4' : '#fef2f2'}; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: ${aiStatus === 'Accepted' ? '#166534' : '#991b1b'};">Status: ${aiStatus}</h3>
+              <p style="margin: 0; font-size: 15px;"><strong>AI Feedback:</strong> ${aiFeedback}</p>
+            </div>
+
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0; font-size: 18px; color: #334155;">Points Awarded</p>
+              <h1 style="margin: 10px 0 0 0; color: #2563eb;">${spAwarded} <span style="font-size: 16px; color: #64748b;">/ ${maxSp} SP</span></h1>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-top: 20px;">
+              <em>Note: If you update your project and its submission link from your dashboard, it will be re-evaluated and your SP may be adjusted (a standard deduction of 5 SP applies for resubmissions).</em>
+            </p>
+            <p style="color: #475569; margin-top: 30px;">Best regards,<br><strong>Code-A-Nova Team</strong></p>
+          </div>
+        </div>
+      `
+    };
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent to ${email} for ${projectName}`);
+  } catch (err) {
+    console.error("Failed to send AI evaluation email:", err);
+  }
+};
 
 const rzp = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -129,6 +177,12 @@ async function processAssignmentsWithAI(assignments, internship, user) {
           pointsAdded: awardedSP,
           date: new Date()
         });
+
+        // Send evaluation email
+        await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
+      } else {
+        // Send rejection email
+        await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
       }
     }
   }
@@ -285,5 +339,6 @@ const verifyPayment = async (req, res) => {
 module.exports = {
   submitProject,
   verifyPayment,
-  evaluateRepoWithAI
+  evaluateRepoWithAI,
+  sendAIEvaluationEmail
 };

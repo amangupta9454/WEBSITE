@@ -5,6 +5,7 @@ const ProjectSubmission = require("../models/ProjectSubmission");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
+const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 
 const getInternshipType = (duration) => {
   const months = parseInt(String(duration || "").match(/\d+/)?.[0] || "1", 10);
@@ -180,9 +181,11 @@ const getDashboardInfo = async (req, res) => {
       daysElapsed,
       globalRank,
       submissions: submissions.map((sub) => ({
+        id: sub._id,
         month: sub.month,
         submittedAt: sub.submittedAt,
         assignmentsCount: sub.assignments ? sub.assignments.length : 0,
+        assignments: sub.assignments
       })),
     };
 
@@ -460,6 +463,116 @@ const getPublicLeaderboard = async (req, res) => {
   }
 };
 
+const updateProjectLink = async (req, res) => {
+  try {
+    const { internshipType, projectId, assignmentId, newRepoLink } = req.body;
+    const user = req.user; // from auth middleware
+
+    if (!newRepoLink || !newRepoLink.startsWith('https://github.com/')) {
+      return res.status(400).json({ message: 'Valid GitHub repository link is required' });
+    }
+
+    const targetInternship = user.internships.find((app) =>
+      app.status === "Approved" && 
+      (app.domain.toLowerCase().includes(internshipType.toLowerCase()) || 
+       (internshipType === 'Summer Intern' && app.duration.includes('15 Days')))
+    );
+
+    if (!targetInternship) {
+      return res.status(404).json({ message: 'Active internship not found' });
+    }
+
+    let projectName = '';
+    let previousSP = 0;
+
+    if (internshipType === 'Summer Intern') {
+      const repoIndex = targetInternship.assignedRepos.findIndex(r => r.projectId.toString() === projectId);
+      if (repoIndex === -1) return res.status(404).json({ message: 'Project not found' });
+      
+      const project = await SummerProject.findById(projectId);
+      projectName = project ? project.name : 'Summer Project';
+      
+      targetInternship.assignedRepos[repoIndex].repoLink = newRepoLink;
+      
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+      targetInternship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
+      targetInternship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
+
+      if (evaluation.aiStatus === 'Accepted') {
+        const penalty = targetInternship.assignedRepos[repoIndex].pointsAwarded ? 5 : 0;
+        const awardedSP = Math.max(0, 50 - penalty);
+        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) + (awardedSP - (targetInternship.assignedRepos[repoIndex].pointsAwarded ? 50 : 0));
+        targetInternship.assignedRepos[repoIndex].pointsAwarded = true;
+        
+        if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
+        targetInternship.pointsHistory.push({
+          reason: `AI Re-verified Summer Project: ${projectName} (Penalty: -${penalty} SP)`,
+          pointsAdded: awardedSP,
+          date: new Date()
+        });
+        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
+      } else {
+        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
+      }
+      
+      await user.save();
+
+    } else {
+      const submission = await ProjectSubmission.findById(projectId);
+      if (!submission || submission.studentId !== targetInternship.studentId) {
+        return res.status(404).json({ message: 'Submission not found' });
+      }
+
+      const assignmentIndex = submission.assignments.findIndex(a => a._id.toString() === assignmentId);
+      if (assignmentIndex === -1) return res.status(404).json({ message: 'Assignment not found' });
+
+      projectName = submission.assignments[assignmentIndex].projectName;
+      previousSP = submission.assignments[assignmentIndex].spAwarded || 0;
+      submission.assignments[assignmentIndex].github = newRepoLink;
+
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+      
+      submission.assignments[assignmentIndex].aiStatus = evaluation.aiStatus;
+      submission.assignments[assignmentIndex].aiFeedback = evaluation.aiFeedback;
+
+      if (evaluation.aiStatus === 'Accepted') {
+        const baseSP = 20;
+        const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+        const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+        let awardedSP = baseSP + qualitySP + complexitySP;
+        
+        // Apply 5 SP penalty for updating
+        awardedSP = Math.max(0, awardedSP - 5);
+        
+        submission.assignments[assignmentIndex].spAwarded = awardedSP;
+        
+        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP + awardedSP;
+        
+        if (!targetInternship.pointsHistory) targetInternship.pointsHistory = [];
+        targetInternship.pointsHistory.push({
+          reason: `AI Re-verified Project: ${projectName} (Penalty: -5 SP for Resubmission)`,
+          pointsAdded: awardedSP,
+          date: new Date()
+        });
+        
+        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
+      } else {
+        submission.assignments[assignmentIndex].spAwarded = 0;
+        targetInternship.synergyPoints = (targetInternship.synergyPoints || 0) - previousSP;
+        await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
+      }
+
+      await submission.save();
+      await user.save();
+    }
+
+    res.json({ message: 'Project link updated and evaluated successfully.' });
+  } catch (error) {
+    console.error("[Backend] Update project link error:", error);
+    res.status(500).json({ message: "Server error during project update" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
@@ -470,4 +583,5 @@ module.exports = {
   getRegistrationStatus,
   joinWaitlist,
   getPublicLeaderboard,
+  updateProjectLink
 };
