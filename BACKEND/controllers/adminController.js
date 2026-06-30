@@ -1384,8 +1384,7 @@ const getRecentPayments = async (req, res) => {
           let pDate = internship.paymentDate;
           
           if (!pDate) {
-             // Fallback for old records
-             pDate = user.updatedAt;
+             return; // Skip old records that don't have an explicit paymentDate
           }
 
           if (pDate >= sevenDaysAgo) {
