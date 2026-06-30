@@ -1287,10 +1287,9 @@ const evaluatePendingAI = async (req, res) => {
           subUpdated = true;
           processedCount++;
           
-          if (processedCount >= 5) {
+          if (processedCount >= 2) {
             break;
           }
-          await delay(1000);
         }
       }
 
@@ -1302,12 +1301,12 @@ const evaluatePendingAI = async (req, res) => {
         }
       }
       
-      if (processedCount >= 5) {
+      if (processedCount >= 2) {
         break;
       }
     }
 
-    if (processedCount < 5) {
+    if (processedCount < 2) {
       // Now process Summer projects
       const users = await User.find({});
       for (let user of users) {
@@ -1341,15 +1340,14 @@ const evaluatePendingAI = async (req, res) => {
               userUpdated = true;
               processedCount++;
               
-              if (processedCount >= 5) {
+              if (processedCount >= 2) {
                  break;
               }
-              await delay(1000);
             }
           }
         }
         
-        if (processedCount >= 5) {
+        if (processedCount >= 2) {
            break;
         }
       }
@@ -1357,7 +1355,7 @@ const evaluatePendingAI = async (req, res) => {
         await user.save();
       }
       
-      if (processedCount >= 5) {
+      if (processedCount >= 2) {
          break;
       }
     }
