@@ -2478,7 +2478,13 @@ const AdminDashboard = () => {
             <NotificationsAdmin />
           )}
           {activeSidebarTab === "leaderboard" && (() => {
-            const isActive = (app) => app.offerLetterStatus === "Sent" && !app.isCertificateSent;
+            const isActive = (app) => {
+              if (!app.startDate || !app.endDate) return false;
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+              const end = new Date(app.endDate);
+              return end >= now;
+            };
             
             let displayList = applications.filter(app => app.synergyPoints > 0);
             if (leaderboardSubTab === "active") {
