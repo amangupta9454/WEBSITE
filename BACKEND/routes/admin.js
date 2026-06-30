@@ -84,8 +84,8 @@ router.get("/settings/payment", getPaymentSetting);
 router.post("/settings/payment", auth, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
-router.get("/leaderboard-setting", getLeaderboardSetting);
-router.post("/toggle-leaderboard-setting", auth, toggleLeaderboardSetting);
+router.get("/settings/leaderboard", getLeaderboardSetting);
+router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
 
 // Submissions
 router.get("/all-submissions", auth, getAllSubmissions);
