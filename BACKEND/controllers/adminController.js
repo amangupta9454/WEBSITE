@@ -1287,8 +1287,10 @@ const evaluatePendingAI = async (req, res) => {
           subUpdated = true;
           processedCount++;
           
-          // Add 4-second delay to avoid Gemini API Rate Limit (15 RPM limit)
-          await delay(4000);
+          if (processedCount >= 5) {
+            break;
+          }
+          await delay(1000);
         }
       }
 
@@ -1299,15 +1301,20 @@ const evaluatePendingAI = async (req, res) => {
           await user.save();
         }
       }
+      
+      if (processedCount >= 5) {
+        break;
+      }
     }
 
-    // Now process Summer projects
-    const users = await User.find({});
-    for (let user of users) {
-      let userUpdated = false;
-      for (let internship of user.internships) {
-        if (internship.assignedRepos && internship.assignedRepos.length > 0) {
-          for (let repo of internship.assignedRepos) {
+    if (processedCount < 5) {
+      // Now process Summer projects
+      const users = await User.find({});
+      for (let user of users) {
+        let userUpdated = false;
+        for (let internship of user.internships) {
+          if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+            for (let repo of internship.assignedRepos) {
             if (repo.reviewStatus === 'Pending' && repo.repoLink) {
               const project = await SummerProject.findById(repo.projectId);
               const projectName = project ? project.name : 'Summer Project';
@@ -1334,18 +1341,28 @@ const evaluatePendingAI = async (req, res) => {
               userUpdated = true;
               processedCount++;
               
-              // Add 4-second delay to avoid Gemini API Rate Limit
-              await delay(4000);
+              if (processedCount >= 5) {
+                 break;
+              }
+              await delay(1000);
             }
           }
+        }
+        
+        if (processedCount >= 5) {
+           break;
         }
       }
       if (userUpdated) {
         await user.save();
       }
+      
+      if (processedCount >= 5) {
+         break;
+      }
     }
-
-    res.json({ message: `Successfully evaluated ${processedCount} pending projects.` });
+    }
+    res.json({ message: `Successfully evaluated ${processedCount} pending projects. If more are pending, click again.` });
   } catch (error) {
     console.error('[Backend] evaluatePendingAI error:', error);
     res.status(500).json({ message: 'Server error during batch AI evaluation' });
