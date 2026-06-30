@@ -25,6 +25,7 @@ const {
   getSummerProjects,
   deleteSummerProject,
   updateAssignedRepo,
+  reviewSummerProject,
   assignNormalTasks,
   getNormalTasks,
   createNormalTask,
@@ -34,6 +35,8 @@ const {
   getAdminNotifications,
   deleteNotification,
   syncRefunds,
+  getLeaderboardSetting,
+  toggleLeaderboardSetting,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -66,6 +69,7 @@ router.delete("/summer-projects/:id", auth, deleteSummerProject);
 
 // Student repository tracking route
 router.post("/update-assigned-repo", auth, updateAssignedRepo);
+router.post("/review-summer-project", auth, reviewSummerProject);
 router.post("/assign-normal-tasks", auth, assignNormalTasks);
 
 router.get("/normal-tasks", auth, getNormalTasks);
@@ -76,6 +80,8 @@ router.get("/settings/payment", getPaymentSetting);
 router.post("/settings/payment", auth, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
+router.get("/settings/leaderboard", getLeaderboardSetting);
+router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
 router.post("/sync-refunds", auth, syncRefunds);
 
 // Admin Notification Routes

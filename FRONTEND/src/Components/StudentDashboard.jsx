@@ -24,6 +24,11 @@ import {
   CheckSquare,
   FileText,
   AlertCircle,
+  Trophy,
+  Zap,
+  User,
+  Settings,
+  ImagePlus
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
@@ -675,27 +680,48 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                   </div>
 
                   {proj.isFinalSubmitted ? (
-                    <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl p-4 flex items-start gap-4 shadow-sm shadow-emerald-100/50 mt-4">
-                      <div className="bg-emerald-100/80 p-2.5 rounded-xl text-emerald-600 shadow-sm mt-0.5">
-                        <CheckCircle size={20} strokeWidth={2.5} />
+                    <div className="flex flex-col gap-3 mt-4">
+                      <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl p-4 flex items-start gap-4 shadow-sm shadow-emerald-100/50">
+                        <div className="bg-emerald-100/80 p-2.5 rounded-xl text-emerald-600 shadow-sm mt-0.5">
+                          <CheckCircle size={20} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-emerald-900 text-sm mb-1">
+                            Project Final Submitted Successfully
+                          </h5>
+                          <p className="text-sm text-emerald-800 leading-relaxed font-medium mb-2">
+                            Your GitHub repository and project has been locked and
+                            submitted for admin review.
+                          </p>
+                          <a
+                            href={proj.repoLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-200/50 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <Github size={14} /> View Repository
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <h5 className="font-bold text-emerald-900 text-sm mb-1">
-                          Project Final Submitted Successfully
-                        </h5>
-                        <p className="text-sm text-emerald-800 leading-relaxed font-medium mb-2">
-                          Your GitHub repository and project has been locked and
-                          submitted for admin review.
-                        </p>
-                        <a
-                          href={proj.repoLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-200/50 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          <Github size={14} /> View Repository
-                        </a>
-                      </div>
+
+                      {proj.reviewStatus && proj.reviewStatus !== "Pending" && (
+                        <div className={`border rounded-xl p-4 flex items-start gap-4 shadow-sm ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50' : 'bg-rose-50 border-rose-200 shadow-rose-100/50'}`}>
+                          <div className={`p-2.5 rounded-xl shadow-sm mt-0.5 ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-100/80 text-emerald-600' : 'bg-rose-100/80 text-rose-600'}`}>
+                            {proj.reviewStatus === 'Accepted' ? <CheckCircle size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
+                          </div>
+                          <div className="w-full">
+                            <h5 className={`font-bold text-sm mb-1 ${proj.reviewStatus === 'Accepted' ? 'text-emerald-900' : 'text-rose-900'}`}>
+                              Admin Review: {proj.reviewStatus}
+                            </h5>
+                            {proj.feedback && (
+                              <div className={`text-sm leading-relaxed font-medium mt-2 p-3 rounded-lg border ${proj.reviewStatus === 'Accepted' ? 'text-emerald-800 bg-emerald-100/50 border-emerald-200' : 'text-rose-800 bg-rose-100/50 border-rose-200'}`}>
+                                <strong className="block text-[10px] uppercase tracking-wider mb-1 opacity-70">Feedback</strong>
+                                {proj.feedback}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 flex flex-col gap-4 shadow-sm shadow-amber-100/50 mt-4">
@@ -829,6 +855,75 @@ const StudentDashboard = () => {
     navigate("/student-login");
   };
 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({ name: "", profileImage: "" });
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const openProfileModal = () => {
+    if (data?.user) {
+      setProfileFormData({
+        name: data.user.name || "",
+        profileImage: data.user.profileImage || ""
+      });
+    }
+    setIsProfileModalOpen(true);
+  };
+
+  const handleProfileImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast.error("File size must be less than 2MB");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
+        formData
+      );
+      setProfileFormData({ ...profileFormData, profileImage: res.data.secure_url });
+      toast.success("Image uploaded successfully!");
+    } catch (err) {
+      console.error("Upload error", err);
+      toast.error("Failed to upload image. Please check your connection.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSavingProfile(true);
+      const token = localStorage.getItem("studentToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/profile`,
+        { name: profileFormData.name, profileImage: profileFormData.profileImage },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      toast.success("Profile updated successfully!");
+      // Update local state instantly
+      setData(prev => ({
+        ...prev,
+        user: { ...prev.user, name: profileFormData.name, profileImage: profileFormData.profileImage }
+      }));
+      setIsProfileModalOpen(false);
+    } catch (error) {
+      console.error("Error saving profile", error);
+      toast.error("Failed to save profile. Please try again.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handleDismissNotification = async (notificationId) => {
     try {
       const token = localStorage.getItem("studentToken");
@@ -857,6 +952,16 @@ const StudentDashboard = () => {
     );
     return duration > 1 ? "Summer/Winter Intern" : "Normal Intern";
   };
+
+  const totalSynergyPoints = data?.internships?.reduce((sum, intern) => sum + (intern.synergyPoints || 0), 0) || 0;
+
+  const getTier = (points) => {
+    if (points >= 600) return { title: "Elite Intern", color: "text-purple-600 bg-purple-100 border-purple-200" };
+    if (points >= 300) return { title: "Pro Developer", color: "text-orange-600 bg-orange-100 border-orange-200" };
+    if (points >= 100) return { title: "Rising Star", color: "text-blue-600 bg-blue-100 border-blue-200" };
+    return { title: "Novice Intern", color: "text-emerald-600 bg-emerald-100 border-emerald-200" };
+  };
+  const currentTier = getTier(totalSynergyPoints);
 
   if (loading) {
     return (
@@ -929,13 +1034,50 @@ const StudentDashboard = () => {
               </h1>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-5 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-red-100 text-sm"
-          >
-            <LogOut size={18} /> Logout
-          </button>
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={openProfileModal}
+              className="px-4 py-2.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-blue-100 text-sm"
+            >
+              <Settings size={18} /> Profile
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-red-100 text-sm"
+            >
+              <LogOut size={18} /> Logout
+            </button>
+          </div>
         </header>
+
+        {/* Synergy Points Summary Card */}
+        <div className="bg-gradient-to-br from-white to-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-6 items-center justify-between">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Trophy className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Your Synergy Score</h2>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-slate-800 tracking-tight">{totalSynergyPoints}</span>
+                <span className="text-slate-500 font-medium">Points</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-1 w-full md:w-auto bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-4 justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <h3 className="text-sm font-bold text-slate-800">How to earn more points?</h3>
+              </div>
+              <p className="text-xs text-slate-500">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
+            </div>
+            <div className={`px-4 py-2 rounded-lg border ${currentTier.color} font-bold text-sm text-center min-w-[120px]`}>
+              {currentTier.title}
+            </div>
+          </div>
+        </div>
 
         {/* Dashboard Content */}
         <main>
@@ -970,6 +1112,110 @@ const StudentDashboard = () => {
           )}
         </main>
       </div>
+      
+      {/* Profile Settings Modal */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-[99999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in border border-slate-200">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <User size={20} className="text-blue-600" /> Profile Settings
+              </h2>
+              <button 
+                onClick={() => setIsProfileModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Profile Image Section */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 shadow-sm bg-slate-50">
+                    {profileFormData.profileImage || data?.user?.profileImage ? (
+                      <img 
+                        src={profileFormData.profileImage || data?.user?.profileImage} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-blue-600 bg-blue-50">
+                        {(profileFormData.name || data?.user?.name || "U").charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 shadow-md transition-colors">
+                    <ImagePlus size={16} />
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
+                      disabled={isUploading}
+                    />
+                  </label>
+                </div>
+                {isUploading && <span className="text-xs font-bold text-blue-600 animate-pulse">Uploading image...</span>}
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileFormData.name}
+                    onChange={(e) => setProfileFormData({...profileFormData, name: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={data?.user?.email || ""}
+                    disabled
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile</label>
+                  <input
+                    type="text"
+                    value={data?.user?.mobile || ""}
+                    disabled
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsProfileModalOpen(false)}
+                className="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveProfile}
+                disabled={isSavingProfile || isUploading}
+                className="px-5 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm shadow-blue-600/20"
+              >
+                {isSavingProfile ? (
+                  <><Loader2 size={16} className="animate-spin" /> Saving...</>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );

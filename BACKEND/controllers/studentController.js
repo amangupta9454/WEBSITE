@@ -130,6 +130,8 @@ const getDashboardInfo = async (req, res) => {
             isFinalSubmitted: assignedRepo
               ? assignedRepo.isFinalSubmitted
               : false,
+            reviewStatus: assignedRepo ? assignedRepo.reviewStatus : 'Pending',
+            feedback: assignedRepo ? assignedRepo.feedback : '',
           };
         });
     }
@@ -204,13 +206,14 @@ const getDashboardInfo = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { github, linkedin, portfolio, profileImage } = req.body;
+    const { name, github, linkedin, portfolio, profileImage } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (name !== undefined) user.name = name;
     if (github !== undefined) user.github = github;
     if (linkedin !== undefined) user.linkedin = linkedin;
     if (portfolio !== undefined) user.portfolio = portfolio;
@@ -221,6 +224,7 @@ const updateProfile = async (req, res) => {
     res.json({
       message: "Profile updated successfully",
       user: {
+        name: user.name,
         github: user.github,
         linkedin: user.linkedin,
         portfolio: user.portfolio,
@@ -372,16 +376,7 @@ const dismissNotification = async (req, res) => {
   }
 };
 
-module.exports = {
-  getDashboardInfo,
-  updateProfile,
-  markAlertRead,
-  submitProjectRepo,
-  finalSubmitProjectRepo,
-  dismissNotification,
-};
-
-exports.getRegistrationStatus = async (req, res) => {
+const getRegistrationStatus = async (req, res) => {
   try {
     let setting = await Settings.findOne({ key: "registrationEnabled" });
     if (!setting) {
@@ -396,7 +391,7 @@ exports.getRegistrationStatus = async (req, res) => {
   }
 };
 
-exports.joinWaitlist = async (req, res) => {
+const joinWaitlist = async (req, res) => {
   try {
     const { name, email } = req.body;
 
@@ -416,4 +411,46 @@ exports.joinWaitlist = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
+};
+
+const getPublicLeaderboard = async (req, res) => {
+  try {
+    const users = await User.find({});
+    let leaderboard = [];
+
+    users.forEach((user) => {
+      user.internships.forEach((internship) => {
+        if (internship.synergyPoints > 0) {
+          leaderboard.push({
+            name: user.name,
+            profileImage: user.profileImage,
+            domain: internship.domain,
+            synergyPoints: internship.synergyPoints,
+            studentId: internship.studentId,
+            internshipId: internship._id
+          });
+        }
+      });
+    });
+
+    leaderboard.sort((a, b) => b.synergyPoints - a.synergyPoints);
+    leaderboard = leaderboard.slice(0, 50); // Top 50
+
+    res.json({ leaderboard });
+  } catch (error) {
+    console.error("[Backend] Get leaderboard error:", error);
+    res.status(500).json({ message: "Server error retrieving leaderboard" });
+  }
+};
+
+module.exports = {
+  getDashboardInfo,
+  updateProfile,
+  markAlertRead,
+  submitProjectRepo,
+  finalSubmitProjectRepo,
+  dismissNotification,
+  getRegistrationStatus,
+  joinWaitlist,
+  getPublicLeaderboard,
 };

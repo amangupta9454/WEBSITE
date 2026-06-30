@@ -9,6 +9,15 @@ const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -100,6 +109,7 @@ const getInternships = async (req, res) => {
           isCertificateSent: app.isCertificateSent || false,
           paymentAmount: app.paymentAmount || 0,
           refundAmount: app.refundAmount || 0,
+          synergyPoints: app.synergyPoints || 0,
           isCertificateVerified: isVerified,
           assignedRepos: app.assignedRepos || [],
           submissions: allSubmissions.filter(
@@ -909,6 +919,110 @@ const syncRefunds = async (req, res) => {
   }
 };
 
+const reviewSummerProject = async (req, res) => {
+  try {
+    const { applicationId, projectId, reviewStatus, feedback } = req.body;
+    if (!applicationId || !projectId) {
+      return res.status(400).json({ message: "Application ID and Project ID required" });
+    }
+
+    const user = await User.findOne({ "internships._id": applicationId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const internship = user.internships.id(applicationId);
+    if (!internship) return res.status(404).json({ message: "Internship not found" });
+
+    if (!internship.assignedRepos) {
+      return res.status(404).json({ message: "No assigned repositories found" });
+    }
+
+    const repoIndex = internship.assignedRepos.findIndex(r => r.projectId.toString() === projectId);
+    if (repoIndex === -1) {
+      return res.status(404).json({ message: "Repository assignment not found" });
+    }
+
+    internship.assignedRepos[repoIndex].reviewStatus = reviewStatus;
+    internship.assignedRepos[repoIndex].feedback = feedback;
+    
+    // Add Synergy Points if Accepted and points not already awarded
+    if (reviewStatus === 'Accepted' && !internship.assignedRepos[repoIndex].pointsAwarded) {
+      internship.assignedRepos[repoIndex].pointsAwarded = true;
+      internship.synergyPoints = (internship.synergyPoints || 0) + 50;
+      if (!internship.pointsHistory) internship.pointsHistory = [];
+      
+      const project = await SummerProject.findById(projectId);
+      const projectName = project ? project.name : "Summer Project";
+
+      internship.pointsHistory.push({
+        reason: `Project Accepted: ${projectName}`,
+        pointsAdded: 50,
+        date: new Date()
+      });
+    }
+    
+    await user.save();
+
+    // Send email notification
+    try {
+      const project = await SummerProject.findById(projectId);
+      const projectName = project ? project.name : "your project";
+      
+      const mailOptions = {
+        from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: `Update on your Summer Project Submission - ${projectName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Project Review Update</h2>
+            <p>Hi ${user.name},</p>
+            <p>Your submission for <strong>${projectName}</strong> has been reviewed.</p>
+            <p><strong>Status:</strong> ${reviewStatus}</p>
+            ${feedback ? `<p><strong>Feedback:</strong> ${feedback}</p>` : ''}
+            <p>Keep up the great work!</p>
+            <br/>
+            <p>Best regards,<br/>CODE-A-NOVA Internships Team</p>
+          </div>
+        `,
+      };
+      
+      await transporter.sendMail(mailOptions);
+    } catch (emailError) {
+      console.error("[Admin] Failed to send email notification for project review:", emailError);
+      // Don't fail the request if email fails, but log it
+    }
+
+    res.json({ message: "Project review updated successfully" });
+  } catch (error) {
+    console.error("[Admin] Error reviewing summer project:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getLeaderboardSetting = async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: "showLeaderboard" });
+    res.json({ showLeaderboard: setting ? setting.value : false });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const toggleLeaderboardSetting = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "showLeaderboard" });
+    if (setting) {
+      setting.value = !setting.value;
+      await setting.save();
+    } else {
+      setting = await Settings.create({ key: "showLeaderboard", value: true });
+    }
+    res.json({ message: "Leaderboard setting updated", showLeaderboard: setting.value });
+  } catch (error) {
+    console.error("[Admin] Error toggling leaderboard setting:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -916,6 +1030,8 @@ module.exports = {
   updateInternshipDetails,
   uploadCertificates,
   updateOfferStatus,
+  getLeaderboardSetting,
+  toggleLeaderboardSetting,
   setStartDate,
   updateBatch,
   updateInternshipType,
@@ -935,6 +1051,7 @@ module.exports = {
   getSummerProjects,
   deleteSummerProject,
   updateAssignedRepo,
+  reviewSummerProject,
   bulkUpdate,
   createNotification,
   getAdminNotifications,

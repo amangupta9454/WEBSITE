@@ -113,6 +113,27 @@ const SummerProjectsAdmin = ({ applications }) => {
     }
   };
 
+  // Review State
+  const [reviewFeedback, setReviewFeedback] = useState({});
+
+  const handleReviewSubmit = async (applicationId, projectId, status) => {
+    try {
+      const feedback = reviewFeedback[`${applicationId}-${projectId}`] || "";
+      if (status === "Changes Requested" && !feedback.trim()) {
+        toast.error("Feedback is required when requesting changes.");
+        return;
+      }
+      const token = localStorage.getItem("adminToken");
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/review-summer-project`, 
+        { applicationId, projectId, reviewStatus: status, feedback },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Project ${status} successfully. Please refresh to see updated status.`);
+    } catch (err) {
+      toast.error("Failed to update project review");
+    }
+  };
+
   // Get Summer Interns for selected domain
   const getDomainInterns = () => {
     return applications.filter(app => 
@@ -382,7 +403,14 @@ const SummerProjectsAdmin = ({ applications }) => {
                                     return (
                                       <div key={proj._id} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-sm">
                                         <div>
-                                          <h5 className="font-bold text-slate-800">{proj.name}</h5>
+                                          <div className="flex justify-between items-start">
+                                            <h5 className="font-bold text-slate-800">{proj.name}</h5>
+                                            {repo?.reviewStatus && (
+                                              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${repo.reviewStatus === 'Accepted' ? 'bg-emerald-100 text-emerald-700' : repo.reviewStatus === 'Changes Requested' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                {repo.reviewStatus}
+                                              </span>
+                                            )}
+                                          </div>
                                           <p className="text-xs text-slate-500 mt-1 line-clamp-1">{proj.description}</p>
                                         </div>
                                         <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -405,6 +433,31 @@ const SummerProjectsAdmin = ({ applications }) => {
                                           )}
                                           {repo?.isFinalSubmitted && <CheckCircle size={16} className="text-emerald-500" title="Final Submitted" />}
                                         </div>
+                                        {repo?.repoLink && repo?.isFinalSubmitted && (
+                                          <div className="mt-3 pt-3 border-t border-slate-100">
+                                            <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Feedback</label>
+                                            <textarea 
+                                              value={reviewFeedback[`${app._id}-${proj._id}`] !== undefined ? reviewFeedback[`${app._id}-${proj._id}`] : (repo.feedback || "")}
+                                              onChange={(e) => setReviewFeedback({...reviewFeedback, [`${app._id}-${proj._id}`]: e.target.value})}
+                                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 mb-2 min-h-[60px]"
+                                              placeholder="Enter feedback to help the student improve..."
+                                            />
+                                            <div className="flex gap-2">
+                                              <button 
+                                                onClick={() => handleReviewSubmit(app._id, proj._id, "Accepted")}
+                                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors"
+                                              >
+                                                Accept
+                                              </button>
+                                              <button 
+                                                onClick={() => handleReviewSubmit(app._id, proj._id, "Changes Requested")}
+                                                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold py-1.5 rounded-md transition-colors"
+                                              >
+                                                Request Changes
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}

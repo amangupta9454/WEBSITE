@@ -24,6 +24,7 @@ import AdminLogin from "./Components/AdminLogin";
 import AdminDashboard from "./Components/AdminDashboard";
 import Verify from "./Components/Verify";
 import Project from "./Components/Project";
+import Leaderboard from "./Components/Leaderboard";
 import MainLayout from "./layouts/MainLayout";
 
 const UnifiedLayout = () => (
@@ -61,6 +62,7 @@ function App() {
             </MainLayout>
           }
         />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/privacy-policy" element={<Privacy />} />
         <Route path="/refund-policy" element={<Refund />} />
         <Route path="/terms" element={<Term />} />

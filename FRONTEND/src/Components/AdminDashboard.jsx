@@ -37,6 +37,7 @@ import {
   Trash2,
   ListTodo,
   BookOpen,
+  Trophy,
 } from "lucide-react";
 import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
@@ -51,6 +52,7 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("new");
   const [activeSidebarTab, setActiveSidebarTab] = useState("interns");
+  const [leaderboardSubTab, setLeaderboardSubTab] = useState("active");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [updating, setUpdating] = useState({});
@@ -61,6 +63,7 @@ const AdminDashboard = () => {
   const [exportDuration, setExportDuration] = useState("1");
   const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState(false);
   const [assignTasksModal, setAssignTasksModal] = useState({
     isOpen: false,
     appId: null,
@@ -117,6 +120,7 @@ const AdminDashboard = () => {
     fetchApplications(token);
     fetchPaymentSetting(token);
     fetchRegistrationSetting(token);
+    fetchLeaderboardSetting(token);
     const logoutTimer = setTimeout(
       () => {
         handleLogout();
@@ -223,6 +227,32 @@ const AdminDashboard = () => {
       toast.success(res.data.message);
     } catch (err) {
       toast.error("Failed to toggle registration setting");
+    }
+  };
+
+  const fetchLeaderboardSetting = async (token) => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/leaderboard`
+      );
+      setLeaderboardEnabled(res.data.showLeaderboard);
+    } catch (err) {
+      console.error("Failed to load leaderboard setting:", err);
+    }
+  };
+
+  const handleToggleLeaderboard = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/leaderboard`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setLeaderboardEnabled(res.data.showLeaderboard);
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error("Failed to toggle leaderboard setting");
     }
   };
 
@@ -1519,6 +1549,19 @@ const AdminDashboard = () => {
                 </span>
               </button>
               <button
+                onClick={handleToggleLeaderboard}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                  leaderboardEnabled
+                    ? "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-600"
+                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                }`}
+              >
+                <Trophy className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  L-Board: {leaderboardEnabled ? "ON" : "OFF"}
+                </span>
+              </button>
+              <button
                 onClick={handleTogglePayment}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
                   paymentEnabled
@@ -1584,6 +1627,13 @@ const AdminDashboard = () => {
             >
               <Bell className="w-4 h-4" />
               Notifications
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("leaderboard")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "leaderboard" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Trophy className="w-4 h-4" />
+              Leaderboard
             </button>
           </div>
         </div>
@@ -2391,6 +2441,101 @@ const AdminDashboard = () => {
           {activeSidebarTab === "notifications" && (
             <NotificationsAdmin />
           )}
+          {activeSidebarTab === "leaderboard" && (() => {
+            const isActive = (app) => app.offerLetterStatus === "Sent" && !app.isCertificateSent;
+            
+            let displayList = applications.filter(app => app.synergyPoints > 0);
+            if (leaderboardSubTab === "active") {
+              displayList = displayList.filter(isActive);
+            }
+            displayList.sort((a, b) => (b.synergyPoints || 0) - (a.synergyPoints || 0));
+
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden m-6">
+                <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <Trophy className="text-indigo-600" /> Synergy Points Leaderboard
+                  </h2>
+                  <div className="flex bg-slate-200/60 p-1 rounded-xl">
+                    <button
+                      onClick={() => setLeaderboardSubTab("active")}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        leaderboardSubTab === "active"
+                          ? "bg-white text-indigo-700 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Active Interns
+                    </button>
+                    <button
+                      onClick={() => setLeaderboardSubTab("all")}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                        leaderboardSubTab === "all"
+                          ? "bg-white text-indigo-700 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      All Interns
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="p-4 pl-6">Rank</th>
+                        <th className="p-4">Intern Details</th>
+                        <th className="p-4">Domain</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4 pr-6 text-right">Synergy Points</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {displayList.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="p-12 text-center">
+                            <Trophy className="mx-auto text-slate-300 mb-3" size={32} />
+                            <p className="text-slate-500 font-medium">No leaderboard data found for this category.</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        displayList.map((app, idx) => (
+                          <tr key={app._id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-4 pl-6 font-bold text-slate-700">#{idx + 1}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-sm shadow-sm">
+                                  {app.name?.charAt(0) || "U"}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-800">{app.name}</div>
+                                  <div className="text-xs font-medium text-slate-500">{app.studentId}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm font-semibold text-slate-600">
+                              {app.domain}
+                            </td>
+                            <td className="p-4">
+                              {isActive(app) ? (
+                                <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-green-100 text-green-700 border border-green-200 tracking-wider">Active</span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-slate-100 text-slate-600 border border-slate-200 tracking-wider">Completed</span>
+                              )}
+                            </td>
+                            <td className="p-4 pr-6 text-right font-black text-indigo-600 text-lg">
+                              {app.synergyPoints} <span className="text-xs font-bold text-slate-400">SP</span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

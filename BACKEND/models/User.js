@@ -71,10 +71,21 @@ const userSchema = new mongoose.Schema(
           {
             projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'SummerProject' },
             repoLink: { type: String },
-            isFinalSubmitted: { type: Boolean, default: false }
+            isFinalSubmitted: { type: Boolean, default: false },
+            reviewStatus: { type: String, enum: ['Pending', 'Changes Requested', 'Accepted'], default: 'Pending' },
+            feedback: { type: String, default: "" },
+            pointsAwarded: { type: Boolean, default: false }
           }
         ],
-        assignedNormalTasks: [{ type: String }]
+        assignedNormalTasks: [{ type: String }],
+        synergyPoints: { type: Number, default: 0 },
+        pointsHistory: [
+          {
+            reason: String,
+            pointsAdded: Number,
+            date: { type: Date, default: Date.now }
+          }
+        ]
       },
     ],
   },

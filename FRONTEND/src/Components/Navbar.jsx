@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
+import axios from 'axios';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -14,6 +17,18 @@ const Navbar = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const fetchSetting = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/leaderboard`);
+        setShowLeaderboard(res.data.showLeaderboard);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSetting();
   }, []);
 
   const navLinks = [
@@ -29,7 +44,7 @@ const Navbar = () => {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${
-        scrolled 
+        scrolled || location.pathname === '/leaderboard'
           ? 'bg-white border-b border-gray-200 py-4 shadow-sm' 
           : 'bg-white md:bg-transparent border-b border-gray-200 md:border-transparent py-4 md:py-6 shadow-sm md:shadow-none'
       }`}
@@ -43,17 +58,42 @@ const Navbar = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className={`text-sm font-semibold transition-colors hover:text-brand-purple ${
-                location.pathname === link.path ? 'text-brand-purple' : 'text-gray-600'
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            if (link.name === 'Internship' && showLeaderboard) {
+              return (
+                <div key={link.name} className="relative group" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
+                  <button className={`flex items-center gap-1 text-sm font-semibold transition-colors hover:text-brand-purple ${(location.pathname === '/internship' || location.pathname === '/leaderboard') ? 'text-brand-purple' : 'text-gray-600'}`}>
+                    Internship <ChevronDown size={14} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-2"
+                      >
+                        <Link to="/internship" className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Application</Link>
+                        <Link to="/leaderboard" className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Leaderboard</Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={`text-sm font-semibold transition-colors hover:text-brand-purple ${
+                  location.pathname === link.path ? 'text-brand-purple' : 'text-gray-600'
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -100,34 +140,53 @@ const Navbar = () => {
                 {/* Decorative left line */}
                 <div className="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-gray-100 via-gray-200 to-transparent" />
                 
-                {navLinks.map((link, i) => (
-                  <motion.div
-                    key={link.name}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: i * 0.05 + 0.1, type: 'spring', stiffness: 300, damping: 24 }}
-                    className="relative"
-                  >
-                    {location.pathname === link.path && (
-                      <motion.div 
-                        layoutId="activeIndicator"
-                        className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-[3px] h-6 bg-blue-600 rounded-r-full" 
-                      />
-                    )}
-                    <Link
-                      to={link.path}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block py-3 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${
-                        location.pathname === link.path 
-                          ? 'text-gray-900 translate-x-2' 
-                          : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'
-                      }`}
+                {navLinks.map((link, i) => {
+                  if (link.name === 'Internship' && showLeaderboard) {
+                    return (
+                      <motion.div
+                        key={link.name}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: i * 0.05 + 0.1, type: 'spring', stiffness: 300, damping: 24 }}
+                        className="relative pb-4"
+                      >
+                        <span className="block px-6 text-xs font-bold tracking-widest text-gray-400 uppercase mt-4 mb-2">Internship</span>
+                        <Link to="/internship" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${location.pathname === '/internship' ? 'text-gray-900 translate-x-2' : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'}`}>Application</Link>
+                        <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)} className={`block py-2 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${location.pathname === '/leaderboard' ? 'text-gray-900 translate-x-2' : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'}`}>Leaderboard</Link>
+                      </motion.div>
+                    );
+                  }
+
+                  return (
+                    <motion.div
+                      key={link.name}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ delay: i * 0.05 + 0.1, type: 'spring', stiffness: 300, damping: 24 }}
+                      className="relative"
                     >
-                      {link.name}
-                    </Link>
-                  </motion.div>
-                ))}
+                      {location.pathname === link.path && (
+                        <motion.div 
+                          layoutId="activeIndicator"
+                          className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-[3px] h-6 bg-blue-600 rounded-r-full" 
+                        />
+                      )}
+                      <Link
+                        to={link.path}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`block py-3 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${
+                          location.pathname === link.path 
+                            ? 'text-gray-900 translate-x-2' 
+                            : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'
+                        }`}
+                      >
+                        {link.name}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
               </div>
               
               {/* Fixed Bottom Footer */}
