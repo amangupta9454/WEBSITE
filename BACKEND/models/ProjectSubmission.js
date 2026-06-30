@@ -8,7 +8,8 @@ const assignmentSchema = new mongoose.Schema({
   hosted: { type: String },
   aiStatus: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
   aiFeedback: { type: String, default: '' },
-  spAwarded: { type: Number, default: 0 }
+  spAwarded: { type: Number, default: 0 },
+  emailSent: { type: Boolean, default: false }
 });
 
 const projectSubmissionSchema = new mongoose.Schema({

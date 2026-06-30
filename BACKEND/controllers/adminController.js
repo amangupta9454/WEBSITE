@@ -1279,10 +1279,10 @@ const evaluatePendingAI = async (req, res) => {
               pointsAdded: awardedSP,
               date: new Date()
             });
-            await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
+            assignment.emailSent = false;
           } else {
              assignment.spAwarded = 0;
-             await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
+             assignment.emailSent = false;
           }
           subUpdated = true;
           processedCount++;
@@ -1333,10 +1333,8 @@ const evaluatePendingAI = async (req, res) => {
                   pointsAdded: 50,
                   date: new Date()
                 });
-                await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 50);
-              } else if (evaluation.aiStatus === 'Rejected') {
-                await sendAIEvaluationEmail(user.email, user.name, projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
               }
+              repo.emailSent = false;
               userUpdated = true;
               processedCount++;
               
@@ -1360,7 +1358,7 @@ const evaluatePendingAI = async (req, res) => {
       }
     }
     }
-    res.json({ message: `Successfully evaluated ${processedCount} pending projects. If more are pending, click again.` });
+    res.json({ message: `Successfully evaluated ${processedCount} pending projects.`, processedCount });
   } catch (error) {
     console.error('[Backend] evaluatePendingAI error:', error);
     res.status(500).json({ message: 'Server error during batch AI evaluation' });
@@ -1420,6 +1418,151 @@ const getRecentPayments = async (req, res) => {
   }
 };
 
+const sendEvaluationEmails = async (req, res) => {
+  try {
+    let emailsSent = 0;
+    
+    // 1. Process Normal Projects
+    const normalSubmissions = await ProjectSubmission.find({});
+    for (let sub of normalSubmissions) {
+      let subUpdated = false;
+      for (let assignment of sub.assignments) {
+        if (assignment.aiStatus !== 'Pending' && assignment.emailSent === false) {
+          await sendAIEvaluationEmail(
+            sub.email, 
+            sub.name, 
+            assignment.projectName, 
+            assignment.aiStatus, 
+            assignment.aiFeedback, 
+            assignment.spAwarded
+          );
+          assignment.emailSent = true;
+          subUpdated = true;
+          emailsSent++;
+        }
+      }
+      if (subUpdated) await sub.save();
+    }
+
+    // 2. Process Summer Projects
+    const users = await User.find({ 'internships.assignedRepos': { $exists: true, $not: {$size: 0} } });
+    for (let user of users) {
+      let userUpdated = false;
+      for (let internship of user.internships) {
+        if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+          for (let repo of internship.assignedRepos) {
+            if (repo.reviewStatus !== 'Pending' && repo.emailSent === false) {
+              const project = await SummerProject.findById(repo.projectId);
+              const projectName = project ? project.name : 'Summer Project';
+              const spToEmail = repo.pointsAwarded ? 50 : 0;
+              
+              await sendAIEvaluationEmail(
+                user.email, 
+                user.name, 
+                projectName, 
+                repo.reviewStatus, 
+                repo.feedback, 
+                spToEmail
+              );
+              repo.emailSent = true;
+              userUpdated = true;
+              emailsSent++;
+            }
+          }
+        }
+      }
+      if (userUpdated) await user.save();
+    }
+
+    res.json({ message: `Successfully sent ${emailsSent} evaluation emails.` });
+  } catch (error) {
+    console.error("[Admin] Error sending evaluation emails:", error);
+    res.status(500).json({ message: "Server error while sending emails." });
+  }
+};
+
+const resetAIEvaluations = async (req, res) => {
+  try {
+    let resetCount = 0;
+
+    // 1. Reset Normal Projects
+    const normalSubmissions = await ProjectSubmission.find({});
+    for (let sub of normalSubmissions) {
+      const user = await User.findOne({ 'internships.studentId': sub.studentId });
+      if (!user) continue;
+      
+      const internship = user.internships.find(app => app.studentId === sub.studentId);
+      if (!internship) continue;
+
+      let subUpdated = false;
+      let totalSPToDeduct = 0;
+
+      for (let assignment of sub.assignments) {
+        if (assignment.aiStatus !== 'Pending') {
+          totalSPToDeduct += (assignment.spAwarded || 0);
+          assignment.aiStatus = 'Pending';
+          assignment.aiFeedback = '';
+          assignment.spAwarded = 0;
+          assignment.emailSent = false;
+          subUpdated = true;
+          resetCount++;
+        }
+      }
+
+      if (subUpdated) {
+        await sub.save();
+        if (totalSPToDeduct > 0) {
+          internship.synergyPoints = Math.max(0, (internship.synergyPoints || 0) - totalSPToDeduct);
+          
+          // Remove AI Verification history entries
+          if (internship.pointsHistory) {
+            internship.pointsHistory = internship.pointsHistory.filter(h => !h.reason.includes('AI Verified Project'));
+          }
+          await user.save();
+        }
+      }
+    }
+
+    // 2. Reset Summer Projects
+    const users = await User.find({ 'internships.assignedRepos': { $exists: true, $not: {$size: 0} } });
+    for (let user of users) {
+      let userUpdated = false;
+      for (let internship of user.internships) {
+        let totalSPToDeduct = 0;
+        if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+          for (let repo of internship.assignedRepos) {
+            if (repo.reviewStatus !== 'Pending') {
+              if (repo.pointsAwarded) {
+                totalSPToDeduct += 50;
+                repo.pointsAwarded = false;
+              }
+              repo.reviewStatus = 'Pending';
+              repo.feedback = '';
+              repo.emailSent = false;
+              userUpdated = true;
+              resetCount++;
+            }
+          }
+        }
+        
+        if (totalSPToDeduct > 0) {
+          internship.synergyPoints = Math.max(0, (internship.synergyPoints || 0) - totalSPToDeduct);
+          if (internship.pointsHistory) {
+            internship.pointsHistory = internship.pointsHistory.filter(h => !h.reason.includes('AI Verified Summer Project'));
+          }
+          userUpdated = true;
+        }
+      }
+      if (userUpdated) await user.save();
+    }
+
+    res.json({ message: `Successfully reset ${resetCount} AI evaluations.` });
+  } catch (error) {
+    console.error("[Admin] Error resetting AI evaluations:", error);
+    res.status(500).json({ message: "Server error while resetting evaluations." });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -1459,4 +1602,6 @@ module.exports = {
   deleteNotification,
   syncRefunds,
   getRecentPayments,
+  sendEvaluationEmails,
+  resetAIEvaluations
 };

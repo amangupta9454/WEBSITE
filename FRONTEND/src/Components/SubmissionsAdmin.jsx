@@ -5,7 +5,8 @@ import { ExternalLink, Edit3, Save, X, Search, ChevronDown, ChevronUp, Check, Al
 
 const SubmissionsAdmin = () => {
   const [submissions, setSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const autoRunRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedStudents, setExpandedStudents] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -117,20 +118,70 @@ const SubmissionsAdmin = () => {
   };
 
   const handleEvaluateAI = async () => {
-    if (!window.confirm("Are you sure you want to run AI evaluation on all pending submissions? This might take a few minutes.")) return;
+    if (!window.confirm("Are you sure you want to run AI evaluation on all pending submissions? Do not close this tab until finished.")) return;
     
+    setIsAutoRunning(true);
+    autoRunRef.current = true;
+    
+    let totalProcessed = 0;
     try {
-      setLoading(true);
+      while(autoRunRef.current) {
+        setLoading(true);
+        const token = localStorage.getItem('adminToken');
+        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/evaluate-pending-ai`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        await fetchSubmissions();
+        const count = res.data.processedCount || 0;
+        totalProcessed += count;
+        
+        if (count === 0) {
+          autoRunRef.current = false;
+          setIsAutoRunning(false);
+          toast.success(`AI evaluation completed. Total processed: ${totalProcessed}`);
+          break;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to run AI evaluation. Auto-run stopped.');
+      autoRunRef.current = false;
+      setIsAutoRunning(false);
+      setLoading(false);
+    }
+  };
+
+  const stopAutoRun = () => {
+    autoRunRef.current = false;
+    setIsAutoRunning(false);
+    toast('Auto-run stopped by user', { icon: '🛑' });
+  };
+
+  const handleSendEmails = async () => {
+    if (!window.confirm("Are you sure you want to send evaluation emails to all processed projects?")) return;
+    try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/evaluate-pending-ai`, {}, {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/send-evaluation-emails`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error('Failed to send evaluation emails');
+    }
+  };
+
+  const handleResetEvaluations = async () => {
+    if (!window.confirm("DANGER: This will reset ALL past AI evaluations and deduct SP for everyone. Are you absolutely sure?")) return;
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/reset-ai-evaluations`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(res.data.message);
       fetchSubmissions();
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to run AI evaluation');
-      setLoading(false);
+      toast.error('Failed to reset AI evaluations');
     }
   };
 
@@ -160,13 +211,41 @@ const SubmissionsAdmin = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <button
-            onClick={handleEvaluateAI}
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex-shrink-0"
-            title="Force AI to evaluate all Pending submissions"
-          >
-            Run AI on Pending
-          </button>
+          <div className="flex gap-2">
+            {!isAutoRunning ? (
+              <button
+                onClick={handleEvaluateAI}
+                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex-shrink-0"
+                title="Force AI to evaluate all Pending submissions"
+              >
+                Run AI on Pending
+              </button>
+            ) : (
+              <button
+                onClick={stopAutoRun}
+                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm flex-shrink-0 animate-pulse"
+                title="Stop auto-evaluating"
+              >
+                Stop Auto-Run
+              </button>
+            )}
+            
+            <button
+              onClick={handleSendEmails}
+              className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex-shrink-0"
+              title="Send evaluation emails to all processed submissions"
+            >
+              Send Evaluation Emails
+            </button>
+            
+            <button
+              onClick={handleResetEvaluations}
+              className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors shadow-sm flex-shrink-0"
+              title="Reset all past AI evaluations to Pending"
+            >
+              Reset All
+            </button>
+          </div>
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
             <input

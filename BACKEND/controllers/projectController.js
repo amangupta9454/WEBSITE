@@ -215,12 +215,10 @@ async function processAssignmentsWithAI(assignments, internship, user) {
           pointsAdded: awardedSP,
           date: new Date()
         });
-
-        // Send evaluation email
-        await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, awardedSP);
+        
+        assignment.emailSent = false;
       } else {
-        // Send rejection email
-        await sendAIEvaluationEmail(user.email, user.name, assignment.projectName, evaluation.aiStatus, evaluation.aiFeedback, 0);
+        assignment.emailSent = false;
       }
     }
   }
