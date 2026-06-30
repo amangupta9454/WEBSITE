@@ -1240,6 +1240,8 @@ const toggleLeaderboardSetting = async (req, res) => {
   }
 };
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const evaluatePendingAI = async (req, res) => {
   try {
     const submissions = await ProjectSubmission.find({});
@@ -1282,6 +1284,9 @@ const evaluatePendingAI = async (req, res) => {
           }
           subUpdated = true;
           processedCount++;
+          
+          // Add 4-second delay to avoid Gemini API Rate Limit (15 RPM limit)
+          await delay(4000);
         }
       }
 
@@ -1323,6 +1328,9 @@ const evaluatePendingAI = async (req, res) => {
               }
               userUpdated = true;
               processedCount++;
+              
+              // Add 4-second delay to avoid Gemini API Rate Limit
+              await delay(4000);
             }
           }
         }
