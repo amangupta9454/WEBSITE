@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
             projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'SummerProject' },
             repoLink: { type: String },
             isFinalSubmitted: { type: Boolean, default: false },
-            reviewStatus: { type: String, enum: ['Pending', 'Changes Requested', 'Accepted'], default: 'Pending' },
+            reviewStatus: { type: String, enum: ['Pending', 'pending', 'Changes Requested', 'Accepted'], default: 'Pending' },
             feedback: { type: String, default: "" },
             pointsAwarded: { type: Boolean, default: false }
           }
