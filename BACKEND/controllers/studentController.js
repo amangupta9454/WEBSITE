@@ -427,7 +427,8 @@ const getPublicLeaderboard = async (req, res) => {
             domain: internship.domain,
             synergyPoints: internship.synergyPoints,
             studentId: internship.studentId,
-            internshipId: internship._id
+            internshipId: internship._id,
+            internshipType: internship.internshipType || "Normal Intern"
           });
         }
       });

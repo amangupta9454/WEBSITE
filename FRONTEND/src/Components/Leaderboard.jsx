@@ -105,12 +105,19 @@ const Leaderboard = () => {
                           <h3 className="text-lg font-bold text-slate-900 truncate">
                             {user.name}
                           </h3>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${tier.color} w-fit`}>
-                            {tier.title}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${tier.color} w-fit`}>
+                              {tier.title}
+                            </span>
+                            {user.internshipType && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border w-fit ${user.internshipType === 'Normal Intern' ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-indigo-100 text-indigo-700 border-indigo-200'}`}>
+                                {user.internshipType}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm font-medium text-slate-500 truncate">
-                          {user.domain} Intern
+                          {user.domain}
                         </p>
                       </div>
                     </div>
