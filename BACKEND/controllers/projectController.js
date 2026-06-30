@@ -68,13 +68,30 @@ Respond ONLY with a valid JSON object in the exact format:
 {"status": "Accepted" or "Rejected", "reason": "A brief 1-sentence reason.", "codeQualityScore": number, "complexityScore": number}
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt,
+    if (!process.env.GROQ_API_KEY) {
+      return { aiStatus: 'Pending', aiFeedback: 'GROQ_API_KEY is missing. AI evaluation paused.', codeQualityScore: 0, complexityScore: 0 };
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      })
     });
-    
-    let text = response.text || '';
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    const data = await response.json();
+    if (!data.choices || !data.choices[0]) {
+      console.error('Groq API unexpected response:', data);
+      return { aiStatus: 'Pending', aiFeedback: 'AI evaluation failed. Please review manually.', codeQualityScore: 0, complexityScore: 0 };
+    }
+
+    const text = data.choices[0].message.content.trim();
     const result = JSON.parse(text);
 
     return { 
