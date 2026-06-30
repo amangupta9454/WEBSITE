@@ -230,8 +230,14 @@ const SubmissionsAdmin = () => {
                               {sub.aiStatus}
                             </span>
                             {sub.aiFeedback && (
-                               <div className="text-[10px] max-w-[200px] truncate text-slate-500 mt-1" title={sub.aiFeedback}>
-                                 {sub.aiFeedback}
+                               <div className="relative group mt-1">
+                                 <div className="text-[10px] max-w-[200px] truncate text-slate-500 cursor-help border-b border-dashed border-slate-300">
+                                   {sub.aiFeedback}
+                                 </div>
+                                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-max max-w-[300px] p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl z-50 whitespace-normal leading-relaxed">
+                                   {sub.aiFeedback}
+                                   <div className="absolute -bottom-1 left-4 w-2 h-2 bg-slate-800 transform rotate-45"></div>
+                                 </div>
                                </div>
                             )}
                           </td>
