@@ -102,12 +102,13 @@ const NormalInternDashboard = ({ internship }) => {
   };
 
   const handleSubmitProject = (taskName = "") => {
+    const finalTaskName = taskName && taskName.startsWith("http") ? "" : taskName;
     navigate("/project-submission", {
       state: {
         internshipId: internship._id,
         domain: internship.domain,
         studentId: internship.studentId,
-        taskName: taskName,
+        taskName: finalTaskName,
       },
     });
   };

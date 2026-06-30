@@ -124,14 +124,19 @@ const submitProject = async (req, res) => {
       return res.status(404).json({ message: 'Internship not found' });
     }
 
-    if (name !== internship.name || email !== internship.email || domain !== internship.domain) {
-      return res.status(400).json({ message: 'Details do not match registered information' });
+    const now = new Date();
+    if (!internship.startDate || !internship.endDate) {
+      return res.status(400).json({ message: 'Your internship dates have not been set by the admin yet.' });
+    }
+    
+    const end = new Date(internship.endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    if (now < new Date(internship.startDate) || now > end) {
+      return res.status(400).json({ message: 'You can only submit projects within your active internship dates.' });
     }
 
     const registeredDuration = parseInt(internship.duration.split(' ')[0]);
-    if (parseInt(duration) !== registeredDuration) {
-      return res.status(400).json({ message: 'Duration does not match registered' });
-    }
 
     const previousCount = await ProjectSubmission.countDocuments({ studentId });
     if (previousCount >= registeredDuration) {
