@@ -302,7 +302,8 @@ const submitProject = async (req, res) => {
         message: 'Payment required for final submission'
       });
     } else {
-      // Create empty submission first to return instantly
+      const processedAssignments = await processAssignmentsWithAI(assignments || [], internship, user);
+
       const submission = new ProjectSubmission({
         studentId,
         name,
@@ -310,30 +311,12 @@ const submitProject = async (req, res) => {
         mobile: internship.mobile,
         domain,
         duration: registeredDuration,
-        assignments: assignments || [],
+        assignments: processedAssignments,
         month: currentMonth
       });
-      await submission.save();
-      
-      res.json({ message: 'Project submitted successfully! AI evaluation started in background.' });
 
-      // Fire and forget AI background evaluation
-      setTimeout(async () => {
-        try {
-          // Re-fetch user in background to ensure latest state
-          const bgUser = await User.findOne({ 'internships.studentId': studentId });
-          if (!bgUser) return;
-          const bgInternship = bgUser.internships.find(app => app.studentId === studentId);
-          if (!bgInternship) return;
-          
-          const processedAssignments = await processAssignmentsWithAI(submission.assignments, bgInternship, bgUser);
-          
-          submission.assignments = processedAssignments;
-          await submission.save();
-        } catch (err) {
-          console.error("Background AI eval error (normal submission):", err);
-        }
-      }, 0);
+      await submission.save();
+      return res.json({ message: 'Project submitted and AI-evaluated successfully' });
     }
   } catch (error) {
     console.error('[Project] Submit error:', error);
