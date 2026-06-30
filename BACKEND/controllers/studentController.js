@@ -488,21 +488,13 @@ const updateProjectLink = async (req, res) => {
     const { internshipType, projectId, assignmentId, newRepoLink } = req.body;
     const user = req.user; // from auth middleware
 
+    const studentId = req.user.studentId;
+    
     if (!newRepoLink || !newRepoLink.startsWith('https://github.com/')) {
       return res.status(400).json({ message: 'Valid GitHub repository link is required' });
     }
 
-    let targetInternship;
-    if (internshipType === 'Summer Intern') {
-      targetInternship = user.internships.find((app) =>
-        app.status === "Approved" && app.duration.includes('15 Days')
-      );
-    } else {
-      // Normal Intern (has 1 or 3 Months duration usually, but we can just find any approved non-15days internship or one that matches)
-      targetInternship = user.internships.find((app) =>
-        app.status === "Approved" && !app.duration.includes('15 Days')
-      );
-    }
+    const targetInternship = user.internships.find((app) => app.studentId === studentId);
 
     if (!targetInternship) {
       return res.status(404).json({ message: 'Active internship not found' });
