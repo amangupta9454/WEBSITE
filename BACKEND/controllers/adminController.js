@@ -1109,12 +1109,12 @@ const getAllSubmissions = async (req, res) => {
               email: user.email,
               internshipType: internship.internshipType || 'Summer Intern',
               projectName: 'Summer Project',
-              githubLink: repo.githubLink,
-              hostedLink: repo.hostedLink,
+              githubLink: repo.repoLink,
+              hostedLink: '',
               aiStatus: repo.reviewStatus || 'Pending',
               aiFeedback: repo.feedback || '',
-              spAwarded: repo.pointsAwarded ? 50 : 0, // currently fixed at 50 if awarded
-              submittedAt: repo.submittedAt,
+              spAwarded: repo.pointsAwarded ? 50 : 0, 
+              submittedAt: user.updatedAt,
               // For overriding SP
               modelRef: 'User',
               docId: user._id.toString(),
@@ -1138,8 +1138,12 @@ const getAllSubmissions = async (req, res) => {
 
 const overrideSP = async (req, res) => {
   try {
-    const { modelRef, docId, internshipId, assignmentId, newSpAwarded, reason } = req.body;
+    const { modelRef, docId, internshipId, assignmentId, newSpAwarded, reason, aiStatus, aiFeedback } = req.body;
     
+    // SP can't exceed 50 per project
+    let finalSp = Number(newSpAwarded) || 0;
+    if (finalSp > 50) finalSp = 50;
+
     if (modelRef === 'ProjectSubmission') {
       const sub = await ProjectSubmission.findById(docId);
       if (!sub) return res.status(404).json({ message: 'Submission not found' });
@@ -1148,9 +1152,12 @@ const overrideSP = async (req, res) => {
       if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
       
       const oldSp = assignment.spAwarded || 0;
-      const difference = newSpAwarded - oldSp;
+      const difference = finalSp - oldSp;
       
-      assignment.spAwarded = newSpAwarded;
+      assignment.spAwarded = finalSp;
+      if (aiStatus) assignment.aiStatus = aiStatus;
+      if (aiFeedback !== undefined) assignment.aiFeedback = aiFeedback;
+
       await sub.save();
       
       // Update User Synergy Points
@@ -1178,14 +1185,17 @@ const overrideSP = async (req, res) => {
       const repo = internship.assignedRepos.id(assignmentId);
       if (!repo) return res.status(404).json({ message: 'Repo not found' });
       
-      const oldSp = repo.pointsAwarded ? 50 : 0; // For summer/winter
-      const difference = newSpAwarded - oldSp;
+      const oldSp = repo.pointsAwarded ? 50 : 0; 
+      const difference = finalSp - oldSp;
       
-      if (newSpAwarded > 0) {
+      if (finalSp > 0) {
          repo.pointsAwarded = true;
       } else {
          repo.pointsAwarded = false;
       }
+
+      if (aiStatus) repo.reviewStatus = aiStatus;
+      if (aiFeedback !== undefined) repo.feedback = aiFeedback;
       
       internship.synergyPoints = (internship.synergyPoints || 0) + difference;
       if (!internship.pointsHistory) internship.pointsHistory = [];

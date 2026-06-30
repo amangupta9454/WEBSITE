@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { ExternalLink, Edit3, Save, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ExternalLink, Edit3, Save, X, Search, ChevronDown, ChevronUp, Check, AlertTriangle } from 'lucide-react';
 
 const SubmissionsAdmin = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [editSp, setEditSp] = useState(0);
-  const [editReason, setEditReason] = useState('');
-  const [submittingSp, setSubmittingSp] = useState(false);
   const [expandedStudents, setExpandedStudents] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  
+  const [modalState, setModalState] = useState({ isOpen: false, type: '', submission: null });
+  const [modalSp, setModalSp] = useState(0);
+  const [modalReason, setModalReason] = useState('');
 
   useEffect(() => {
     fetchSubmissions();
@@ -32,43 +33,87 @@ const SubmissionsAdmin = () => {
     }
   };
 
-  const handleEditClick = (sub) => {
-    setEditingId(sub.id);
-    setEditSp(sub.spAwarded);
-    setEditReason('');
-  };
-
-  const handleSaveSp = async (sub) => {
-    try {
-      setSubmittingSp(true);
-      const token = localStorage.getItem('adminToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/override-sp`, {
-        modelRef: sub.modelRef,
-        docId: sub.docId,
-        internshipId: sub.internshipId,
-        assignmentId: sub.assignmentId,
-        newSpAwarded: editSp,
-        reason: editReason
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      toast.success('SP updated successfully');
-      setEditingId(null);
-      fetchSubmissions();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to update SP');
-    } finally {
-      setSubmittingSp(false);
-    }
-  };
-
   const toggleStudent = (studentId) => {
     setExpandedStudents(prev => ({
       ...prev,
       [studentId]: !prev[studentId]
     }));
+  };
+
+  const openModal = (type, sub) => {
+    setModalState({ isOpen: true, type, submission: sub });
+    if (type === 'accept') {
+      setModalSp(sub.spAwarded || 0);
+      setModalReason('');
+    } else if (type === 'reject') {
+      setModalReason(sub.aiFeedback || '');
+      setModalSp(0);
+    } else {
+      // Edit SP
+      setModalSp(sub.spAwarded || 0);
+      setModalReason('');
+    }
+  };
+
+  const closeModal = () => {
+    setModalState({ isOpen: false, type: '', submission: null });
+    setModalSp(0);
+    setModalReason('');
+  };
+
+  const handleAction = async () => {
+    const { type, submission } = modalState;
+    if (!submission) return;
+
+    if (modalSp > 50) {
+      toast.error('Maximum 50 SP allowed per project');
+      return;
+    }
+
+    if (type === 'reject' && !modalReason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('adminToken');
+      
+      let payload = {
+        modelRef: submission.modelRef,
+        docId: submission.docId,
+        internshipId: submission.internshipId,
+        assignmentId: submission.assignmentId,
+      };
+
+      if (type === 'accept') {
+        payload.aiStatus = 'Accepted';
+        payload.newSpAwarded = modalSp;
+        payload.reason = modalReason || 'Admin manually accepted project';
+      } else if (type === 'reject') {
+        payload.aiStatus = 'Rejected';
+        payload.aiFeedback = modalReason;
+        payload.newSpAwarded = 0;
+        payload.reason = 'Admin rejected project';
+      } else {
+        // Edit SP
+        payload.newSpAwarded = modalSp;
+        payload.reason = modalReason || 'Admin manually edited SP';
+      }
+
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/override-sp`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Project status updated successfully');
+      closeModal();
+      fetchSubmissions();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update status');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Group submissions by student
@@ -141,108 +186,89 @@ const SubmissionsAdmin = () => {
               </div>
 
               {expandedStudents[student.studentId] && (
-                <div className="bg-white p-4 border-t border-slate-200">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
-                      <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-2">Project Name</th>
-                          <th className="px-4 py-2">Submitted</th>
-                          <th className="px-4 py-2">Links</th>
-                          <th className="px-4 py-2">AI Status</th>
-                          <th className="px-4 py-2">SP Awarded</th>
-                          <th className="px-4 py-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {student.submissions.map((sub) => (
-                          <tr key={sub.id} className="hover:bg-slate-50/50">
-                            <td className="px-4 py-3 font-medium text-slate-800">
-                              {sub.projectName}
-                            </td>
-                            <td className="px-4 py-3 text-xs text-slate-500">
-                              {new Date(sub.submittedAt).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex gap-2">
-                                {sub.githubLink && (
-                                  <a href={sub.githubLink} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 flex items-center gap-1" title="GitHub">
-                                    <ExternalLink size={14} /> GitHub
-                                  </a>
-                                )}
-                                {sub.hostedLink && (
-                                  <a href={sub.hostedLink} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1" title="Hosted">
-                                    <ExternalLink size={14} /> Hosted
-                                  </a>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                sub.aiStatus === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
-                                sub.aiStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                'bg-amber-100 text-amber-700'
-                              }`}>
-                                {sub.aiStatus}
-                              </span>
-                              {sub.aiFeedback && (
-                                 <div className="text-[10px] max-w-[200px] truncate text-slate-500 mt-1" title={sub.aiFeedback}>
-                                   {sub.aiFeedback}
-                                 </div>
+                <div className="bg-white p-4 border-t border-slate-200 overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-2">Project Name</th>
+                        <th className="px-4 py-2">Submitted</th>
+                        <th className="px-4 py-2">Links</th>
+                        <th className="px-4 py-2">Status</th>
+                        <th className="px-4 py-2">SP</th>
+                        <th className="px-4 py-2 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {student.submissions.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-medium text-slate-800">
+                            {sub.projectName}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-500">
+                            {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              {sub.githubLink && (
+                                <a href={sub.githubLink} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded" title="GitHub">
+                                  <ExternalLink size={12} /> GitHub
+                                </a>
                               )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {editingId === sub.id ? (
-                                <input
-                                  type="number"
-                                  value={editSp}
-                                  onChange={(e) => setEditSp(Number(e.target.value))}
-                                  className="w-16 px-2 py-1 border rounded text-xs"
-                                />
-                              ) : (
-                                <span className="font-bold text-slate-700">{sub.spAwarded} SP</span>
+                              {sub.hostedLink && (
+                                <a href={sub.hostedLink} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded" title="Hosted">
+                                  <ExternalLink size={12} /> Hosted
+                                </a>
                               )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {editingId === sub.id ? (
-                                <div className="flex flex-col gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Reason..."
-                                    value={editReason}
-                                    onChange={(e) => setEditReason(e.target.value)}
-                                    className="px-2 py-1 border rounded text-xs w-32"
-                                  />
-                                  <div className="flex gap-2">
-                                    <button 
-                                      onClick={() => handleSaveSp(sub)}
-                                      disabled={submittingSp}
-                                      className="text-emerald-600 hover:bg-emerald-50 p-1 rounded"
-                                    >
-                                      <Save size={16} />
-                                    </button>
-                                    <button 
-                                      onClick={() => setEditingId(null)}
-                                      className="text-red-600 hover:bg-red-50 p-1 rounded"
-                                    >
-                                      <X size={16} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              sub.aiStatus === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
+                              sub.aiStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {sub.aiStatus}
+                            </span>
+                            {sub.aiFeedback && (
+                               <div className="text-[10px] max-w-[200px] truncate text-slate-500 mt-1" title={sub.aiFeedback}>
+                                 {sub.aiFeedback}
+                               </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-bold text-slate-700">
+                            {sub.spAwarded}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {sub.aiStatus !== 'Accepted' && (
                                 <button 
-                                  onClick={() => handleEditClick(sub)}
-                                  className="text-slate-500 hover:text-blue-600 p-1.5 bg-slate-100 rounded hover:bg-blue-50 transition-colors flex items-center gap-1 text-xs font-semibold"
+                                  onClick={() => openModal('accept', sub)}
+                                  className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded text-xs font-bold transition-colors"
                                 >
-                                  <Edit3 size={14} /> Edit SP
+                                  <Check size={14} /> Accept
                                 </button>
                               )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              {sub.aiStatus !== 'Rejected' && (
+                                <button 
+                                  onClick={() => openModal('reject', sub)}
+                                  className="flex items-center gap-1 px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-bold transition-colors"
+                                >
+                                  <X size={14} /> Reject
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => openModal('edit', sub)}
+                                className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-bold transition-colors"
+                                title="Edit SP"
+                              >
+                                <Edit3 size={14} /> Edit SP
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -251,6 +277,88 @@ const SubmissionsAdmin = () => {
               No interns or submissions found.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Action Modal */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              {modalState.type === 'accept' && <><Check className="text-emerald-500" /> Accept Project</>}
+              {modalState.type === 'reject' && <><X className="text-red-500" /> Reject Project</>}
+              {modalState.type === 'edit' && <><Edit3 className="text-blue-500" /> Edit SP</>}
+            </h3>
+
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-sm font-bold text-slate-800">{modalState.submission.projectName}</div>
+                <div className="text-xs text-slate-500">Student: {modalState.submission.name}</div>
+              </div>
+
+              {(modalState.type === 'accept' || modalState.type === 'edit') && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Assign SP (Max 50)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={modalSp}
+                    onChange={(e) => setModalSp(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  {modalSp > 50 && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertTriangle size={12}/> SP cannot exceed 50 per project</p>}
+                </div>
+              )}
+
+              {modalState.type === 'reject' && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Reason for Rejection</label>
+                  <textarea
+                    rows="3"
+                    value={modalReason}
+                    onChange={(e) => setModalReason(e.target.value)}
+                    placeholder="Provide feedback on why the project is rejected..."
+                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none resize-none"
+                  ></textarea>
+                </div>
+              )}
+
+              {(modalState.type === 'accept' || modalState.type === 'edit') && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Reason (Optional)</label>
+                  <input
+                    type="text"
+                    value={modalReason}
+                    onChange={(e) => setModalReason(e.target.value)}
+                    placeholder="Reason for manual SP assignment"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              )}
+
+              <button
+                onClick={handleAction}
+                disabled={submitting || modalSp > 50}
+                className={`w-full py-3 rounded-xl font-bold text-white transition-all shadow-sm ${
+                  submitting ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5 hover:shadow-md'
+                } ${
+                  modalState.type === 'accept' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                  modalState.type === 'reject' ? 'bg-red-600 hover:bg-red-700' :
+                  'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {submitting ? 'Saving...' : 'Confirm Action'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
