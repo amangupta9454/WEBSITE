@@ -1314,7 +1314,7 @@ const evaluatePendingAI = async (req, res) => {
         for (let internship of user.internships) {
           if (internship.assignedRepos && internship.assignedRepos.length > 0) {
             for (let repo of internship.assignedRepos) {
-            if (repo.reviewStatus === 'Pending' && repo.repoLink) {
+            if (repo.reviewStatus === 'Pending' && repo.repoLink && repo.isFinalSubmitted) {
               const project = await SummerProject.findById(repo.projectId);
               const projectName = project ? project.name : 'Summer Project';
               
