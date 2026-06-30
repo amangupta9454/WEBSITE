@@ -5,6 +5,7 @@ import { ExternalLink, Edit3, Save, X, Search, ChevronDown, ChevronUp, Check, Al
 
 const SubmissionsAdmin = () => {
   const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isAutoRunning, setIsAutoRunning] = useState(false);
   const autoRunRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState('');
