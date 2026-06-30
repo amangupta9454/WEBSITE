@@ -265,4 +265,8 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-module.exports = { submitProject, verifyPayment };
+module.exports = {
+  submitProject,
+  verifyPayment,
+  evaluateRepoWithAI
+};

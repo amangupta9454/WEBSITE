@@ -39,7 +39,8 @@ const {
   toggleLeaderboardSetting,
   manualAcceptAssignment,
   getAllSubmissions,
-  overrideSP
+  overrideSP,
+  evaluatePendingAI
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -90,6 +91,7 @@ router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
 // Submissions
 router.get("/all-submissions", auth, getAllSubmissions);
 router.post("/override-sp", auth, overrideSP);
+router.post("/evaluate-pending-ai", auth, evaluatePendingAI);
 
 router.post("/sync-refunds", auth, syncRefunds);
 

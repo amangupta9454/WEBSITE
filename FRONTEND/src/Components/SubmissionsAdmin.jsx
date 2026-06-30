@@ -116,6 +116,24 @@ const SubmissionsAdmin = () => {
     }
   };
 
+  const handleEvaluateAI = async () => {
+    if (!window.confirm("Are you sure you want to run AI evaluation on all pending submissions? This might take a few minutes.")) return;
+    
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/evaluate-pending-ai`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(res.data.message);
+      fetchSubmissions();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to run AI evaluation');
+      setLoading(false);
+    }
+  };
+
   // Group submissions by student
   const groupedSubmissions = {};
   submissions.forEach(sub => {
@@ -141,15 +159,24 @@ const SubmissionsAdmin = () => {
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by Name or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button
+            onClick={handleEvaluateAI}
+            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex-shrink-0"
+            title="Force AI to evaluate all Pending submissions"
+          >
+            Run AI on Pending
+          </button>
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by Name or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
         </div>
       </div>
 

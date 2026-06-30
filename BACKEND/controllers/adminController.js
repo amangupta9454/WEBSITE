@@ -4,6 +4,8 @@ const Certificate = require("../models/Certificate");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
+const ProjectSubmission = require("../models/ProjectSubmission");
+const { evaluateRepoWithAI } = require("./projectController");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -25,7 +27,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 const multer = require("multer");
-const ProjectSubmission = require("../models/ProjectSubmission");
 const Settings = require("../models/Settings");
 const Razorpay = require("razorpay");
 const rzp = new Razorpay({
@@ -1239,6 +1240,105 @@ const toggleLeaderboardSetting = async (req, res) => {
   }
 };
 
+const evaluatePendingAI = async (req, res) => {
+  try {
+    const submissions = await ProjectSubmission.find({});
+    let processedCount = 0;
+
+    for (let sub of submissions) {
+      const user = await User.findOne({ 'internships.studentId': sub.studentId });
+      if (!user) continue;
+      
+      const internship = user.internships.find(app => app.studentId === sub.studentId);
+      if (!internship) continue;
+
+      let subUpdated = false;
+      let totalPointsToAdd = 0;
+
+      for (let assignment of sub.assignments) {
+        if (assignment.aiStatus === 'Pending' && assignment.github) {
+          const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName);
+          
+          assignment.aiStatus = evaluation.aiStatus;
+          assignment.aiFeedback = evaluation.aiFeedback;
+
+          if (evaluation.aiStatus === 'Accepted') {
+            const baseSP = 20;
+            const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+            const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+            const awardedSP = baseSP + qualitySP + complexitySP;
+
+            assignment.spAwarded = awardedSP;
+            totalPointsToAdd += awardedSP;
+            
+            if (!internship.pointsHistory) internship.pointsHistory = [];
+            internship.pointsHistory.push({
+              reason: `AI Verified Project (Batch): ${assignment.projectName} (Quality: ${evaluation.codeQualityScore}/10, Complexity: ${evaluation.complexityScore}/10)`,
+              pointsAdded: awardedSP,
+              date: new Date()
+            });
+          } else {
+             assignment.spAwarded = 0;
+          }
+          subUpdated = true;
+          processedCount++;
+        }
+      }
+
+      if (subUpdated) {
+        await sub.save();
+        if (totalPointsToAdd > 0) {
+          internship.synergyPoints = (internship.synergyPoints || 0) + totalPointsToAdd;
+          await user.save();
+        }
+      }
+    }
+
+    // Now process Summer projects
+    const users = await User.find({});
+    for (let user of users) {
+      let userUpdated = false;
+      for (let internship of user.internships) {
+        if (internship.assignedRepos && internship.assignedRepos.length > 0) {
+          for (let repo of internship.assignedRepos) {
+            if (repo.reviewStatus === 'Pending' && repo.repoLink) {
+              const project = await SummerProject.findById(repo.projectId);
+              const projectName = project ? project.name : 'Summer Project';
+              
+              const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName);
+              
+              repo.reviewStatus = evaluation.aiStatus;
+              repo.feedback = evaluation.aiFeedback;
+              
+              if (evaluation.aiStatus === 'Accepted' && !repo.pointsAwarded) {
+                repo.pointsAwarded = true;
+                internship.synergyPoints = (internship.synergyPoints || 0) + 50; // Max 50 for summer
+                
+                if (!internship.pointsHistory) internship.pointsHistory = [];
+                internship.pointsHistory.push({
+                  reason: `AI Verified Summer Project (Batch): ${projectName}`,
+                  pointsAdded: 50,
+                  date: new Date()
+                });
+              }
+              userUpdated = true;
+              processedCount++;
+            }
+          }
+        }
+      }
+      if (userUpdated) {
+        await user.save();
+      }
+    }
+
+    res.json({ message: `Successfully evaluated ${processedCount} pending projects.` });
+  } catch (error) {
+    console.error('[Backend] evaluatePendingAI error:', error);
+    res.status(500).json({ message: 'Server error during batch AI evaluation' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -1271,6 +1371,7 @@ module.exports = {
   reviewSummerProject,
   getAllSubmissions,
   overrideSP,
+  evaluatePendingAI,
   bulkUpdate,
   createNotification,
   getAdminNotifications,
