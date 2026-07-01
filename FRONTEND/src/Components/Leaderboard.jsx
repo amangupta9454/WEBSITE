@@ -23,24 +23,24 @@ const VIPCard = ({ user, rank, getTier }) => {
     bgGradient = "bg-gradient-to-b from-yellow-50 to-white border-yellow-200";
     borderGlow = "shadow-[0_0_20px_rgba(234,179,8,0.15)]";
     badgeColor = "text-yellow-600 bg-yellow-100";
-    rankText = "text-yellow-200";
+    rankText = "text-yellow-600/30";
   } else if (rank === 2) {
     bgGradient = "bg-gradient-to-b from-slate-50 to-white border-slate-200";
     borderGlow = "shadow-[0_0_15px_rgba(203,213,225,0.15)]";
     badgeColor = "text-slate-600 bg-slate-100";
-    rankText = "text-slate-200";
+    rankText = "text-slate-400/50";
   } else {
     bgGradient = "bg-gradient-to-b from-orange-50 to-white border-orange-200";
     borderGlow = "shadow-[0_0_15px_rgba(249,115,22,0.15)]";
     badgeColor = "text-orange-600 bg-orange-100";
-    rankText = "text-orange-200";
+    rankText = "text-orange-500/30";
   }
 
   return (
     <div className={`relative flex flex-col items-center p-4 sm:p-5 rounded-3xl border backdrop-blur-md transition-all duration-500 hover:-translate-y-1 ${bgGradient} ${borderGlow} w-full max-w-sm mx-auto`}>
       {isFirst && <Crown className="absolute -top-5 text-yellow-500 w-10 h-10 drop-shadow-md animate-bounce z-10" />}
       
-      <div className={`absolute top-4 left-4 text-2xl font-black opacity-40 ${rankText}`}>
+      <div className={`absolute top-4 left-4 text-2xl font-black ${rankText}`}>
         #{rank}
       </div>
 
@@ -203,13 +203,26 @@ const Leaderboard = () => {
                       <div className="flex-1 min-w-0 ml-3 sm:ml-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 z-10">
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm sm:text-base font-bold text-slate-800 truncate group-hover:text-blue-900 transition-colors">{user.name}</h3>
-                          <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{user.domain}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] sm:text-xs font-medium text-slate-500 truncate">
+                            <span>{user.domain}</span>
+                            {user.studentId && (
+                              <>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className="text-slate-400 font-mono">{user.studentId}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                         
-                        <div className="flex items-center gap-1.5 mt-0.5 sm:mt-0 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 mt-2 sm:mt-0 flex-shrink-0 flex-wrap justify-end">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${tier.color}`}>
                             {tier.title}
                           </span>
+                          {user.internshipType && (
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 border border-slate-200 text-slate-600">
+                              {user.internshipType}
+                            </span>
+                          )}
                         </div>
                       </div>
                       
