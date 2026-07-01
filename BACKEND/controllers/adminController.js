@@ -1114,7 +1114,7 @@ const getAllSubmissions = async (req, res) => {
               hostedLink: '',
               aiStatus: repo.reviewStatus || 'Pending',
               aiFeedback: repo.feedback || '',
-              spAwarded: repo.pointsAwarded ? 50 : 0, 
+              spAwarded: repo.spAwarded || (repo.pointsAwarded ? 50 : 0), 
               submittedAt: repo.submittedAt || null,
               // For overriding SP
               modelRef: 'User',
@@ -1186,9 +1186,10 @@ const overrideSP = async (req, res) => {
       const repo = internship.assignedRepos.id(assignmentId);
       if (!repo) return res.status(404).json({ message: 'Repo not found' });
       
-      const oldSp = repo.pointsAwarded ? 50 : 0; 
+      const oldSp = repo.spAwarded || (repo.pointsAwarded ? 50 : 0); 
       const difference = finalSp - oldSp;
       
+      repo.spAwarded = finalSp;
       if (finalSp > 0) {
          repo.pointsAwarded = true;
       } else {
@@ -1323,8 +1324,14 @@ const evaluatePendingAI = async (req, res) => {
                 repo.feedback = evaluation.aiFeedback;
                 
                 if (evaluation.aiStatus === 'Accepted' && !repo.pointsAwarded) {
+                  const baseSP = 20;
+                  const qualitySP = Math.min(20, Math.floor((evaluation.codeQualityScore || 0) * 2));
+                  const complexitySP = Math.min(10, Math.floor((evaluation.complexityScore || 0) * 1));
+                  const awardedSP = baseSP + qualitySP + complexitySP;
+
                   repo.pointsAwarded = true;
-                  internship.synergyPoints = (internship.synergyPoints || 0) + 50;
+                  repo.spAwarded = awardedSP;
+                  internship.synergyPoints = (internship.synergyPoints || 0) + awardedSP;
                   if (!internship.pointsHistory) internship.pointsHistory = [];
                   internship.pointsHistory.push({
                     reason: `AI Verified Summer Project (Batch): ${projectName}`,
@@ -1494,7 +1501,10 @@ const sendEvaluationEmails = async (req, res) => {
           emailsSent++;
         }
       }
-      if (subUpdated) await sub.save();
+      if (subUpdated) {
+        sub.markModified('assignments');
+        await sub.save();
+      }
     }
 
     // 2. Process Summer Projects
@@ -1507,7 +1517,7 @@ const sendEvaluationEmails = async (req, res) => {
             if (repo.reviewStatus !== 'Pending' && repo.emailSent === false) {
               const project = await SummerProject.findById(repo.projectId);
               const projectName = project ? project.name : 'Summer Project';
-              const spToEmail = repo.pointsAwarded ? 50 : 0;
+              const spToEmail = repo.spAwarded || (repo.pointsAwarded ? 50 : 0);
               
               await sendAIEvaluationEmail(
                 user.email, 
@@ -1524,7 +1534,10 @@ const sendEvaluationEmails = async (req, res) => {
           }
         }
       }
-      if (userUpdated) await user.save();
+      if (userUpdated) {
+        user.markModified('internships');
+        await user.save();
+      }
     }
 
     res.json({ message: `Successfully sent ${emailsSent} evaluation emails.` });

@@ -2831,7 +2831,7 @@ const AdminDashboard = () => {
                               <div className="flex justify-between items-start mb-1">
                                 <h4 className="font-semibold text-sm text-slate-800">{assignment.projectName}</h4>
                                 {assignment.aiStatus === 'Accepted' && (
-                                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">AI Accepted (+50 SP)</span>
+                                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">AI Accepted (+{assignment.spAwarded || 50} SP)</span>
                                 )}
                                 {assignment.aiStatus === 'Rejected' && (
                                   <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">AI Rejected</span>
@@ -2855,7 +2855,7 @@ const AdminDashboard = () => {
                                     onClick={() => handleManualAcceptAssignment(sub._id, assignment._id)}
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors"
                                   >
-                                    Manually Accept (+50 SP)
+                                    Manually Accept
                                   </button>
                                 </div>
                               )}

@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema(
             reviewStatus: { type: String, enum: ['Pending', 'pending', 'Changes Requested', 'Accepted', 'Rejected'], default: 'Pending' },
             feedback: { type: String, default: "" },
             pointsAwarded: { type: Boolean, default: false },
+            spAwarded: { type: Number, default: 0 },
             submittedAt: { type: Date },
             emailSent: { type: Boolean, default: false }
           }
