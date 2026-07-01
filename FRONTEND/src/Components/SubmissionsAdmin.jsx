@@ -200,46 +200,18 @@ const SubmissionsAdmin = () => {
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        <div className="w-full lg:w-auto">
           <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
-          <div className="flex flex-wrap gap-2 mt-2 text-sm">
+          <div className="flex items-center gap-2 mt-2 text-sm overflow-x-auto pb-2 lg:pb-0 whitespace-nowrap">
             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium border border-blue-200 shadow-sm">Total: {totalSubmissions}</span>
             <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-medium border border-emerald-200 shadow-sm">Accepted: {acceptedSubmissions}</span>
             <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-md font-medium border border-rose-200 shadow-sm">Rejected: {rejectedSubmissions}</span>
             <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-medium border border-amber-200 shadow-sm">Pending: {pendingSubmissions}</span>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex gap-2">
-            {!isAutoRunning ? (
-              <button
-                onClick={handleEvaluateAI}
-                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex-shrink-0"
-                title="Force AI to evaluate all Pending submissions"
-              >
-                Run AI on Pending
-              </button>
-            ) : (
-              <button
-                onClick={stopAutoRun}
-                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm flex-shrink-0 animate-pulse"
-                title="Stop auto-evaluating"
-              >
-                Stop Auto-Run
-              </button>
-            )}
-            
-            <button
-              onClick={handleSendEmails}
-              className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex-shrink-0"
-              title="Send evaluation emails to all processed submissions"
-            >
-              Send Evaluation Emails
-            </button>
-            
-          </div>
-          <div className="relative w-full md:w-64">
+        <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
+          <div className="relative flex-shrink-0 w-64 max-w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
@@ -248,6 +220,33 @@ const SubmissionsAdmin = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {!isAutoRunning ? (
+              <button
+                onClick={handleEvaluateAI}
+                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                title="Force AI to evaluate all Pending submissions"
+              >
+                Run AI on Pending
+              </button>
+            ) : (
+              <button
+                onClick={stopAutoRun}
+                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm animate-pulse"
+                title="Stop auto-evaluating"
+              >
+                Stop Auto-Run
+              </button>
+            )}
+            
+            <button
+              onClick={handleSendEmails}
+              className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+              title="Send evaluation emails to all processed submissions"
+            >
+              Send Evaluation Emails
+            </button>
           </div>
         </div>
       </div>
