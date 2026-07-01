@@ -11,7 +11,7 @@ const XLSX = require("xlsx");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 const nodemailer = require("nodemailer");
-const { evaluateRepoWithAI } = require("./projectController");
+const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
