@@ -51,7 +51,12 @@ const VIPCard = ({ user, rank, getTier }) => {
         </div>
       </div>
 
-      <h3 className="text-lg md:text-xl font-black text-slate-800 text-center mb-1">{user.name}</h3>
+      <div className="mb-2 z-10 flex justify-center">
+        <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold border shadow-sm ${tier.color}`}>
+          {tier.title}
+        </span>
+      </div>
+      <h3 className="text-lg md:text-xl font-black text-slate-800 text-center mb-1 z-10">{user.name}</h3>
       <div className="flex items-center justify-center gap-2 mb-3 text-slate-500 text-xs sm:text-sm font-medium">
         <span>{user.domain}</span>
         {user.studentId && (
@@ -73,9 +78,6 @@ const VIPCard = ({ user, rank, getTier }) => {
             <Linkedin size={14} />
           </a>
         )}
-        <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${tier.color}`}>
-          {tier.title}
-        </span>
         {user.internshipType && (
           <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-600">
             {user.internshipType}
