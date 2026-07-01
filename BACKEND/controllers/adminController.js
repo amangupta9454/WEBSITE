@@ -1405,6 +1405,72 @@ const getRecentPayments = async (req, res) => {
   }
 };
 
+const migrateDates = async (req, res) => {
+  try {
+    const users = await User.find({});
+    let updatedUsers = 0;
+
+    for (let user of users) {
+      let userModified = false;
+      for (let internship of user.internships) {
+        if (!internship.pointsHistory || internship.pointsHistory.length === 0) continue;
+
+        const submission = await ProjectSubmission.findOne({ studentId: internship.studentId });
+
+        for (let history of internship.pointsHistory) {
+          let matchedDate = null;
+
+          if (history.reason.includes('Summer Project') || history.reason.includes('Winter Project') || history.reason.includes('Summer/Winter Project')) {
+            for (let repo of (internship.assignedRepos || [])) {
+              const project = await SummerProject.findById(repo.projectId);
+              if (project && history.reason.includes(project.name)) {
+                matchedDate = repo.submittedAt || project.dueDate;
+                break;
+              }
+            }
+            if (!matchedDate && internship.assignedRepos && internship.assignedRepos.length > 0) {
+               const firstRepo = internship.assignedRepos[0];
+               const project = await SummerProject.findById(firstRepo.projectId);
+               matchedDate = firstRepo.submittedAt || (project ? project.dueDate : new Date('2024-06-01'));
+            }
+          } 
+          else if (history.reason.includes('Project Accepted') || history.reason.includes('AI Verified Project') || history.reason.includes('AI Re-verified Project') || history.reason.includes('Admin SP Override')) {
+             if (submission && submission.assignments && submission.assignments.length > 0) {
+                for (let assignment of submission.assignments) {
+                  if (history.reason.includes(assignment.projectName)) {
+                    matchedDate = assignment.submittedAt;
+                    break;
+                  }
+                }
+                if (!matchedDate) {
+                  matchedDate = submission.assignments[0].submittedAt;
+                }
+             }
+          }
+
+          if (matchedDate) {
+            history.date = matchedDate;
+            userModified = true;
+          } else {
+             history.date = new Date('2024-06-15');
+             userModified = true;
+          }
+        }
+      }
+      
+      if (userModified) {
+        await user.save();
+        updatedUsers++;
+      }
+    }
+
+    res.json({ message: `Successfully updated pointsHistory dates for ${updatedUsers} users.` });
+  } catch (error) {
+    console.error('Migration failed:', error);
+    res.status(500).json({ message: 'Migration failed' });
+  }
+};
+
 const sendEvaluationEmails = async (req, res) => {
   try {
     let emailsSent = 0;
@@ -1590,5 +1656,6 @@ module.exports = {
   syncRefunds,
   getRecentPayments,
   sendEvaluationEmails,
-  resetAIEvaluations
+  resetAIEvaluations,
+  migrateDates
 };

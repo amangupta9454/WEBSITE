@@ -43,7 +43,8 @@ const {
   evaluatePendingAI,
   getRecentPayments,
   sendEvaluationEmails,
-  resetAIEvaluations
+  resetAIEvaluations,
+  migrateDates
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -98,6 +99,7 @@ router.post("/override-sp", auth, overrideSP);
 router.post("/evaluate-pending-ai", auth, evaluatePendingAI);
 router.post("/send-evaluation-emails", auth, sendEvaluationEmails);
 router.post("/reset-ai-evaluations", auth, resetAIEvaluations);
+router.get("/migrate-dates", migrateDates);
 
 router.post("/sync-refunds", auth, syncRefunds);
 
