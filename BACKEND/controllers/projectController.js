@@ -115,7 +115,7 @@ async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
     }
 
     // Fetch key source code files to allow AI to deeply evaluate and "soft run"
-    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c', '.cs', '.html', '.css', '.php', '.go', '.rb', '.rs', '.txt'];
+    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c', '.cs', '.html', '.css', '.php', '.go', '.rb', '.rs', '.txt', '.ipynb', '.xlsx', '.csv'];
     const sourceNodes = filesList.filter(t => {
       if (t.type !== 'blob') return false;
       const lowerPath = t.path.toLowerCase();
@@ -123,10 +123,25 @@ async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
       return validExtensions.some(ext => lowerPath.endsWith(ext));
     });
 
+    const projectKeywords = projectName.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+
     sourceNodes.sort((a, b) => {
-      const isAImportant = /main|index|app|server/i.test(a.path) ? 1 : 0;
-      const isBImportant = /main|index|app|server/i.test(b.path) ? 1 : 0;
-      return isBImportant - isAImportant;
+      const aPath = a.path.toLowerCase();
+      const bPath = b.path.toLowerCase();
+      
+      let aScore = 0;
+      let bScore = 0;
+
+      // Bonus for matching project name keywords (crucial for monorepos where multiple projects exist in one repo)
+      projectKeywords.forEach(kw => {
+        if (aPath.includes(kw)) aScore += 10;
+        if (bPath.includes(kw)) bScore += 10;
+      });
+
+      if (/main|index|app|server/i.test(aPath)) aScore += 2;
+      if (/main|index|app|server/i.test(bPath)) bScore += 2;
+
+      return bScore - aScore;
     });
 
     const topSourceFiles = sourceNodes.slice(0, 15); // Up to 15 files
