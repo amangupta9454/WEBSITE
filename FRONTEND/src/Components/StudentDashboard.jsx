@@ -28,7 +28,8 @@ import {
   Zap,
   User,
   Settings,
-  ImagePlus
+  ImagePlus,
+  Linkedin
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
