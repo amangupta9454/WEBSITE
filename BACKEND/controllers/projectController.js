@@ -173,8 +173,17 @@ async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
       }
     }
 
+    const systemPrompt = `You are an expert, STRICT code evaluator. You must evaluate the provided code against the project requirements.
+You MUST respond ONLY with a valid JSON object. Do NOT include any markdown formatting like \`\`\`json, and do NOT include explanations outside of the JSON object. 
+The JSON object MUST have this exact schema:
+{
+  "status": "Accepted" or "Rejected",
+  "reason": "A brief 1-2 sentence reason detailing your findings.",
+  "codeQualityScore": number (0-10),
+  "complexityScore": number (0-10)
+}`;
+
     const prompt = `
-You are an expert, STRICT code evaluator. 
 A student has submitted a project repository for the assignment titled: "${projectName}".
 
 IMPORTANT CONTEXT:
@@ -199,9 +208,7 @@ EVALUATION RULES:
 2. QUALITY CHECK: Evaluate the project's code quality (0-10) based on clean code practices.
 3. COMPLEXITY CHECK: Evaluate complexity (0-10) based on the algorithms/logic used.
 
-Respond ONLY with a valid JSON object in the exact format:
-{"status": "Accepted" or "Rejected", "reason": "A brief 1-2 sentence reason detailing your findings in the code, specifically addressing if it matches the expected project type.", "codeQualityScore": number, "complexityScore": number}
-    `;
+Remember, return ONLY the JSON object.`;
 
     const groqKeys = [
       process.env.GROQ_API_KEY,
@@ -235,7 +242,10 @@ Respond ONLY with a valid JSON object in the exact format:
           },
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
-            messages: [{ role: 'user', content: prompt }],
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt }
+            ],
             response_format: { type: 'json_object' }
           })
         });
