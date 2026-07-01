@@ -857,27 +857,27 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       <div className="mt-2">
                         <div className="flex items-center gap-2 mb-3">
                            <button 
-                             onClick={() => setUpdateLinkInputs({...updateLinkInputs, [proj.projectId]: proj.repoLink})}
+                             onClick={() => setUpdateLinkInputs({...updateLinkInputs, [proj.id]: proj.repoLink})}
                              className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors"
                            >
                              Update Project Link (Warning: -5 SP Penalty)
                            </button>
                         </div>
-                        {updateLinkInputs[proj.projectId] !== undefined && (
+                        {updateLinkInputs[proj.id] !== undefined && (
                            <div className="flex flex-col sm:flex-row gap-2 max-w-lg mt-2">
                              <input
                                type="url"
                                placeholder="https://github.com/..."
-                               value={updateLinkInputs[proj.projectId]}
-                               onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [proj.projectId]: e.target.value })}
+                               value={updateLinkInputs[proj.id]}
+                               onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [proj.id]: e.target.value })}
                                className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                              />
                              <button
-                               onClick={() => handleUpdateLink(proj.projectId)}
-                               disabled={updatingLinkProjectId === proj.projectId}
+                               onClick={() => handleUpdateLink(proj.id)}
+                               disabled={updatingLinkProjectId === proj.id}
                                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
                              >
-                               {updatingLinkProjectId === proj.projectId ? "Updating..." : "Update & Evaluate"}
+                               {updatingLinkProjectId === proj.id ? "Updating..." : "Update & Evaluate"}
                              </button>
                            </div>
                         )}
