@@ -52,7 +52,15 @@ const VIPCard = ({ user, rank, getTier }) => {
       </div>
 
       <h3 className="text-lg md:text-xl font-black text-slate-800 text-center mb-1">{user.name}</h3>
-      <p className="text-slate-500 text-xs sm:text-sm font-medium mb-3 text-center">{user.domain}</p>
+      <div className="flex items-center justify-center gap-2 mb-3 text-slate-500 text-xs sm:text-sm font-medium">
+        <span>{user.domain}</span>
+        {user.studentId && (
+          <>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span className="text-slate-400 font-mono text-[10px] sm:text-xs">{user.studentId}</span>
+          </>
+        )}
+      </div>
       
       <div className="flex flex-wrap justify-center items-center gap-2 mb-3">
         {user.github && (
