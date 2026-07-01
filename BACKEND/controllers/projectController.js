@@ -201,27 +201,63 @@ Respond ONLY with a valid JSON object in the exact format:
 {"status": "Accepted" or "Rejected", "reason": "A brief 1-2 sentence reason detailing your findings in the code, specifically addressing if it matches the expected project type.", "codeQualityScore": number, "complexityScore": number}
     `;
 
-    if (!process.env.GROQ_API_KEY) {
+    const groqKeys = [
+      process.env.GROQ_API_KEY,
+      process.env.GROQ_API_KEY_2,
+      process.env.GROQ_API_KEY_3,
+      process.env.GROQ_API_KEY_4
+    ].filter(Boolean);
+
+    if (groqKeys.length === 0) {
       return { aiStatus: 'Pending', aiFeedback: 'GROQ_API_KEY is missing. AI evaluation paused.', codeQualityScore: 0, complexityScore: 0 };
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      })
-    });
+    let response = null;
+    let data = null;
+    let success = false;
+    let lastError = null;
 
-    const data = await response.json();
-    if (!data.choices || !data.choices[0]) {
-      console.error('Groq API unexpected response:', data);
-      return { aiStatus: 'Pending', aiFeedback: 'AI evaluation failed. Please review manually.', codeQualityScore: 0, complexityScore: 0 };
+    for (let key of groqKeys) {
+      try {
+        const tempRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        const tempData = await tempRes.json();
+        
+        if (tempRes.status === 429 || (tempData.error && tempData.error.code === 'rate_limit_exceeded')) {
+          console.warn('Groq API Key rate limited, trying next key...');
+          lastError = 'Rate limit exceeded on all available Groq API keys.';
+          continue; // Try next key
+        }
+
+        if (!tempData.choices || !tempData.choices[0]) {
+          console.error('Groq API unexpected response with key:', tempData);
+          lastError = 'AI evaluation failed. Please review manually.';
+          continue; // Try next key just in case
+        }
+
+        response = tempRes;
+        data = tempData;
+        success = true;
+        break; // Success! Break out of the loop
+      } catch (err) {
+        console.error('Fetch error with a Groq key:', err);
+        lastError = 'Network error contacting AI provider.';
+      }
+    }
+
+    if (!success) {
+      return { aiStatus: 'Pending', aiFeedback: lastError || 'AI evaluation failed after trying all keys.', codeQualityScore: 0, complexityScore: 0 };
     }
 
     const text = data.choices[0].message.content.trim();
@@ -314,7 +350,7 @@ const submitProject = async (req, res) => {
     const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid);
 
     if (paymentRequired) {
-      const amount = registeredDuration === 3 ? 99 : 69;
+      const amount = registeredDuration === 3 ? 299 : 199;
       const order = await rzp.orders.create({
         amount: amount * 100,
         currency: 'INR',
