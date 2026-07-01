@@ -406,7 +406,7 @@ const verifyPayment = async (req, res) => {
       { 
         $set: { 
           'internships.$.hasPaid': true,
-          'internships.$.paymentAmount': registeredDuration === 3 ? 99 : 69,
+          'internships.$.paymentAmount': registeredDuration === 3 ? 299 : 199,
           'internships.$.paymentDate': new Date(),
           'internships.$.razorpayPaymentId': razorpay_payment_id
         } 

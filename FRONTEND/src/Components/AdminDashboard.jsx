@@ -124,14 +124,6 @@ const AdminDashboard = () => {
     fetchRegistrationSetting(token);
     fetchLeaderboardSetting(token);
     fetchRecentPayments(token);
-    const logoutTimer = setTimeout(
-      () => {
-        handleLogout();
-        toast.info("Session timed out due to inactivity");
-      },
-      5 * 60 * 1000,
-    );
-    return () => clearTimeout(logoutTimer);
   }, []);
 
   useEffect(() => {
