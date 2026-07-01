@@ -1264,7 +1264,12 @@ const evaluatePendingAI = async (req, res) => {
         if (processedCount >= MAX_BATCH_SIZE) break;
         
         if (assignment.aiStatus === 'Pending' && assignment.github) {
-          const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName);
+          const NormalTask = require('../models/NormalTask');
+          const monthMatch = assignment.projectName.match(/Month (\d+)/i);
+          const monthNum = monthMatch ? parseInt(monthMatch[1]) : 1;
+          const normalTask = await NormalTask.findOne({ domain: sub.domain, monthNumber: monthNum });
+
+          const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName, normalTask ? normalTask.pdfUrl : null);
           assignment.aiStatus = evaluation.aiStatus;
           assignment.aiFeedback = evaluation.aiFeedback;
 
@@ -1312,7 +1317,7 @@ const evaluatePendingAI = async (req, res) => {
               if (repo.reviewStatus === 'Pending' && repo.repoLink) {
                 const project = await SummerProject.findById(repo.projectId);
                 const projectName = project ? project.name : 'Summer Project';
-                const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName);
+                const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName, project ? project.pdfUrl : null);
                 
                 repo.reviewStatus = evaluation.aiStatus;
                 repo.feedback = evaluation.aiFeedback;

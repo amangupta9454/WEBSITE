@@ -367,7 +367,7 @@ const finalSubmitProjectRepo = async (req, res) => {
 
     const project = await SummerProject.findById(projectId);
     const projectName = project ? project.name : 'Summer Project';
-    const evaluation = await evaluateRepoWithAI(internship.assignedRepos[repoIndex].repoLink, projectName);
+    const evaluation = await evaluateRepoWithAI(internship.assignedRepos[repoIndex].repoLink, projectName, project ? project.pdfUrl : null);
     
     internship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
     internship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
@@ -514,7 +514,7 @@ const updateProjectLink = async (req, res) => {
       projectName = project ? project.name : 'Summer Project';
       
       targetInternship.assignedRepos[repoIndex].repoLink = newRepoLink;
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, project ? project.pdfUrl : null);
       targetInternship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
       targetInternship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
 
@@ -549,7 +549,12 @@ const updateProjectLink = async (req, res) => {
       previousSP = submission.assignments[assignmentIndex].spAwarded || 0;
       submission.assignments[assignmentIndex].github = newRepoLink;
 
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName);
+      const NormalTask = require('../models/NormalTask');
+      const monthMatch = projectName.match(/Month (\d+)/i);
+      const monthNum = monthMatch ? parseInt(monthMatch[1]) : 1;
+      const normalTask = await NormalTask.findOne({ domain: submission.domain, monthNumber: monthNum });
+
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, normalTask ? normalTask.pdfUrl : null);
       submission.assignments[assignmentIndex].aiStatus = evaluation.aiStatus;
       submission.assignments[assignmentIndex].aiFeedback = evaluation.aiFeedback;
 

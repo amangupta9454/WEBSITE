@@ -8,6 +8,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 const nodemailer = require('nodemailer');
+const pdfParse = require('pdf-parse');
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -73,7 +74,7 @@ const rzp = new Razorpay({
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-async function evaluateRepoWithAI(githubLink, projectName) {
+async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
   try {
     if (!githubLink || githubLink.trim() === '') {
       return { aiStatus: 'Rejected', aiFeedback: 'No GitHub URL provided.' };
@@ -112,7 +113,7 @@ async function evaluateRepoWithAI(githubLink, projectName) {
     }
 
     // Fetch key source code files to allow AI to deeply evaluate and "soft run"
-    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c', '.cs', '.html', '.css', '.php', '.go', '.rb', '.rs'];
+    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.cpp', '.c', '.cs', '.html', '.css', '.php', '.go', '.rb', '.rs', '.txt'];
     const sourceNodes = filesList.filter(t => {
       if (t.type !== 'blob') return false;
       const lowerPath = t.path.toLowerCase();
@@ -155,20 +156,35 @@ async function evaluateRepoWithAI(githubLink, projectName) {
       }
     }
 
+    let pdfTextPrompt = '';
+    if (pdfUrl) {
+      try {
+        const pdfRes = await fetch(pdfUrl);
+        if (pdfRes.ok) {
+          const pdfBuffer = await pdfRes.arrayBuffer();
+          const parsedPdf = await pdfParse(Buffer.from(pdfBuffer));
+          const truncatedPdfText = parsedPdf.text.slice(0, 3000); // Send up to 3000 chars of instructions
+          pdfTextPrompt = `\n--- ADMIN PROVIDED INSTRUCTIONS (PDF) ---\n${truncatedPdfText}\n\nYou MUST ensure the submitted code closely matches the functional requirements detailed above.\n`;
+        }
+      } catch (pdfErr) {
+        console.error('Failed to parse PDF for AI prompt:', pdfErr);
+      }
+    }
+
     const prompt = `
 You are an expert, STRICT code evaluator. 
 A student has submitted a project repository for the assignment titled: "${projectName}".
 
 IMPORTANT CONTEXT:
-The student was given the requirements for "${projectName}" in a PDF document (which you cannot see).
-Your primary job is to verify that the submitted code ACTUALLY implements a project that matches the title "${projectName}".
+The student was given the requirements for "${projectName}" in a PDF document (which you cannot see in full, but instructions are provided below).
+Your primary job is to verify that the submitted code ACTUALLY implements a project that matches the title "${projectName}" and follows the given instructions.
 
 Here is the file structure of their repository:
 ${files.join('\n')}
 
-Here is a snippet of their README.md:
+--- README CONTENT ---
 ${readmeText}
-
+${pdfTextPrompt}
 Here are the contents of key source files from the project for you to deeply evaluate and simulate ("soft run") in your mind:
 ${codeSnippets}
 
@@ -177,6 +193,7 @@ EVALUATION RULES:
    - If the project is supposed to be a "Food Delivery App" but the code is for a "To-Do List", REJECT IT.
    - If the project is an "E-commerce Website" but they submitted a generic template, a completely random tutorial repo, or boilerplate code, REJECT IT.
    - You MUST look for domain-specific clues in the code (variable names, routes, components, database schemas) that prove it is a real attempt at "${projectName}".
+   - If an admin provided PDF instructions, the submission MUST fulfill those instructions.
 2. QUALITY CHECK: Evaluate the project's code quality (0-10) based on clean code practices.
 3. COMPLEXITY CHECK: Evaluate complexity (0-10) based on the algorithms/logic used.
 
