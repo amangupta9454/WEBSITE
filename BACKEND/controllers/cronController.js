@@ -112,4 +112,68 @@ const runDailyCron = async (req, res) => {
   }
 };
 
-module.exports = { runDailyCron };
+const runWeeklySocialCron = async (req, res) => {
+  try {
+    if (process.env.CRON_SECRET) {
+       const authHeader = req.headers.authorization;
+       if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+         return res.status(401).json({ error: 'Unauthorized' });
+       }
+    }
+
+    console.log('[Cron] Starting weekly social media check...');
+    const users = await User.find({ "internships.0": { $exists: true } });
+    let emailsSent = 0;
+
+    for (const user of users) {
+      // Check if both github and linkedin are missing.
+      // If the user's profile already has both github and linkedin saved, then don't send mail.
+      if (!user.github || !user.linkedin) {
+        
+        // Ensure they have an active internship (not just an empty array)
+        if (user.internships && user.internships.length > 0) {
+          
+          // Send reminder email
+          const mailOptions = {
+            from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: `Action Required: Update Your Social Media Profiles on Student Dashboard`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;">
+                <h2 style="color: #1e3a8a;">Code-A-Nova Dashboard Update</h2>
+                <p>Dear <strong>${user.name}</strong>,</p>
+                <p>We noticed that your GitHub and/or LinkedIn profile links are missing from your Student Dashboard.</p>
+                <p style="font-size: 16px; padding: 15px; background: #e0f2fe; border-left: 4px solid #3b82f6; color: #1e3a8a;">
+                  <strong>Action Needed:</strong> Adding your social links helps you build a strong professional network and proves the authenticity of your ranking on the public Leaderboard.
+                </p>
+                <p><strong>Registered Email:</strong> ${user.email}<br/><strong>Student ID:</strong> ${user.internships[0].studentId}</p>
+                <a href="https://code-a-nova.online/student-login" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">
+                  Update Profile Now
+                </a>
+                <br/><br/>
+                <p style="font-size: 13px; color: #6b7280;">If you have already updated your links, please ignore this email.</p>
+                <p>Best Regards,<br/><strong>Team Code-A-Nova</strong></p>
+              </div>
+            `
+          };
+          
+          try {
+            await transporter.sendMail(mailOptions);
+            emailsSent++;
+          } catch (err) {
+            console.error(`Failed to send social reminder email to ${user.email}:`, err);
+          }
+        }
+      }
+    }
+
+    console.log(`[Cron] Social check complete. Sent ${emailsSent} emails.`);
+    return res.status(200).json({ success: true, emailsSent });
+
+  } catch (error) {
+    console.error('[Cron Error]', error);
+    return res.status(500).json({ error: 'Weekly social cron execution failed' });
+  }
+};
+
+module.exports = { runDailyCron, runWeeklySocialCron };

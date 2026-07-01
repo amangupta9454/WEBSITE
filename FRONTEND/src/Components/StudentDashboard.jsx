@@ -1016,7 +1016,7 @@ const StudentDashboard = () => {
   };
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [profileFormData, setProfileFormData] = useState({ name: "", profileImage: "" });
+  const [profileFormData, setProfileFormData] = useState({ name: "", profileImage: "", github: "", linkedin: "" });
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -1024,7 +1024,9 @@ const StudentDashboard = () => {
     if (data?.user) {
       setProfileFormData({
         name: data.user.name || "",
-        profileImage: data.user.profileImage || ""
+        profileImage: data.user.profileImage || "",
+        github: data.user.github || "",
+        linkedin: data.user.linkedin || ""
       });
     }
     setIsProfileModalOpen(true);
@@ -1063,9 +1065,9 @@ const StudentDashboard = () => {
     try {
       setIsSavingProfile(true);
       const token = localStorage.getItem("studentToken");
-      const res = await axios.post(
+      const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/student/profile`,
-        { name: profileFormData.name, profileImage: profileFormData.profileImage },
+        { name: profileFormData.name, profileImage: profileFormData.profileImage, github: profileFormData.github, linkedin: profileFormData.linkedin },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -1073,7 +1075,7 @@ const StudentDashboard = () => {
       // Update local state instantly
       setData(prev => ({
         ...prev,
-        user: { ...prev.user, name: profileFormData.name, profileImage: profileFormData.profileImage }
+        user: { ...prev.user, name: profileFormData.name, profileImage: profileFormData.profileImage, github: profileFormData.github, linkedin: profileFormData.linkedin }
       }));
       setIsProfileModalOpen(false);
     } catch (error) {
@@ -1330,15 +1332,48 @@ const StudentDashboard = () => {
               {/* Form Fields */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                  <label className="text-sm font-semibold text-slate-700">Full Name</label>
                   <input
                     type="text"
                     value={profileFormData.name}
                     onChange={(e) => setProfileFormData({...profileFormData, name: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-slate-700 bg-slate-50"
                     placeholder="Enter your full name"
                   />
                 </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">GitHub Profile URL</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Github size={16} />
+                    </div>
+                    <input
+                      type="url"
+                      value={profileFormData.github}
+                      onChange={(e) => setProfileFormData({...profileFormData, github: e.target.value})}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-slate-700 bg-slate-50"
+                      placeholder="https://github.com/username"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700">LinkedIn Profile URL</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Linkedin size={16} />
+                    </div>
+                    <input
+                      type="url"
+                      value={profileFormData.linkedin}
+                      onChange={(e) => setProfileFormData({...profileFormData, linkedin: e.target.value})}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-slate-700 bg-slate-50"
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
                   <input

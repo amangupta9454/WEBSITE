@@ -460,15 +460,17 @@ const getPublicLeaderboard = async (req, res) => {
     users.forEach((user) => {
       user.internships.forEach((internship) => {
         if (internship.synergyPoints > 0) {
-          leaderboard.push({
-            name: user.name,
-            profileImage: user.profileImage,
-            domain: internship.domain,
-            synergyPoints: internship.synergyPoints,
-            studentId: internship.studentId,
-            internshipId: internship._id,
-            internshipType: internship.internshipType || "Normal Intern"
-          });
+            leaderboard.push({
+              name: user.name,
+              profileImage: user.profileImage,
+              github: user.github,
+              linkedin: user.linkedin,
+              domain: internship.domain,
+              synergyPoints: internship.synergyPoints,
+              studentId: internship.studentId,
+              internshipId: internship._id,
+              internshipType: internship.internshipType || "Normal Intern"
+            });
         }
       });
     });

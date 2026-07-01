@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Trophy, Star, Medal, Award, Crown, ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { Trophy, Star, Medal, Award, Crown, ChevronLeft, ChevronRight, Zap, Github, Linkedin } from "lucide-react";
 import { useWindowSize } from "react-use";
 import Confetti from "react-confetti";
 import Navbar from "./Navbar";
@@ -54,7 +54,17 @@ const VIPCard = ({ user, rank, getTier }) => {
       <h3 className="text-lg md:text-xl font-black text-slate-800 text-center mb-1">{user.name}</h3>
       <p className="text-slate-500 text-xs sm:text-sm font-medium mb-3 text-center">{user.domain}</p>
       
-      <div className="flex flex-wrap justify-center gap-2 mb-3">
+      <div className="flex flex-wrap justify-center items-center gap-2 mb-3">
+        {user.github && (
+          <a href={user.github} target="_blank" rel="noreferrer" className="p-1 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors">
+            <Github size={14} />
+          </a>
+        )}
+        {user.linkedin && (
+          <a href={user.linkedin} target="_blank" rel="noreferrer" className="p-1 rounded-full bg-slate-100 text-slate-500 hover:text-blue-600 hover:bg-slate-200 transition-colors">
+            <Linkedin size={14} />
+          </a>
+        )}
         <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${tier.color}`}>
           {tier.title}
         </span>
@@ -215,6 +225,16 @@ const Leaderboard = () => {
                         </div>
                         
                         <div className="flex items-center gap-1.5 mt-2 sm:mt-0 flex-shrink-0 flex-wrap justify-end">
+                          {user.github && (
+                            <a href={user.github} target="_blank" rel="noreferrer" className="p-1 rounded-full text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+                              <Github size={12} />
+                            </a>
+                          )}
+                          {user.linkedin && (
+                            <a href={user.linkedin} target="_blank" rel="noreferrer" className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors">
+                              <Linkedin size={12} />
+                            </a>
+                          )}
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${tier.color}`}>
                             {tier.title}
                           </span>
