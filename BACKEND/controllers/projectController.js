@@ -10,6 +10,8 @@ const { GoogleGenAI } = require('@google/genai');
 const nodemailer = require('nodemailer');
 const pdfParse = require('pdf-parse');
 
+let currentGroqKeyIndex = 0;
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -217,7 +219,13 @@ Respond ONLY with a valid JSON object in the exact format:
     let success = false;
     let lastError = null;
 
-    for (let key of groqKeys) {
+    const startIndex = currentGroqKeyIndex % groqKeys.length;
+    currentGroqKeyIndex = (currentGroqKeyIndex + 1) % groqKeys.length;
+
+    for (let i = 0; i < groqKeys.length; i++) {
+      const keyIndex = (startIndex + i) % groqKeys.length;
+      const key = groqKeys[keyIndex];
+
       try {
         const tempRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -235,13 +243,13 @@ Respond ONLY with a valid JSON object in the exact format:
         const tempData = await tempRes.json();
         
         if (tempRes.status === 429 || (tempData.error && tempData.error.code === 'rate_limit_exceeded')) {
-          console.warn('Groq API Key rate limited, trying next key...');
+          console.warn(`Groq API Key (index ${keyIndex}) rate limited, trying next key...`);
           lastError = 'Rate limit exceeded on all available Groq API keys.';
           continue; // Try next key
         }
 
         if (!tempData.choices || !tempData.choices[0]) {
-          console.error('Groq API unexpected response with key:', tempData);
+          console.error(`Groq API unexpected response with key (index ${keyIndex}):`, tempData);
           lastError = 'AI evaluation failed. Please review manually.';
           continue; // Try next key just in case
         }
@@ -251,7 +259,7 @@ Respond ONLY with a valid JSON object in the exact format:
         success = true;
         break; // Success! Break out of the loop
       } catch (err) {
-        console.error('Fetch error with a Groq key:', err);
+        console.error(`Fetch error with a Groq key (index ${keyIndex}):`, err);
         lastError = 'Network error contacting AI provider.';
       }
     }
