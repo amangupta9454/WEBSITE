@@ -98,6 +98,7 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [timeframe, setTimeframe] = useState('all');
   const itemsPerPage = 10;
   const { width, height } = useWindowSize();
   const navigate = useNavigate();
@@ -105,11 +106,13 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboardData = async () => {
       try {
+        setLoading(true);
         const settingsRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/leaderboard`);
         if (!settingsRes.data.showLeaderboard) return navigate("/");
 
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/student/leaderboard`);
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/student/leaderboard?timeframe=${timeframe}`);
         setLeaderboard(res.data.leaderboard);
+        setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch leaderboard", err);
       } finally {
@@ -117,7 +120,7 @@ const Leaderboard = () => {
       }
     };
     fetchLeaderboardData();
-  }, [navigate]);
+  }, [navigate, timeframe]);
 
   const getTier = (points) => {
     if (points >= 600) return { title: "Elite Intern", color: "text-purple-600 bg-purple-100 border-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.1)]" };
@@ -161,9 +164,31 @@ const Leaderboard = () => {
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 drop-shadow-sm">
             WALL OF FAME
           </h1>
-          <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
+          <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto font-medium leading-relaxed mb-6">
             Honoring the masterminds pushing the boundaries of code. Consistency, logic, and brilliance live here.
           </p>
+          
+          {/* Timeframe Filters */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              { id: '7d', label: '7 Days' },
+              { id: '1m', label: '1 Month' },
+              { id: '3m', label: '3 Months' },
+              { id: 'all', label: 'All Time' }
+            ].map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setTimeframe(filter.id)}
+                className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 border shadow-sm ${
+                  timeframe === filter.id 
+                    ? 'bg-blue-600 text-white border-blue-600 scale-105' 
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-600'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (

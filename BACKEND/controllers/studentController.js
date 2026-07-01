@@ -454,19 +454,49 @@ const joinWaitlist = async (req, res) => {
 
 const getPublicLeaderboard = async (req, res) => {
   try {
+    const { timeframe } = req.query; // '7d', '1m', '3m', or 'all'
     const users = await User.find({});
     let leaderboard = [];
 
+    // Calculate cutoff date if timeframe is specified
+    let cutoffDate = null;
+    if (timeframe && timeframe !== 'all') {
+      const now = new Date();
+      if (timeframe === '7d') {
+        cutoffDate = new Date(now.setDate(now.getDate() - 7));
+      } else if (timeframe === '1m') {
+        cutoffDate = new Date(now.setMonth(now.getMonth() - 1));
+      } else if (timeframe === '3m') {
+        cutoffDate = new Date(now.setMonth(now.getMonth() - 3));
+      }
+    }
+
     users.forEach((user) => {
       user.internships.forEach((internship) => {
-        if (internship.synergyPoints > 0) {
+        let calculatedPoints = 0;
+
+        if (cutoffDate) {
+          if (internship.pointsHistory && internship.pointsHistory.length > 0) {
+            calculatedPoints = internship.pointsHistory.reduce((sum, entry) => {
+              const entryDate = new Date(entry.date);
+              if (entryDate >= cutoffDate) {
+                return sum + (entry.pointsAdded || 0);
+              }
+              return sum;
+            }, 0);
+          }
+        } else {
+          calculatedPoints = internship.synergyPoints;
+        }
+
+        if (calculatedPoints > 0) {
             leaderboard.push({
               name: user.name,
               profileImage: user.profileImage,
               github: user.github,
               linkedin: user.linkedin,
               domain: internship.domain,
-              synergyPoints: internship.synergyPoints,
+              synergyPoints: calculatedPoints,
               studentId: internship.studentId,
               internshipId: internship._id,
               internshipType: internship.internshipType || "Normal Intern"
