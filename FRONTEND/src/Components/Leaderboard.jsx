@@ -7,41 +7,6 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useNavigate } from "react-router-dom";
 
-const PodiumCard = ({ user, rank, getTier }) => {
-  if (!user) return null;
-  const isFirst = rank === 1;
-  const heightClasses = rank === 1 ? "h-48 md:h-56" : rank === 2 ? "h-36 md:h-44" : "h-28 md:h-36";
-  const bgClasses = rank === 1 ? "bg-gradient-to-t from-yellow-500 to-yellow-300" : rank === 2 ? "bg-gradient-to-t from-slate-400 to-slate-200" : "bg-gradient-to-t from-amber-700 to-orange-400";
-  const glowClasses = rank === 1 ? "shadow-[0_0_30px_rgba(234,179,8,0.5)]" : rank === 2 ? "shadow-[0_0_20px_rgba(148,163,184,0.4)]" : "shadow-[0_0_20px_rgba(217,119,6,0.4)]";
-  const tier = getTier(user.synergyPoints);
-
-  return (
-    <div className={`flex flex-col items-center justify-end ${rank === 1 ? 'z-20 -mx-2 md:-mx-4' : 'z-10'} relative group`}>
-      <div className={`relative mb-4 flex flex-col items-center transform transition-transform duration-500 group-hover:-translate-y-2`}>
-        {isFirst && <Crown className="absolute -top-8 w-10 h-10 text-yellow-400 drop-shadow-md animate-bounce" />}
-        <div className={`w-16 h-16 md:w-24 md:h-24 rounded-full p-1 bg-gradient-to-tr ${rank === 1 ? 'from-yellow-600 to-yellow-300' : rank === 2 ? 'from-slate-500 to-slate-200' : 'from-orange-600 to-orange-300'} shadow-lg`}>
-          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
-            <img src={user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&rounded=true&bold=true`} alt={user.name} className="w-full h-full object-cover" />
-          </div>
-        </div>
-        <div className="mt-3 text-center bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl shadow-lg border border-white/50 min-w-[100px] md:min-w-[140px]">
-          <h3 className="text-sm md:text-base font-black text-slate-800 truncate max-w-[80px] md:max-w-[120px] mx-auto">{user.name}</h3>
-          <p className="text-xs md:text-sm font-bold text-blue-600">{user.synergyPoints} SP</p>
-          <div className="mt-1 flex justify-center">
-             <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold border ${tier.color}`}>
-               {tier.title}
-             </span>
-          </div>
-        </div>
-      </div>
-      
-      <div className={`w-24 md:w-36 ${heightClasses} ${bgClasses} rounded-t-lg md:rounded-t-2xl relative flex justify-center pt-4 ${glowClasses} overflow-hidden border-t-2 border-white/40`}>
-        <div className="absolute inset-0 bg-white/10"></div>
-        <span className="text-4xl md:text-6xl font-black text-white/90 drop-shadow-md">{rank}</span>
-      </div>
-    </div>
-  );
-};
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -119,32 +84,26 @@ const Leaderboard = () => {
               <p className="text-slate-500">The leaderboard will update once interns start earning Synergy Points.</p>
             </div>
           ) : (
-            <>
-              {leaderboard.length >= 3 && (
-                <div className="mb-10 px-4 md:px-10 pt-10 pb-8 bg-slate-50/50 border-b border-slate-100">
-                  <div className="flex justify-center items-end gap-2 md:gap-6 pt-10">
-                    <PodiumCard user={leaderboard[1]} rank={2} getTier={getTier} />
-                    <PodiumCard user={leaderboard[0]} rank={1} getTier={getTier} />
-                    <PodiumCard user={leaderboard[2]} rank={3} getTier={getTier} />
-                  </div>
-                </div>
-              )}
-              <div className="divide-y divide-slate-100">
-                {leaderboard.slice(leaderboard.length >= 3 ? 3 : 0).map((user, idx) => {
-                  const actualRank = leaderboard.length >= 3 ? idx + 3 : idx;
-                  const tier = getTier(user.synergyPoints);
-                  return (
-                    <div key={user.studentId || actualRank} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-colors hover:bg-slate-50 relative overflow-hidden ${
-                      actualRank < 10 ? 'bg-gradient-to-r from-blue-50/50 to-transparent border-l-4 border-blue-400' : 'border-l-4 border-transparent'
-                    }`}>
-                      {actualRank < 10 && actualRank >= 3 && (
-                        <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold rounded-bl-lg shadow-sm opacity-90">
-                          TOP 10
-                        </div>
-                      )}
-                      <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
-                        {getRankBadge(actualRank)}
+            <div className="flex flex-col p-4 sm:p-6 gap-2">
+              {leaderboard.map((user, idx) => {
+                const tier = getTier(user.synergyPoints);
+                let rowClasses = 'border-l-4 border-transparent border-b border-b-slate-100';
+                if (idx === 0) rowClasses = 'bg-gradient-to-r from-yellow-50 to-white border-l-4 border-yellow-400 shadow-md transform hover:-translate-y-1 z-30 relative mb-2 rounded-xl border border-yellow-200';
+                else if (idx === 1) rowClasses = 'bg-gradient-to-r from-slate-50 to-white border-l-4 border-slate-400 shadow-sm transform hover:-translate-y-1 z-20 relative mb-2 rounded-xl border border-slate-200';
+                else if (idx === 2) rowClasses = 'bg-gradient-to-r from-orange-50 to-white border-l-4 border-orange-400 shadow-sm transform hover:-translate-y-1 z-10 relative mb-4 rounded-xl border border-orange-200';
+                else if (idx < 10) rowClasses = 'bg-gradient-to-r from-blue-50/30 to-transparent border-l-4 border-blue-400 border-b border-b-slate-100';
+
+                return (
+                  <div key={user.studentId || idx} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-all duration-300 hover:bg-slate-50 overflow-hidden ${rowClasses}`}>
+                    {idx === 0 && <Crown className="absolute top-2 right-4 text-yellow-400 w-8 h-8 opacity-20" />}
+                    {idx < 10 && idx >= 3 && (
+                      <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold rounded-bl-lg shadow-sm opacity-90">
+                        TOP 10
                       </div>
+                    )}
+                    <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
+                      {getRankBadge(idx)}
+                    </div>
                     
                     <div className="flex-1 min-w-0 flex items-center gap-3 sm:gap-4">
                       <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm">
@@ -156,7 +115,7 @@ const Leaderboard = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
-                          <h3 className="text-lg font-bold text-slate-900 truncate">
+                          <h3 className={`text-lg font-bold text-slate-900 ${idx < 3 ? '' : 'truncate'}`}>
                             {user.name}
                           </h3>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -188,7 +147,6 @@ const Leaderboard = () => {
                 );
               })}
             </div>
-            </>
           )}
         </div>
       </div>
