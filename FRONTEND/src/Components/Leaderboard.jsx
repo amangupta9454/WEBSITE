@@ -20,55 +20,55 @@ const VIPCard = ({ user, rank, getTier }) => {
   let rankText = "";
   
   if (rank === 1) {
-    bgGradient = "bg-gradient-to-b from-yellow-500/20 to-slate-900 border-yellow-500/50";
-    borderGlow = "shadow-[0_0_40px_rgba(234,179,8,0.3)]";
-    badgeColor = "text-yellow-400 bg-yellow-400/10";
-    rankText = "text-yellow-400";
+    bgGradient = "bg-gradient-to-b from-yellow-50 to-white border-yellow-200";
+    borderGlow = "shadow-[0_0_20px_rgba(234,179,8,0.15)]";
+    badgeColor = "text-yellow-600 bg-yellow-100";
+    rankText = "text-yellow-200";
   } else if (rank === 2) {
-    bgGradient = "bg-gradient-to-b from-slate-300/20 to-slate-900 border-slate-300/50";
-    borderGlow = "shadow-[0_0_30px_rgba(203,213,225,0.2)]";
-    badgeColor = "text-slate-300 bg-slate-300/10";
-    rankText = "text-slate-300";
+    bgGradient = "bg-gradient-to-b from-slate-50 to-white border-slate-200";
+    borderGlow = "shadow-[0_0_15px_rgba(203,213,225,0.15)]";
+    badgeColor = "text-slate-600 bg-slate-100";
+    rankText = "text-slate-200";
   } else {
-    bgGradient = "bg-gradient-to-b from-orange-500/20 to-slate-900 border-orange-500/50";
-    borderGlow = "shadow-[0_0_30px_rgba(249,115,22,0.2)]";
-    badgeColor = "text-orange-400 bg-orange-400/10";
-    rankText = "text-orange-400";
+    bgGradient = "bg-gradient-to-b from-orange-50 to-white border-orange-200";
+    borderGlow = "shadow-[0_0_15px_rgba(249,115,22,0.15)]";
+    badgeColor = "text-orange-600 bg-orange-100";
+    rankText = "text-orange-200";
   }
 
   return (
-    <div className={`relative flex flex-col items-center p-6 rounded-3xl border backdrop-blur-md transition-all duration-500 hover:-translate-y-2 ${bgGradient} ${borderGlow} w-full max-w-sm mx-auto`}>
-      {isFirst && <Crown className="absolute -top-6 text-yellow-400 w-12 h-12 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] animate-bounce z-10" />}
+    <div className={`relative flex flex-col items-center p-4 sm:p-5 rounded-3xl border backdrop-blur-md transition-all duration-500 hover:-translate-y-1 ${bgGradient} ${borderGlow} w-full max-w-sm mx-auto`}>
+      {isFirst && <Crown className="absolute -top-5 text-yellow-500 w-10 h-10 drop-shadow-md animate-bounce z-10" />}
       
-      <div className={`absolute top-4 left-4 text-3xl font-black opacity-30 ${rankText}`}>
+      <div className={`absolute top-4 left-4 text-2xl font-black opacity-40 ${rankText}`}>
         #{rank}
       </div>
 
-      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full p-1 mb-4 z-10">
-        <div className={`absolute inset-0 rounded-full animate-spin-slow bg-gradient-to-tr ${rank === 1 ? 'from-yellow-400 to-transparent' : rank === 2 ? 'from-slate-400 to-transparent' : 'from-orange-500 to-transparent'}`}></div>
-        <div className="w-full h-full rounded-full overflow-hidden border-4 border-slate-900 relative z-10 bg-slate-800">
+      <div className="relative w-20 h-20 md:w-28 md:h-28 rounded-full p-1 mb-3 z-10">
+        <div className={`absolute inset-0 rounded-full animate-spin-slow bg-gradient-to-tr ${rank === 1 ? 'from-yellow-300 to-transparent' : rank === 2 ? 'from-slate-300 to-transparent' : 'from-orange-300 to-transparent'}`}></div>
+        <div className="w-full h-full rounded-full overflow-hidden border-4 border-white relative z-10 bg-white">
           <img src={user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&rounded=true&bold=true`} alt={user.name} className="w-full h-full object-cover" />
         </div>
       </div>
 
-      <h3 className="text-xl md:text-2xl font-black text-white text-center mb-1">{user.name}</h3>
-      <p className="text-slate-400 text-sm font-medium mb-4 text-center">{user.domain}</p>
+      <h3 className="text-lg md:text-xl font-black text-slate-800 text-center mb-1">{user.name}</h3>
+      <p className="text-slate-500 text-xs sm:text-sm font-medium mb-3 text-center">{user.domain}</p>
       
-      <div className="flex flex-wrap justify-center gap-2 mb-4">
-        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${tier.color}`}>
+      <div className="flex flex-wrap justify-center gap-2 mb-3">
+        <span className={`px-2 py-1 rounded-full text-[10px] font-bold border ${tier.color}`}>
           {tier.title}
         </span>
         {user.internshipType && (
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300">
+          <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-600">
             {user.internshipType}
           </span>
         )}
       </div>
 
-      <div className={`mt-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-white/5 w-full ${badgeColor}`}>
-        <Zap className="w-5 h-5" />
-        <span className="text-2xl font-black tracking-tight">{user.synergyPoints}</span>
-        <span className="text-xs font-bold uppercase opacity-70 mt-1">SP</span>
+      <div className={`mt-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl border border-white/50 w-full ${badgeColor}`}>
+        <Zap className="w-4 h-4" />
+        <span className="text-xl font-black tracking-tight">{user.synergyPoints}</span>
+        <span className="text-[10px] font-bold uppercase opacity-70 mt-1">SP</span>
       </div>
     </div>
   );
@@ -100,10 +100,10 @@ const Leaderboard = () => {
   }, [navigate]);
 
   const getTier = (points) => {
-    if (points >= 600) return { title: "Elite Intern", color: "text-purple-300 bg-purple-500/20 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]" };
-    if (points >= 300) return { title: "Pro Developer", color: "text-orange-300 bg-orange-500/20 border-orange-500/30 shadow-[0_0_10px_rgba(249,115,22,0.2)]" };
-    if (points >= 100) return { title: "Rising Star", color: "text-blue-300 bg-blue-500/20 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]" };
-    return { title: "Novice Intern", color: "text-emerald-300 bg-emerald-500/20 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]" };
+    if (points >= 600) return { title: "Elite Intern", color: "text-purple-600 bg-purple-100 border-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.1)]" };
+    if (points >= 300) return { title: "Pro Developer", color: "text-orange-600 bg-orange-100 border-orange-200 shadow-[0_0_10px_rgba(249,115,22,0.1)]" };
+    if (points >= 100) return { title: "Rising Star", color: "text-blue-600 bg-blue-100 border-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.1)]" };
+    return { title: "Novice Intern", color: "text-emerald-600 bg-emerald-100 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.1)]" };
   };
 
   const top3 = leaderboard.slice(0, 3);
@@ -112,36 +112,36 @@ const Leaderboard = () => {
   const listItems = isFirstPage ? currentItems.slice(3) : currentItems;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 relative overflow-hidden font-sans selection:bg-blue-500/30 selection:text-blue-200">
+    <div className="min-h-screen bg-slate-50 text-slate-800 relative overflow-hidden font-sans selection:bg-blue-500/30 selection:text-blue-900">
       
       {/* Dynamic Background Effects */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:30px_30px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
         {/* Glowing Orbs */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob"></div>
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-indigo-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-4000"></div>
+        <div className="absolute top-0 left-1/4 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob"></div>
+        <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-60 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="fixed inset-0 z-50 pointer-events-none">
-        {leaderboard.length > 0 && <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.12} colors={['#eab308', '#60a5fa', '#a855f7', '#fb923c', '#ffffff']} />}
+        {leaderboard.length > 0 && <Confetti width={width} height={height} recycle={false} numberOfPieces={800} gravity={0.15} colors={['#eab308', '#60a5fa', '#a855f7', '#fb923c']} />}
       </div>
 
       <Navbar />
       
-      <main className="relative z-10 pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="relative z-10 pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         
         {/* Hero Header */}
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-            <Trophy className="w-4 h-4 text-yellow-400 mr-2" />
-            <span className="text-sm font-semibold tracking-wide uppercase text-slate-300">Codeanova Elite Rankings</span>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full border border-slate-200 bg-white/50 backdrop-blur-md mb-6 shadow-sm">
+            <Trophy className="w-4 h-4 text-yellow-500 mr-2" />
+            <span className="text-[10px] md:text-xs font-bold tracking-wide uppercase text-slate-600">Codeanova Elite Rankings</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 drop-shadow-sm">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 drop-shadow-sm">
             WALL OF FAME
           </h1>
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+          <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
             Honoring the masterminds pushing the boundaries of code. Consistency, logic, and brilliance live here.
           </p>
         </div>
@@ -151,13 +151,13 @@ const Leaderboard = () => {
             <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="p-20 text-center bg-white/5 border border-white/10 rounded-3xl backdrop-blur-sm">
-            <Star className="mx-auto text-slate-600 mb-4" size={48} />
-            <h3 className="text-xl font-bold text-slate-300 mb-2">Awaiting the First Legend</h3>
-            <p className="text-slate-500">The leaderboard will ignite once interns start earning Synergy Points.</p>
+          <div className="p-16 text-center bg-white/80 border border-slate-200 rounded-3xl backdrop-blur-sm shadow-sm max-w-md mx-auto">
+            <Star className="mx-auto text-slate-300 mb-4" size={40} />
+            <h3 className="text-lg font-bold text-slate-700 mb-2">Awaiting the First Legend</h3>
+            <p className="text-sm text-slate-500">The leaderboard will ignite once interns start earning Synergy Points.</p>
           </div>
         ) : (
-          <div className="space-y-16">
+          <div className="space-y-10">
             
             {/* Top 3 VIP Grid (Only on First Page) */}
             {isFirstPage && top3.length > 0 && (
@@ -176,11 +176,11 @@ const Leaderboard = () => {
 
             {/* List for Rest of the Interns */}
             {listItems.length > 0 && (
-              <div className="max-w-4xl mx-auto flex flex-col gap-3">
-                <h3 className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-4 px-2 flex items-center gap-3">
-                  <span className="w-8 h-[1px] bg-slate-700"></span>
+              <div className="max-w-4xl mx-auto flex flex-col gap-2">
+                <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2 px-2 flex items-center gap-3">
+                  <span className="w-8 h-[1px] bg-slate-200"></span>
                   {isFirstPage ? "The Challengers" : "Leaderboard"}
-                  <span className="flex-1 h-[1px] bg-slate-800"></span>
+                  <span className="flex-1 h-[1px] bg-slate-200"></span>
                 </h3>
                 
                 {listItems.map((user, idx) => {
@@ -188,35 +188,35 @@ const Leaderboard = () => {
                   const tier = getTier(user.synergyPoints);
                   
                   return (
-                    <div key={user.studentId || actualRank} className="group relative flex items-center p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300">
+                    <div key={user.studentId || actualRank} className="group relative flex items-center p-3 sm:p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300">
                       {/* Glow effect on hover */}
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-50/0 via-blue-50 to-purple-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                       
-                      <div className="flex-shrink-0 w-12 text-center">
-                        <span className="text-xl font-black text-slate-500 group-hover:text-slate-300 transition-colors">#{actualRank}</span>
+                      <div className="flex-shrink-0 w-10 text-center z-10">
+                        <span className="text-lg font-black text-slate-400 group-hover:text-blue-600 transition-colors">#{actualRank}</span>
                       </div>
                       
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden border border-slate-700 ml-2">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden border border-slate-200 ml-2 z-10 bg-slate-100">
                         <img src={user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff&rounded=true&bold=true`} alt={user.name} className="w-full h-full object-cover" />
                       </div>
                       
-                      <div className="flex-1 min-w-0 ml-4 sm:ml-6 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                      <div className="flex-1 min-w-0 ml-3 sm:ml-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 z-10">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-slate-200 truncate group-hover:text-white transition-colors">{user.name}</h3>
-                          <p className="text-xs sm:text-sm text-slate-500 truncate">{user.domain}</p>
+                          <h3 className="text-sm sm:text-base font-bold text-slate-800 truncate group-hover:text-blue-900 transition-colors">{user.name}</h3>
+                          <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate">{user.domain}</p>
                         </div>
                         
-                        <div className="flex items-center gap-2 mt-1 sm:mt-0 flex-shrink-0">
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${tier.color}`}>
+                        <div className="flex items-center gap-1.5 mt-0.5 sm:mt-0 flex-shrink-0">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${tier.color}`}>
                             {tier.title}
                           </span>
                         </div>
                       </div>
                       
-                      <div className="flex-shrink-0 ml-4 text-right">
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <span className="text-xl sm:text-2xl font-black text-blue-400 group-hover:text-blue-300 transition-colors drop-shadow-[0_0_10px_rgba(96,165,250,0.3)]">{user.synergyPoints}</span>
-                          <Zap className="w-4 h-4 text-blue-500/70" />
+                      <div className="flex-shrink-0 ml-3 text-right z-10">
+                        <div className="flex items-center gap-1 justify-end">
+                          <span className="text-lg sm:text-xl font-black text-blue-600">{user.synergyPoints}</span>
+                          <Zap className="w-3.5 h-3.5 text-blue-500" />
                         </div>
                       </div>
                     </div>
@@ -227,25 +227,25 @@ const Leaderboard = () => {
 
             {/* Pagination Controls */}
             {leaderboard.length > itemsPerPage && (
-              <div className="flex items-center justify-center gap-4 pt-8">
+              <div className="flex items-center justify-center gap-3 pt-6">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="flex items-center px-5 py-2.5 rounded-full text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all backdrop-blur-sm"
+                  className="flex items-center px-4 py-2 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  <ChevronLeft className="w-3.5 h-3.5 mr-1" />
                   Prev
                 </button>
-                <div className="px-5 py-2.5 rounded-full bg-slate-900/50 border border-slate-800 text-sm font-bold text-slate-400 shadow-inner backdrop-blur-sm">
-                  <span className="text-white">{currentPage}</span> <span className="opacity-50 mx-1">/</span> {Math.ceil(leaderboard.length / itemsPerPage)}
+                <div className="px-4 py-2 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-500 shadow-inner">
+                  <span className="text-slate-800">{currentPage}</span> <span className="opacity-50 mx-1">/</span> {Math.ceil(leaderboard.length / itemsPerPage)}
                 </div>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(leaderboard.length / itemsPerPage)))}
                   disabled={currentPage === Math.ceil(leaderboard.length / itemsPerPage)}
-                  className="flex items-center px-5 py-2.5 rounded-full text-sm font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all backdrop-blur-sm"
+                  className="flex items-center px-4 py-2 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
                   Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </button>
               </div>
             )}
@@ -253,7 +253,7 @@ const Leaderboard = () => {
         )}
       </main>
       
-      <div className="border-t border-white/5 bg-slate-950/50 backdrop-blur-md relative z-20">
+      <div className="border-t border-slate-200 bg-white/80 backdrop-blur-md relative z-20">
         <Footer />
       </div>
     </div>
