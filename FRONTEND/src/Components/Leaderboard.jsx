@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { width, height } = useWindowSize();
   const navigate = useNavigate();
 
@@ -84,25 +86,27 @@ const Leaderboard = () => {
               <p className="text-slate-500">The leaderboard will update once interns start earning Synergy Points.</p>
             </div>
           ) : (
+            <>
             <div className="flex flex-col p-4 sm:p-6 gap-2">
-              {leaderboard.map((user, idx) => {
+              {leaderboard.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user, idx) => {
+                const actualRank = (currentPage - 1) * itemsPerPage + idx;
                 const tier = getTier(user.synergyPoints);
                 let rowClasses = 'border-l-4 border-transparent border-b border-b-slate-100';
-                if (idx === 0) rowClasses = 'bg-gradient-to-r from-yellow-50 to-white border-l-4 border-yellow-400 shadow-md transform hover:-translate-y-1 z-30 relative mb-2 rounded-xl border border-yellow-200';
-                else if (idx === 1) rowClasses = 'bg-gradient-to-r from-slate-50 to-white border-l-4 border-slate-400 shadow-sm transform hover:-translate-y-1 z-20 relative mb-2 rounded-xl border border-slate-200';
-                else if (idx === 2) rowClasses = 'bg-gradient-to-r from-orange-50 to-white border-l-4 border-orange-400 shadow-sm transform hover:-translate-y-1 z-10 relative mb-4 rounded-xl border border-orange-200';
-                else if (idx < 10) rowClasses = 'bg-gradient-to-r from-blue-50/30 to-transparent border-l-4 border-blue-400 border-b border-b-slate-100';
+                if (actualRank === 0) rowClasses = 'bg-gradient-to-r from-yellow-50 to-white border-l-4 border-yellow-400 shadow-md transform hover:-translate-y-1 z-30 relative mb-2 rounded-xl border border-yellow-200';
+                else if (actualRank === 1) rowClasses = 'bg-gradient-to-r from-slate-50 to-white border-l-4 border-slate-400 shadow-sm transform hover:-translate-y-1 z-20 relative mb-2 rounded-xl border border-slate-200';
+                else if (actualRank === 2) rowClasses = 'bg-gradient-to-r from-orange-50 to-white border-l-4 border-orange-400 shadow-sm transform hover:-translate-y-1 z-10 relative mb-4 rounded-xl border border-orange-200';
+                else if (actualRank < 10) rowClasses = 'bg-gradient-to-r from-blue-50/30 to-transparent border-l-4 border-blue-400 border-b border-b-slate-100';
 
                 return (
-                  <div key={user.studentId || idx} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-all duration-300 hover:bg-slate-50 overflow-hidden ${rowClasses}`}>
-                    {idx === 0 && <Crown className="absolute top-2 right-4 text-yellow-400 w-8 h-8 opacity-20" />}
-                    {idx < 10 && idx >= 3 && (
+                  <div key={user.studentId || actualRank} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-all duration-300 hover:bg-slate-50 overflow-hidden ${rowClasses}`}>
+                    {actualRank === 0 && <Crown className="absolute top-2 right-4 text-yellow-400 w-8 h-8 opacity-20" />}
+                    {actualRank < 10 && actualRank >= 3 && (
                       <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold rounded-bl-lg shadow-sm opacity-90">
                         TOP 10
                       </div>
                     )}
                     <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
-                      {getRankBadge(idx)}
+                      {getRankBadge(actualRank)}
                     </div>
                     
                     <div className="flex-1 min-w-0 flex items-center gap-3 sm:gap-4">
@@ -115,7 +119,7 @@ const Leaderboard = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
-                          <h3 className={`text-lg font-bold text-slate-900 ${idx < 3 ? '' : 'truncate'}`}>
+                          <h3 className={`text-lg font-bold text-slate-900 ${actualRank < 3 ? '' : 'truncate'}`}>
                             {user.name}
                           </h3>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -147,6 +151,30 @@ const Leaderboard = () => {
                 );
               })}
             </div>
+            
+            {/* Pagination Controls */}
+            {leaderboard.length > itemsPerPage && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-3xl">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-medium text-slate-600">
+                  Page {currentPage} of {Math.ceil(leaderboard.length / itemsPerPage)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(leaderboard.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(leaderboard.length / itemsPerPage)}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+            </>
           )}
         </div>
       </div>
