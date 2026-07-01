@@ -380,7 +380,7 @@ const finalSubmitProjectRepo = async (req, res) => {
       internship.pointsHistory.push({
         reason: `AI Verified Summer Project: ${projectName} (Quality: ${evaluation.codeQualityScore}/10, Complexity: ${evaluation.complexityScore}/10)`,
         pointsAdded: 50,
-        date: new Date()
+        date: internship.assignedRepos[repoIndex].submittedAt || (project ? project.dueDate : new Date())
       });
     }
 
@@ -454,39 +454,28 @@ const joinWaitlist = async (req, res) => {
 
 const getPublicLeaderboard = async (req, res) => {
   try {
-    const { timeframe } = req.query; // '7d', '1m', '3m', or 'all'
+    const { timeframe } = req.query; // 'current_month' or 'all'
     const users = await User.find({});
     let leaderboard = [];
 
-    // Calculate cutoff date if timeframe is specified
-    let cutoffDate = null;
-    if (timeframe && timeframe !== 'all') {
-      const now = new Date();
-      if (timeframe === '7d') {
-        cutoffDate = new Date(now.setDate(now.getDate() - 7));
-      } else if (timeframe === '1m') {
-        cutoffDate = new Date(now.setMonth(now.getMonth() - 1));
-      } else if (timeframe === '3m') {
-        cutoffDate = new Date(now.setMonth(now.getMonth() - 3));
-      }
-    }
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
     users.forEach((user) => {
       user.internships.forEach((internship) => {
         let calculatedPoints = 0;
 
-        if (cutoffDate) {
+        if (timeframe === 'current_month') {
           if (internship.pointsHistory && internship.pointsHistory.length > 0) {
             calculatedPoints = internship.pointsHistory.reduce((sum, entry) => {
               const entryDate = new Date(entry.date);
-              if (entryDate >= cutoffDate) {
+              if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
                 return sum + (entry.pointsAdded || 0);
               }
               return sum;
             }, 0);
           }
-          // Cap the calculated points to not exceed the actual total synergy points
-          // This fixes anomalies where pointsHistory has orphaned/duplicate points but synergyPoints was reset/corrected.
           calculatedPoints = Math.min(calculatedPoints, internship.synergyPoints || 0);
         } else {
           calculatedPoints = internship.synergyPoints || 0;
@@ -564,7 +553,7 @@ const updateProjectLink = async (req, res) => {
         targetInternship.pointsHistory.push({
           reason: `AI Re-verified Summer Project: ${projectName} (Penalty: -${penalty} SP)`,
           pointsAdded: awardedSP,
-          date: new Date()
+          date: targetInternship.assignedRepos[repoIndex].submittedAt || (project ? project.dueDate : new Date())
         });
       } else {
         targetInternship.assignedRepos[repoIndex].emailSent = false;
@@ -608,7 +597,7 @@ const updateProjectLink = async (req, res) => {
         targetInternship.pointsHistory.push({
           reason: `AI Re-verified Project: ${projectName} (Penalty: -5 SP for Resubmission)`,
           pointsAdded: awardedSP,
-          date: new Date()
+          date: submission.assignments[assignmentIndex].submittedAt || new Date()
         });
       } else {
         submission.assignments[assignmentIndex].spAwarded = 0;

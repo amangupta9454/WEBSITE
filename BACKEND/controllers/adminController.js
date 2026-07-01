@@ -957,7 +957,7 @@ const reviewSummerProject = async (req, res) => {
       internship.pointsHistory.push({
         reason: `Project Accepted: ${projectName}`,
         pointsAdded: 50,
-        date: new Date()
+        date: internship.assignedRepos[repoIndex].submittedAt || (project ? project.dueDate : new Date())
       });
     }
     
@@ -1048,9 +1048,9 @@ const manualAcceptAssignment = async (req, res) => {
         internship.synergyPoints = (internship.synergyPoints || 0) + 50;
         if (!internship.pointsHistory) internship.pointsHistory = [];
         internship.pointsHistory.push({
-          reason: `Admin Manually Accepted Project: ${assignment.projectName}`,
+          reason: `Project Accepted: ${assignment.projectName}`,
           pointsAdded: 50,
-          date: new Date()
+          date: assignment.submittedAt || new Date()
         });
         await user.save();
       }
@@ -1171,7 +1171,7 @@ const overrideSP = async (req, res) => {
           internship.pointsHistory.push({
             reason: `Admin SP Override for ${assignment.projectName}: ${reason || 'Manual adjustment'}`,
             pointsAdded: difference,
-            date: new Date()
+            date: assignment.submittedAt || new Date()
           });
           await user.save();
         }
@@ -1203,7 +1203,7 @@ const overrideSP = async (req, res) => {
       internship.pointsHistory.push({
         reason: `Admin SP Override for Summer/Winter Project: ${reason || 'Manual adjustment'}`,
         pointsAdded: difference,
-        date: new Date()
+        date: repo.submittedAt || new Date()
       });
       await user.save();
     }
@@ -1286,7 +1286,7 @@ const evaluatePendingAI = async (req, res) => {
             internship.pointsHistory.push({
               reason: `AI Verified Project (Batch): ${assignment.projectName}`,
               pointsAdded: awardedSP,
-              date: new Date()
+              date: assignment.submittedAt || new Date()
             });
           }
           assignment.emailSent = false;
@@ -1329,7 +1329,7 @@ const evaluatePendingAI = async (req, res) => {
                   internship.pointsHistory.push({
                     reason: `AI Verified Summer Project (Batch): ${projectName}`,
                     pointsAdded: 50,
-                    date: new Date()
+                    date: repo.submittedAt || (project ? project.dueDate : new Date())
                   });
                 }
                 repo.emailSent = false;

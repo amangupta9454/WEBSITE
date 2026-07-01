@@ -98,7 +98,7 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [timeframe, setTimeframe] = useState('all');
+  const [timeframe, setTimeframe] = useState('current_month');
   const itemsPerPage = 10;
   const { width, height } = useWindowSize();
   const navigate = useNavigate();
@@ -171,9 +171,7 @@ const Leaderboard = () => {
           {/* Timeframe Filters */}
           <div className="flex flex-wrap justify-center gap-2">
             {[
-              { id: '7d', label: '7 Days' },
-              { id: '1m', label: '1 Month' },
-              { id: '3m', label: '3 Months' },
+              { id: 'current_month', label: `${new Date().toLocaleString('default', { month: 'long' })} Leaderboard` },
               { id: 'all', label: 'All Time' }
             ].map(filter => (
               <button
