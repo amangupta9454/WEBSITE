@@ -9,6 +9,7 @@ const SubmissionsAdmin = () => {
   const [isAutoRunning, setIsAutoRunning] = useState(false);
   const autoRunRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Total');
   const [expandedStudents, setExpandedStudents] = useState({});
   const [submitting, setSubmitting] = useState(false);
   
@@ -188,9 +189,19 @@ const SubmissionsAdmin = () => {
     groupedSubmissions[sub.studentId].totalSp += (sub.spAwarded || 0);
   });
 
-  const studentsList = Object.values(groupedSubmissions).filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.studentId.toLowerCase().includes(searchTerm.toLowerCase())
+  const studentsList = Object.values(groupedSubmissions).map(student => {
+    if (statusFilter === 'Total') return student;
+    
+    const filteredSubmissions = student.submissions.filter(sub => {
+      if (statusFilter === 'Pending') return sub.aiStatus === 'Pending' || sub.aiStatus === 'pending';
+      return sub.aiStatus === statusFilter;
+    });
+
+    return { ...student, submissions: filteredSubmissions };
+  }).filter(s => 
+    s.submissions.length > 0 && 
+    (s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     s.studentId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const totalSubmissions = submissions.length;
@@ -204,10 +215,30 @@ const SubmissionsAdmin = () => {
         <div className="w-full lg:w-auto">
           <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
           <div className="flex items-center gap-2 mt-2 text-sm overflow-x-auto pb-2 lg:pb-0 whitespace-nowrap">
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium border border-blue-200 shadow-sm">Total: {totalSubmissions}</span>
-            <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-medium border border-emerald-200 shadow-sm">Accepted: {acceptedSubmissions}</span>
-            <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-md font-medium border border-rose-200 shadow-sm">Rejected: {rejectedSubmissions}</span>
-            <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-medium border border-amber-200 shadow-sm">Pending: {pendingSubmissions}</span>
+            <span 
+              onClick={() => setStatusFilter('Total')}
+              className={`px-2 py-1 rounded-md font-medium border shadow-sm cursor-pointer transition-all ${statusFilter === 'Total' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200'}`}
+            >
+              Total: {totalSubmissions}
+            </span>
+            <span 
+              onClick={() => setStatusFilter('Accepted')}
+              className={`px-2 py-1 rounded-md font-medium border shadow-sm cursor-pointer transition-all ${statusFilter === 'Accepted' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200'}`}
+            >
+              Accepted: {acceptedSubmissions}
+            </span>
+            <span 
+              onClick={() => setStatusFilter('Rejected')}
+              className={`px-2 py-1 rounded-md font-medium border shadow-sm cursor-pointer transition-all ${statusFilter === 'Rejected' ? 'bg-rose-600 text-white border-rose-700' : 'bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-200'}`}
+            >
+              Rejected: {rejectedSubmissions}
+            </span>
+            <span 
+              onClick={() => setStatusFilter('Pending')}
+              className={`px-2 py-1 rounded-md font-medium border shadow-sm cursor-pointer transition-all ${statusFilter === 'Pending' ? 'bg-amber-500 text-white border-amber-600' : 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200'}`}
+            >
+              Pending: {pendingSubmissions}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
