@@ -85,7 +85,7 @@ const Leaderboard = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 -mt-10 relative z-20 pb-24">
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white/30 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden relative">
           {loading ? (
             <div className="p-20 text-center text-slate-500 font-medium animate-pulse">
               Loading leaderboard...
@@ -102,14 +102,14 @@ const Leaderboard = () => {
               {leaderboard.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user, idx) => {
                 const actualRank = (currentPage - 1) * itemsPerPage + idx;
                 const tier = getTier(user.synergyPoints);
-                let rowClasses = 'border-l-4 border-transparent border-b border-b-slate-100';
-                if (actualRank === 0) rowClasses = 'bg-gradient-to-r from-yellow-50 to-white border-l-4 border-yellow-400 shadow-md transform hover:-translate-y-1 z-30 relative mb-2 rounded-xl border border-yellow-200';
-                else if (actualRank === 1) rowClasses = 'bg-gradient-to-r from-slate-50 to-white border-l-4 border-slate-400 shadow-sm transform hover:-translate-y-1 z-20 relative mb-2 rounded-xl border border-slate-200';
-                else if (actualRank === 2) rowClasses = 'bg-gradient-to-r from-orange-50 to-white border-l-4 border-orange-400 shadow-sm transform hover:-translate-y-1 z-10 relative mb-4 rounded-xl border border-orange-200';
-                else if (actualRank < 10) rowClasses = 'bg-gradient-to-r from-blue-50/30 to-transparent border-l-4 border-blue-400 border-b border-b-slate-100';
+                let rowClasses = 'border-l-4 border-transparent border-b border-white/20 bg-white/40 backdrop-blur-md';
+                if (actualRank === 0) rowClasses = 'bg-gradient-to-r from-yellow-300/50 to-yellow-100/30 backdrop-blur-xl border border-yellow-300/60 shadow-[0_0_20px_rgba(250,204,21,0.4)] transform hover:-translate-y-1 z-30 relative mb-2 rounded-xl';
+                else if (actualRank === 1) rowClasses = 'bg-gradient-to-r from-slate-400/50 to-slate-200/30 backdrop-blur-xl border border-slate-300/60 shadow-[0_0_15px_rgba(148,163,184,0.4)] transform hover:-translate-y-1 z-20 relative mb-2 rounded-xl';
+                else if (actualRank === 2) rowClasses = 'bg-gradient-to-r from-orange-400/50 to-orange-200/30 backdrop-blur-xl border border-orange-300/60 shadow-[0_0_15px_rgba(251,146,60,0.4)] transform hover:-translate-y-1 z-10 relative mb-4 rounded-xl';
+                else if (actualRank < 10) rowClasses = 'bg-gradient-to-r from-blue-300/30 to-transparent backdrop-blur-md border-l-4 border-blue-400 border-b border-white/30 rounded-lg mb-1';
 
                 return (
-                  <div key={user.studentId || actualRank} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-all duration-300 hover:bg-slate-50 overflow-hidden ${rowClasses}`}>
+                  <div key={user.studentId || actualRank} className={`p-4 sm:p-6 flex items-center gap-4 sm:gap-6 transition-all duration-300 hover:bg-white/60 hover:shadow-lg overflow-hidden ${rowClasses}`}>
                     {actualRank === 0 && <Crown className="absolute top-2 right-4 text-yellow-400 w-8 h-8 opacity-20" />}
                     {actualRank < 10 && actualRank >= 3 && (
                       <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-bold rounded-bl-lg shadow-sm opacity-90">
@@ -165,21 +165,21 @@ const Leaderboard = () => {
             
             {/* Pagination Controls */}
             {leaderboard.length > itemsPerPage && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-3xl">
+              <div className="flex items-center justify-between px-6 py-4 border-t border-white/30 bg-white/20 backdrop-blur-md rounded-b-3xl">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-800 bg-white/50 border border-white/40 rounded-lg hover:bg-white/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   Previous
                 </button>
-                <span className="text-sm font-medium text-slate-600">
+                <span className="text-sm font-bold text-slate-800 drop-shadow-sm">
                   Page {currentPage} of {Math.ceil(leaderboard.length / itemsPerPage)}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(leaderboard.length / itemsPerPage)))}
                   disabled={currentPage === Math.ceil(leaderboard.length / itemsPerPage)}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-800 bg-white/50 border border-white/40 rounded-lg hover:bg-white/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   Next
                 </button>
