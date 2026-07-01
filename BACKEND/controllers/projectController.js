@@ -156,8 +156,13 @@ async function evaluateRepoWithAI(githubLink, projectName) {
     }
 
     const prompt = `
-You are an expert, strict code evaluator. 
+You are an expert, STRICT code evaluator. 
 A student has submitted a project repository for the assignment titled: "${projectName}".
+
+IMPORTANT CONTEXT:
+The student was given the requirements for "${projectName}" in a PDF document (which you cannot see).
+Your primary job is to verify that the submitted code ACTUALLY implements a project that matches the title "${projectName}".
+
 Here is the file structure of their repository:
 ${files.join('\n')}
 
@@ -167,12 +172,16 @@ ${readmeText}
 Here are the contents of key source files from the project for you to deeply evaluate and simulate ("soft run") in your mind:
 ${codeSnippets}
 
-Evaluate deeply if this repository is a valid, working, and correct submission for "${projectName}". 
-DO NOT judge superficially based only on filenames or README. You MUST read the provided source code snippets.
-Does the code contain actual logic, correct implementation, and required functionality? Reject empty templates, boilerplate, or spam.
-Also, evaluate the project's code quality (0-10) based on clean code practices, and complexity (0-10) based on the algorithms/logic used in the code.
+EVALUATION RULES:
+1. RELEVANCE CHECK (CRITICAL): Does the code align with the project name "${projectName}"? 
+   - If the project is supposed to be a "Food Delivery App" but the code is for a "To-Do List", REJECT IT.
+   - If the project is an "E-commerce Website" but they submitted a generic template, a completely random tutorial repo, or boilerplate code, REJECT IT.
+   - You MUST look for domain-specific clues in the code (variable names, routes, components, database schemas) that prove it is a real attempt at "${projectName}".
+2. QUALITY CHECK: Evaluate the project's code quality (0-10) based on clean code practices.
+3. COMPLEXITY CHECK: Evaluate complexity (0-10) based on the algorithms/logic used.
+
 Respond ONLY with a valid JSON object in the exact format:
-{"status": "Accepted" or "Rejected", "reason": "A brief 1-2 sentence reason detailing your findings in the code.", "codeQualityScore": number, "complexityScore": number}
+{"status": "Accepted" or "Rejected", "reason": "A brief 1-2 sentence reason detailing your findings in the code, specifically addressing if it matches the expected project type.", "codeQualityScore": number, "complexityScore": number}
     `;
 
     if (!process.env.GROQ_API_KEY) {
