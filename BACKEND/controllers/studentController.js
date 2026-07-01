@@ -485,8 +485,11 @@ const getPublicLeaderboard = async (req, res) => {
               return sum;
             }, 0);
           }
+          // Cap the calculated points to not exceed the actual total synergy points
+          // This fixes anomalies where pointsHistory has orphaned/duplicate points but synergyPoints was reset/corrected.
+          calculatedPoints = Math.min(calculatedPoints, internship.synergyPoints || 0);
         } else {
-          calculatedPoints = internship.synergyPoints;
+          calculatedPoints = internship.synergyPoints || 0;
         }
 
         if (calculatedPoints > 0) {
