@@ -343,11 +343,12 @@ const SubmissionsAdmin = () => {
                           </td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-1 rounded text-xs font-bold ${
+                              !sub.isFinalSubmitted ? 'bg-slate-100 text-slate-500' :
                               sub.aiStatus === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
                               sub.aiStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
                               'bg-amber-100 text-amber-700'
                             }`}>
-                              {sub.aiStatus}
+                              {!sub.isFinalSubmitted ? 'Draft (Not Submitted)' : sub.aiStatus}
                             </span>
                             {sub.aiFeedback && (
                                <div className="relative group mt-1">
@@ -366,29 +367,35 @@ const SubmissionsAdmin = () => {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {sub.aiStatus !== 'Accepted' && (
-                                <button 
-                                  onClick={() => openModal('accept', sub)}
-                                  className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded text-xs font-bold transition-colors"
-                                >
-                                  <Check size={14} /> Accept
-                                </button>
+                              {sub.isFinalSubmitted ? (
+                                <>
+                                  {sub.aiStatus !== 'Accepted' && (
+                                    <button 
+                                      onClick={() => openModal('accept', sub)}
+                                      className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded text-xs font-bold transition-colors"
+                                    >
+                                      <Check size={14} /> Accept
+                                    </button>
+                                  )}
+                                  {sub.aiStatus !== 'Rejected' && (
+                                    <button 
+                                      onClick={() => openModal('reject', sub)}
+                                      className="flex items-center gap-1 px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-bold transition-colors"
+                                    >
+                                      <X size={14} /> Reject
+                                    </button>
+                                  )}
+                                  <button 
+                                    onClick={() => openModal('edit', sub)}
+                                    className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-bold transition-colors"
+                                    title="Edit SP"
+                                  >
+                                    <Edit3 size={14} /> Edit SP
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">No Actions (Draft)</span>
                               )}
-                              {sub.aiStatus !== 'Rejected' && (
-                                <button 
-                                  onClick={() => openModal('reject', sub)}
-                                  className="flex items-center gap-1 px-2 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-bold transition-colors"
-                                >
-                                  <X size={14} /> Reject
-                                </button>
-                              )}
-                              <button 
-                                onClick={() => openModal('edit', sub)}
-                                className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-bold transition-colors"
-                                title="Edit SP"
-                              >
-                                <Edit3 size={14} /> Edit SP
-                              </button>
                             </div>
                           </td>
                         </tr>

@@ -942,6 +942,10 @@ const reviewSummerProject = async (req, res) => {
       return res.status(404).json({ message: "Repository assignment not found" });
     }
 
+    if (!internship.assignedRepos[repoIndex].isFinalSubmitted) {
+      return res.status(400).json({ message: "Student has not finally submitted this project yet." });
+    }
+
     internship.assignedRepos[repoIndex].reviewStatus = reviewStatus;
     internship.assignedRepos[repoIndex].feedback = feedback;
     
@@ -1089,6 +1093,7 @@ const getAllSubmissions = async (req, res) => {
             aiFeedback: assignment.aiFeedback,
             spAwarded: assignment.spAwarded || 0,
             submittedAt: sub.submittedAt,
+            isFinalSubmitted: true,
             // For overriding SP
             modelRef: 'ProjectSubmission',
             docId: sub._id.toString(),
@@ -1116,6 +1121,7 @@ const getAllSubmissions = async (req, res) => {
               aiFeedback: repo.feedback || '',
               spAwarded: repo.spAwarded || (repo.pointsAwarded ? 50 : 0), 
               submittedAt: repo.submittedAt || null,
+              isFinalSubmitted: repo.isFinalSubmitted || false,
               // For overriding SP
               modelRef: 'User',
               docId: user._id.toString(),
@@ -1185,6 +1191,10 @@ const overrideSP = async (req, res) => {
       
       const repo = internship.assignedRepos.id(assignmentId);
       if (!repo) return res.status(404).json({ message: 'Repo not found' });
+      
+      if (!repo.isFinalSubmitted) {
+         return res.status(400).json({ message: "Student has not finally submitted this project yet." });
+      }
       
       const oldSp = repo.spAwarded || (repo.pointsAwarded ? 50 : 0); 
       const difference = finalSp - oldSp;
@@ -1315,7 +1325,7 @@ const evaluatePendingAI = async (req, res) => {
             for (let repo of internship.assignedRepos) {
               if (processedCount >= MAX_BATCH_SIZE) break;
               
-              if (repo.reviewStatus === 'Pending' && repo.repoLink) {
+              if (repo.reviewStatus === 'Pending' && repo.repoLink && repo.isFinalSubmitted) {
                 const project = await SummerProject.findById(repo.projectId);
                 const projectName = project ? project.name : 'Summer Project';
                 const evaluation = await evaluateRepoWithAI(repo.repoLink, projectName, project ? project.pdfUrl : null);
