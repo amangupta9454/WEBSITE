@@ -52,12 +52,23 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      {/* Animated Background Mesh */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-10 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-1/3 -right-10 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+      </div>
+
+      {/* Global Confetti */}
+      <div className="fixed inset-0 z-50 pointer-events-none">
+        {leaderboard.length > 0 && <Confetti width={width} height={height} recycle={false} numberOfPieces={600} gravity={0.15} />}
+      </div>
+
       <Navbar />
       
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-blue-900 to-indigo-900 text-white pt-32 pb-20 px-4 relative overflow-hidden">
-        {leaderboard.length > 0 && <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />}
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center justify-center p-3 bg-white/10 rounded-2xl mb-6 backdrop-blur-sm border border-white/20">
             <Trophy className="text-yellow-400 w-8 h-8 mr-3" />
