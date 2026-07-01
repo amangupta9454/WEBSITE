@@ -172,20 +172,6 @@ const SubmissionsAdmin = () => {
     }
   };
 
-  const handleResetEvaluations = async () => {
-    if (!window.confirm("DANGER: This will reset ALL past AI evaluations and deduct SP for everyone. Are you absolutely sure?")) return;
-    try {
-      const token = localStorage.getItem('adminToken');
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/reset-ai-evaluations`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success(res.data.message);
-      fetchSubmissions();
-    } catch (err) {
-      toast.error('Failed to reset AI evaluations');
-    }
-  };
-
   // Group submissions by student
   const groupedSubmissions = {};
   submissions.forEach(sub => {
@@ -252,13 +238,6 @@ const SubmissionsAdmin = () => {
               Send Evaluation Emails
             </button>
             
-            <button
-              onClick={handleResetEvaluations}
-              className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors shadow-sm flex-shrink-0"
-              title="Reset all past AI evaluations to Pending"
-            >
-              Reset All
-            </button>
           </div>
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
