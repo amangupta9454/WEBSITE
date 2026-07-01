@@ -207,11 +207,24 @@ const SubmissionsAdmin = () => {
     s.studentId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalSubmissions = submissions.length;
+  const acceptedSubmissions = submissions.filter(s => s.aiStatus === 'Accepted').length;
+  const rejectedSubmissions = submissions.filter(s => s.aiStatus === 'Rejected').length;
+  const pendingSubmissions = submissions.filter(s => s.aiStatus === 'Pending' || s.aiStatus === 'pending').length;
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
-        <div className="flex items-center gap-4 w-full md:w-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">All Project Submissions</h2>
+          <div className="flex flex-wrap gap-2 mt-2 text-sm">
+            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium border border-blue-200 shadow-sm">Total: {totalSubmissions}</span>
+            <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-medium border border-emerald-200 shadow-sm">Accepted: {acceptedSubmissions}</span>
+            <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-md font-medium border border-rose-200 shadow-sm">Rejected: {rejectedSubmissions}</span>
+            <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-medium border border-amber-200 shadow-sm">Pending: {pendingSubmissions}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
           <div className="flex gap-2">
             {!isAutoRunning ? (
               <button
