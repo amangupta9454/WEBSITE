@@ -422,22 +422,6 @@ Begin the interview now.
            </div>
          )}
 
-        <footer className="px-8 py-6 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-center gap-6 mt-auto">
-          <button 
-            onClick={toggleMic} 
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 group ${isMuted ? 'bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20'}`}
-          >
-            {isMuted ? <MicOff className="w-6 h-6 group-hover:scale-110 transition-transform" /> : <Mic className="w-6 h-6 group-hover:scale-110 transition-transform" />}
-          </button>
-          
-          <button 
-            onClick={endCall} 
-            className="h-16 px-10 rounded-2xl flex items-center gap-3 font-bold bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-all duration-300 hover:-translate-y-1"
-          >
-            <PhoneOff className="w-5 h-5" /> 
-            <span className="tracking-wide">End Interview</span>
-          </button>
-        </footer>
       </div>
     </div>
   );
