@@ -17,6 +17,24 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date },
     dismissedNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
     interviewCredits: { type: Number, default: 3 },
+    interviewIsUnlimited: { type: Boolean, default: false },
+    interviewPendingOrders: [
+      {
+        orderId: { type: String },
+        packageId: { type: String },
+        amount: { type: Number },
+        createdAt: { type: Date, default: Date.now },
+      }
+    ],
+    interviewPayments: [
+      {
+        packageId: { type: String },
+        amount: { type: Number },
+        razorpayOrderId: { type: String },
+        razorpayPaymentId: { type: String },
+        paidAt: { type: Date, default: Date.now },
+      }
+    ],
 
     // Internship applications array
     internships: [

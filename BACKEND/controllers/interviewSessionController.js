@@ -1,26 +1,18 @@
 const InterviewSession = require('../models/InterviewSession');
-const InterviewUser = require('../models/InterviewUser');
 const User = require('../models/User');
 
 exports.createSession = async (req, res) => {
   const { jobTitle, jobDescription, experienceYears, durationMinutes } = req.body;
-  const userId = req.user.unifiedUserId;
-  const role = req.user.unifiedRole;
+  const userId = req.user.id || req.user.unifiedUserId;
 
   try {
-    let user;
-    if (role === 'intern') {
-      user = await User.findById(userId);
-    } else {
-      user = await InterviewUser.findById(userId);
-    }
-    
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const credits = role === 'intern' ? (user.interviewCredits || 0) : (user.credits || 0);
-    const isUnlimited = role === 'intern' ? false : (user.isUnlimited || false);
+    const credits = user.interviewCredits || 0;
+    const isUnlimited = user.interviewIsUnlimited || false;
 
     if (!isUnlimited && credits <= 0) {
       return res.status(403).json({ success: false, message: 'Insufficient credits. Please purchase more.' });
@@ -28,11 +20,7 @@ exports.createSession = async (req, res) => {
 
     // Deduct credit only if not unlimited
     if (!isUnlimited) {
-      if (role === 'intern') {
-        user.interviewCredits = credits - 1;
-      } else {
-        user.credits = credits - 1;
-      }
+      user.interviewCredits = credits - 1;
       await user.save();
     }
 
@@ -43,7 +31,7 @@ exports.createSession = async (req, res) => {
       experienceYears,
       durationMinutes
     });
-    
+
     await session.save();
 
     const remaining = isUnlimited ? 'Unlimited' : (credits - 1);
@@ -56,11 +44,11 @@ exports.createSession = async (req, res) => {
 
 exports.endSession = async (req, res) => {
   const { sessionId, feedback, status } = req.body;
-  const userId = req.user.unifiedUserId;
+  const userId = req.user.id || req.user.unifiedUserId;
 
   try {
     const session = await InterviewSession.findOne({ _id: sessionId, userId });
-    
+
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
@@ -69,7 +57,7 @@ exports.endSession = async (req, res) => {
     try {
       if (feedback && feedback.conversation && feedback.conversation.length > 0) {
         const transcriptText = feedback.conversation.map(msg => `${msg.role.toUpperCase()}: ${msg.transcript}`).join('\n');
-        
+
         const prompt = `Act as an expert Technical HR Manager conducting a job interview.
 You are evaluating a candidate based on the following interview transcript. 
 Analyze the candidate's responses in extreme detail for technical accuracy, communication skills, confidence, and overall performance.
@@ -82,13 +70,13 @@ ${transcriptText}
 
 You must return your evaluation STRICTLY as a valid JSON object with the following structure (no markdown, no code blocks):
 {
-  "overall_score": 8, // Score out of 10
-  "technical_score": 7, // Score out of 10
-  "communication_score": 9, // Score out of 10
+  "overall_score": 8,
+  "technical_score": 7,
+  "communication_score": 9,
   "strengths": ["Clear communication", "Good understanding of concepts"],
   "weaknesses": ["Hesitated on some questions", "Needs to explain concepts more deeply"],
-  "enhancements": ["Practice system design questions", "Speak slower during technical explanations", "Learn more about React hooks"],
-  "detailed_feedback": "A highly detailed, comprehensive paragraph of overall HR feedback covering their specific technical answers, communication style, and exactly what they need to do to pass a real interview."
+  "enhancements": ["Practice system design questions", "Speak slower during technical explanations"],
+  "detailed_feedback": "A highly detailed, comprehensive paragraph of overall HR feedback."
 }`;
 
         const groqKeys = [
@@ -132,9 +120,7 @@ You must return your evaluation STRICTLY as a valid JSON object with the followi
 
     session.feedback = feedback || session.feedback;
     if (aiEvaluation) {
-      // Merge AI evaluation into feedback
       session.feedback = { ...session.feedback, ai_evaluation: aiEvaluation };
-      // Keep overallScore at the root for easier UI access if needed by existing UI components
       if (aiEvaluation.overall_score) {
         session.feedback.overallScore = aiEvaluation.overall_score;
       }
@@ -151,7 +137,7 @@ You must return your evaluation STRICTLY as a valid JSON object with the followi
 };
 
 exports.getUserSessions = async (req, res) => {
-  const userId = req.user.unifiedUserId;
+  const userId = req.user.id || req.user.unifiedUserId;
   try {
     const sessions = await InterviewSession.find({ userId }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, sessions });
@@ -162,30 +148,21 @@ exports.getUserSessions = async (req, res) => {
 };
 
 exports.getUserCredits = async (req, res) => {
-  const userId = req.user.unifiedUserId;
-  const role = req.user.unifiedRole;
-  
+  const userId = req.user.id || req.user.unifiedUserId;
+
   try {
-    let user;
-    if (role === 'intern') {
-      user = await User.findById(userId);
-      res.status(200).json({ 
-        success: true, 
-        credits: user?.interviewCredits || 0, 
-        isUnlimited: false, 
-        role: 'intern',
-        user: { name: user?.name, email: user?.email, profileImage: user?.profileImage }
-      });
-    } else {
-      user = await InterviewUser.findById(userId);
-      res.status(200).json({ 
-        success: true, 
-        credits: user?.credits || 0, 
-        isUnlimited: user?.isUnlimited || false, 
-        role: 'interview_user',
-        user: { name: user?.name, email: user?.email, profileImage: user?.profileImage }
-      });
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    res.status(200).json({
+      success: true,
+      credits: user.interviewCredits || 0,
+      isUnlimited: user.interviewIsUnlimited || false,
+      role: 'intern',
+      user: { name: user.name, email: user.email, profileImage: user.profileImage }
+    });
   } catch (error) {
     console.error('Error fetching credits:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
