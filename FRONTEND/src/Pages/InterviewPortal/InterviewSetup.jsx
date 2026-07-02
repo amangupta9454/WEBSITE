@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AlertCircle, Eye, ShieldAlert, Video } from 'lucide-react';
 
 const InterviewSetup = () => {
   const [formData, setFormData] = useState({
@@ -53,9 +54,30 @@ const InterviewSetup = () => {
       <div className="absolute top-40 left-10 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
 
       <div className="relative z-10 max-w-2xl w-full bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-xl border border-slate-200 p-8 sm:p-10">
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Configure Interview</h2>
           <p className="text-slate-500 mt-2 text-sm">Set up the parameters for your AI mock interview session.</p>
+        </div>
+
+        {/* Rules & Instructions Alert */}
+        <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <h3 className="font-bold text-amber-800 mb-3 flex items-center gap-2">
+            <AlertCircle size={18} className="text-amber-600" /> Important Rules & Guidelines
+          </h3>
+          <ul className="space-y-3 text-sm text-amber-700">
+            <li className="flex items-start gap-2">
+              <Video className="text-amber-500 shrink-0 mt-0.5" size={16} />
+              <span><strong>Camera & Mic Required:</strong> Ensure your camera and microphone are properly working. You must grant browser permissions to start.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <ShieldAlert className="text-amber-500 shrink-0 mt-0.5" size={16} />
+              <span><strong>Tab Switching Restricted:</strong> Do not switch tabs or open other applications during the interview. This will generate a warning.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Eye className="text-amber-500 shrink-0 mt-0.5" size={16} />
+              <span><strong>AI Proctoring Active:</strong> Your eye contact, face visibility, and attention span are monitored in real-time. Looking away frequently will negatively affect your score.</span>
+            </li>
+          </ul>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
