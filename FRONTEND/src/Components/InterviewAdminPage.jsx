@@ -380,6 +380,34 @@ export default function InterviewAdminPage() {
         </button>
       </div>
 
+      {/* Interview Token Cost Banner */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+            <Database className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Token Cost</h3>
+            <p className="text-xs text-slate-500">Amount of tokens deducted per interview.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <input 
+            type="number" 
+            value={tokenSettings.interviewCost} 
+            onChange={(e) => setTokenSettings({...tokenSettings, interviewCost: Number(e.target.value)})}
+            className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-center font-bold" 
+          />
+          <button 
+            onClick={saveTokenSettings}
+            disabled={savingTokens}
+            className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {savingTokens ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {savingTokens ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
 
       {/* User Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

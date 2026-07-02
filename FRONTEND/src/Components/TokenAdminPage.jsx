@@ -18,13 +18,26 @@ function TokenHistoryModal({ user, onClose }) {
   }
   
   if (user.interviewPayments) {
-    user.interviewPayments.forEach(p => history.push({ 
-      source: 'payment', 
-      type: 'PURCHASE', 
-      amount: `₹${p.amount}`, 
-      reason: `Purchased Package ID: ${p.packageId}`, 
-      date: p.paidAt 
-    }));
+    user.interviewPayments.forEach(p => {
+      let tknMatch = p.packageId ? p.packageId.match(/(\d+)/) : null;
+      let tknAmount = tknMatch ? parseInt(tknMatch[1]) : 0;
+      
+      // Fix for legacy typo where 100_tokens might have been saved as 10_tokens
+      if (tknAmount === 10 && p.amount === 299) {
+        tknAmount = 100;
+      }
+      if (tknAmount === 50 && p.amount === 199) {
+         tknAmount = 50;
+      }
+
+      history.push({ 
+        source: 'payment', 
+        type: 'PURCHASE', 
+        amount: tknAmount, 
+        reason: `Purchased Package: ${tknAmount} Tokens (₹${p.amount})`, 
+        date: p.paidAt 
+      });
+    });
   }
 
   history.sort((a, b) => new Date(b.date) - new Date(a.date));
