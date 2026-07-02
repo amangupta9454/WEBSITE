@@ -159,6 +159,7 @@ function FeedbackModal({ feedback, onClose }) {
 
 export default function InterviewDashboardContent({ credits, isUnlimited, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [rePracticeSession, setRePracticeSession] = useState(null);
   const navigate = useNavigate();
   
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
@@ -283,7 +284,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
                   </span>
                   
                   {session.status !== 'Completed' ? (
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => navigate('/interview-setup', { state: { rePracticeSession: session } })}>
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => setRePracticeSession(session)}>
                       <PlayCircle size={14} /> Re-practice
                     </button>
                   ) : session.feedback ? (
@@ -319,6 +320,33 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
       </div>
 
       <FeedbackModal feedback={selectedFeedback} onClose={() => setSelectedFeedback(null)} />
+
+      {rePracticeSession && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative text-center">
+            <button onClick={() => setRePracticeSession(null)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
+              <X size={20} />
+            </button>
+            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PlayCircle size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Resume Session</h3>
+            <p className="text-slate-500 text-sm mb-6">
+              You are about to resume your unfinished interview for <strong>{rePracticeSession.jobTitle}</strong>. No extra credits will be deducted.
+            </p>
+            <button 
+              onClick={() => {
+                const id = rePracticeSession._id;
+                setRePracticeSession(null);
+                navigate(`/interview-active/${id}`);
+              }}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-200"
+            >
+              Start Interview Now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
