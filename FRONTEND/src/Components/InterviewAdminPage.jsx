@@ -53,6 +53,14 @@ function SessionRow({ session }) {
     ? "text-blue-600 bg-blue-50 border-blue-200"
     : "text-red-600 bg-red-50 border-red-200";
 
+  const formatMetricValue = (key, value) => {
+    if (key === 'eyeContactScore' || key === 'attentionScore') return `${value}/10`;
+    if (key === 'faceVisibilityPct') return `${value}%`;
+    if (key === 'lookAwayDurationSec') return `${value}s`;
+    if (key === 'interviewDurationMin') return `${value}m`;
+    return value;
+  };
+
   return (
     <div className="border border-slate-100 rounded-xl mb-2 overflow-hidden">
       <button
@@ -144,7 +152,7 @@ function SessionRow({ session }) {
                   {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
                     <div key={k} className="bg-white p-2 rounded-lg border border-slate-200 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
-                      <p className="text-sm font-bold text-slate-700">{v}</p>
+                      <p className="text-sm font-bold text-slate-700">{formatMetricValue(k, v)}</p>
                     </div>
                   ))}
                 </div>

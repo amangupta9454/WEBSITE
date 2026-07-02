@@ -26,6 +26,14 @@ function FeedbackModal({ feedback, onClose }) {
     acc.push({ ...curr });
     return acc;
   }, []) || [];
+
+  const formatMetricValue = (key, value) => {
+    if (key === 'eyeContactScore' || key === 'attentionScore') return `${value}/10`;
+    if (key === 'faceVisibilityPct') return `${value}%`;
+    if (key === 'lookAwayDurationSec') return `${value}s`;
+    if (key === 'interviewDurationMin') return `${value}m`;
+    return value;
+  };
   
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
@@ -118,7 +126,7 @@ function FeedbackModal({ feedback, onClose }) {
                   {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
                     <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
-                      <p className="text-lg font-black text-slate-700">{v}</p>
+                      <p className="text-lg font-black text-slate-700">{formatMetricValue(k, v)}</p>
                     </div>
                   ))}
                 </div>
