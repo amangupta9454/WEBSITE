@@ -25,135 +25,12 @@ const getDashboardInfo = async (req, res) => {
     const allSummerProjects = await SummerProject.find({});
     const allNormalTasks = await NormalTask.find({});
 
-    // Filter for only the internship that matches the studentId
-    const targetInternship = user.internships.find(
-      (app) => app.studentId === studentId,
-    );
-
-    if (!targetInternship) {
-      return res.status(404).json({ message: "Internship not found" });
+    // Determine which internships to process
+    if (!user.internships || user.internships.length === 0) {
+      return res.status(404).json({ message: "No internships found for this user" });
     }
 
-    // Fetch submissions for the specific internship
-    const submissions = await ProjectSubmission.find({
-      studentId: targetInternship.studentId,
-    }).sort({ month: 1 });
-    const submittedMonths = submissions.length;
-
-    // Parse internship duration (e.g. "2 Months" or "2" -> 2)
-    const durationStr = targetInternship.duration || "1 Month";
-    const duration = parseInt(durationStr.split(" ")[0], 10) || 1;
-    const currentDueMonth = submittedMonths + 1;
-
-    let isBlocked = false;
-    let blockReason = "";
-    let activeAlert = null;
-    let daysElapsed = 0;
-
-    if (targetInternship.startDate && currentDueMonth <= duration) {
-      const startDate = new Date(targetInternship.startDate);
-      const today = new Date();
-      const diffTime = today.getTime() - startDate.getTime();
-      daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      // Compute alert parameters based on next pending month
-      let completionDay = 30 * currentDueMonth;
-      let yellowStartDay = 30 * currentDueMonth - 2 * currentDueMonth;
-      let blockDay =
-        currentDueMonth === 1 ? 35 : currentDueMonth === 2 ? 80 : 120;
-
-      // Date objects for UI display
-      const completionDate = new Date(
-        startDate.getTime() + completionDay * 24 * 60 * 60 * 1000,
-      );
-      const blockDate = new Date(
-        startDate.getTime() + blockDay * 24 * 60 * 60 * 1000,
-      );
-
-      const completionDateString = completionDate.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-      const blockDateString = blockDate.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-
-      // 1. Block Check is removed. Student is never blocked.
-      isBlocked = false;
-      blockReason = "";
-
-      // 2. Alert warnings
-      if (daysElapsed >= yellowStartDay && daysElapsed < completionDay) {
-        activeAlert = {
-          type: "yellow",
-          message: `Your Month ${currentDueMonth} assignment submission is due on ${completionDateString}. Kindly submit the project at the earliest.`,
-        };
-      } else if (daysElapsed >= completionDay) {
-        activeAlert = {
-          type: "red",
-          message: `Your assignment submission is delayed! Kindly submit the project as soon as possible to keep your progress updated.`,
-        };
-      } else if (
-        daysElapsed >= completionDay - 10 &&
-        daysElapsed < yellowStartDay
-      ) {
-        activeAlert = {
-          type: "green",
-          message: `The project submission deadline is nearing. Please submit the project as soon as possible.`,
-        };
-      }
-    }
-
-    const internshipType =
-      targetInternship.internshipType ||
-      getInternshipType(targetInternship.duration);
-
-    // Populate projects for Summer/Winter Interns
-    let projects = [];
-    if (internshipType === "Summer/Winter Intern") {
-      projects = allSummerProjects
-        .filter((p) => p.domain === targetInternship.domain)
-        .map((p) => {
-          const assignedRepo = targetInternship.assignedRepos?.find(
-            (r) => r.projectId.toString() === p._id.toString(),
-          );
-          return {
-            id: p._id,
-            name: p.name,
-            description: p.description,
-            pdfUrl: p.pdfUrl,
-            createdAt: p.createdAt,
-            dueDate: p.dueDate,
-            repoLink: assignedRepo ? assignedRepo.repoLink : null,
-            isFinalSubmitted: assignedRepo
-              ? assignedRepo.isFinalSubmitted
-              : false,
-            reviewStatus: assignedRepo ? assignedRepo.reviewStatus : 'Pending',
-            feedback: assignedRepo ? assignedRepo.feedback : '',
-          };
-        });
-    }
-
-    let assignedNormalTasks = targetInternship.assignedNormalTasks || [];
-    if (
-      internshipType === "Normal Intern" &&
-      (!assignedNormalTasks || assignedNormalTasks.length === 0)
-    ) {
-      // Fetch default templates for this domain
-      const domainTasks = allNormalTasks
-        .filter((t) => t.domain === targetInternship.domain)
-        .sort((a, b) => a.monthNumber - b.monthNumber);
-
-      if (domainTasks.length > 0) {
-        assignedNormalTasks = Array.from({ length: duration }).map((_, idx) => {
-          const task = domainTasks.find((t) => t.monthNumber === idx + 1);
-          return task ? task.pdfUrl : "";
-        });
-      }
-    }
+    const enrichedInternships = [];
 
     // Calculate global rank
     const allUsers = await User.find({});
@@ -167,33 +44,147 @@ const getDashboardInfo = async (req, res) => {
     });
     
     allInterns.sort((a, b) => b.sp - a.sp);
-    const rankIndex = allInterns.findIndex(i => i.studentId === studentId);
-    const globalRank = rankIndex !== -1 ? rankIndex + 1 : null;
 
-    const enrichedInternship = {
-      ...targetInternship.toObject(),
-      internshipType,
-      assignedNormalTasks,
-      projects,
-      isBlocked,
-      blockReason,
-      activeAlert,
-      daysElapsed,
-      globalRank,
-      submissions: submissions.map((sub) => ({
-        id: sub._id,
-        month: sub.month,
-        submittedAt: sub.submittedAt,
-        assignmentsCount: sub.assignments ? sub.assignments.length : 0,
-        assignments: sub.assignments
-      })),
-    };
+    for (const targetInternship of user.internships) {
+      // Fetch submissions for the specific internship
+      const submissions = await ProjectSubmission.find({
+        studentId: targetInternship.studentId,
+      }).sort({ month: 1 });
+      const submittedMonths = submissions.length;
 
-    // Fetch notifications
+      // Parse internship duration
+      const durationStr = targetInternship.duration || "1 Month";
+      const duration = parseInt(durationStr.split(" ")[0], 10) || 1;
+      const currentDueMonth = submittedMonths + 1;
+
+      let isBlocked = false;
+      let blockReason = "";
+      let activeAlert = null;
+      let daysElapsed = 0;
+
+      if (targetInternship.startDate && currentDueMonth <= duration) {
+        const startDate = new Date(targetInternship.startDate);
+        const today = new Date();
+        const diffTime = today.getTime() - startDate.getTime();
+        daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        let completionDay = 30 * currentDueMonth;
+        let yellowStartDay = 30 * currentDueMonth - 2 * currentDueMonth;
+        let blockDay =
+          currentDueMonth === 1 ? 35 : currentDueMonth === 2 ? 80 : 120;
+
+        const completionDate = new Date(
+          startDate.getTime() + completionDay * 24 * 60 * 60 * 1000,
+        );
+        const blockDate = new Date(
+          startDate.getTime() + blockDay * 24 * 60 * 60 * 1000,
+        );
+
+        const completionDateString = completionDate.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+
+        isBlocked = false;
+        blockReason = "";
+
+        if (daysElapsed >= yellowStartDay && daysElapsed < completionDay) {
+          activeAlert = {
+            type: "yellow",
+            message: `Your Month ${currentDueMonth} assignment submission is due on ${completionDateString}. Kindly submit the project at the earliest.`,
+          };
+        } else if (daysElapsed >= completionDay) {
+          activeAlert = {
+            type: "red",
+            message: `Your assignment submission is delayed! Kindly submit the project as soon as possible to keep your progress updated.`,
+          };
+        } else if (
+          daysElapsed >= completionDay - 10 &&
+          daysElapsed < yellowStartDay
+        ) {
+          activeAlert = {
+            type: "green",
+            message: `The project submission deadline is nearing. Please submit the project as soon as possible.`,
+          };
+        }
+      }
+
+      const internshipType =
+        targetInternship.internshipType ||
+        getInternshipType(targetInternship.duration);
+
+      let projects = [];
+      if (internshipType === "Summer/Winter Intern") {
+        projects = allSummerProjects
+          .filter((p) => p.domain === targetInternship.domain)
+          .map((p) => {
+            const assignedRepo = targetInternship.assignedRepos?.find(
+              (r) => r.projectId.toString() === p._id.toString(),
+            );
+            return {
+              id: p._id,
+              name: p.name,
+              description: p.description,
+              pdfUrl: p.pdfUrl,
+              createdAt: p.createdAt,
+              dueDate: p.dueDate,
+              repoLink: assignedRepo ? assignedRepo.repoLink : null,
+              isFinalSubmitted: assignedRepo
+                ? assignedRepo.isFinalSubmitted
+                : false,
+              reviewStatus: assignedRepo ? assignedRepo.reviewStatus : 'Pending',
+              feedback: assignedRepo ? assignedRepo.feedback : '',
+            };
+          });
+      }
+
+      let assignedNormalTasks = targetInternship.assignedNormalTasks || [];
+      if (
+        internshipType === "Normal Intern" &&
+        (!assignedNormalTasks || assignedNormalTasks.length === 0)
+      ) {
+        const domainTasks = allNormalTasks
+          .filter((t) => t.domain === targetInternship.domain)
+          .sort((a, b) => a.monthNumber - b.monthNumber);
+
+        if (domainTasks.length > 0) {
+          assignedNormalTasks = Array.from({ length: duration }).map((_, idx) => {
+            const task = domainTasks.find((t) => t.monthNumber === idx + 1);
+            return task ? task.pdfUrl : "";
+          });
+        }
+      }
+
+      const rankIndex = allInterns.findIndex(i => i.studentId === targetInternship.studentId);
+      const globalRank = rankIndex !== -1 ? rankIndex + 1 : null;
+
+      enrichedInternships.push({
+        ...targetInternship.toObject(),
+        internshipType,
+        assignedNormalTasks,
+        projects,
+        isBlocked,
+        blockReason,
+        activeAlert,
+        daysElapsed,
+        globalRank,
+        submissions: submissions.map((sub) => ({
+          id: sub._id,
+          month: sub.month,
+          submittedAt: sub.submittedAt,
+          assignmentsCount: sub.assignments ? sub.assignments.length : 0,
+          assignments: sub.assignments
+        })),
+      });
+    }
+
+    // Get unique internship types to fetch relevant notifications
+    const userInternshipTypes = [...new Set(enrichedInternships.map(i => i.internshipType))];
     const allNotifications = await Notification.find({
       $or: [
         { audience: 'All' },
-        { audience: internshipType }
+        { audience: { $in: userInternshipTypes } }
       ]
     }).sort({ createdAt: -1 });
 
@@ -202,7 +193,6 @@ const getDashboardInfo = async (req, res) => {
     );
 
     res.json({
-      isBlocked,
       user: {
         id: user._id,
         name: user.name,
@@ -213,7 +203,7 @@ const getDashboardInfo = async (req, res) => {
         linkedin: user.linkedin,
         portfolio: user.portfolio,
       },
-      internships: [enrichedInternship],
+      internships: enrichedInternships,
       notifications: activeNotifications,
     });
   } catch (error) {

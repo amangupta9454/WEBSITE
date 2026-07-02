@@ -29,7 +29,8 @@ import {
   User,
   Settings,
   ImagePlus,
-  Linkedin
+  Linkedin,
+  PlayCircle,
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
@@ -964,6 +965,12 @@ const StudentDashboard = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiRecycle, setConfettiRecycle] = useState(false);
 
+  // Interview state
+  const [interviewCredits, setInterviewCredits] = useState(0);
+  const [interviewSessions, setInterviewSessions] = useState([]);
+  const [isInterviewLoading, setIsInterviewLoading] = useState(false);
+  const [selectedInternshipId, setSelectedInternshipId] = useState(null);
+
   useEffect(() => {
     if (location.state?.showConfetti) {
       setShowConfetti(true);
@@ -993,6 +1000,12 @@ const StudentDashboard = () => {
       );
 
       setData(response.data);
+      if (response.data.internships?.length > 0) {
+        setSelectedInternshipId(response.data.internships[0]._id);
+      }
+      
+      // Also fetch interview data
+      fetchInterviewData();
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.removeItem("studentToken");
@@ -1006,6 +1019,32 @@ const StudentDashboard = () => {
     }
   };
 
+  const fetchInterviewData = async () => {
+    try {
+      setIsInterviewLoading(true);
+      const token = localStorage.getItem("studentToken");
+      const [creditsRes, sessionsRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-sessions`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      if (creditsRes.data.success) setInterviewCredits(creditsRes.data.credits);
+      if (sessionsRes.data.success) setInterviewSessions(sessionsRes.data.sessions);
+    } catch (err) {
+      console.error("Failed to fetch interview data", err);
+    } finally {
+      setIsInterviewLoading(false);
+    }
+  };
+
+  const handleStartInterview = () => {
+    localStorage.setItem("interviewToken", localStorage.getItem("studentToken"));
+    navigate("/interview-setup");
+  };
+
   useEffect(() => {
     fetchDashboard();
   }, [navigate]);
@@ -1013,6 +1052,7 @@ const StudentDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("studentToken");
     localStorage.removeItem("studentData");
+    localStorage.removeItem("interviewToken");
     navigate("/student-login");
   };
 
@@ -1135,7 +1175,7 @@ const StudentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-28 px-4 sm:px-6 pb-16 font-sans">
+    <div className="w-full font-sans">
       {showConfetti && (
         <Confetti
           width={width}
@@ -1152,66 +1192,18 @@ const StudentDashboard = () => {
           }}
         />
       )}
-      <div className="max-w-6xl mx-auto space-y-6">
-        {data?.notifications?.length > 0 && (
-          <div className="space-y-3 mb-6">
-            {data.notifications.map((notif) => (
-              <div key={notif._id} className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3 shadow-sm relative">
-                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-                <div className="flex-1 pr-6">
-                  <h4 className="font-bold text-blue-900 text-sm mb-1">Important Update</h4>
-                  <p className="text-blue-800 text-sm">{notif.message}</p>
-                </div>
-                <button 
-                  onClick={() => handleDismissNotification(notif._id)}
-                  className="text-blue-400 hover:text-blue-700 hover:bg-blue-100 p-1 rounded-md transition-colors shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+      <div className="w-full relative z-10">
+        {data?.isBlocked && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl flex gap-3 shadow-sm">
+            <AlertTriangle className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-red-800 font-bold">Access Blocked</h3>
+              <p className="text-red-700 mt-1">{data.blockReason}</p>
+            </div>
           </div>
         )}
-        {/* Header section */}
-        <header className="flex flex-col sm:flex-row justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-8 gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
-              {data?.user?.profileImage ? (
-                <img
-                  src={data.user.profileImage}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xl font-bold text-blue-600">
-                  {data?.user?.name?.charAt(0)}
-                </span>
-              )}
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Intern Portal
-              </p>
-              <h1 className="text-xl font-black text-slate-800 leading-tight">
-                {data?.user?.name}
-              </h1>
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={openProfileModal}
-              className="px-4 py-2.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-blue-100 text-sm"
-            >
-              <Settings size={18} /> Profile
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold flex items-center gap-2 border border-transparent hover:border-red-100 text-sm"
-            >
-              <LogOut size={18} /> Logout
-            </button>
-          </div>
-        </header>
+
+
 
         {/* Synergy Points Summary Card */}
         <div className="bg-gradient-to-br from-white to-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-6 items-center justify-between">
@@ -1252,21 +1244,45 @@ const StudentDashboard = () => {
         {/* Dashboard Content */}
         <main>
           {data?.internships?.length > 0 ? (
-            data.internships.map((internship) => {
-              const mode = getInternshipMode(internship);
-              return (
-                <div key={internship._id} className="mb-10">
-                  {mode === "Summer/Winter Intern" ? (
-                    <SummerInternDashboard
-                      internship={internship}
-                      onRefresh={fetchDashboard}
-                    />
-                  ) : (
-                    <NormalInternDashboard internship={internship} />
-                  )}
+            <>
+              {data.internships.length > 1 && (
+                <div className="mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-blue-600" />
+                    Select Internship
+                  </h3>
+                  <select
+                    value={selectedInternshipId || ""}
+                    onChange={(e) => setSelectedInternshipId(e.target.value)}
+                    className="w-full sm:w-auto min-w-[250px] px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+                  >
+                    {data.internships.map(internship => (
+                      <option key={internship._id} value={internship._id}>
+                        {internship.domain} • {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB') : "N/A"}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              );
-            })
+              )}
+              
+              {data.internships
+                .filter(internship => internship._id === (selectedInternshipId || data.internships[0]._id))
+                .map((internship) => {
+                  const mode = getInternshipMode(internship);
+                  return (
+                    <div key={internship._id} className="mb-10 animate-fade-in">
+                      {mode === "Summer/Winter Intern" ? (
+                        <SummerInternDashboard
+                          internship={internship}
+                          onRefresh={fetchDashboard}
+                        />
+                      ) : (
+                        <NormalInternDashboard internship={internship} />
+                      )}
+                    </div>
+                  );
+              })}
+            </>
           ) : (
             <div className="bg-white py-16 px-6 text-center rounded-2xl shadow-sm border border-slate-200">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">

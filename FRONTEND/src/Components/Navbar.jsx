@@ -9,6 +9,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -36,10 +37,20 @@ const Navbar = () => {
     { name: 'Services', path: '/services' },
     { name: 'Industries', path: '/industries' },
     { name: 'Projects', path: '/projects' },
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-    { name: 'Internship', path: '/internship' },
+    { name: 'Internship', path: '/internship' }
   ];
+
+  const studentToken = localStorage.getItem('studentToken');
+  const interviewToken = localStorage.getItem('interviewToken');
+  const isLoggedIn = !!(studentToken || interviewToken);
+  const dashboardLink = studentToken ? '/dashboard' : '/dashboard';
+
+  const handleLogout = () => {
+    localStorage.removeItem('studentToken');
+    localStorage.removeItem('interviewToken');
+    localStorage.removeItem('interviewUser');
+    window.location.href = '/';
+  };
 
   return (
     <header 
@@ -94,6 +105,36 @@ const Navbar = () => {
               </Link>
             );
           })}
+          
+          {isLoggedIn ? (
+            <div className="relative group ml-4" onMouseEnter={() => setUserDropdownOpen(true)} onMouseLeave={() => setUserDropdownOpen(false)}>
+              <button className={`flex items-center gap-1 text-sm font-extrabold transition-colors hover:text-brand-purple ${(location.pathname === dashboardLink) ? 'text-brand-purple' : 'text-gray-900'}`}>
+                My Account <ChevronDown size={14} className={`transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {userDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-2"
+                  >
+                    <Link to={dashboardLink} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Dashboard</Link>
+                    <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600">Logout</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              to="/student-login"
+              className={`text-sm font-extrabold transition-colors hover:text-brand-purple ml-4 ${
+                location.pathname === '/student-login' ? 'text-brand-purple' : 'text-gray-900'
+              }`}
+            >
+              Login
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -196,6 +237,31 @@ const Navbar = () => {
                     <span className="block text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">Get in Touch</span>
                     <a href="mailto:codeanova26@gmail.com" className="block text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">codeanova26@gmail.com</a>
                   </div>
+                  {isLoggedIn ? (
+                    <>
+                      <Link 
+                        to={dashboardLink} 
+                        onClick={() => setMobileMenuOpen(false)} 
+                        className="flex items-center justify-center w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold transition-all hover:shadow-lg mb-2"
+                      >
+                        <span>Dashboard</span>
+                      </Link>
+                      <button 
+                        onClick={handleLogout} 
+                        className="flex items-center justify-center w-full p-4 bg-red-50 text-red-600 rounded-2xl font-bold transition-all hover:shadow-lg"
+                      >
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link 
+                      to="/student-login" 
+                      onClick={() => setMobileMenuOpen(false)} 
+                      className="flex items-center justify-center w-full p-4 bg-gradient-to-r from-blue-600 to-brand-purple text-white rounded-2xl font-bold transition-all hover:shadow-lg"
+                    >
+                      <span>Login to Practice</span>
+                    </Link>
+                  )}
                   <Link 
                     to="/contact" 
                     onClick={() => setMobileMenuOpen(false)} 

@@ -220,7 +220,7 @@ const Project = () => {
               );
 
               resetForm();
-              setTimeout(() => navigate('/student-dashboard', { state: { showConfetti: true } }), 1000);
+              setTimeout(() => navigate('/dashboard', { state: { showConfetti: true } }), 1000);
             } catch (err) {
               toast.error('Payment verification failed');
             }
@@ -251,12 +251,12 @@ const Project = () => {
               }
             }
           );
-          setTimeout(() => navigate('/student-dashboard', { state: { showConfetti: true } }), 1000);
+          setTimeout(() => navigate('/dashboard', { state: { showConfetti: true } }), 1000);
         } else {
           // Direct success for normal month
           toast.success(res.data.message || 'Assignment submitted successfully!');
           toast.success("Redirecting to dashboard...", { autoClose: 2000 });
-          setTimeout(() => navigate('/student-dashboard'), 1000);
+          setTimeout(() => navigate('/dashboard'), 1000);
         }
         
         resetForm();

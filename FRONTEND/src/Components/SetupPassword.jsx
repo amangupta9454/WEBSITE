@@ -19,7 +19,7 @@ const SetupPassword = () => {
     }
     const user = JSON.parse(userStr);
     if (!user.isFirstLogin) {
-      navigate('/student-dashboard');
+      navigate('/dashboard');
     }
   }, [navigate]);
 
@@ -48,7 +48,7 @@ const SetupPassword = () => {
       localStorage.setItem('studentData', JSON.stringify(user));
 
       toast.success('Password setup successfully!');
-      setTimeout(() => navigate('/student-dashboard'), 1500);
+      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update password');
     } finally {

@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date },
     dismissedNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
+    interviewCredits: { type: Number, default: 3 },
 
     // Internship applications array
     internships: [

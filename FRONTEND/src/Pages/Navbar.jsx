@@ -82,7 +82,7 @@ function Navbar() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/student-dashboard"
+                    to="/dashboard"
                     className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-full transition-all duration-300 shadow-lg hover:shadow-cyan-500/50 flex items-center"
                   >
                     <User className="inline mr-2" size={18} />
@@ -136,7 +136,7 @@ function Navbar() {
             {isAuthenticated ? (
               <>
                 <Link
-                  to="/student-dashboard"
+                  to="/dashboard"
                   onClick={() => setIsOpen(false)}
                   className="block w-full text-center py-3 bg-cyan-600 text-white rounded-xl"
                 >

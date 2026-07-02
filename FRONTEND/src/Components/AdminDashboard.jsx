@@ -43,7 +43,8 @@ import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
 import NotificationsAdmin from "./NotificationsAdmin";
 import SubmissionsAdmin from "./SubmissionsAdmin";
-import { Bell } from "lucide-react";
+import InterviewAdminPage from "./InterviewAdminPage";
+import { Bell, Settings, Zap } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -52,7 +53,9 @@ const AdminDashboard = () => {
   const [selectedDomain, setSelectedDomain] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("new");
+  const [activeMainTab, setActiveMainTab] = useState("features");
   const [activeSidebarTab, setActiveSidebarTab] = useState("interns");
+  const [activeFeatureTab, setActiveFeatureTab] = useState("interview");
   const [leaderboardSubTab, setLeaderboardSubTab] = useState("active");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -1524,6 +1527,99 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const ImpersonateIntern = () => {
+    const [impersonateForm, setImpersonateForm] = useState({ studentId: "", email: "" });
+    const [impersonating, setImpersonating] = useState(false);
+
+    const handleImpersonate = async (e) => {
+      e.preventDefault();
+      setImpersonating(true);
+      try {
+        const res = await axios.post(`${BACKEND}/api/auth/login`, {
+          studentId: impersonateForm.studentId,
+          email: impersonateForm.email
+        });
+        
+        if (res.data.token) {
+          // Set standard student tokens
+          localStorage.setItem('studentToken', res.data.token);
+          localStorage.setItem('studentData', JSON.stringify(res.data.user));
+          
+          // Set interview portal fallback tokens
+          localStorage.setItem('interviewToken', res.data.token);
+          localStorage.setItem('interviewUser', JSON.stringify(res.data.user));
+          localStorage.setItem('interviewUserRole', 'intern');
+          
+          toast.success(`Successfully logged in as ${res.data.user.name}`);
+          window.open('/dashboard', '_blank'); // Open intern dashboard in new tab
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Login failed. Check credentials.");
+      } finally {
+        setImpersonating(false);
+      }
+    };
+
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in max-w-2xl">
+        <div className="p-5 border-b border-slate-200 bg-emerald-50/30 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+            <LogOut className="w-5 h-5 rotate-180" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 text-lg">Impersonate Intern</h3>
+            <p className="text-sm text-slate-500">Login to the student dashboard as any intern using their credentials.</p>
+          </div>
+        </div>
+        <form onSubmit={handleImpersonate} className="p-6 space-y-5 bg-slate-50/50">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Student ID
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. CAN-0001"
+              value={impersonateForm.studentId}
+              onChange={e => setImpersonateForm({ ...impersonateForm, studentId: e.target.value })}
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="student@example.com"
+              value={impersonateForm.email}
+              onChange={e => setImpersonateForm({ ...impersonateForm, email: e.target.value })}
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={impersonating || !impersonateForm.studentId || !impersonateForm.email}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all transform hover:-translate-y-0.5"
+          >
+            {impersonating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              <>
+                <LogOut className="w-5 h-5 rotate-180" />
+                Login as Intern
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    );
+  };
+
   const ActivityTab = () => (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
       <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
@@ -1563,6 +1659,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Top Navbar */}
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -1571,67 +1668,37 @@ const AdminDashboard = () => {
                 <Users className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-slate-900 font-bold text-base leading-tight">
-                  Admin Dashboard
-                </h1>
-                <p className="text-slate-500 text-xs hidden sm:block">
-                  Internship Management
-                </p>
+                <h1 className="text-slate-900 font-bold text-base leading-tight">Admin Dashboard</h1>
+                <p className="text-slate-500 text-xs hidden sm:block">Code-A-Nova Management</p>
               </div>
+            </div>
+            {/* Main Tab Switcher */}
+            <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+              <button
+                onClick={() => setActiveMainTab("features")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "features"
+                    ? "bg-white text-indigo-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Zap className="w-4 h-4" /> Features
+              </button>
+              <button
+                onClick={() => setActiveMainTab("interns")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "interns"
+                    ? "bg-white text-blue-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Users className="w-4 h-4" /> Interns
+              </button>
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={handleToggleRegistration}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                  registrationEnabled
-                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600"
-                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
-                }`}
-              >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  Reg: {registrationEnabled ? "ON" : "OFF"}
-                </span>
-              </button>
-              <button
-                onClick={handleToggleLeaderboard}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                  leaderboardEnabled
-                    ? "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-600"
-                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
-                }`}
-              >
-                <Trophy className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  L-Board: {leaderboardEnabled ? "ON" : "OFF"}
-                </span>
-              </button>
-              <button
-                onClick={handleTogglePayment}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                  paymentEnabled
-                    ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
-                    : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  Pay: {paymentEnabled ? "ON" : "OFF"}
-                </span>
-              </button>
-              <button
-                onClick={handleSyncRefunds}
-                disabled={syncingRefunds}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-600 transition-all duration-200 disabled:opacity-50"
-              >
-                {syncingRefunds ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                <span className="hidden sm:inline">
-                  Sync Refunds
-                </span>
-              </button>
-              <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 hover:text-red-300 text-sm font-medium transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 text-sm font-medium transition-all duration-200"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -1642,6 +1709,38 @@ const AdminDashboard = () => {
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-6">
+        {/* ─── FEATURES TAB ─── */}
+        {activeMainTab === "features" && (
+          <div className="w-full flex flex-col md:flex-row gap-6">
+            {/* Feature Sidebar */}
+            <div className="w-full md:w-64 flex-shrink-0">
+              <div className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-row md:flex-col gap-2 overflow-x-auto">
+                <button
+                  onClick={() => setActiveFeatureTab("interview")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "interview" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <Activity className="w-4 h-4" /> Interview
+                </button>
+              </div>
+            </div>
+            {/* Feature Content */}
+            <div className="flex-1 min-w-0">
+              {activeFeatureTab === "interview" && (
+                <div className="animate-fade-in">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-black text-slate-800">Interview Feature</h2>
+                    <p className="text-sm text-slate-500 mt-1">All interview users, their credits, sessions, and feedback.</p>
+                  </div>
+                  <InterviewAdminPage />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ─── INTERNS TAB ─── */}
+        {activeMainTab === "interns" && (
+          <div className="w-full flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
         <div className="w-full md:w-64 flex-shrink-0">
           <div className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-row md:flex-col gap-2 overflow-x-auto">
@@ -1673,6 +1772,12 @@ const AdminDashboard = () => {
               <Bell size={18} /> Notifications
             </button>
             <button
+              onClick={() => setActiveSidebarTab("impersonate")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "impersonate" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <LogOut size={18} className="rotate-180" /> Impersonate
+            </button>
+            <button
               onClick={() => setActiveSidebarTab("submissions")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "submissions" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
@@ -1691,6 +1796,12 @@ const AdminDashboard = () => {
             >
               <CreditCard className="w-4 h-4" />
               Recent Paid
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("settings")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "settings" ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Settings className="w-4 h-4" /> Settings
             </button>
           </div>
         </div>
@@ -2659,6 +2770,79 @@ const AdminDashboard = () => {
             );
           })()}
         </div>
+
+          {/* Settings Tab */}
+          {activeSidebarTab === "impersonate" && (
+            <div className="w-full">
+              <ImpersonateIntern />
+            </div>
+          )}
+          {activeSidebarTab === "settings" && (
+            <div className="flex-1 min-w-0 animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-800">Settings</h2>
+                <p className="text-sm text-slate-500 mt-1">Manage global site toggles and sync operations.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Registration</p>
+                  <p className="text-sm text-slate-600 mb-4">Enable or disable new intern registrations.</p>
+                  <button
+                    onClick={handleToggleRegistration}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                      registrationEnabled
+                        ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-600"
+                        : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                    }`}
+                  >
+                    <UserPlus className="w-4 h-4" /> Registration: {registrationEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Leaderboard</p>
+                  <p className="text-sm text-slate-600 mb-4">Show or hide the public leaderboard page.</p>
+                  <button
+                    onClick={handleToggleLeaderboard}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                      leaderboardEnabled
+                        ? "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-600"
+                        : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4" /> Leaderboard: {leaderboardEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Payments</p>
+                  <p className="text-sm text-slate-600 mb-4">Enable or disable the payment gateway.</p>
+                  <button
+                    onClick={handleTogglePayment}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                      paymentEnabled
+                        ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                        : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4" /> Payments: {paymentEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Sync Refunds</p>
+                  <p className="text-sm text-slate-600 mb-4">Sync pending refund statuses from the payment gateway.</p>
+                  <button
+                    onClick={handleSyncRefunds}
+                    disabled={syncingRefunds}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-600 transition-all disabled:opacity-50"
+                  >
+                    {syncingRefunds ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                    Sync Refunds
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        )}
       </div>
 
       {showBulkActionModal && (

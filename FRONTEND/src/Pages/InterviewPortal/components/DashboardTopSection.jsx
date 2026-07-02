@@ -1,0 +1,228 @@
+import React, { useState, useEffect } from "react";
+import { Settings, Tag } from "lucide-react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import BuyTokensModal from "./BuyTokensModal";
+import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
+
+function loadScript(src) {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+export default function DashboardTopSection() {
+  const [credits, setCredits] = useState(0);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const fetchData = async () => {
+    const token = localStorage.getItem('interviewToken');
+    if (!token) return;
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setCredits(res.data.credits);
+        setIsUnlimited(res.data.isUnlimited);
+        if (res.data.user) {
+          setUserData(res.data.user);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleBuyPackage = async (pkg) => {
+    setIsBuyModalOpen(false);
+    const token = localStorage.getItem('interviewToken');
+    if (!token) return;
+
+    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!res) {
+      toast.error("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
+
+    try {
+      const toastId = toast.loading("Initializing payment...");
+      
+      const orderRes = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-payment/create-order`,
+        { packageId: pkg.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (!orderRes.data.success) {
+        toast.dismiss(toastId);
+        toast.error(orderRes.data.message || "Failed to create order");
+        return;
+      }
+
+      toast.dismiss(toastId);
+      const order = orderRes.data.order;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Code-A-Nova",
+        description: `Purchase ${pkg.name}`,
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-payment/verify`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                packageId: pkg.id
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (verifyRes.data.success) {
+              toast.success("Payment Successful! Credits updated.");
+              setCredits(verifyRes.data.credits);
+              setIsUnlimited(verifyRes.data.isUnlimited);
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("An error occurred during verification");
+          }
+        },
+        theme: {
+          color: "#4f46e5",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong!");
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        
+        {/* Welcome Banner (Card 1) */}
+        <div className="lg:col-span-1 bg-gradient-to-r from-blue-600 to-indigo-700 p-5 sm:p-6 rounded-2xl shadow-lg shadow-indigo-200/50 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:opacity-20 transition-opacity duration-700"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-400 opacity-20 rounded-full blur-2xl group-hover:opacity-30 transition-opacity duration-700"></div>
+          <div className="relative z-10 w-full text-center xl:text-left">
+            <h2 className="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center xl:justify-start gap-2">
+              Welcome Back! <span className="animate-bounce inline-block">👋</span>
+            </h2>
+            <p className="text-blue-100 max-w-sm mx-auto xl:mx-0 text-xs sm:text-sm leading-relaxed font-medium">
+              Ready to learn and grow today? Access tools, track progress, and prepare for your dream career.
+            </p>
+          </div>
+        </div>
+        
+        {/* Profile & Wallet Sleek Card (Card 2) */}
+        <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-slate-100 overflow-hidden relative">
+          
+          {/* Profile Section */}
+          <div className="flex-1 p-4 sm:p-5 flex items-center justify-center xl:justify-start gap-4 relative z-10 hover:bg-slate-50 transition-colors duration-300">
+            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm shrink-0">
+              {userData?.profileImage ? (
+                <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg font-bold text-indigo-600">
+                  {userData?.name?.charAt(0) || "U"}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 text-center xl:text-left flex flex-col xl:items-start items-center">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-black text-slate-800 leading-tight truncate">
+                  {userData?.name || "User"}
+                </h1>
+              </div>
+              {userData?.email && (
+                <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
+                  {userData.email}
+                </p>
+              )}
+              {userData?.mobile && (
+                <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
+                  +91 {userData.mobile}
+                </p>
+              )}
+              <button
+                onClick={() => setIsProfileModalOpen(true)}
+                className="mt-2 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1 transition-colors bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md"
+              >
+                <Settings size={12} /> Edit Profile
+              </button>
+            </div>
+          </div>
+          
+          {/* Wallet Section */}
+          <div className="flex-1 p-4 sm:p-5 flex items-center justify-between relative z-10 bg-slate-50/30 hover:bg-slate-50/80 transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600 shrink-0">
+                <Tag size={18} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Wallet</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent tracking-tight leading-none">
+                    {isUnlimited ? '∞' : credits}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tokens</span>
+                </div>
+                <div className="mt-1">
+                  <p className="text-[9px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
+                    <span className="animate-pulse">✨</span> Upgrade
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setIsBuyModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 sm:px-4 sm:py-2 rounded-xl transition-all shadow-md shadow-indigo-500/20 hover:-translate-y-0.5 text-xs flex items-center justify-center shrink-0 ml-2"
+            >
+              <span className="hidden sm:inline">Add Tokens</span>
+              <span className="sm:hidden">+</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <BuyTokensModal 
+        isOpen={isBuyModalOpen} 
+        onClose={() => setIsBuyModalOpen(false)} 
+        onSelectPackage={handleBuyPackage} 
+      />
+      
+      <ProfileSettingsModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        user={userData}
+        onSaveSuccess={() => {
+          fetchData();
+        }}
+      />
+    </div>
+  );
+}

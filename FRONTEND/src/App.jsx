@@ -15,9 +15,9 @@ import IndustryDetail from "./Pages/IndustryDetail";
 import Privacy from "./Pages/Privacy";
 import Term from "./Pages/Term";
 import Refund from "./Pages/Refund";
+import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import ResumeEmbed from "./Pages/ResumeEmbed";
 import Registration from "./Components/Registration";
-import StudentLogin from "./Components/StudentLogin";
 import SetupPassword from "./Components/SetupPassword";
 import StudentDashboard from "./Components/StudentDashboard";
 import AdminLogin from "./Components/AdminLogin";
@@ -26,6 +26,10 @@ import Verify from "./Components/Verify";
 import Project from "./Components/Project";
 import Leaderboard from "./Components/Leaderboard";
 import MainLayout from "./layouts/MainLayout";
+import InterviewLogin from "./Pages/InterviewPortal/InterviewLogin";
+import InterviewDashboard from "./Pages/InterviewPortal/InterviewDashboard";
+import InterviewSetup from "./Pages/InterviewPortal/InterviewSetup";
+import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
 
 const UnifiedLayout = () => (
   <MainLayout>
@@ -71,11 +75,16 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
-        {/* Old Legacy Functional Pages */}
+        {/* InterviewActive needs full screen, so it doesn't get UnifiedLayout */}
+        <Route path="/interview-active/:sessionId" element={<InterviewActive />} />
+
+        {/* Old Legacy Functional Pages and Interview Portal */}
         <Route element={<UnifiedLayout />}>
-          <Route path="/student-login" element={<StudentLogin />} />
+          {/* Interview Portal Routes */}
+          <Route path="/student-login" element={<InterviewLogin />} />
+          <Route path="/dashboard" element={<UnifiedDashboard />} />
+          <Route path="/interview-setup" element={<InterviewSetup />} />
           <Route path="/setup-password" element={<SetupPassword />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/project-submission" element={<Project />} />
           <Route path="/resume-builder" element={<ResumeEmbed />} />
           <Route path="/verify" element={<Verify />} />

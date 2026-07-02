@@ -12,6 +12,9 @@ const authRoutes = require("./routes/auth");
 const studentRoutes = require("./routes/student");
 const cronRoutes = require("./routes/cron");
 const contactRoutes = require("./routes/contact");
+const interviewAuthRoutes = require("./routes/interviewAuth");
+const interviewSessionRoutes = require("./routes/interviewSession");
+const interviewPaymentRoutes = require("./routes/interviewPayment");
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
@@ -38,7 +41,7 @@ async function connectToDatabase() {
 // Create Express app
 const app = express();
 
-app.use(cors("*"));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // Connect DB before routes (but Vercel runs per request → we connect lazily)
@@ -60,6 +63,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/interview-auth", interviewAuthRoutes);
+app.use("/api/interview-session", interviewSessionRoutes);
+app.use("/api/interview-payment", interviewPaymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running on Vercel...");
