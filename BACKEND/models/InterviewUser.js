@@ -8,6 +8,14 @@ const interviewUserSchema = new mongoose.Schema(
     profileImage: { type: String, default: "" },
     credits: { type: Number, default: 3 }, // 3 free interviews
     isUnlimited: { type: Boolean, default: false },
+    pendingOrders: [
+      {
+        orderId: { type: String },
+        packageId: { type: String },
+        amount: { type: Number },
+        createdAt: { type: Date, default: Date.now },
+      }
+    ],
     payments: [
       {
         packageId: { type: String },

@@ -41,6 +41,18 @@ exports.createOrder = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Failed to create Razorpay order' });
     }
 
+    // Save the pending order to the user's document
+    const userId = req.user.id || req.user.userId;
+    await InterviewUser.findByIdAndUpdate(userId, {
+      $push: {
+        pendingOrders: {
+          orderId: order.id,
+          packageId,
+          amount
+        }
+      }
+    });
+
     res.status(200).json({ success: true, order, amount });
   } catch (error) {
     console.error('Error creating razorpay order:', error);
@@ -63,11 +75,21 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid payment signature' });
     }
 
-    // Payment is valid, update user credits
+    // Check if the order is still pending
     const user = await InterviewUser.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    const pendingOrderIndex = user.pendingOrders.findIndex(o => o.orderId === razorpay_order_id);
+    
+    // If the order is not in pendingOrders, it was already fulfilled (e.g. by Webhook)
+    if (pendingOrderIndex === -1) {
+      return res.status(200).json({ success: true, message: 'Payment already processed successfully', credits: user.credits, isUnlimited: user.isUnlimited });
+    }
+
+    // Remove from pending
+    user.pendingOrders.splice(pendingOrderIndex, 1);
 
     if (packageId === 'unlimited') {
       user.isUnlimited = true;
@@ -95,5 +117,72 @@ exports.verifyPayment = async (req, res) => {
   } catch (error) {
     console.error('Error verifying payment:', error);
     res.status(500).json({ success: false, message: 'Server error verifying payment' });
+  }
+};
+
+exports.webhookHandler = async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+    
+    // Validate signature
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+    }
+
+    const event = req.body.event;
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = req.body.payload.payment.entity;
+      const orderId = paymentEntity.order_id;
+      const paymentId = paymentEntity.id;
+
+      // Find user who has this pending order
+      const user = await InterviewUser.findOne({ 'pendingOrders.orderId': orderId });
+      if (!user) {
+        // Order either already processed by frontend or doesn't exist
+        return res.status(200).json({ success: true, message: 'Order already processed or not found' });
+      }
+
+      const pendingOrderIndex = user.pendingOrders.findIndex(o => o.orderId === orderId);
+      if (pendingOrderIndex !== -1) {
+        const pendingOrder = user.pendingOrders[pendingOrderIndex];
+        const packageId = pendingOrder.packageId;
+
+        // Remove from pending
+        user.pendingOrders.splice(pendingOrderIndex, 1);
+
+        if (packageId === 'unlimited') {
+          user.isUnlimited = true;
+        } else {
+          let tokensToAdd = 0;
+          if (packageId === '5_tokens') tokensToAdd = 5;
+          if (packageId === '10_tokens') tokensToAdd = 10;
+          if (packageId === '20_tokens') tokensToAdd = 20;
+          user.credits += tokensToAdd;
+        }
+
+        // Add to payments
+        user.payments.push({
+          packageId,
+          amount: pendingOrder.amount,
+          razorpayOrderId: orderId,
+          razorpayPaymentId: paymentId,
+          paidAt: new Date(),
+        });
+
+        await user.save();
+        console.log(`Webhook successfully processed order ${orderId} for user ${user.email}`);
+      }
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ success: false, message: 'Server error in webhook' });
   }
 };
