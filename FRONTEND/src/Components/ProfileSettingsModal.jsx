@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 export default function ProfileSettingsModal({ isOpen, onClose, user, onSaveSuccess }) {
-  const [profileFormData, setProfileFormData] = useState({ name: "", profileImage: "", github: "", linkedin: "" });
+  const [profileFormData, setProfileFormData] = useState({ name: "", profileImage: "", github: "", linkedin: "", mobile: "" });
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -15,7 +15,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, user, onSaveSucc
         name: user.name || "",
         profileImage: user.profileImage || "",
         github: user.github || "",
-        linkedin: user.linkedin || ""
+        linkedin: user.linkedin || "",
+        mobile: user.mobile || ""
       });
     }
   }, [user, isOpen]);
@@ -59,7 +60,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, user, onSaveSucc
       
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/student/profile`,
-        { name: profileFormData.name, profileImage: profileFormData.profileImage, github: profileFormData.github, linkedin: profileFormData.linkedin },
+        { name: profileFormData.name, profileImage: profileFormData.profileImage, github: profileFormData.github, linkedin: profileFormData.linkedin, mobile: profileFormData.mobile },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -176,9 +177,9 @@ export default function ProfileSettingsModal({ isOpen, onClose, user, onSaveSucc
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile</label>
               <input
                 type="text"
-                value={user?.mobile || ""}
-                disabled
-                className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 cursor-not-allowed"
+                value={profileFormData.mobile}
+                onChange={(e) => setProfileFormData({...profileFormData, mobile: e.target.value})}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
               />
             </div>
           </div>

@@ -215,7 +215,7 @@ const getDashboardInfo = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, github, linkedin, portfolio, profileImage } = req.body;
+    const { name, github, linkedin, portfolio, profileImage, mobile } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -227,6 +227,7 @@ const updateProfile = async (req, res) => {
     if (linkedin !== undefined) user.linkedin = linkedin;
     if (portfolio !== undefined) user.portfolio = portfolio;
     if (profileImage !== undefined) user.profileImage = profileImage; // Assuming frontend handles base64 or cloudinary url upload
+    if (mobile !== undefined) user.mobile = mobile;
 
     await user.save();
 
@@ -238,6 +239,7 @@ const updateProfile = async (req, res) => {
         linkedin: user.linkedin,
         portfolio: user.portfolio,
         profileImage: user.profileImage,
+        mobile: user.mobile,
       },
     });
   } catch (error) {
