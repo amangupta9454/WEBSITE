@@ -24,7 +24,7 @@ const InterviewSetup = () => {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/create`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.data.success) {
         // Update user credits locally
         const userStr = localStorage.getItem('interviewUser');
@@ -57,7 +57,7 @@ const InterviewSetup = () => {
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Configure Interview</h2>
           <p className="text-slate-500 mt-2 text-sm">Set up the parameters for your AI mock interview session.</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
             <label className="block text-sm font-bold text-slate-700">Job Title</label>
@@ -128,7 +128,7 @@ const InterviewSetup = () => {
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Starting...
                 </div>
-              ) : 'Start Interview (1 Credit)'}
+              ) : 'Start Interview (10 Credit)'}
             </button>
           </div>
         </form>
