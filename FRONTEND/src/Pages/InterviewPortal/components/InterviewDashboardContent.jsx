@@ -201,73 +201,75 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
       </div>
 
       {/* Mock Interviews Section */}
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-black text-slate-800">Recent Interview Sessions</h3>
-          <div className="flex items-center gap-3">
+      {interviewEnabled && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-black text-slate-800">Recent Interview Sessions</h3>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={onStartInterview}
+                className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
+              >
+                Start New <PlayCircle size={16} />
+              </button>
+            </div>
+          </div>
+
+
+        {isLoading ? (
+          <div className="text-center py-10">Loading your sessions...</div>
+        ) : sessions.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sessions.map((session) => (
+              <div key={session._id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex flex-col">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="bg-blue-50 text-blue-700 p-2 rounded-lg">
+                    <Video size={20} />
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    session.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {session.status}
+                  </span>
+                </div>
+                <h4 className="font-bold text-lg text-slate-800 mb-1">{session.jobTitle}</h4>
+                <p className="text-sm text-slate-500 mb-4 line-clamp-2">{session.jobDescription}</p>
+                
+                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                    <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
+                  </span>
+                  
+                  {session.feedback ? (
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session.feedback)}>
+                      View Feedback
+                    </button>
+                  ) : (
+                    <span className="text-sm text-slate-400 font-medium">No Feedback</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white py-16 px-6 text-center rounded-2xl shadow-sm border border-slate-200">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Video className="text-slate-400 w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No Interviews Yet</h3>
+            <p className="text-slate-500 font-medium max-w-md mx-auto mb-6">
+              You haven't completed any mock interviews yet. Start one now to practice your skills!
+            </p>
             <button 
               onClick={onStartInterview}
-              className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
             >
-              Start New <PlayCircle size={16} />
+              <PlayCircle size={18} /> Start Practice
             </button>
           </div>
-        </div>
-
-
-      {isLoading ? (
-        <div className="text-center py-10">Loading your sessions...</div>
-      ) : sessions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sessions.map((session) => (
-            <div key={session._id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex flex-col">
-              <div className="flex justify-between items-start mb-4">
-                <div className="bg-blue-50 text-blue-700 p-2 rounded-lg">
-                  <Video size={20} />
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  session.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {session.status}
-                </span>
-              </div>
-              <h4 className="font-bold text-lg text-slate-800 mb-1">{session.jobTitle}</h4>
-              <p className="text-sm text-slate-500 mb-4 line-clamp-2">{session.jobDescription}</p>
-              
-              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
-                </span>
-                
-                {session.feedback ? (
-                  <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session.feedback)}>
-                    View Feedback
-                  </button>
-                ) : (
-                  <span className="text-sm text-slate-400 font-medium">No Feedback</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white py-16 px-6 text-center rounded-2xl shadow-sm border border-slate-200">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Video className="text-slate-400 w-8 h-8" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">No Interviews Yet</h3>
-          <p className="text-slate-500 font-medium max-w-md mx-auto mb-6">
-            You haven't completed any mock interviews yet. Start one now to practice your skills!
-          </p>
-          <button 
-            onClick={onStartInterview}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
-          >
-            <PlayCircle size={18} /> Start Practice
-          </button>
+        )}
         </div>
       )}
-      </div>
 
       <FeedbackModal feedback={selectedFeedback} onClose={() => setSelectedFeedback(null)} />
     </div>
