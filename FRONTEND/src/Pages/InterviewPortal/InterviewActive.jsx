@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AiAvatar from "./components/AiAvatar";
 import { useFaceTracking } from "../../hooks/useFaceTracking";
+import toast from "react-hot-toast";
 
 function InterviewActive() {
   const { sessionId } = useParams();
@@ -101,8 +102,7 @@ function InterviewActive() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && isCallActive) {
-        setFatalError("Tab switch detected. Interview terminated to ensure fairness.");
-        setTimeout(() => endCall(), 2000);
+        toast.error("Warning: Tab switch detected! In a real interview, this might lead to rejection.", { duration: 5000 });
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -263,69 +263,122 @@ Begin the interview now.
     }
   };
 
-  if (!interviewData) return <div className="p-8">Loading interview...</div>;
+  if (!interviewData) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-indigo-400">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+        <p className="font-bold tracking-widest uppercase text-sm animate-pulse">Initializing Setup...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 relative overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-slate-200 relative overflow-hidden font-sans selection:bg-indigo-500/30">
       {/* Decorative background elements matching Code-A-Nova */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none rounded-b-[3rem]"></div>
-      <div className="absolute top-20 right-10 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
-      <div className="absolute top-40 left-10 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900/20 via-indigo-900/5 to-transparent pointer-events-none"></div>
+      <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full mix-blend-screen filter blur-[120px] pointer-events-none animate-pulse duration-10000"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col h-full flex-1">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white/80 backdrop-blur-xl shadow-sm">
-          <div>
-            <h1 className="font-black text-xl text-slate-800 tracking-tight">{interviewData.jobTitle} Interview</h1>
+        <header className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <span className="font-black text-white text-lg">C</span>
+            </div>
+            <div>
+              <h1 className="font-black text-xl text-white tracking-tight">{interviewData.jobTitle}</h1>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Mock Interview</p>
+            </div>
           </div>
-        <div className="flex items-center gap-2 px-5 py-2 rounded-xl font-mono font-bold bg-white border border-slate-200 shadow-sm text-slate-600">
-          <Timer className="w-5 h-5 text-indigo-500" />
-          <span>{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm bg-emerald-50 text-emerald-700 border border-emerald-100">
-          <div className={`w-2 h-2 rounded-full bg-emerald-500 ${isCallActive ? 'animate-ping' : ''}`}></div>
-          {isCallActive ? "Live" : "Connecting..."}
-        </div>
-      </header>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono font-bold bg-white/5 border border-white/10 text-indigo-300 backdrop-blur-md">
+              <Timer className="w-4 h-4 text-indigo-400" />
+              <span className="text-sm">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}</span>
+            </div>
+            <div className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold backdrop-blur-md border ${isCallActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+              <div className={`w-2 h-2 rounded-full ${isCallActive ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse' : 'bg-amber-500'}`}></div>
+              {isCallActive ? "Live" : "Connecting..."}
+            </div>
+          </div>
+        </header>
       
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-8 max-w-7xl mx-auto w-full items-center">
-        <div className="relative rounded-[2rem] overflow-hidden bg-white/50 backdrop-blur-sm border border-white shadow-xl h-[450px] flex items-center justify-center p-4 ring-1 ring-slate-900/5">
-          <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
-        </div>
-        
-        <div className="relative rounded-[2rem] overflow-hidden bg-white/50 backdrop-blur-sm border border-white shadow-xl h-[450px] p-2 ring-1 ring-slate-900/5">
-          <div className="relative w-full h-full rounded-3xl overflow-hidden bg-slate-100">
-            <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
-            {cameraError && <div className="absolute inset-0 flex items-center justify-center bg-slate-800/90 text-white font-medium">{cameraError}</div>}
+        <main className="flex-1 flex flex-col md:flex-row gap-6 p-6 md:p-8 w-full max-w-[1400px] mx-auto items-stretch justify-center">
+          
+          {/* AI Avatar Side */}
+          <div className="flex-1 relative rounded-3xl overflow-hidden bg-[#131B2C] border border-white/10 shadow-2xl flex flex-col min-h-[400px]">
+            <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
+              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 text-[10px] font-bold tracking-widest text-indigo-300 uppercase">AI Interviewer</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center p-8 relative">
+              {isAiSpeaking && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-48 h-48 bg-indigo-500/20 rounded-full blur-[50px] animate-pulse"></div>
+                </div>
+              )}
+              <div className="relative z-10 transform scale-125 transition-transform duration-700">
+                <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
+              </div>
+            </div>
+            
+            {/* Real-time Subtitles Area */}
+            <div className="h-32 bg-black/40 backdrop-blur-md border-t border-white/5 p-6 flex flex-col justify-end">
+              {currentQuestion ? (
+                <p className="text-lg md:text-xl font-medium text-white/90 leading-relaxed animate-fade-in drop-shadow-md">
+                  "{currentQuestion}"
+                </p>
+              ) : (
+                <p className="text-sm font-medium text-white/30 italic">AI is thinking...</p>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+          
+          {/* Candidate Video Side */}
+          <div className="flex-1 relative rounded-3xl overflow-hidden bg-[#131B2C] border border-white/10 shadow-2xl flex flex-col min-h-[400px]">
+             <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
+              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 text-[10px] font-bold tracking-widest text-emerald-300 uppercase">You (Candidate)</span>
+            </div>
+            <div className="relative w-full h-full bg-black">
+              <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-90 transition-opacity" style={{ transform: "scaleX(-1)" }} />
+              
+              {/* Subtle face tracking overlay effect (optional aesthetic) */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#131B2C] via-transparent to-transparent opacity-80 pointer-events-none"></div>
 
-      {currentQuestion && (
-        <div className="px-6 py-5 bg-white/80 backdrop-blur-md border-y border-slate-200 shadow-sm">
-          <div className="max-w-5xl mx-auto flex items-start gap-4">
-            <span className="bg-indigo-600 text-white text-[10px] font-black tracking-wider uppercase px-3 py-1.5 rounded-lg shadow-sm shrink-0">AI Interviewer</span>
-            <p className="text-slate-800 font-medium text-lg leading-relaxed">{currentQuestion}</p>
+              {cameraError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30">
+                  <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
+                  <div className="text-white font-medium text-center max-w-xs">{cameraError}</div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        </main>
 
-      {vapiError && (
-         <div className="px-6 py-4 shrink-0 bg-transparent">
-           <div className="px-5 py-4 rounded-2xl max-w-5xl mx-auto text-sm font-bold text-red-700 bg-red-50 border border-red-200 shadow-sm flex items-center gap-3">
-             <AlertTriangle className="w-5 h-5" />
-             {vapiError}
+        {vapiError && (
+           <div className="px-8 pb-4 shrink-0 bg-transparent animate-fade-in">
+             <div className="px-6 py-4 rounded-2xl max-w-3xl mx-auto text-sm font-bold text-red-200 bg-red-950/50 border border-red-500/30 backdrop-blur-md flex items-center justify-center gap-3">
+               <AlertTriangle className="w-5 h-5 text-red-500" />
+               {vapiError}
+             </div>
            </div>
-         </div>
-       )}
+         )}
 
-      <footer className="px-6 py-6 bg-white/80 backdrop-blur-xl border-t border-slate-200 flex justify-center gap-6 mt-auto">
-        <button onClick={toggleMic} className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all ${isMuted ? 'bg-red-50 border-red-200 text-red-600 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 shadow-sm hover:shadow'}`}>
-          {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-        </button>
-        <button onClick={endCall} className="h-16 px-8 rounded-2xl flex items-center gap-3 font-bold bg-red-600 text-white shadow-lg shadow-red-600/20 hover:bg-red-700 hover:-translate-y-0.5 transition-all">
-          <PhoneOff className="w-5 h-5" /> End Interview
-        </button>
-      </footer>
+        <footer className="px-8 py-6 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-center gap-6 mt-auto">
+          <button 
+            onClick={toggleMic} 
+            className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 group ${isMuted ? 'bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20'}`}
+          >
+            {isMuted ? <MicOff className="w-6 h-6 group-hover:scale-110 transition-transform" /> : <Mic className="w-6 h-6 group-hover:scale-110 transition-transform" />}
+          </button>
+          
+          <button 
+            onClick={endCall} 
+            className="h-16 px-10 rounded-2xl flex items-center gap-3 font-bold bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-all duration-300 hover:-translate-y-1"
+          >
+            <PhoneOff className="w-5 h-5" /> 
+            <span className="tracking-wide">End Interview</span>
+          </button>
+        </footer>
       </div>
     </div>
   );
