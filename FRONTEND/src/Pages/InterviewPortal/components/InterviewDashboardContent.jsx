@@ -9,6 +9,18 @@ function FeedbackModal({ feedback, onClose }) {
   if (!feedback) return null;
   const evaluation = feedback.ai_evaluation;
   
+  const deduplicatedConversation = feedback.conversation?.reduce((acc, curr) => {
+    if (acc.length === 0) return [curr];
+    const last = acc[acc.length - 1];
+    const currText = curr.transcript || curr.text || '';
+    const lastText = last.transcript || last.text || '';
+    if (last.role === curr.role && currText === lastText) {
+      return acc; // Skip duplicate adjacent lines
+    }
+    acc.push(curr);
+    return acc;
+  }, []) || [];
+  
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
@@ -86,44 +98,44 @@ function FeedbackModal({ feedback, onClose }) {
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center">
-                <p className="text-amber-700 font-medium text-sm">The raw transcript was collected, but no structured AI evaluation is available for this session.</p>
-              </div>
-
-              {/* Attention Metrics Section */}
-              {feedback.attentionMetrics && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
-                      <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k}</p>
-                        <p className="text-lg font-black text-slate-700">{v}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Transcript Section */}
-              {feedback.conversation && feedback.conversation.length > 0 && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Raw Transcript</h4>
-                  <div className="max-h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                    {feedback.conversation.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md shadow-indigo-200' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'}`}>
-                          <p className="text-[10px] uppercase font-black opacity-70 mb-1">{msg.role === 'user' ? 'You' : 'AI Interviewer'}</p>
-                          <p className="leading-relaxed">{msg.transcript || msg.text || ''}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-8">
+              <p className="text-amber-700 font-medium text-sm">The raw transcript was collected, but no structured AI evaluation is available for this session.</p>
             </div>
           )}
+
+          <div className="space-y-8 mt-8 pt-8 border-t border-slate-100">
+            {/* Attention Metrics Section */}
+            {feedback.attentionMetrics && (
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
+                    <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k}</p>
+                      <p className="text-lg font-black text-slate-700">{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Transcript Section */}
+            {deduplicatedConversation.length > 0 && (
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Raw Transcript</h4>
+                <div className="max-h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  {deduplicatedConversation.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md shadow-indigo-200' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'}`}>
+                        <p className="text-[10px] uppercase font-black opacity-70 mb-1">{msg.role === 'user' ? 'You' : 'AI Interviewer'}</p>
+                        <p className="leading-relaxed">{msg.transcript || msg.text || ''}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>,

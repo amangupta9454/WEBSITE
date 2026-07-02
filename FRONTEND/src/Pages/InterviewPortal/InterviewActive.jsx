@@ -138,7 +138,9 @@ function InterviewActive() {
 
     vapiRef.current.on("message", (msg) => {
       if (msg.type === "transcript") {
-        conversationRef.current.push({ role: msg.role, transcript: msg.transcript });
+        if (msg.transcriptType === "final") {
+          conversationRef.current.push({ role: msg.role, transcript: msg.transcript });
+        }
         if (msg.role === "assistant") {
           if (msg.transcript?.trim()) setCurrentQuestion(msg.transcript);
           setIsAiSpeaking(true);

@@ -26,7 +26,21 @@ function StatCard({ label, value, icon: Icon, color }) {
 function SessionRow({ session }) {
   const [open, setOpen] = useState(false);
   const feedback = session.feedback || {};
-  const overallScore = feedback.overallScore || feedback.overall_score || null;
+  const evaluation = feedback.ai_evaluation;
+  
+  const deduplicatedConversation = feedback.conversation?.reduce((acc, curr) => {
+    if (acc.length === 0) return [curr];
+    const last = acc[acc.length - 1];
+    const currText = curr.transcript || curr.text || '';
+    const lastText = last.transcript || last.text || '';
+    if (last.role === curr.role && currText === lastText) {
+      return acc; // Skip duplicate adjacent lines
+    }
+    acc.push(curr);
+    return acc;
+  }, []) || [];
+  
+  const overallScore = evaluation?.overall_score || feedback.overallScore || feedback.overall_score || null;
   const statusColor = session.status === "Completed"
     ? "text-emerald-600 bg-emerald-50 border-emerald-200"
     : session.status === "Started"
@@ -107,43 +121,47 @@ function SessionRow({ session }) {
                         ))}
                       </ul>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* Attention Metrics Section */}
-              {feedback.attentionMetrics && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
-                      <div key={k} className="bg-white p-2 rounded-lg border border-slate-200 text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{k}</p>
-                        <p className="text-sm font-bold text-slate-700">{v}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Transcript Section */}
-              {feedback.conversation && feedback.conversation.length > 0 && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Transcript</h4>
-                  <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                    {feedback.conversation.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] p-3 rounded-xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'}`}>
-                          <p className="text-[9px] uppercase font-bold opacity-70 mb-1">{msg.role === 'user' ? 'Candidate' : 'AI'}</p>
-                          <p>{msg.transcript || msg.text || ''}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
             </div>
+          ) : (
+            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-6">
+              <p className="text-amber-700 font-medium text-sm">No structured AI evaluation available for this session.</p>
+            </div>
           )}
+          
+          <div className="space-y-6 mt-6 pt-6 border-t border-slate-100">
+            {/* Attention Metrics Section */}
+            {feedback.attentionMetrics && (
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
+                    <div key={k} className="bg-white p-2 rounded-lg border border-slate-200 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{k}</p>
+                      <p className="text-sm font-bold text-slate-700">{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Transcript Section */}
+            {deduplicatedConversation.length > 0 && (
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Transcript</h4>
+                <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  {deduplicatedConversation.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-3 rounded-xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'}`}>
+                        <p className="text-[9px] uppercase font-bold opacity-70 mb-1">{msg.role === 'user' ? 'Candidate' : 'AI'}</p>
+                        <p>{msg.transcript || msg.text || ''}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
