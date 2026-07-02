@@ -183,28 +183,40 @@ export default function DashboardTopSection() {
                 <Tag size={18} />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Wallet</span>
+                <span className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${!isUnlimited && credits <= 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>Wallet</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent tracking-tight leading-none">
+                  <span className={`text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                     {isUnlimited ? '∞' : credits}
                   </span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tokens</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
                 </div>
                 <div className="mt-1">
-                  <p className="text-[9px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
-                    <span className="animate-pulse">✨</span> Upgrade
-                  </p>
+                  {isUnlimited ? (
+                    <p className="text-[9px] font-bold text-teal-700 bg-teal-100/80 border border-teal-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
+                      <span>💎</span> Premium Active
+                    </p>
+                  ) : credits <= 0 ? (
+                    <p className="text-[9px] font-bold text-red-700 bg-red-100/80 border border-red-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap animate-pulse">
+                      <span>⚠️</span> Recharge Now
+                    </p>
+                  ) : (
+                    <p className="text-[9px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
+                      <span className="animate-pulse">✨</span> Upgrade
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
             
-            <button 
-              onClick={() => setIsBuyModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 sm:px-4 sm:py-2 rounded-xl transition-all shadow-md shadow-indigo-500/20 hover:-translate-y-0.5 text-xs flex items-center justify-center shrink-0 ml-2"
-            >
-              <span className="hidden sm:inline">Add Tokens</span>
-              <span className="sm:hidden">+</span>
-            </button>
+            {!isUnlimited && (
+              <button 
+                onClick={() => setIsBuyModalOpen(true)}
+                className={`text-white font-bold p-2 sm:px-4 sm:py-2 rounded-xl transition-all shadow-md text-xs flex items-center justify-center shrink-0 ml-2 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+              >
+                <span className="hidden sm:inline">Add Tokens</span>
+                <span className="sm:hidden">+</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
