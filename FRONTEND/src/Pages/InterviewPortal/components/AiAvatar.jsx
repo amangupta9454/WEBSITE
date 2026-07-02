@@ -33,7 +33,7 @@ function AiAvatar({ gender, isSpeaking, isListening }) {
       <div className="absolute inset-0 w-full h-full">
         <video
           ref={videoRef}
-          className="w-full h-full object-cover pointer-events-none"
+          className="w-full h-full object-cover object-top pointer-events-none"
           autoPlay
           muted
           loop

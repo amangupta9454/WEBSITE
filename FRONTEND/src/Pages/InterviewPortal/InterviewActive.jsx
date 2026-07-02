@@ -313,75 +313,100 @@ Begin the interview now.
           </div>
         </header>
       
-        <main className="flex-1 flex flex-col md:flex-row gap-6 p-6 md:p-8 w-full max-w-[1400px] mx-auto items-stretch justify-center">
+        <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 w-full max-w-5xl mx-auto relative">
           
-          {/* AI Avatar Side */}
-          <div className="flex-1 relative rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col min-h-[400px]">
-            <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
-              <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm text-[10px] font-bold tracking-widest text-indigo-600 uppercase">AI Interviewer</span>
+          {/* Warning Message */}
+          {warningMessage && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-6 py-3 rounded-2xl shadow-xl shadow-amber-500/20 flex items-center gap-3 z-50 animate-bounce">
+              <AlertTriangle size={20} />
+              <span className="font-bold">{warningMessage}</span>
             </div>
-            <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-slate-50">
-              {!isStarted && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/60 backdrop-blur-md">
-                  <div className="bg-white p-8 rounded-3xl shadow-2xl border border-indigo-100 flex flex-col items-center max-w-sm text-center">
-                    <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                      <PlayCircle size={40} className="text-indigo-600" />
-                    </div>
-                    <h2 className="text-2xl font-black text-slate-800 mb-2">Ready to start?</h2>
-                    <p className="text-slate-500 text-sm font-medium mb-8">Take a deep breath. Your AI interviewer is ready when you are.</p>
+          )}
+
+          <div className="flex flex-col md:flex-row gap-6 md:gap-12 w-full justify-center items-center">
+            
+            {/* AI Avatar Side (Portrait) */}
+            <div className="relative rounded-[2.5rem] overflow-hidden bg-white border-4 border-white shadow-2xl shadow-indigo-100 w-full max-w-[320px] aspect-[3/4] flex-shrink-0 group">
+              <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
+                <span className="px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md border border-slate-100 shadow-sm text-[10px] font-bold tracking-widest text-indigo-600 uppercase">AI Interviewer</span>
+              </div>
+              <div className="relative w-full h-full bg-slate-100">
+                {!isStarted && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-md">
                     <button 
                       onClick={() => {
                         setIsStarted(true);
                         startCall();
                       }}
-                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 transition-all flex items-center justify-center gap-2"
+                      className="w-20 h-20 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-[0_0_30px_rgba(79,70,229,0.4)] hover:scale-105 transition-all flex items-center justify-center mb-4"
                     >
-                      Start Interview
+                      <PlayCircle size={40} />
                     </button>
+                    <h3 className="font-black text-slate-800 text-lg">Start Session</h3>
                   </div>
+                )}
+                {isAiSpeaking && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-full h-full bg-indigo-400/10 blur-xl animate-pulse"></div>
+                  </div>
+                )}
+                <div className={`relative z-10 w-full h-full transition-all duration-700 ${!isStarted ? 'opacity-30 blur-sm scale-110' : ''}`}>
+                  <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
                 </div>
-              )}
-              {isAiSpeaking && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-64 h-64 bg-indigo-400/10 rounded-full blur-[60px] animate-pulse"></div>
-                </div>
-              )}
-              <div className={`relative z-10 w-full h-full transition-all duration-700 ${!isStarted ? 'opacity-30 blur-sm scale-110' : ''}`}>
-                <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
               </div>
             </div>
             
-            {/* Real-time Subtitles Area */}
-            <div className="min-h-[120px] bg-slate-50 border-t border-slate-200 p-6 flex flex-col justify-center">
-              {currentQuestion ? (
-                <p className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed animate-fade-in text-center">
-                  "{currentQuestion}"
-                </p>
-              ) : (
-                <p className="text-sm font-medium text-slate-400 italic text-center">Waiting for AI...</p>
-              )}
-            </div>
-          </div>
-          
-          {/* Candidate Video Side */}
-          <div className="flex-1 relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col min-h-[400px]">
-             <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
-              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-sm text-[10px] font-bold tracking-widest text-emerald-400 uppercase">You (Candidate)</span>
-            </div>
-            <div className="relative w-full h-full bg-slate-900">
-              <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
-              
-              {/* Subtle overlay for better text contrast */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
+            {/* Candidate Video Side (Portrait) */}
+            <div className="relative rounded-[2.5rem] overflow-hidden bg-slate-900 border-4 border-white shadow-2xl shadow-slate-200 w-full max-w-[320px] aspect-[3/4] flex-shrink-0 group">
+               <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
+                <span className="px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 shadow-sm text-[10px] font-bold tracking-widest text-emerald-400 uppercase">You</span>
+              </div>
+              <div className="relative w-full h-full bg-slate-900">
+                <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
+                
+                {/* Subtle overlay for better text contrast */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
 
-              {cameraError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30">
-                  <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
-                  <div className="text-white font-medium text-center max-w-xs">{cameraError}</div>
-                </div>
-              )}
+                {cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30 p-6 text-center">
+                    <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
+                    <div className="text-white font-medium text-sm">{cameraError}</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Real-time Subtitles Area */}
+          <div className="mt-12 max-w-3xl text-center min-h-[100px] flex flex-col justify-center">
+            {currentQuestion ? (
+              <p className="text-xl md:text-3xl font-black text-slate-800 leading-tight animate-fade-in drop-shadow-sm">
+                "{currentQuestion}"
+              </p>
+            ) : isStarted ? (
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">Waiting for response...</p>
+            ) : null}
+          </div>
+
+          {/* Floating Controls */}
+          {isStarted && (
+            <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/90 backdrop-blur-xl p-3 rounded-full shadow-2xl border border-slate-200 z-50">
+               <button 
+                 onClick={toggleMic} 
+                 title={isMuted ? "Unmute" : "Mute"}
+                 className={`w-14 h-14 flex items-center justify-center rounded-full transition-all ${isMuted ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+               >
+                 {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+               </button>
+               <button 
+                 onClick={endCall} 
+                 title="End Interview"
+                 className="w-14 h-14 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full transition-all shadow-lg shadow-red-500/30 hover:scale-105"
+               >
+                 <PhoneOff size={24} />
+               </button>
+            </div>
+          )}
         </main>
 
         {vapiError && (

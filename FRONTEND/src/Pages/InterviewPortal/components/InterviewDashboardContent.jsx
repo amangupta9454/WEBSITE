@@ -283,7 +283,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
                     <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
                   </span>
                   
-                  {session.status !== 'Completed' ? (
+                  {session.status !== 'Completed' && localStorage.getItem(`repracticed_${session._id}`) !== 'true' ? (
                     <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => setRePracticeSession(session)}>
                       <PlayCircle size={14} /> Re-practice
                     </button>
@@ -292,7 +292,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
                       View Feedback
                     </button>
                   ) : (
-                    <span className="text-sm text-slate-400 font-medium">No Feedback</span>
+                    <span className="text-sm text-slate-400 font-medium">Session Closed</span>
                   )}
                 </div>
               </div>
@@ -337,6 +337,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             <button 
               onClick={() => {
                 const id = rePracticeSession._id;
+                localStorage.setItem(`repracticed_${id}`, 'true');
                 setRePracticeSession(null);
                 navigate(`/interview-active/${id}`);
               }}
