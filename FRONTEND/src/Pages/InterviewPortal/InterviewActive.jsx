@@ -274,41 +274,41 @@ Begin the interview now.
   };
 
   if (!interviewData) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-indigo-400">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-indigo-600">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="font-bold tracking-widest uppercase text-sm animate-pulse">Initializing Setup...</p>
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p className="font-bold tracking-widest uppercase text-sm animate-pulse text-indigo-500">Initializing Setup...</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-slate-200 relative overflow-hidden font-sans selection:bg-indigo-500/30">
-      {/* Decorative background elements matching Code-A-Nova */}
-      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900/20 via-indigo-900/5 to-transparent pointer-events-none"></div>
-      <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full mix-blend-screen filter blur-[120px] pointer-events-none animate-pulse duration-10000"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 relative overflow-hidden font-sans selection:bg-indigo-500/30">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-100/50 via-blue-50/50 to-transparent pointer-events-none"></div>
+      <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-indigo-200/40 rounded-full mix-blend-multiply filter blur-[120px] pointer-events-none animate-pulse duration-10000"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-200/40 rounded-full mix-blend-multiply filter blur-[100px] pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col h-full flex-1">
-        <header className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl">
+        <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200 bg-white/80 backdrop-blur-xl shadow-sm z-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <span className="font-black text-white text-lg">C</span>
             </div>
             <div>
-              <h1 className="font-black text-xl text-white tracking-tight">{interviewData.jobTitle}</h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Mock Interview</p>
+              <h1 className="font-black text-xl text-slate-800 tracking-tight">{interviewData.jobTitle}</h1>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Mock Interview</p>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono font-bold bg-white/5 border border-white/10 text-indigo-300 backdrop-blur-md">
-              <Timer className="w-4 h-4 text-indigo-400" />
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono font-bold bg-indigo-50 border border-indigo-100 text-indigo-700">
+              <Timer className="w-4 h-4 text-indigo-500" />
               <span className="text-sm">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}</span>
             </div>
-            <div className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold backdrop-blur-md border ${isCallActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-              <div className={`w-2 h-2 rounded-full ${isCallActive ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse' : 'bg-amber-500'}`}></div>
-              {isCallActive ? "Live" : "Connecting..."}
+            <div className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border ${isCallActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+              <div className={`w-2 h-2 rounded-full ${isCallActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-amber-500'}`}></div>
+              {isCallActive ? "Live Session" : "Connecting..."}
             </div>
           </div>
         </header>
@@ -316,57 +316,63 @@ Begin the interview now.
         <main className="flex-1 flex flex-col md:flex-row gap-6 p-6 md:p-8 w-full max-w-[1400px] mx-auto items-stretch justify-center">
           
           {/* AI Avatar Side */}
-          <div className="flex-1 relative rounded-3xl overflow-hidden bg-[#131B2C] border border-white/10 shadow-2xl flex flex-col min-h-[400px]">
+          <div className="flex-1 relative rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col min-h-[400px]">
             <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
-              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 text-[10px] font-bold tracking-widest text-indigo-300 uppercase">AI Interviewer</span>
+              <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm text-[10px] font-bold tracking-widest text-indigo-600 uppercase">AI Interviewer</span>
             </div>
-            <div className="flex-1 flex items-center justify-center p-8 relative">
+            <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-slate-50">
               {!isStarted && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-[#131B2C]/80 backdrop-blur-sm">
-                  <button 
-                    onClick={() => {
-                      setIsStarted(true);
-                      startCall();
-                    }}
-                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold text-lg shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-105 transition-all flex items-center gap-3"
-                  >
-                    <PlayCircle size={24} /> Start AI Interview
-                  </button>
-                  <p className="text-indigo-300/70 text-sm mt-4 font-medium tracking-wide">Ready when you are!</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/60 backdrop-blur-md">
+                  <div className="bg-white p-8 rounded-3xl shadow-2xl border border-indigo-100 flex flex-col items-center max-w-sm text-center">
+                    <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                      <PlayCircle size={40} className="text-indigo-600" />
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-800 mb-2">Ready to start?</h2>
+                    <p className="text-slate-500 text-sm font-medium mb-8">Take a deep breath. Your AI interviewer is ready when you are.</p>
+                    <button 
+                      onClick={() => {
+                        setIsStarted(true);
+                        startCall();
+                      }}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 transition-all flex items-center justify-center gap-2"
+                    >
+                      Start Interview
+                    </button>
+                  </div>
                 </div>
               )}
               {isAiSpeaking && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 bg-indigo-500/20 rounded-full blur-[50px] animate-pulse"></div>
+                  <div className="w-64 h-64 bg-indigo-400/10 rounded-full blur-[60px] animate-pulse"></div>
                 </div>
               )}
-              <div className={`relative z-10 transform scale-125 transition-transform duration-700 ${!isStarted ? 'opacity-50 blur-sm' : ''}`}>
+              <div className={`relative z-10 w-full h-full transition-all duration-700 ${!isStarted ? 'opacity-30 blur-sm scale-110' : ''}`}>
                 <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
               </div>
             </div>
             
             {/* Real-time Subtitles Area */}
-            <div className="h-32 bg-black/40 backdrop-blur-md border-t border-white/5 p-6 flex flex-col justify-end">
+            <div className="min-h-[120px] bg-slate-50 border-t border-slate-200 p-6 flex flex-col justify-center">
               {currentQuestion ? (
-                <p className="text-lg md:text-xl font-medium text-white/90 leading-relaxed animate-fade-in drop-shadow-md">
+                <p className="text-lg md:text-xl font-bold text-slate-800 leading-relaxed animate-fade-in text-center">
                   "{currentQuestion}"
                 </p>
               ) : (
-                <p className="text-sm font-medium text-white/30 italic">AI is thinking...</p>
+                <p className="text-sm font-medium text-slate-400 italic text-center">Waiting for AI...</p>
               )}
             </div>
           </div>
           
           {/* Candidate Video Side */}
-          <div className="flex-1 relative rounded-3xl overflow-hidden bg-[#131B2C] border border-white/10 shadow-2xl flex flex-col min-h-[400px]">
+          <div className="flex-1 relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col min-h-[400px]">
              <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
-              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 text-[10px] font-bold tracking-widest text-emerald-300 uppercase">You (Candidate)</span>
+              <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-sm text-[10px] font-bold tracking-widest text-emerald-400 uppercase">You (Candidate)</span>
             </div>
-            <div className="relative w-full h-full bg-black">
-              <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-90 transition-opacity" style={{ transform: "scaleX(-1)" }} />
+            <div className="relative w-full h-full bg-slate-900">
+              <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
               
-              {/* Subtle face tracking overlay effect (optional aesthetic) */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#131B2C] via-transparent to-transparent opacity-80 pointer-events-none"></div>
+              {/* Subtle overlay for better text contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
 
               {cameraError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30">

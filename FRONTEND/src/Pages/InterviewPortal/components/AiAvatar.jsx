@@ -29,17 +29,8 @@ function AiAvatar({ gender, isSpeaking, isListening }) {
   }, [videoSrc]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gray-900 flex items-center justify-center">
-      {/* 
-        The video container scales up slightly when the AI is speaking 
-        to simulate leaning in / talking engagement.
-      */}
-      <div 
-        className={`absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out ${
-          isSpeaking ? 'scale-[1.08]' : 'scale-[1.04]'
-        }`}
-        style={{ transformOrigin: 'center center' }}
-      >
+    <div className="relative w-full h-full overflow-hidden bg-slate-100 flex items-center justify-center">
+      <div className="absolute inset-0 w-full h-full">
         <video
           ref={videoRef}
           className="w-full h-full object-cover pointer-events-none"
@@ -52,21 +43,9 @@ function AiAvatar({ gender, isSpeaking, isListening }) {
         </video>
       </div>
 
-      {/* Simulated camera grain/noise overlay for realism */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-        }}
-      />
-
-      {/* Subtle vignette for realistic webcam depth */}
-      <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ boxShadow: 'inset 0 0 80px rgba(0,0,0,0.3)' }}></div>
-      
-      {/* Speaking Glow Effect */}
+      {/* Speaking Glow Effect - Subtle ring for visual feedback */}
       {isSpeaking && (
-        <div className="absolute inset-0 pointer-events-none ring-4 ring-inset ring-blue-500/30 transition-all duration-300"></div>
+        <div className="absolute inset-0 pointer-events-none ring-[6px] ring-inset ring-indigo-500/20 transition-all duration-300"></div>
       )}
     </div>
   );
