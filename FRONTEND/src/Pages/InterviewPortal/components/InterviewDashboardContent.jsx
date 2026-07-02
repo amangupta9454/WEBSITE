@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
@@ -145,7 +145,22 @@ function FeedbackModal({ feedback, onClose }) {
 
 export default function InterviewDashboardContent({ credits, isUnlimited, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const navigate = useNavigate();
+  
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [interviewEnabled, setInterviewEnabled] = useState(true);
+
+  const handleStartAttempt = () => {
+    if (!isUnlimited && credits <= 0) {
+      if (onBuyClick) {
+        onBuyClick();
+      } else {
+        setIsBuyModalOpen(true);
+      }
+    } else {
+      if (onStartInterview) onStartInterview();
+    }
+  };
 
   useEffect(() => {
     const checkFeature = async () => {
@@ -219,7 +234,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             <h3 className="text-xl font-black text-slate-800">Recent Interview Sessions</h3>
             <div className="flex items-center gap-3">
               <button 
-                onClick={onStartInterview}
+                onClick={handleStartAttempt}
                 className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
               >
                 Start New <PlayCircle size={16} />
@@ -252,7 +267,11 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
                     <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
                   </span>
                   
-                  {session.feedback ? (
+                  {session.status !== 'Completed' ? (
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => navigate(`/interview/active/${session._id}`)}>
+                      <PlayCircle size={14} /> Re-practice
+                    </button>
+                  ) : session.feedback ? (
                     <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session.feedback)}>
                       View Feedback
                     </button>
@@ -273,7 +292,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
               You haven't completed any mock interviews yet. Start one now to practice your skills!
             </p>
             <button 
-              onClick={onStartInterview}
+              onClick={handleStartAttempt}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
             >
               <PlayCircle size={18} /> Start Practice

@@ -177,6 +177,16 @@ function InterviewActive() {
   };
 
   const GenerateFeedback = async (conversation) => {
+    if (time < 60) {
+      toast("Interview ended too soon. You can retry it from the dashboard.", { icon: "ℹ️", duration: 5000 });
+      if (localStorage.getItem('studentToken')) {
+        navigate('/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+      return;
+    }
+
     const attentionReport = getAttentionReport();
     
     // Send feedback generation request to backend
