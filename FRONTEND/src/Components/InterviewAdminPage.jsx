@@ -29,14 +29,20 @@ function SessionRow({ session }) {
   const evaluation = feedback.ai_evaluation;
   
   const deduplicatedConversation = feedback.conversation?.reduce((acc, curr) => {
-    if (acc.length === 0) return [curr];
+    if (acc.length === 0) return [{ ...curr }];
     const last = acc[acc.length - 1];
-    const currText = curr.transcript || curr.text || '';
-    const lastText = last.transcript || last.text || '';
-    if (last.role === curr.role && currText === lastText) {
-      return acc; // Skip duplicate adjacent lines
+    const currText = (curr.transcript || curr.text || '').trim();
+    const lastText = (last.transcript || last.text || '').trim();
+    
+    if (last.role === curr.role && (currText === lastText || currText.includes(lastText) || lastText.includes(currText))) {
+      // Keep the longer text as it's likely the final transcript
+      if (currText.length > lastText.length) {
+        last.transcript = currText;
+        last.text = currText;
+      }
+      return acc;
     }
-    acc.push(curr);
+    acc.push({ ...curr });
     return acc;
   }, []) || [];
   

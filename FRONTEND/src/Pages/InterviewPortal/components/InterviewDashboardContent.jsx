@@ -10,14 +10,20 @@ function FeedbackModal({ feedback, onClose }) {
   const evaluation = feedback.ai_evaluation;
   
   const deduplicatedConversation = feedback.conversation?.reduce((acc, curr) => {
-    if (acc.length === 0) return [curr];
+    if (acc.length === 0) return [{ ...curr }];
     const last = acc[acc.length - 1];
-    const currText = curr.transcript || curr.text || '';
-    const lastText = last.transcript || last.text || '';
-    if (last.role === curr.role && currText === lastText) {
-      return acc; // Skip duplicate adjacent lines
+    const currText = (curr.transcript || curr.text || '').trim();
+    const lastText = (last.transcript || last.text || '').trim();
+    
+    if (last.role === curr.role && (currText === lastText || currText.includes(lastText) || lastText.includes(currText))) {
+      // Keep the longer text as it's likely the final transcript
+      if (currText.length > lastText.length) {
+        last.transcript = currText;
+        last.text = currText;
+      }
+      return acc;
     }
-    acc.push(curr);
+    acc.push({ ...curr });
     return acc;
   }, []) || [];
   
@@ -198,7 +204,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
               <PlayCircle size={24} />
             </div>
             <h3 className="font-bold text-slate-800 mb-1 relative z-10">Mock Interviews</h3>
-            <p className="text-sm text-slate-500 relative z-10">Coming Soon</p>
+            <p className="text-sm text-slate-500 relative z-10">Currently Not Available</p>
           </div>
         )}
         
@@ -207,7 +213,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             <CheckCircle size={24} />
           </div>
           <h3 className="font-bold text-slate-800 mb-1">Coding Challenges</h3>
-          <p className="text-sm text-slate-500">Coming Soon</p>
+          <p className="text-sm text-slate-500">Currently Not Available</p>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
@@ -215,7 +221,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             <Clock size={24} />
           </div>
           <h3 className="font-bold text-slate-800 mb-1">Project Sandbox</h3>
-          <p className="text-sm text-slate-500">Coming Soon</p>
+          <p className="text-sm text-slate-500">Currently Not Available</p>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
@@ -223,22 +229,23 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             <Tag size={24} />
           </div>
           <h3 className="font-bold text-slate-800 mb-1">Certifications</h3>
-          <p className="text-sm text-slate-500">Coming Soon</p>
+          <p className="text-sm text-slate-500">Currently Not Available</p>
         </div>
       </div>
 
       {/* Mock Interviews Section */}
-      {interviewEnabled && (
-        <div>
+      <div>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-black text-slate-800">Recent Interview Sessions</h3>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={handleStartAttempt}
-                className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
-              >
-                Start New <PlayCircle size={16} />
-              </button>
+              {interviewEnabled && (
+                <button 
+                  onClick={handleStartAttempt}
+                  className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
+                >
+                  Start New <PlayCircle size={16} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -289,18 +296,19 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">No Interviews Yet</h3>
             <p className="text-slate-500 font-medium max-w-md mx-auto mb-6">
-              You haven't completed any mock interviews yet. Start one now to practice your skills!
+              You haven't completed any mock interviews yet.
             </p>
-            <button 
-              onClick={handleStartAttempt}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
-            >
-              <PlayCircle size={18} /> Start Practice
-            </button>
+            {interviewEnabled && (
+              <button 
+                onClick={handleStartAttempt}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
+              >
+                <PlayCircle size={18} /> Start Practice
+              </button>
+            )}
           </div>
         )}
-        </div>
-      )}
+      </div>
 
       <FeedbackModal feedback={selectedFeedback} onClose={() => setSelectedFeedback(null)} />
     </div>
