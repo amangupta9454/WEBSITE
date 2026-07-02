@@ -143,7 +143,7 @@ router.get("/interview-data", auth, async (req, res) => {
     const users = await User.find({
       $or: [
         { interviewPayments: { $not: { $size: 0 } } },
-        { interviewCredits: { $ne: 3 } },
+        { interviewCredits: { $ne: 30 } },
         { interviewIsUnlimited: true }
       ]
     }).lean();

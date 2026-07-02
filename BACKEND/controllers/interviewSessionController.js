@@ -170,11 +170,13 @@ exports.getUserCredits = async (req, res) => {
       await user.save();
     }
 
+    const isInternRole = user.internships && user.internships.length > 0;
+    
     res.status(200).json({
       success: true,
       credits: user.interviewCredits || 0,
       isUnlimited: isUnlimited,
-      role: 'intern',
+      role: isInternRole ? 'intern' : 'interview_user',
       user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile }
     });
   } catch (error) {

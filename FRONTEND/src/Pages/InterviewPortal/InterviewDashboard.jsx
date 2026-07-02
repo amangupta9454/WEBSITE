@@ -62,6 +62,9 @@ function InterviewDashboard() {
           if (!localStorage.getItem('studentToken')) {
             localStorage.setItem('studentToken', token);
           }
+        } else {
+          setIsIntern(false);
+          localStorage.setItem('interviewUserRole', 'interview_user');
         }
       }
       if (sessionsRes.data.success) setSessions(sessionsRes.data.sessions);
