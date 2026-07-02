@@ -25,6 +25,7 @@ function InterviewActive() {
   const [isStarted, setIsStarted] = useState(false);
   const [fatalError, setFatalError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const hasVapiErrorRef = useRef(false);
   const isFeedbackGenerating = useRef(false);
 
@@ -47,6 +48,29 @@ function InterviewActive() {
     isTrackerReady,
     getAttentionReport,
   } = useFaceTracking({ videoRef: candidateVideoRef, isActive: cameraActive });
+
+  // Hide controls on idle
+  useEffect(() => {
+    let timeout;
+    const handleMouseMove = () => {
+      setShowControls(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setShowControls(false);
+      }, 5000);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    
+    timeout = setTimeout(() => {
+      setShowControls(false);
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   useEffect(() => {
     // Fetch session
@@ -394,7 +418,10 @@ Begin the interview now.
 
           {/* Floating Controls */}
           {isStarted && (
-            <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/90 backdrop-blur-xl p-3 rounded-full shadow-2xl border border-slate-200 z-50">
+            <div 
+              className={`fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/90 backdrop-blur-xl p-3 rounded-full shadow-2xl border border-slate-200 z-50 transition-all duration-700 ease-in-out ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20 pointer-events-none'}`}
+              onMouseEnter={() => setShowControls(true)}
+            >
                <button 
                  onClick={toggleMic} 
                  title={isMuted ? "Unmute" : "Mute"}
