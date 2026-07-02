@@ -27,6 +27,13 @@ exports.createSession = async (req, res) => {
     // Deduct credit only if not unlimited
     if (!isUnlimited) {
       user.interviewCredits = credits - 10;
+      if (!user.tokenHistory) user.tokenHistory = [];
+      user.tokenHistory.push({
+        type: 'USE',
+        amount: 10,
+        reason: 'Started a mock interview',
+        date: new Date()
+      });
       await user.save();
     }
 

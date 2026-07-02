@@ -112,6 +112,14 @@ const userSchema = new mongoose.Schema(
         ]
       },
     ],
+    tokenHistory: [
+      {
+        type: { type: String, enum: ['ADD', 'DEDUCT', 'USE', 'PURCHASE'] },
+        amount: { type: Number },
+        reason: { type: String },
+        date: { type: Date, default: Date.now }
+      }
+    ],
   },
   { timestamps: true },
 );

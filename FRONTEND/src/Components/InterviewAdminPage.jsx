@@ -380,41 +380,6 @@ export default function InterviewAdminPage() {
         </button>
       </div>
 
-      {/* Token Settings Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Database className="w-4 h-4 text-indigo-600" /> Token Management
-        </h3>
-        <div className="flex flex-col md:flex-row gap-6 items-end">
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-slate-500 mb-2">Free Tokens (New Users)</label>
-            <input 
-              type="number" 
-              value={tokenSettings.freeTokens} 
-              onChange={(e) => setTokenSettings({...tokenSettings, freeTokens: Number(e.target.value)})}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none" 
-            />
-          </div>
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-slate-500 mb-2">Token Cost per Interview</label>
-            <input 
-              type="number" 
-              value={tokenSettings.interviewCost} 
-              onChange={(e) => setTokenSettings({...tokenSettings, interviewCost: Number(e.target.value)})}
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none" 
-            />
-          </div>
-          <button 
-            onClick={saveTokenSettings}
-            disabled={savingTokens}
-            className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2 h-[42px]"
-          >
-            {savingTokens ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {savingTokens ? "Saving..." : "Save Settings"}
-          </button>
-        </div>
-      </div>
-
 
       {/* User Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

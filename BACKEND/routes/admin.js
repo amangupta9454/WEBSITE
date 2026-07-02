@@ -179,6 +179,52 @@ router.post("/interview-settings/tokens", auth, async (req, res) => {
   }
 });
 
+// Adjust tokens manually
+router.post("/interview-settings/tokens/adjust", auth, async (req, res) => {
+  try {
+    const { userId, type, amount, reason } = req.body;
+    
+    if (!userId || !type || !amount) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const adjustAmount = Number(amount);
+    if (type === 'ADD') {
+      user.interviewCredits = (user.interviewCredits || 0) + adjustAmount;
+    } else if (type === 'DEDUCT') {
+      user.interviewCredits = Math.max(0, (user.interviewCredits || 0) - adjustAmount);
+    }
+
+    if (!user.tokenHistory) user.tokenHistory = [];
+    user.tokenHistory.push({
+      type,
+      amount: adjustAmount,
+      reason: reason || (type === 'ADD' ? 'Admin adjusted' : 'Admin deducted'),
+      date: new Date()
+    });
+
+    await user.save();
+    res.json({ success: true, message: "Tokens adjusted successfully", credits: user.interviewCredits });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Fetch token data specifically for Token Management page
+router.get("/token-data", auth, async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email interviewCredits interviewIsUnlimited tokenHistory interviewPayments').lean();
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get("/interview-data", auth, async (req, res) => {
   try {
     const users = await User.find({

@@ -44,7 +44,8 @@ import NormalTasksAdmin from "./NormalTasksAdmin";
 import NotificationsAdmin from "./NotificationsAdmin";
 import SubmissionsAdmin from "./SubmissionsAdmin";
 import InterviewAdminPage from "./InterviewAdminPage";
-import { Bell, Settings, Zap } from "lucide-react";
+import TokenAdminPage from "./TokenAdminPage";
+import { Bell, Settings, Zap, Database } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -1721,6 +1722,12 @@ const AdminDashboard = () => {
                 >
                   <Activity className="w-4 h-4" /> Interview
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("tokens")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "tokens" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <Database className="w-4 h-4" /> Token Management
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -1732,6 +1739,15 @@ const AdminDashboard = () => {
                     <p className="text-sm text-slate-500 mt-1">All interview users, their credits, sessions, and feedback.</p>
                   </div>
                   <InterviewAdminPage />
+                </div>
+              )}
+              {activeFeatureTab === "tokens" && (
+                <div className="animate-fade-in">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-black text-slate-800">Token Management</h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage global token settings and individual user token balances.</p>
+                  </div>
+                  <TokenAdminPage />
                 </div>
               )}
             </div>

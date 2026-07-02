@@ -948,6 +948,7 @@ const reviewSummerProject = async (req, res) => {
 
     internship.assignedRepos[repoIndex].reviewStatus = reviewStatus;
     internship.assignedRepos[repoIndex].feedback = feedback;
+    internship.assignedRepos[repoIndex].emailSent = false;
     
     // Add Synergy Points if Accepted and points not already awarded
     if (reviewStatus === 'Accepted' && !internship.assignedRepos[repoIndex].pointsAwarded) {
@@ -1043,6 +1044,7 @@ const manualAcceptAssignment = async (req, res) => {
 
     assignment.aiStatus = 'Accepted';
     assignment.aiFeedback = 'Manually Accepted by Admin';
+    assignment.emailSent = false;
     await submission.save();
 
     const user = await User.findOne({ 'internships.studentId': submission.studentId });
