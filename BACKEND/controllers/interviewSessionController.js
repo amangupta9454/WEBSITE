@@ -20,13 +20,13 @@ exports.createSession = async (req, res) => {
       await user.save();
     }
 
-    if (!isUnlimited && credits <= 0) {
-      return res.status(403).json({ success: false, message: 'Insufficient credits. Please purchase more.' });
+    if (!isUnlimited && credits < 10) {
+      return res.status(403).json({ success: false, message: 'Insufficient credits. Each interview costs 10 tokens. Please purchase more.' });
     }
 
     // Deduct credit only if not unlimited
     if (!isUnlimited) {
-      user.interviewCredits = credits - 1;
+      user.interviewCredits = credits - 10;
       await user.save();
     }
 
@@ -40,7 +40,7 @@ exports.createSession = async (req, res) => {
 
     await session.save();
 
-    const remaining = isUnlimited ? 'Unlimited' : (credits - 1);
+    const remaining = isUnlimited ? 'Unlimited' : (credits - 10);
     res.status(201).json({ success: true, session, creditsRemaining: remaining });
   } catch (error) {
     console.error('Error creating interview session:', error);

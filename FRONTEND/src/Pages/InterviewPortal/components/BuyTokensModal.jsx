@@ -4,10 +4,10 @@ import { X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const packages = [
-  { id: '5_tokens', title: '5 Tokens', price: 199, desc: 'Perfect for quick practice.' },
-  { id: '10_tokens', title: '10 Tokens', price: 299, desc: 'Most popular for comprehensive prep.', recommended: true },
-  { id: '20_tokens', title: '20 Tokens', price: 499, desc: 'Great value for extensive practice.' },
-  { id: 'unlimited', title: 'Unlimited Access', price: 999, desc: 'Lifetime unlimited interviews.' },
+  { id: '50_tokens', title: '50 Tokens', price: 199, desc: 'Perfect for quick practice.' },
+  { id: '100_tokens', title: '100 Tokens', price: 299, desc: 'Most popular for comprehensive prep.', recommended: true },
+  { id: '200_tokens', title: '200 Tokens', price: 499, desc: 'Great value for extensive practice.' },
+  { id: 'unlimited', title: 'Unlimited Access', price: 999, desc: '1 month unlimited interviews.' },
 ];
 
 export default function BuyTokensModal({ isOpen, onClose, onSelectPackage }) {

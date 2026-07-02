@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date },
     dismissedNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
-    interviewCredits: { type: Number, default: 3 },
+    interviewCredits: { type: Number, default: 30 },
     interviewIsUnlimited: { type: Boolean, default: false },
     interviewUnlimitedExpiresAt: { type: Date },
     interviewPendingOrders: [

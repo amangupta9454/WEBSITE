@@ -7,7 +7,7 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-const amountMap = { '5_tokens': 199, '10_tokens': 299, '20_tokens': 499, 'unlimited': 999 };
+const amountMap = { '50_tokens': 199, '100_tokens': 299, '200_tokens': 499, 'unlimited': 999 };
 
 exports.createOrder = async (req, res) => {
   try {
@@ -77,7 +77,7 @@ exports.verifyPayment = async (req, res) => {
       user.interviewIsUnlimited = true;
       user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
     } else {
-      const tokensMap = { '5_tokens': 5, '10_tokens': 10, '20_tokens': 20 };
+      const tokensMap = { '50_tokens': 50, '100_tokens': 100, '200_tokens': 200 };
       user.interviewCredits += (tokensMap[packageId] || 0);
     }
 
@@ -133,7 +133,7 @@ exports.webhookHandler = async (req, res) => {
           user.interviewIsUnlimited = true;
           user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
         } else {
-          const tokensMap = { '5_tokens': 5, '10_tokens': 10, '20_tokens': 20 };
+          const tokensMap = { '50_tokens': 50, '100_tokens': 100, '200_tokens': 200 };
           user.interviewCredits += (tokensMap[packageId] || 0);
         }
 
