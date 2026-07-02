@@ -24,6 +24,7 @@ function InterviewActive() {
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [isStarted, setIsStarted] = useState(false);
   const [fatalError, setFatalError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const hasVapiErrorRef = useRef(false);
 
   const [time, setTime] = useState(0);
@@ -128,6 +129,7 @@ function InterviewActive() {
     });
 
     vapiRef.current.on("call-end", async () => {
+      if (hasVapiErrorRef.current) return;
       isInitializing.current = false;
       setIsCallActive(false);
       stopTimer();
@@ -178,19 +180,14 @@ function InterviewActive() {
 
   const GenerateFeedback = async (conversation) => {
     if (time < 60) {
-      toast("Interview ended too soon. You can retry it from the dashboard.", { icon: "ℹ️", duration: 5000 });
-      if (localStorage.getItem('studentToken')) {
-        navigate('/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      toast("Interview ended too soon. No feedback generated.", { icon: "ℹ️", duration: 5000 });
+      navigate('/dashboard');
       return;
     }
 
+    setIsSaving(true);
     const attentionReport = getAttentionReport();
     
-    // Send feedback generation request to backend
-    // Since we don't have the ai-feedback endpoint implemented in this new backend, we will just send raw transcript for now
     try {
       const token = localStorage.getItem('interviewToken');
       await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
@@ -203,14 +200,12 @@ function InterviewActive() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      toast.success("Interview completed! Feedback generated.");
     } catch (err) {
       console.error(err);
+      toast.error("Failed to save feedback.");
     } finally {
-      if (localStorage.getItem('studentToken')) {
-        navigate('/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     }
   };
 
@@ -259,12 +254,11 @@ Begin the interview now.
 
   const endCall = useCallback(() => {
     if (vapiRef.current && isCallActive) {
+      setIsSaving(true);
       vapiRef.current.stop();
-      setIsCallActive(false);
-      stopTimer();
-      navigate('/dashboard');
+      // stop() will trigger "call-end" event, which calls GenerateFeedback
     }
-  }, [isCallActive, navigate]);
+  }, [isCallActive]);
 
   const toggleMic = () => {
     if (vapiRef.current?.mute) {
@@ -278,6 +272,16 @@ Begin the interview now.
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
         <p className="font-bold tracking-widest uppercase text-sm animate-pulse text-indigo-500">Initializing Setup...</p>
+      </div>
+    </div>
+  );
+
+  if (isSaving) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-indigo-600">
+      <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-3xl shadow-2xl border border-slate-200">
+        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        <h2 className="text-xl font-black text-slate-800">Generating Feedback...</h2>
+        <p className="font-medium text-slate-500 text-sm max-w-xs text-center">Please wait while our AI analyzes your performance and generates a detailed report.</p>
       </div>
     </div>
   );
