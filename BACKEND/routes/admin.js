@@ -138,6 +138,47 @@ router.post("/interview-settings/toggle", auth, async (req, res) => {
   }
 });
 
+router.get("/interview-settings/tokens", auth, async (req, res) => {
+  try {
+    let freeTokens = await Settings.findOne({ key: "interviewFreeTokens" });
+    let interviewCost = await Settings.findOne({ key: "interviewCostTokens" });
+    
+    res.json({
+      success: true,
+      freeTokens: freeTokens ? parseInt(freeTokens.value) : 30,
+      interviewCost: interviewCost ? parseInt(interviewCost.value) : 10
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post("/interview-settings/tokens", auth, async (req, res) => {
+  try {
+    const { freeTokens, interviewCost } = req.body;
+    
+    if (freeTokens !== undefined) {
+      await Settings.findOneAndUpdate(
+        { key: "interviewFreeTokens" },
+        { value: freeTokens },
+        { upsert: true }
+      );
+    }
+    
+    if (interviewCost !== undefined) {
+      await Settings.findOneAndUpdate(
+        { key: "interviewCostTokens" },
+        { value: interviewCost },
+        { upsert: true }
+      );
+    }
+    
+    res.json({ success: true, message: "Settings updated" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get("/interview-data", auth, async (req, res) => {
   try {
     const users = await User.find({
