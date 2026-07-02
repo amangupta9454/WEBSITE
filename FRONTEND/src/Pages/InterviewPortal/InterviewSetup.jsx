@@ -11,7 +11,23 @@ const InterviewSetup = () => {
     durationMinutes: 15
   });
   const [loading, setLoading] = useState(false);
+  const [cost, setCost] = useState(10);
+  const [isUnlimited, setIsUnlimited] = useState(false);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('interviewToken');
+    if(token) {
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+            headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+            if(res.data.success) {
+                setCost(res.data.interviewCost || 10);
+                setIsUnlimited(res.data.isUnlimited || false);
+            }
+        }).catch(err => console.error(err));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -150,7 +166,7 @@ const InterviewSetup = () => {
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Starting...
                 </div>
-              ) : 'Start Interview (10 Credit)'}
+              ) : `Start Interview${isUnlimited ? '' : ` (${cost} Tokens)`}`}
             </button>
           </div>
         </form>

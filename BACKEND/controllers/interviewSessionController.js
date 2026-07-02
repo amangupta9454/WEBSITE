@@ -1,5 +1,6 @@
 const InterviewSession = require('../models/InterviewSession');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 
 exports.createSession = async (req, res) => {
   const { jobTitle, jobDescription, experienceYears, durationMinutes } = req.body;
@@ -20,17 +21,20 @@ exports.createSession = async (req, res) => {
       await user.save();
     }
 
-    if (!isUnlimited && credits < 10) {
-      return res.status(403).json({ success: false, message: 'Insufficient credits. Each interview costs 10 tokens. Please purchase more.' });
+    const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
+    const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;
+
+    if (!isUnlimited && credits < interviewCost) {
+      return res.status(403).json({ success: false, message: `Insufficient credits. Each interview costs ${interviewCost} tokens. Please purchase more.` });
     }
 
     // Deduct credit only if not unlimited
     if (!isUnlimited) {
-      user.interviewCredits = credits - 10;
+      user.interviewCredits = credits - interviewCost;
       if (!user.tokenHistory) user.tokenHistory = [];
       user.tokenHistory.push({
         type: 'USE',
-        amount: 10,
+        amount: interviewCost,
         reason: 'Started a mock interview',
         date: new Date()
       });
@@ -47,7 +51,7 @@ exports.createSession = async (req, res) => {
 
     await session.save();
 
-    const remaining = isUnlimited ? 'Unlimited' : (credits - 10);
+    const remaining = isUnlimited ? 'Unlimited' : (credits - interviewCost);
     res.status(201).json({ success: true, session, creditsRemaining: remaining });
   } catch (error) {
     console.error('Error creating interview session:', error);
@@ -179,10 +183,14 @@ exports.getUserCredits = async (req, res) => {
 
     const isInternRole = user.internships && user.internships.length > 0;
     
+    const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
+    const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;
+    
     res.status(200).json({
       success: true,
       credits: user.interviewCredits || 0,
       isUnlimited: isUnlimited,
+      interviewCost: interviewCost,
       role: isInternRole ? 'intern' : 'interview_user',
       user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile }
     });
