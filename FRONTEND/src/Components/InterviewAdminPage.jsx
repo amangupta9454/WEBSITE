@@ -75,7 +75,7 @@ function SessionRow({ session }) {
           ) : (
             <div className="space-y-4">
               {/* AI Evaluation Section */}
-              {feedback.ai_evaluation && (
+              {feedback.ai_evaluation ? (
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">AI Evaluation</h4>
                   <div className="grid grid-cols-3 gap-3 mb-4">
@@ -163,9 +163,11 @@ function SessionRow({ session }) {
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    )}
+  </div>
+);
 }
 
 function UserCard({ user }) {
