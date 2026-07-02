@@ -175,7 +175,7 @@ exports.getUserCredits = async (req, res) => {
       credits: user.interviewCredits || 0,
       isUnlimited: isUnlimited,
       role: 'intern',
-      user: { name: user.name, email: user.email, profileImage: user.profileImage }
+      user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile }
     });
   } catch (error) {
     console.error('Error fetching credits:', error);
