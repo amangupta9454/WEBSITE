@@ -23,7 +23,7 @@ export default function DashboardTopSection() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('interviewToken');
+    const token = localStorage.getItem('studentToken');
     if (!token) return;
     try {
       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
@@ -47,7 +47,7 @@ export default function DashboardTopSection() {
 
   const handleBuyPackage = async (pkg) => {
     setIsBuyModalOpen(false);
-    const token = localStorage.getItem('interviewToken');
+    const token = localStorage.getItem('studentToken');
     if (!token) return;
 
     const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");

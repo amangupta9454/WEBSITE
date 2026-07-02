@@ -26,7 +26,7 @@ import Verify from "./Components/Verify";
 import Project from "./Components/Project";
 import Leaderboard from "./Components/Leaderboard";
 import MainLayout from "./layouts/MainLayout";
-import InterviewLogin from "./Pages/InterviewPortal/InterviewLogin";
+import StudentLogin from "./Components/StudentLogin";
 import InterviewDashboard from "./Pages/InterviewPortal/InterviewDashboard";
 import InterviewSetup from "./Pages/InterviewPortal/InterviewSetup";
 import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
@@ -81,7 +81,7 @@ function App() {
         {/* Old Legacy Functional Pages and Interview Portal */}
         <Route element={<UnifiedLayout />}>
           {/* Interview Portal Routes */}
-          <Route path="/student-login" element={<InterviewLogin />} />
+          <Route path="/student-login" element={<StudentLogin />} />
           <Route path="/dashboard" element={<UnifiedDashboard />} />
           <Route path="/interview-setup" element={<InterviewSetup />} />
           <Route path="/setup-password" element={<SetupPassword />} />

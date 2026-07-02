@@ -41,13 +41,11 @@ const Navbar = () => {
   ];
 
   const studentToken = localStorage.getItem('studentToken');
-  const interviewToken = localStorage.getItem('interviewToken');
-  const isLoggedIn = !!(studentToken || interviewToken);
-  const dashboardLink = studentToken ? '/dashboard' : '/dashboard';
+  const isLoggedIn = !!studentToken;
+  const dashboardLink = '/dashboard';
 
   const handleLogout = () => {
     localStorage.removeItem('studentToken');
-    localStorage.removeItem('interviewToken');
     localStorage.removeItem('interviewUser');
     window.location.href = '/';
   };

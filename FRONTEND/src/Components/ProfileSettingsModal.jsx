@@ -54,8 +54,8 @@ export default function ProfileSettingsModal({ isOpen, onClose, user, onSaveSucc
   const handleSaveProfile = async () => {
     try {
       setIsSavingProfile(true);
-      // Try both tokens, in case they are not an intern
-      const token = localStorage.getItem("studentToken") || localStorage.getItem("interviewToken");
+      // Use the student token for authentication
+      const token = localStorage.getItem("studentToken");
       
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/student/profile`,

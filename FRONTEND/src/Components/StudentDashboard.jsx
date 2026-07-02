@@ -1041,7 +1041,6 @@ const StudentDashboard = () => {
   };
 
   const handleStartInterview = () => {
-    localStorage.setItem("interviewToken", localStorage.getItem("studentToken"));
     navigate("/interview-setup");
   };
 
@@ -1052,7 +1051,6 @@ const StudentDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("studentToken");
     localStorage.removeItem("studentData");
-    localStorage.removeItem("interviewToken");
     navigate("/student-login");
   };
 
