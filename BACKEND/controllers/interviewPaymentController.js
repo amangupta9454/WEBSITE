@@ -75,6 +75,7 @@ exports.verifyPayment = async (req, res) => {
 
     if (packageId === 'unlimited') {
       user.interviewIsUnlimited = true;
+      user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
     } else {
       const tokensMap = { '5_tokens': 5, '10_tokens': 10, '20_tokens': 20 };
       user.interviewCredits += (tokensMap[packageId] || 0);
@@ -130,6 +131,7 @@ exports.webhookHandler = async (req, res) => {
 
         if (packageId === 'unlimited') {
           user.interviewIsUnlimited = true;
+          user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
         } else {
           const tokensMap = { '5_tokens': 5, '10_tokens': 10, '20_tokens': 20 };
           user.interviewCredits += (tokensMap[packageId] || 0);

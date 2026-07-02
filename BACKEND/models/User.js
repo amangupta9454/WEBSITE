@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
     dismissedNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
     interviewCredits: { type: Number, default: 3 },
     interviewIsUnlimited: { type: Boolean, default: false },
+    interviewUnlimitedExpiresAt: { type: Date },
     interviewPendingOrders: [
       {
         orderId: { type: String },

@@ -12,7 +12,13 @@ exports.createSession = async (req, res) => {
     }
 
     const credits = user.interviewCredits || 0;
-    const isUnlimited = user.interviewIsUnlimited || false;
+    let isUnlimited = user.interviewIsUnlimited || false;
+    
+    if (isUnlimited && user.interviewUnlimitedExpiresAt && new Date() > user.interviewUnlimitedExpiresAt) {
+      isUnlimited = false; // Expired
+      user.interviewIsUnlimited = false;
+      await user.save();
+    }
 
     if (!isUnlimited && credits <= 0) {
       return res.status(403).json({ success: false, message: 'Insufficient credits. Please purchase more.' });
@@ -156,10 +162,18 @@ exports.getUserCredits = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    let isUnlimited = user.interviewIsUnlimited || false;
+    
+    if (isUnlimited && user.interviewUnlimitedExpiresAt && new Date() > user.interviewUnlimitedExpiresAt) {
+      isUnlimited = false; // Expired
+      user.interviewIsUnlimited = false;
+      await user.save();
+    }
+
     res.status(200).json({
       success: true,
       credits: user.interviewCredits || 0,
-      isUnlimited: user.interviewIsUnlimited || false,
+      isUnlimited: isUnlimited,
       role: 'intern',
       user: { name: user.name, email: user.email, profileImage: user.profileImage }
     });

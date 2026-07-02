@@ -109,7 +109,7 @@ router.get("/notifications", auth, getAdminNotifications);
 router.delete("/notifications/:id", auth, deleteNotification);
 
 // Interview Admin Route
-const InterviewUser = require("../models/InterviewUser");
+const User = require("../models/User");
 const InterviewSession = require("../models/InterviewSession");
 const Settings = require("../models/Settings");
 
@@ -140,44 +140,45 @@ router.post("/interview-settings/toggle", auth, async (req, res) => {
 
 router.get("/interview-data", auth, async (req, res) => {
   try {
-    const users = await InterviewUser.find().lean();
+    const users = await User.find({
+      $or: [
+        { interviewPayments: { $not: { $size: 0 } } },
+        { interviewCredits: { $ne: 3 } },
+        { interviewIsUnlimited: true }
+      ]
+    }).lean();
     const sessions = await InterviewSession.find().populate("userId", "name email").lean();
 
     const userMap = {};
-    users.forEach(u => { userMap[u._id.toString()] = { ...u, sessions: [] }; });
+    users.forEach(u => { 
+      userMap[u._id.toString()] = { 
+        ...u, 
+        credits: u.interviewCredits, 
+        isUnlimited: u.interviewIsUnlimited,
+        sessions: [] 
+      }; 
+    });
     sessions.forEach(s => {
       const uid = s.userId?._id?.toString() || s.userId?.toString();
-      if (uid && userMap[uid]) userMap[uid].sessions.push(s);
+      if (uid && userMap[uid]) {
+        userMap[uid].sessions.push(s);
+      } else if (uid && !userMap[uid]) {
+        // If user has sessions but didn't match the query above (e.g. they only used free credits)
+        userMap[uid] = {
+          _id: uid,
+          name: s.userId?.name || "Unknown",
+          email: s.userId?.email || "",
+          credits: 0,
+          isUnlimited: false,
+          sessions: [s]
+        };
+      }
     });
-
-    // Earnings stats - only real payments
-    const allPayments = users.flatMap(u => (u.payments || []).map(p => ({ ...p, userName: u.name, userEmail: u.email })));
-    const totalEarnings = allPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const last7DaysEarnings = allPayments
-      .filter(p => new Date(p.paidAt) >= sevenDaysAgo)
-      .reduce((acc, p) => acc + (p.amount || 0), 0);
-
-    // Last 7 days breakdown (one entry per day)
-    const dailyEarnings = {};
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      dailyEarnings[key] = 0;
-    }
-    allPayments
-      .filter(p => new Date(p.paidAt) >= sevenDaysAgo)
-      .forEach(p => {
-        const key = new Date(p.paidAt).toISOString().split('T')[0];
-        if (dailyEarnings[key] !== undefined) dailyEarnings[key] += (p.amount || 0);
-      });
 
     res.json({
       success: true,
       data: Object.values(userMap),
-      earnings: { totalEarnings, last7DaysEarnings, dailyEarnings, recentPayments: allPayments.sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt)).slice(0, 10) }
+      earnings: { totalEarnings: 0, last7DaysEarnings: 0, dailyEarnings: {}, recentPayments: [] }
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
