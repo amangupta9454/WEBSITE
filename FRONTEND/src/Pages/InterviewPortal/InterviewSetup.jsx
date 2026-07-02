@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AlertCircle, Eye, ShieldAlert, Video } from 'lucide-react';
 
 const InterviewSetup = () => {
+  const location = useLocation();
+  const prefill = location.state?.rePracticeSession;
+
   const [formData, setFormData] = useState({
-    jobTitle: '',
-    jobDescription: '',
-    experienceYears: '',
-    durationMinutes: 15
+    jobTitle: prefill?.jobTitle || '',
+    jobDescription: prefill?.jobDescription || '',
+    experienceYears: prefill?.experienceYears || '',
+    durationMinutes: prefill?.durationMinutes || 15
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

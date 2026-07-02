@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Timer, Mic, MicOff, PhoneOff, AlertTriangle } from "lucide-react";
+import { Timer, Mic, MicOff, PhoneOff, AlertTriangle, PlayCircle } from "lucide-react";
 import Vapi from "@vapi-ai/web";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -22,6 +22,7 @@ function InterviewActive() {
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [vapiError, setVapiError] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState("");
+  const [isStarted, setIsStarted] = useState(false);
   const [fatalError, setFatalError] = useState("");
   const hasVapiErrorRef = useRef(false);
 
@@ -158,10 +159,9 @@ function InterviewActive() {
       isInitializing.current = false;
       hasVapiErrorRef.current = true;
       setVapiError(err.message || "An unexpected error occurred.");
+      setVapiError(err.message || "An unexpected error occurred.");
     });
     
-    startCall();
-
     return () => {
       vapiRef.current?.stop();
     };
@@ -321,12 +321,26 @@ Begin the interview now.
               <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/5 text-[10px] font-bold tracking-widest text-indigo-300 uppercase">AI Interviewer</span>
             </div>
             <div className="flex-1 flex items-center justify-center p-8 relative">
+              {!isStarted && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-[#131B2C]/80 backdrop-blur-sm">
+                  <button 
+                    onClick={() => {
+                      setIsStarted(true);
+                      startCall();
+                    }}
+                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold text-lg shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-105 transition-all flex items-center gap-3"
+                  >
+                    <PlayCircle size={24} /> Start AI Interview
+                  </button>
+                  <p className="text-indigo-300/70 text-sm mt-4 font-medium tracking-wide">Ready when you are!</p>
+                </div>
+              )}
               {isAiSpeaking && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-48 h-48 bg-indigo-500/20 rounded-full blur-[50px] animate-pulse"></div>
                 </div>
               )}
-              <div className="relative z-10 transform scale-125 transition-transform duration-700">
+              <div className={`relative z-10 transform scale-125 transition-transform duration-700 ${!isStarted ? 'opacity-50 blur-sm' : ''}`}>
                 <AiAvatar isSpeaking={isAiSpeaking} isListening={isCallActive && !isAiSpeaking} />
               </div>
             </div>

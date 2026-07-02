@@ -283,7 +283,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
                   </span>
                   
                   {session.status !== 'Completed' ? (
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => navigate(`/interview/active/${session._id}`)}>
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => navigate('/interview-setup', { state: { rePracticeSession: session } })}>
                       <PlayCircle size={14} /> Re-practice
                     </button>
                   ) : session.feedback ? (
