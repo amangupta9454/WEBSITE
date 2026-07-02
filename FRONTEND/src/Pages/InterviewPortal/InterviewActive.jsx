@@ -26,6 +26,7 @@ function InterviewActive() {
   const [fatalError, setFatalError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const hasVapiErrorRef = useRef(false);
+  const isFeedbackGenerating = useRef(false);
 
   const [time, setTime] = useState(0);
   const timerIntervalRef = useRef(null);
@@ -179,11 +180,8 @@ function InterviewActive() {
   };
 
   const GenerateFeedback = async (conversation) => {
-    if (time < 60) {
-      toast("Interview ended too soon. No feedback generated.", { icon: "ℹ️", duration: 5000 });
-      navigate('/dashboard');
-      return;
-    }
+    if (isFeedbackGenerating.current) return;
+    isFeedbackGenerating.current = true;
 
     setIsSaving(true);
     const attentionReport = getAttentionReport();
@@ -252,11 +250,13 @@ Begin the interview now.
     });
   };
 
-  const endCall = useCallback(() => {
+  const endCall = useCallback(async () => {
     if (vapiRef.current && isCallActive) {
       setIsSaving(true);
       vapiRef.current.stop();
-      // stop() will trigger "call-end" event, which calls GenerateFeedback
+      setIsCallActive(false);
+      stopTimer();
+      await GenerateFeedback(conversationRef.current);
     }
   }, [isCallActive]);
 
