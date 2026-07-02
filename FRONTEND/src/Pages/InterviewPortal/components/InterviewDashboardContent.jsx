@@ -111,7 +111,7 @@ function FeedbackModal({ feedback, onClose }) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
                     <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
                       <p className="text-lg font-black text-slate-700">{v}</p>
                     </div>
                   ))}

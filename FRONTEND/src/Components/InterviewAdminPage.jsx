@@ -137,7 +137,7 @@ function SessionRow({ session }) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
                     <div key={k} className="bg-white p-2 rounded-lg border border-slate-200 text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{k}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
                       <p className="text-sm font-bold text-slate-700">{v}</p>
                     </div>
                   ))}
