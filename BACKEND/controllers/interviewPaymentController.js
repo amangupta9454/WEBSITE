@@ -42,7 +42,7 @@ exports.createOrder = async (req, res) => {
     }
 
     // Save the pending order to the user's document
-    const userId = req.user.id || req.user.userId;
+    const userId = req.user.userId || req.user.id;
     await InterviewUser.findByIdAndUpdate(userId, {
       $push: {
         pendingOrders: {
@@ -63,7 +63,7 @@ exports.createOrder = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, packageId } = req.body;
-    const userId = req.user.id || req.user.userId;
+    const userId = req.user.userId || req.user.id;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
