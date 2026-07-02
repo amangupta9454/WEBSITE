@@ -38,7 +38,7 @@ const StudentLogin = () => {
       toast.success("Login Successful!");
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/student-dashboard");
       }, 1500);
     } catch (err) {
       toast.error(

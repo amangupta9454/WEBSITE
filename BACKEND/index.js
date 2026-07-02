@@ -12,6 +12,7 @@ const authRoutes = require("./routes/auth");
 const studentRoutes = require("./routes/student");
 const cronRoutes = require("./routes/cron");
 const contactRoutes = require("./routes/contact");
+const interviewAuthRoutes = require("./routes/interviewAuth");
 const interviewSessionRoutes = require("./routes/interviewSession");
 const interviewPaymentRoutes = require("./routes/interviewPayment");
 
@@ -62,6 +63,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/interview-auth", interviewAuthRoutes);
 app.use("/api/interview-session", interviewSessionRoutes);
 app.use("/api/interview-payment", interviewPaymentRoutes);
 

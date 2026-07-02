@@ -31,7 +31,7 @@ function InterviewDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('studentToken');
+    const token = localStorage.getItem('interviewToken');
     if (!token) {
       navigate('/student-login');
       return;
@@ -68,7 +68,7 @@ function InterviewDashboard() {
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
-        localStorage.removeItem('studentToken');
+        localStorage.removeItem('interviewToken');
         localStorage.removeItem('interviewUserRole');
         navigate('/student-login');
       }
@@ -78,13 +78,13 @@ function InterviewDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('studentToken');
+    localStorage.removeItem('interviewToken');
     navigate('/');
   };
 
   const handleBuyPackage = async (pkg) => {
     setIsModalOpen(false);
-    const token = localStorage.getItem('studentToken');
+    const token = localStorage.getItem('interviewToken');
     if (!token) return;
 
     const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");

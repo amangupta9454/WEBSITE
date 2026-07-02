@@ -48,7 +48,7 @@ function InterviewActive() {
     // Fetch session
     const fetchSession = async () => {
       try {
-        const token = localStorage.getItem('studentToken');
+        const token = localStorage.getItem('interviewToken');
         // We actually just get it from the backend if we created a route for it, 
         // but we can also just fetch all my-sessions and find it.
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-sessions`, {
@@ -180,7 +180,7 @@ function InterviewActive() {
     // Send feedback generation request to backend
     // Since we don't have the ai-feedback endpoint implemented in this new backend, we will just send raw transcript for now
     try {
-      const token = localStorage.getItem('studentToken');
+      const token = localStorage.getItem('interviewToken');
       await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
         sessionId,
         status: 'Completed',

@@ -20,7 +20,7 @@ const InterviewSetup = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = localStorage.getItem('studentToken');
+      const token = localStorage.getItem('interviewToken');
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/create`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
