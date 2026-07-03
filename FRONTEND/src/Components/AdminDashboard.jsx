@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { clearAllUserData } from '../utils/auth';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from "xlsx";
@@ -182,7 +183,7 @@ const AdminDashboard = () => {
       setDomains(allDomains);
     } catch (err) {
       toast.error("Failed to load applications");
-      localStorage.removeItem("adminToken");
+      clearAllUserData();
       navigate("/admin-login");
     } finally {
       setLoading(false);
@@ -678,7 +679,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+    clearAllUserData();
     toast.success("Admin logged out");
     navigate("/admin-login");
   };

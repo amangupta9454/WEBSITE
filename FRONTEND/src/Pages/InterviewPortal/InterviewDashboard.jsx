@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
+import { clearAllUserData } from '../../utils/auth';
 import InterviewDashboardContent from "./components/InterviewDashboardContent";
 import BuyTokensModal from "./components/BuyTokensModal";
 import toast from "react-hot-toast";
@@ -75,8 +76,7 @@ function InterviewDashboard() {
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
-        localStorage.removeItem('interviewToken');
-        localStorage.removeItem('interviewUserRole');
+        clearAllUserData();
         navigate('/student-login');
       }
     } finally {
@@ -85,7 +85,7 @@ function InterviewDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('interviewToken');
+    clearAllUserData();
     navigate('/');
   };
 

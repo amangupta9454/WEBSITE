@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clearAllUserData } from '../utils/auth';
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import Confetti from "react-confetti";
@@ -1068,9 +1069,7 @@ const StudentDashboard = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("studentToken");
-    localStorage.removeItem("studentData");
-    localStorage.removeItem("interviewToken");
+    clearAllUserData();
     navigate("/student-login");
   };
 

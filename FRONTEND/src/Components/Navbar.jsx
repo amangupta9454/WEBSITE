@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { clearAllUserData } from '../utils/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import axios from 'axios';
@@ -46,9 +47,7 @@ const Navbar = () => {
   const dashboardLink = studentToken ? '/dashboard' : '/dashboard';
 
   const handleLogout = () => {
-    localStorage.removeItem('studentToken');
-    localStorage.removeItem('interviewToken');
-    localStorage.removeItem('interviewUser');
+    clearAllUserData();
     window.location.href = '/';
   };
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, LogIn, LogOut, User, Loader2 } from "lucide-react";
-// import { toast } from 'react-toastify';
+import { clearAllUserData } from '../utils/auth';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,8 +28,7 @@ function Navbar() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("studentToken");
-    localStorage.removeItem("studentData");
+    clearAllUserData();
     setIsAuthenticated(false);
   };
 
