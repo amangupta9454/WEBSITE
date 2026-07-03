@@ -1532,22 +1532,24 @@ const AdminDashboard = () => {
     const [banner, setBanner] = useState(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
     const [preview, setPreview] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
     const [enabled, setEnabled] = useState(false);
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004';
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const adminToken = localStorage.getItem('adminToken');
 
     useEffect(() => {
-      fetch(`${BACKEND_URL}/api/admin/banner`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.success && data.banner) {
-            setBanner(data.banner);
-            setEnabled(data.banner.enabled);
+      axios.get(`${BACKEND_URL}/api/admin/banner`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      })
+        .then(res => {
+          if (res.data.success && res.data.banner) {
+            setBanner(res.data.banner);
+            setEnabled(res.data.banner.enabled);
           }
         })
+        .catch(() => {})
         .finally(() => setLoading(false));
     }, []);
 
@@ -1561,13 +1563,26 @@ const AdminDashboard = () => {
     const handleSave = async () => {
       setUploading(true);
       try {
-        const formData = new FormData();
-        formData.append('enabled', enabled);
-        if (selectedFile) formData.append('bannerImage', selectedFile);
+        let imageUrl = banner?.imageUrl || null;
 
-        const res = await axios.post(`${BACKEND_URL}/api/admin/banner`, formData, {
-          headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'multipart/form-data' }
-        });
+        // Step 1: If new file selected, upload directly to Cloudinary
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+          const cloudRes = await axios.post(
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
+            formData
+          );
+          imageUrl = cloudRes.data.secure_url;
+        }
+
+        // Step 2: Send just the URL + enabled flag as JSON to backend
+        const res = await axios.post(`${BACKEND_URL}/api/admin/banner`, 
+          { imageUrl, enabled },
+          { headers: { Authorization: `Bearer ${adminToken}` } }
+        );
 
         if (res.data.success) {
           setBanner(res.data.banner);
@@ -1577,6 +1592,7 @@ const AdminDashboard = () => {
           toast.success('Banner updated successfully!');
         }
       } catch (err) {
+        console.error(err);
         toast.error('Failed to update banner.');
       } finally {
         setUploading(false);
@@ -1620,31 +1636,61 @@ const AdminDashboard = () => {
             <>
               {/* Current / Preview Image */}
               {currentImage ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                  <img src={currentImage} alt="Banner Preview" className="w-full max-h-64 object-contain" />
+                <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-100 bg-slate-50 shadow-sm">
+                  <img src={currentImage} alt="Banner Preview" className="w-full max-h-72 object-contain p-2" />
                   {preview && (
-                    <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-md">Preview</div>
+                    <div className="absolute top-3 left-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">📷 New Preview</div>
+                  )}
+                  {!preview && banner?.imageUrl && (
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">✓ Live Banner</div>
                   )}
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-400">
-                  <Zap className="mx-auto mb-2 opacity-50" size={32} />
-                  <p className="text-sm font-medium">No banner image uploaded</p>
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center bg-slate-50">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
+                    <Zap className="text-indigo-400" size={28} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-500 mb-1">No banner image uploaded yet</p>
+                  <p className="text-xs text-slate-400">Select a file below to upload</p>
                 </div>
               )}
 
               {/* Upload input */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Upload New Banner Image
                 </label>
+
+                {/* Size Specs Box */}
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                  <p className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-2">📐 Recommended Specifications</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                      <p className="text-slate-400 font-medium">Best Size</p>
+                      <p className="font-bold text-slate-700">800 × 600 px</p>
+                    </div>
+                    <div className="bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                      <p className="text-slate-400 font-medium">Aspect Ratio</p>
+                      <p className="font-bold text-slate-700">4:3 or 16:9</p>
+                    </div>
+                    <div className="bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                      <p className="text-slate-400 font-medium">Max File Size</p>
+                      <p className="font-bold text-slate-700">5 MB</p>
+                    </div>
+                    <div className="bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                      <p className="text-slate-400 font-medium">Format</p>
+                      <p className="font-bold text-slate-700">PNG / JPG / WebP</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-indigo-500 mt-2 font-medium">💡 Tip: Use a poster-style image with text. It will be shown centered in a popup with padding.</p>
+                </div>
+
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  className="block w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer transition-all"
                 />
-                <p className="text-xs text-slate-400 mt-1">Recommended: 800×600px or similar. PNG/JPG.</p>
               </div>
 
               {/* Enable toggle */}
@@ -1669,7 +1715,7 @@ const AdminDashboard = () => {
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all disabled:opacity-50"
                 >
                   {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {uploading ? 'Saving...' : 'Save Changes'}
+                  {uploading ? 'Uploading to Cloudinary...' : 'Save Changes'}
                 </button>
                 {banner?.imageUrl && (
                   <button
@@ -1877,6 +1923,12 @@ const AdminDashboard = () => {
                 >
                   <Database className="w-4 h-4" /> Token Management
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("banner")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "banner" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <Zap className="w-4 h-4" /> Banner
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -1897,6 +1949,15 @@ const AdminDashboard = () => {
                     <p className="text-sm text-slate-500 mt-1">Manage global token settings and individual user token balances.</p>
                   </div>
                   <TokenAdminPage />
+                </div>
+              )}
+              {activeFeatureTab === "banner" && (
+                <div className="animate-fade-in">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-black text-slate-800">Promotional Banner</h2>
+                    <p className="text-sm text-slate-500 mt-1">Upload and manage the popup banner shown to visitors on the website.</p>
+                  </div>
+                  <BannerManager />
                 </div>
               )}
             </div>

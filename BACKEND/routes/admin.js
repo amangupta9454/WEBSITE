@@ -302,48 +302,25 @@ router.get("/banner", async (req, res) => {
   }
 });
 
-// Admin: upload banner image and toggle enabled state
-const cloudinaryForBanner = require("cloudinary").v2;
-const streamifierForBanner = require("streamifier");
-router.post("/banner", auth, upload.single("bannerImage"), async (req, res) => {
+// Admin: save banner settings (imageUrl already uploaded to Cloudinary by frontend)
+router.post("/banner", auth, async (req, res) => {
   try {
-    const { enabled } = req.body;
-
-    // Fetch existing banner setting
-    let setting = await Settings.findOne({ key: "promoBanner" });
-    const existingValue = setting?.value || {};
-
-    let imageUrl = existingValue.imageUrl || null;
-
-    // Upload new image if provided
-    if (req.file) {
-      imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinaryForBanner.uploader.upload_stream(
-          { resource_type: "image", folder: "promo_banners" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result.secure_url);
-          }
-        );
-        streamifierForBanner.createReadStream(req.file.buffer).pipe(stream);
-      });
-    }
+    const { imageUrl, enabled } = req.body;
 
     const newValue = {
-      imageUrl,
-      enabled: enabled === "true" || enabled === true,
+      imageUrl: imageUrl || null,
+      enabled: enabled === true || enabled === "true",
     };
 
-    if (setting) {
-      setting.value = newValue;
-      await setting.save();
-    } else {
-      await Settings.create({ key: "promoBanner", value: newValue });
-    }
+    await Settings.findOneAndUpdate(
+      { key: "promoBanner" },
+      { value: newValue },
+      { upsert: true }
+    );
 
     res.json({ success: true, banner: newValue });
   } catch (err) {
-    console.error("Banner upload error:", err);
+    console.error("Banner save error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
