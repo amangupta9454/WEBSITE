@@ -151,12 +151,10 @@ export default function DashboardTopSection() {
                 </span>
               )}
             </div>
-            <div className="min-w-0 text-left flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-lg font-black text-slate-800 leading-tight truncate w-full">
-                  {userData?.name || "User"}
-                </h1>
-              </div>
+            <div className="min-w-0 w-full text-left flex flex-col justify-center">
+              <h1 className="text-sm sm:text-lg font-black text-slate-800 leading-tight truncate w-full">
+                {userData?.name || "User"}
+              </h1>
               {userData?.email && (
                 <p className="text-[10px] sm:text-xs font-medium text-slate-500 truncate mt-0.5 w-full">
                   {userData.email}
@@ -185,7 +183,7 @@ export default function DashboardTopSection() {
               <div className="flex flex-col min-w-0 items-end sm:items-start">
                 <span className={`hidden sm:block text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${!isUnlimited && credits <= 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>Wallet</span>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+                  <span className={`text-xl sm:text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                     {isUnlimited ? '∞' : credits}
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-widest ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
@@ -211,10 +209,10 @@ export default function DashboardTopSection() {
             {!isUnlimited && (
               <button 
                 onClick={() => setIsBuyModalOpen(true)}
-                className={`text-white font-bold p-2 sm:px-4 sm:py-2 rounded-xl transition-all shadow-md text-xs flex items-center justify-center shrink-0 ml-2 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+                className={`text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all shadow-md text-[10px] sm:text-xs flex items-center justify-center shrink-0 ml-2 sm:ml-3 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
               >
                 <span className="hidden sm:inline">Add Tokens</span>
-                <span className="sm:hidden">+</span>
+                <span className="sm:hidden">Buy Token</span>
               </button>
             )}
           </div>
