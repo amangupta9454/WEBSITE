@@ -21,6 +21,15 @@ exports.createSession = async (req, res) => {
       await user.save();
     }
 
+    // ✅ Check if interview feature is globally enabled or user has an override
+    const featureSetting = await Settings.findOne({ key: 'interviewEnabled' });
+    const isFeatureGloballyEnabled = featureSetting ? featureSetting.value === true || featureSetting.value === 'true' : true;
+    const hasOverride = user.interviewAccessOverride === true;
+
+    if (!isFeatureGloballyEnabled && !hasOverride) {
+      return res.status(403).json({ success: false, message: 'Interview feature is currently disabled.' });
+    }
+
     const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
     const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;
 
