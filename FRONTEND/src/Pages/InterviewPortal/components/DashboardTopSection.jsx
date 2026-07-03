@@ -220,7 +220,7 @@ export default function DashboardTopSection() {
 
             {/* Mobile Wallet View */}
             <div className="flex sm:hidden items-center justify-center gap-3 w-full px-2">
-              <span className={`${credits > 999 ? 'text-3xl' : 'text-4xl'} font-black italic bg-clip-text text-transparent tracking-tighter leading-none drop-shadow-md pr-1 sm:pr-0 ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 10 ? 'bg-gradient-to-r from-orange-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+              <span className={`${credits > 999 ? 'text-3xl' : 'text-4xl'} font-black italic bg-clip-text text-transparent tracking-tighter leading-none drop-shadow-md pr-2 sm:pr-0 ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 10 ? 'bg-gradient-to-r from-orange-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                 {isUnlimited ? '∞' : credits}
               </span>
               
