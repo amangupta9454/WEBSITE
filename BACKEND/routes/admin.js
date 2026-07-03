@@ -306,16 +306,18 @@ router.get("/banner", async (req, res) => {
 router.post("/banner", auth, async (req, res) => {
   try {
     const { imageUrl, enabled } = req.body;
+    const isEnabled = enabled === true || enabled === "true";
 
     const newValue = {
       imageUrl: imageUrl || null,
-      enabled: enabled === true || enabled === "true",
+      enabled: isEnabled,
     };
 
+    // Use $set with explicit fields for Mixed type — avoids Mongoose caching issues
     await Settings.findOneAndUpdate(
       { key: "promoBanner" },
-      { value: newValue },
-      { upsert: true }
+      { $set: { "value.imageUrl": newValue.imageUrl, "value.enabled": newValue.enabled } },
+      { upsert: true, new: true }
     );
 
     res.json({ success: true, banner: newValue });
