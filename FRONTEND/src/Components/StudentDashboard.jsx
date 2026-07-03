@@ -292,10 +292,46 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-        <h3 className="text-xl font-bold text-slate-800 mb-6">
-          Your Assignments
+      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
+          <BookOpen className="text-blue-600" /> Assigned Projects
         </h3>
+
+        <div className="bg-blue-50/50 border border-blue-200 rounded-xl mb-6 shadow-sm overflow-hidden">
+          <details className="group">
+            <summary className="font-bold text-blue-900 flex items-center justify-between p-4 cursor-pointer select-none">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                Mandatory Project Rules & Guidelines
+              </div>
+              <ChevronDown className="w-5 h-5 text-blue-500 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="p-4 pt-0 border-t border-blue-200/50 mt-1 bg-blue-50/30">
+              <ul className="space-y-2.5 text-[13px] text-blue-800 font-medium">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Adding a GitHub repository link for your project is <strong className="text-blue-950 font-bold">mandatory</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span><strong className="text-blue-950 font-bold">Daily code push on GitHub</strong> is strictly required.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Create a <strong className="text-blue-950 font-bold">new repository</strong> for every new assignment/project you receive.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>The Code-A-Nova Team will monitor and <strong className="text-blue-950 font-bold">verify your daily pushes</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Completing the project and following these rules is <strong className="text-blue-950 font-bold">mandatory for your certification</strong>.</span>
+                </li>
+              </ul>
+            </div>
+          </details>
+        </div>
         {isStarted ? (
           <div className="space-y-4">
             {Array.from({
@@ -325,11 +361,11 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
                 >
                   <div>
                     <h4
-                      className={`font-bold text-lg ${isSubmitted ? "text-emerald-900" : "text-blue-900"}`}
+                      className={`font-bold text-lg leading-tight ${isSubmitted ? "text-emerald-900" : "text-blue-900"}`}
                     >
                       {assignedTaskName && !assignedTaskName.startsWith("http")
-                        ? `Task: ${assignedTaskName}`
-                        : `Task Phase ${idx + 1}`}
+                        ? assignedTaskName
+                        : `Task Assignment`}
                     </h4>
                     {assignedTaskName &&
                       assignedTaskName.startsWith("http") && (
@@ -739,75 +775,49 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+        <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
           <BookOpen className="text-amber-600" /> Assigned Projects
         </h3>
 
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 mb-6 shadow-sm shadow-orange-100/50">
-          <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
-            <AlertCircle className="w-5 h-5 text-orange-600" />
-            Mandatory Project Rules & Guidelines
-          </h4>
-          <ul className="space-y-2 text-sm text-orange-800 font-medium">
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                You will be assigned{" "}
-                <strong className="text-orange-950 font-bold">
-                  2-3 projects per month
-                </strong>{" "}
-                during your internship.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                Adding a GitHub repository link for your project is{" "}
-                <strong className="text-orange-950 font-bold">mandatory</strong>
-                .
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                <strong className="text-orange-950 font-bold">
-                  Daily code push on GitHub
-                </strong>{" "}
-                is strictly required.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                Create a{" "}
-                <strong className="text-orange-950 font-bold">
-                  new repository
-                </strong>{" "}
-                for every new assignment/project you receive.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                The Code-A-Nova Team will monitor and{" "}
-                <strong className="text-orange-950 font-bold">
-                  verify your daily pushes
-                </strong>
-                .
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">•</span>
-              <span>
-                Completing the project and following these rules is{" "}
-                <strong className="text-orange-950 font-bold">
-                  mandatory for your certification
-                </strong>
-                .
-              </span>
-            </li>
-          </ul>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl mb-6 shadow-sm overflow-hidden">
+          <details className="group">
+            <summary className="font-bold text-amber-900 flex items-center justify-between p-4 cursor-pointer select-none">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+                Mandatory Project Rules & Guidelines
+              </div>
+              <ChevronDown className="w-5 h-5 text-amber-500 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="p-4 pt-0 border-t border-amber-200/50 mt-1 bg-amber-50/50">
+              <ul className="space-y-2.5 text-[13px] text-amber-800 font-medium">
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>You will be assigned <strong className="text-orange-950 font-bold">2-3 projects per month</strong> during your internship.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>Adding a GitHub repository link for your project is <strong className="text-orange-950 font-bold">mandatory</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span><strong className="text-orange-950 font-bold">Daily code push on GitHub</strong> is strictly required.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>Create a <strong className="text-orange-950 font-bold">new repository</strong> for every new assignment/project you receive.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>The Code-A-Nova Team will monitor and <strong className="text-orange-950 font-bold">verify your daily pushes</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>Completing the project and following these rules is <strong className="text-orange-950 font-bold">mandatory for your certification</strong>.</span>
+                </li>
+              </ul>
+            </div>
+          </details>
         </div>
 
         {!isStarted ? (
@@ -843,40 +853,24 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
               >
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-lg">
+                    <div className="w-full">
+                      <h4 className="font-black text-slate-800 text-xl md:text-2xl leading-tight">
                         {proj.name}
                       </h4>
-                      <p className="text-sm text-slate-500 mt-1">
+                      <p className="text-sm md:text-base text-slate-500 mt-1.5 font-medium">
                         {proj.description}
                       </p>
 
                       {(proj.createdAt || proj.dueDate) && (
-                        <div className="flex gap-4 mt-3 text-xs font-semibold">
+                        <div className="flex flex-wrap gap-2 md:gap-3 mt-4 text-xs font-bold">
                           {proj.createdAt && (
-                            <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-100">
-                              Assigned:{" "}
-                              {new Date(proj.createdAt).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )}
+                            <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md border border-blue-100 flex items-center shadow-sm">
+                              Assigned: {new Date(proj.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </div>
                           )}
                           {proj.dueDate && (
-                            <div className="bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100">
-                              Due Date:{" "}
-                              {new Date(proj.dueDate).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )}
+                            <div className="bg-rose-50 text-rose-700 px-3 py-1.5 rounded-md border border-rose-100 flex items-center shadow-sm">
+                              Due Date: {new Date(proj.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </div>
                           )}
                         </div>
@@ -887,9 +881,9 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                         href={proj.pdfUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1 md:mt-0 text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                        className="flex items-center justify-center w-full md:w-auto gap-2 mt-2 md:mt-0 text-sm font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-5 py-2.5 rounded-xl transition-all whitespace-nowrap shrink-0 shadow-sm"
                       >
-                        <FileText size={16} /> Download Project Document
+                        <FileText size={18} /> Download Project Document
                       </a>
                     )}
                   </div>
@@ -968,47 +962,35 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 flex flex-col gap-4 shadow-sm shadow-amber-100/50 mt-4">
-                      <div className="flex items-start gap-4">
-                        <div className="bg-amber-100/80 p-2.5 rounded-xl text-amber-600 shadow-sm mt-0.5">
-                          <Github size={20} strokeWidth={2.5} />
+                    <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-5 flex flex-col md:flex-row gap-4 md:gap-5 shadow-sm mt-5">
+                      <div className="bg-amber-100 text-amber-700 p-3 rounded-xl shrink-0 self-start shadow-sm">
+                        <Github size={24} strokeWidth={2.5} />
+                      </div>
+                      <div className="w-full">
+                        <h5 className="font-bold text-amber-950 text-base mb-1.5">
+                          Link Your GitHub Repository
+                        </h5>
+                        <p className="text-sm text-amber-800 leading-relaxed mb-4 font-medium">
+                          Save your Github link here. Once your project is
+                          fully complete, click the "Final Submit Project"
+                          button.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+                          <input
+                            type="url"
+                            placeholder="https://github.com/username/repo"
+                            value={repoInputs[proj.id] !== undefined ? repoInputs[proj.id] : proj.repoLink || ""}
+                            onChange={(e) => setRepoInputs({ ...repoInputs, [proj.id]: e.target.value })}
+                            className="flex-1 px-4 py-2.5 text-sm font-medium border border-amber-300/60 rounded-xl focus:ring-2 focus:ring-amber-500/50 outline-none bg-white shadow-sm placeholder:text-slate-400"
+                          />
+                          <button
+                            onClick={() => handleSubmitRepo(proj.id)}
+                            disabled={submittingRepo === proj.id}
+                            className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50 shadow-sm shadow-amber-600/20 whitespace-nowrap"
+                          >
+                            {submittingRepo === proj.id ? "Saving..." : "Save Link"}
+                          </button>
                         </div>
-                        <div className="w-full">
-                          <h5 className="font-bold text-amber-900 text-sm mb-1">
-                            Link Your GitHub Repository
-                          </h5>
-                          <p className="text-sm text-amber-800 leading-relaxed font-medium mb-3">
-                            Save your Github link here. Once your project is
-                            fully complete, click the "Final Submit Project"
-                            button.
-                          </p>
-                          <div className="flex flex-col sm:flex-row gap-2 max-w-lg">
-                            <input
-                              type="url"
-                              placeholder="https://github.com/username/repo"
-                              value={
-                                repoInputs[proj.id] !== undefined
-                                  ? repoInputs[proj.id]
-                                  : proj.repoLink || ""
-                              }
-                              onChange={(e) =>
-                                setRepoInputs({
-                                  ...repoInputs,
-                                  [proj.id]: e.target.value,
-                                })
-                              }
-                              className="flex-1 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white placeholder-amber-800/40"
-                            />
-                            <button
-                              onClick={() => handleSubmitRepo(proj.id)}
-                              disabled={submittingRepo === proj.id}
-                              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-bold transition-colors whitespace-nowrap disabled:opacity-50"
-                            >
-                              {submittingRepo === proj.id
-                                ? "Saving..."
-                                : "Save Link"}
-                            </button>
-                          </div>
                           {proj.repoLink && (
                             <div className="mt-4 pt-4 border-t border-amber-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <span className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
@@ -1026,7 +1008,6 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                           )}
                         </div>
                       </div>
-                    </div>
                   )}
                 </div>
               </div>
