@@ -30,6 +30,7 @@ import InterviewLogin from "./Pages/InterviewPortal/InterviewLogin";
 import InterviewDashboard from "./Pages/InterviewPortal/InterviewDashboard";
 import InterviewSetup from "./Pages/InterviewPortal/InterviewSetup";
 import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
+import FeatureBanner from "./Components/FeatureBanner";
 
 const UnifiedLayout = () => (
   <MainLayout>
@@ -40,6 +41,7 @@ const UnifiedLayout = () => (
 function App() {
   return (
     <Router>
+      <FeatureBanner />
       <Routes>
         {/* New Marketing Pages (Navbar & Footer handled by MainLayout internally) */}
         <Route path="/" element={<Home />} />
