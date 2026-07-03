@@ -182,67 +182,69 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
     <div className="max-w-6xl mx-auto space-y-8">
 
       {/* Feature Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {interviewEnabled ? (
-          <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onStartInterview}>
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <Video size={80} />
+          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onStartInterview}>
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Video className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 relative z-10">
-              <PlayCircle size={24} />
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+              <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 mb-1 relative z-10">Mock Interviews</h3>
-            <p className="text-sm text-slate-500 relative z-10">Practice with AI</p>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Practice with AI</p>
           </div>
         ) : (
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Video size={80} />
+          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10">
+              <Video className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
-            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-4 relative z-10">
-              <PlayCircle size={24} />
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+              <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 mb-1 relative z-10">Mock Interviews</h3>
-            <p className="text-sm text-slate-500 relative z-10">Currently Not Available</p>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Not Available</p>
           </div>
         )}
         
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-4">
-            <CheckCircle size={24} />
+        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 mb-1">Coding Challenges</h3>
-          <p className="text-sm text-slate-500">Currently Not Available</p>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Coding Challenges</h3>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-4">
-            <Clock size={24} />
+        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+            <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 mb-1">Project Sandbox</h3>
-          <p className="text-sm text-slate-500">Currently Not Available</p>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Project Sandbox</h3>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-4">
-            <Tag size={24} />
+        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+            <Tag className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 mb-1">Certifications</h3>
-          <p className="text-sm text-slate-500">Currently Not Available</p>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Certifications</h3>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
         </div>
       </div>
 
       {/* Mock Interviews Section */}
       <div>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-black text-slate-800">Recent Interview Sessions</h3>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mb-3 sm:mb-6">
+            <h3 className="text-base sm:text-xl font-black text-slate-800 leading-tight">Recent Interview Sessions</h3>
+            <div className="flex items-center shrink-0 ml-2">
               {interviewEnabled && (
                 <button 
                   onClick={handleStartAttempt}
-                  className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1"
+                  className="text-blue-600 hover:text-blue-700 font-bold text-xs sm:text-sm flex items-center gap-1"
                 >
-                  Start New <PlayCircle size={16} />
+                  <span className="hidden sm:inline">Start New</span>
+                  <span className="sm:hidden">Start</span>
+                  <PlayCircle size={16} />
                 </button>
               )}
             </div>
@@ -252,11 +254,11 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
         {isLoading ? (
           <div className="text-center py-10">Loading your sessions...</div>
         ) : sessions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {sessions.map((session) => (
-              <div key={session._id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-blue-50 text-blue-700 p-2 rounded-lg">
+              <div key={session._id} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex flex-col">
+                <div className="flex justify-between items-start mb-3 sm:mb-4">
+                  <div className="bg-blue-50 text-blue-700 p-1.5 sm:p-2 rounded-lg">
                     <Video size={20} />
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -265,10 +267,10 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
                     {session.status}
                   </span>
                 </div>
-                <h4 className="font-bold text-lg text-slate-800 mb-1">{session.jobTitle}</h4>
-                <p className="text-sm text-slate-500 mb-4 line-clamp-2">{session.jobDescription}</p>
+                <h4 className="font-bold text-base sm:text-lg text-slate-800 mb-0.5 sm:mb-1">{session.jobTitle}</h4>
+                <p className="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4 line-clamp-2">{session.jobDescription}</p>
                 
-                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-auto pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs text-slate-400 flex items-center gap-1">
                     <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
                   </span>
