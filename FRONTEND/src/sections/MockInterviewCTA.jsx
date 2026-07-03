@@ -21,6 +21,15 @@ const MockInterviewCTA = () => {
     fetchSettings();
   }, []);
 
+  const handleCTAClick = () => {
+    const token = localStorage.getItem('interviewToken');
+    if (token) {
+      navigate('/dashboard');
+    } else {
+      navigate('/student-login');
+    }
+  };
+
   if (!isEnabled) {
     return null;
   }
@@ -59,7 +68,7 @@ const MockInterviewCTA = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <button 
-                onClick={() => navigate('/interview-dashboard')}
+                onClick={handleCTAClick}
                 className="group relative px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-lg overflow-hidden shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all"
               >
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
