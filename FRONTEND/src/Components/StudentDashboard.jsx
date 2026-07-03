@@ -653,55 +653,41 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           </div>
         </div>
 
-        {/* Timeline Mobile Vertical view */}
-        <div className="sm:hidden pt-2 pb-2">
-          <div className="flex flex-col gap-4 relative pl-2">
-            <div className="absolute left-[26px] top-[20px] bottom-[20px] w-1 bg-slate-100 -z-10 rounded-full shadow-inner"></div>
-            <div
-              className="absolute left-[26px] top-[20px] w-1 bg-gradient-to-b from-amber-400 via-orange-400 to-orange-500 -z-10 rounded-full transition-all duration-700 ease-out"
-              style={{
-                height: `calc(${(clampedStage / (stages.length - 1)) * 100}% - ${(clampedStage / (stages.length - 1)) * 40}px)`,
-              }}
+        {/* Timeline Mobile Horizontal Chip view */}
+        <div className="sm:hidden mt-2 mb-2">
+          <p className="text-[10px] font-bold text-slate-400 mb-2.5 uppercase tracking-wider flex items-center justify-between">
+            <span>Internship Progress</span>
+            <span className="text-orange-600 font-black">{Math.round((clampedStage / (stages.length - 1)) * 100)}%</span>
+          </p>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mb-3 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${(clampedStage / (stages.length - 1)) * 100}%` }}
             ></div>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {stages.map((stage, idx) => {
               const isCompleted = idx < currentStage;
               const isActive = idx === currentStage;
 
               return (
-                <div key={idx} className="flex items-center gap-3 relative z-10 group cursor-default">
-                  <div className="bg-white p-1 rounded-full relative shrink-0">
-                    {isActive && (
-                      <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-40"></div>
-                    )}
-                    <div
-                      className={`w-8 h-8 relative rounded-full flex items-center justify-center font-bold transition-all duration-300 border-2 ${
-                        isCompleted
-                          ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white border-white shadow-sm shadow-orange-500/40"
-                          : isActive
-                            ? "bg-white text-orange-600 border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
-                            : "bg-slate-50 text-slate-300 border-slate-100"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle size={16} strokeWidth={3} />
-                      ) : (
-                        <div className="scale-75 origin-center flex items-center justify-center">
-                          {getSummerStageIcon(stage)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className={`text-[11px] font-black uppercase tracking-wider leading-tight ${
+                <div key={idx} className="flex items-center shrink-0">
+                  <div
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black tracking-wide uppercase transition-all ${
                       isCompleted
-                        ? "text-orange-700"
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
                         : isActive
-                          ? "text-orange-600 drop-shadow-sm"
-                          : "text-slate-400"
+                          ? "bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/30"
+                          : "bg-slate-50 border-slate-200 text-slate-400"
                     }`}
                   >
+                    {isCompleted && <CheckCircle size={12} strokeWidth={3} className="text-amber-600" />}
+                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>}
                     {stage}
-                  </span>
+                  </div>
+                  {idx < stages.length - 1 && (
+                    <div className={`w-3 h-0.5 mx-1 rounded-full ${isCompleted ? "bg-amber-300" : "bg-slate-200"}`}></div>
+                  )}
                 </div>
               );
             })}
