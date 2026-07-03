@@ -30,6 +30,7 @@ function InterviewActive() {
   const isFeedbackGenerating = useRef(false);
 
   const [time, setTime] = useState(0);
+  const timeRef = useRef(0);
   const timerIntervalRef = useRef(null);
   const aiSpeechTimeoutRef = useRef(null);
   const userSpeechTimeoutRef = useRef(null);
@@ -161,7 +162,25 @@ function InterviewActive() {
       setIsAiSpeaking(false);
       setIsUserSpeaking(false);
       
-      await GenerateFeedback(conversationRef.current);
+      if (timeRef.current < 60) {
+        try {
+          const token = localStorage.getItem('interviewToken');
+          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
+            sessionId,
+            status: 'Aborted'
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          toast.success("Interview aborted. You can re-practice.");
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to abort session.");
+        } finally {
+          navigate('/dashboard');
+        }
+      } else {
+        await GenerateFeedback(conversationRef.current);
+      }
     });
 
     vapiRef.current.on("message", (msg) => {
@@ -196,7 +215,12 @@ function InterviewActive() {
 
   const startTimer = () => {
     if (timerIntervalRef.current) return;
-    timerIntervalRef.current = setInterval(() => setTime((p) => p + 1), 1000);
+    timerIntervalRef.current = setInterval(() => {
+      setTime((p) => {
+        timeRef.current = p + 1;
+        return p + 1;
+      });
+    }, 1000);
   };
   const stopTimer = () => {
     clearInterval(timerIntervalRef.current);
@@ -280,9 +304,28 @@ Begin the interview now.
       vapiRef.current.stop();
       setIsCallActive(false);
       stopTimer();
-      await GenerateFeedback(conversationRef.current);
+      
+      if (timeRef.current < 60) {
+        try {
+          const token = localStorage.getItem('interviewToken');
+          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
+            sessionId,
+            status: 'Aborted'
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          toast.success("Interview aborted. You can re-practice.");
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to abort session.");
+        } finally {
+          navigate('/dashboard');
+        }
+      } else {
+        await GenerateFeedback(conversationRef.current);
+      }
     }
-  }, [isCallActive]);
+  }, [isCallActive, sessionId, navigate]);
 
   const toggleMic = () => {
     if (vapiRef.current?.mute) {
