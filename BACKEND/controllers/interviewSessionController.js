@@ -186,13 +186,18 @@ exports.getUserCredits = async (req, res) => {
     const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
     const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;
     
+    const globalFeatureSetting = await Settings.findOne({ key: 'interviewEnabled' });
+    const globalEnabled = globalFeatureSetting ? globalFeatureSetting.value : true;
+    const interviewEnabled = globalEnabled || !!user.interviewAccessOverride;
+    
     res.status(200).json({
       success: true,
       credits: user.interviewCredits || 0,
       isUnlimited: isUnlimited,
       interviewCost: interviewCost,
+      interviewEnabled: interviewEnabled,
       role: isInternRole ? 'intern' : 'interview_user',
-      user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile }
+      user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile, interviewAccessOverride: !!user.interviewAccessOverride }
     });
   } catch (error) {
     console.error('Error fetching credits:', error);

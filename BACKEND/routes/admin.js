@@ -138,6 +138,20 @@ router.post("/interview-settings/toggle", auth, async (req, res) => {
   }
 });
 
+router.post("/interview-settings/override/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { override } = req.body;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.interviewAccessOverride = !!override;
+    await user.save();
+    res.json({ success: true, message: 'Override updated', override: user.interviewAccessOverride });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get("/interview-settings/tokens", auth, async (req, res) => {
   try {
     let freeTokens = await Settings.findOne({ key: "interviewFreeTokens" });
@@ -231,7 +245,8 @@ router.get("/interview-data", auth, async (req, res) => {
       $or: [
         { interviewPayments: { $not: { $size: 0 } } },
         { interviewCredits: { $ne: 30 } },
-        { interviewIsUnlimited: true }
+        { interviewIsUnlimited: true },
+        { interviewAccessOverride: true }
       ]
     }).lean();
     const sessions = await InterviewSession.find().populate("userId", "name email").lean();

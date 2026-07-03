@@ -24,6 +24,7 @@ function InterviewDashboard() {
   const [sessions, setSessions] = useState([]);
   const [credits, setCredits] = useState(0);
   const [isUnlimited, setIsUnlimited] = useState(false);
+  const [interviewEnabled, setInterviewEnabled] = useState(true);
   const [isIntern, setIsIntern] = useState(false);
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,6 +56,9 @@ function InterviewDashboard() {
         setIsUnlimited(creditsRes.data.isUnlimited);
         if (creditsRes.data.user) {
           setUserData(creditsRes.data.user);
+        }
+        if (creditsRes.data.interviewEnabled !== undefined) {
+          setInterviewEnabled(creditsRes.data.interviewEnabled);
         }
         if (creditsRes.data.role === 'intern') {
           setIsIntern(true);
@@ -164,6 +168,7 @@ function InterviewDashboard() {
       <InterviewDashboardContent 
         credits={credits} 
         isUnlimited={isUnlimited}
+        interviewEnabled={interviewEnabled}
         sessions={sessions} 
         isLoading={isLoading} 
         onStartInterview={() => navigate('/interview-setup')} 

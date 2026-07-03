@@ -157,13 +157,12 @@ function FeedbackModal({ feedback, onClose }) {
   );
 }
 
-export default function InterviewDashboardContent({ credits, isUnlimited, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
+export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [rePracticeSession, setRePracticeSession] = useState(null);
   const navigate = useNavigate();
   
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
-  const [interviewEnabled, setInterviewEnabled] = useState(true);
 
   const handleStartAttempt = () => {
     if (!isUnlimited && credits <= 0) {
@@ -177,16 +176,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, sessio
     }
   };
 
-  useEffect(() => {
-    const checkFeature = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/interview-settings`);
-        const data = await res.json();
-        if (data.success) setInterviewEnabled(data.enabled);
-      } catch {}
-    };
-    checkFeature();
-  }, []);
+
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

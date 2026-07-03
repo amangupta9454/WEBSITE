@@ -186,6 +186,7 @@ function SessionRow({ session }) {
 
 function UserCard({ user }) {
   const [open, setOpen] = useState(false);
+  const [override, setOverride] = useState(user.interviewAccessOverride || false);
   const totalSessions = user.sessions?.length || 0;
   const completedSessions = user.sessions?.filter(s => s.status === "Completed").length || 0;
 
@@ -248,6 +249,32 @@ function UserCard({ user }) {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Account ID</p>
               <p className="text-xs font-mono text-slate-500">{user._id}</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-5">
+            <input 
+              type="checkbox" 
+              id={`override-${user._id}`} 
+              checked={override}
+              onChange={async () => {
+                const newValue = !override;
+                setOverride(newValue);
+                try {
+                  const token = localStorage.getItem("adminToken");
+                  await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/interview-settings/override/${user._id}`, { override: newValue }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  toast.success(newValue ? "Granted feature access to this user." : "Revoked feature access from this user.");
+                } catch (err) {
+                  setOverride(!newValue);
+                  toast.error("Failed to update feature override");
+                }
+              }}
+              className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+            />
+            <label htmlFor={`override-${user._id}`} className="text-sm font-semibold text-slate-700 cursor-pointer select-none">
+              Override Access (Allow access even if globally disabled)
+            </label>
           </div>
 
           <div className="flex gap-4 mb-4 sm:hidden">
