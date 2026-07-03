@@ -1,9 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Mic, Brain, MessageSquare, ArrowRight, Video, Target, Zap } from 'lucide-react';
 
 const MockInterviewCTA = () => {
   const navigate = useNavigate();
+  const [isEnabled, setIsEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/interview-settings`);
+        if (res.data.success && res.data.enabled !== undefined) {
+          setIsEnabled(res.data.enabled);
+        }
+      } catch (error) {
+        console.error("Failed to fetch interview settings", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  if (!isEnabled) {
+    return null;
+  }
 
   return (
     <section className="relative py-24 overflow-hidden bg-slate-900 font-sans">
