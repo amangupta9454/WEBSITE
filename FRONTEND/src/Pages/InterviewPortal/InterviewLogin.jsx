@@ -137,28 +137,28 @@ const InterviewLogin = () => {
         </div>
 
         {/* Right Side - Login Box */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-16 relative">
+        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white px-4 sm:px-6 py-8 lg:py-16 relative min-h-[calc(100vh-5rem)] lg:min-h-0">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="max-w-md w-full relative z-10"
+            className="max-w-md w-full relative z-10 flex flex-col"
           >
-            <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-xl shadow-purple-600/30 transform rotate-3 hover:rotate-6 transition-transform">
-                <Brain className="w-10 h-10 text-white" />
+            <div className="text-center mb-8 sm:mb-10 mt-auto lg:mt-0">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center mb-5 sm:mb-6 shadow-xl shadow-purple-600/30 transform rotate-3 hover:rotate-6 transition-transform">
+                <Brain className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
-              <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2 sm:mb-3 tracking-tight">
                 Welcome Back
               </h2>
-              <p className="text-gray-500 font-medium">
+              <p className="text-sm sm:text-base text-gray-500 font-medium px-4">
                 Sign in to explore your Code-A-Nova dashboard.
               </p>
             </div>
 
-            <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900">
+            <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100/80 w-full">
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-3xl font-black tracking-tight text-gray-900">
                   Code<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">-A-</span>Nova
                 </h2>
               </div>
@@ -172,14 +172,14 @@ const InterviewLogin = () => {
                 />
               </div>
               
-              <div className="mt-8 flex items-center justify-center gap-3">
+              <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3">
                 <div className="h-px bg-gray-200 flex-1"></div>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Code-A-Nova</span>
+                <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">Code-A-Nova</span>
                 <div className="h-px bg-gray-200 flex-1"></div>
               </div>
             </div>
             
-            <p className="text-center text-sm text-gray-400 mt-8">
+            <p className="text-center text-xs sm:text-sm text-gray-400 mt-6 sm:mt-8 px-4 mb-8 lg:mb-0 mt-auto lg:mt-8">
               By signing in, you agree to our Terms of Service and Privacy Policy.
             </p>
           </motion.div>
