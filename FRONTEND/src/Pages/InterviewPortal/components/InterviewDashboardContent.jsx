@@ -1,16 +1,71 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2 } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
+import axios from "axios";
+
+const CircularScore = ({ score, max = 10, label, colorClass, bgClass, textClass }) => {
+  const percentage = (score / max) * 100;
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className={`flex flex-col items-center p-5 rounded-3xl border ${bgClass} border-opacity-60 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300`}>
+      <div className="absolute top-0 right-0 w-24 h-24 bg-white/40 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500 pointer-events-none"></div>
+      <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${textClass} z-10 opacity-80`}>{label}</p>
+      <div className="relative w-24 h-24 flex items-center justify-center z-10">
+        <svg className="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r={radius} stroke="currentColor" strokeWidth="6" fill="transparent" className="text-black/5" />
+          <circle cx="40" cy="40" r={radius} stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className={`${colorClass} transition-all duration-1000 ease-out`} />
+        </svg>
+        <div className="absolute flex items-baseline gap-0.5">
+          <span className={`text-3xl font-black ${textClass}`}>{score}</span>
+          <span className={`text-sm font-bold opacity-50 ${textClass}`}>/{max}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function FeedbackModal({ feedback: session, onClose }) {
-  if (!session) return null;
-  const evaluation = session.feedback?.ai_evaluation || session.feedback;
-  const enterprise = session.feedback?.enterprise_evaluation;
+  const [localSession, setLocalSession] = useState(session);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  useEffect(() => {
+    if (session) setLocalSession(session);
+  }, [session]);
+
+  useEffect(() => {
+    if (!localSession) return;
+    const hasEnterprise = localSession.feedback?.enterprise_evaluation;
+    const isFailed = localSession.feedback?.enterprise_evaluation?.status === "failed";
+    const needsRetry = (!hasEnterprise || isFailed) && localSession.messages?.length > 0;
+    
+    if (needsRetry && !isRetrying) {
+      setIsRetrying(true);
+      const token = localStorage.getItem('token');
+      axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/retry-evaluation/${localSession._id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        if (res.data.success && res.data.session) {
+          setLocalSession(res.data.session);
+        }
+      }).catch(err => {
+        console.error("Failed to retry evaluation", err);
+      }).finally(() => {
+        setIsRetrying(false);
+      });
+    }
+  }, [localSession._id]); // Run only when session ID changes
+
+  if (!localSession) return null;
+  const evaluation = localSession.feedback?.ai_evaluation || localSession.feedback;
+  const enterprise = localSession.feedback?.enterprise_evaluation;
   
-  const deduplicatedConversation = session.messages?.reduce((acc, curr) => {
+  const deduplicatedConversation = localSession.messages?.reduce((acc, curr) => {
     if (acc.length === 0) return [{ ...curr }];
     const last = acc[acc.length - 1];
     const currText = (curr.transcript || curr.text || '').trim();
@@ -38,30 +93,76 @@ function FeedbackModal({ feedback: session, onClose }) {
   
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
-          <X size={20} />
-        </button>
-        <div className="p-6 md:p-8">
-          <h2 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
-            <Star className="text-amber-500 fill-amber-500" /> AI Evaluation Report
-          </h2>
+      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar flex flex-col overflow-hidden">
+        
+        {/* Stunning Gradient Header */}
+        <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-indigo-800 p-8 relative overflow-hidden shrink-0">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
           
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 text-white/60 hover:text-white bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full transition-colors z-20">
+            <X size={20} />
+          </button>
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white/90 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 backdrop-blur-md border border-white/20">
+              <Star size={12} className="text-amber-300 fill-amber-300" /> AI Evaluation Report
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-2">
+              Performance Insights
+            </h2>
+            <p className="text-indigo-200 text-sm font-medium max-w-lg">
+              Here is a deep-dive analysis of your mock interview. Use these highly actionable insights to prepare and dominate your actual interview.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8 bg-slate-50/50 flex-1">
           {evaluation ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-indigo-50 p-4 rounded-xl text-center border border-indigo-100">
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Overall</p>
-                  <p className="text-3xl font-black text-indigo-900">{evaluation.overall_score}<span className="text-lg text-indigo-400">/10</span></p>
+            <div className="space-y-8">
+              
+              {isRetrying && (
+                <div className="bg-indigo-50/80 p-6 rounded-2xl border border-indigo-200 text-center flex flex-col items-center justify-center space-y-3">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                  <p className="text-indigo-800 font-bold text-sm">Hold on, the AI is finalizing your evaluation...</p>
+                  <p className="text-indigo-500 text-xs">This takes about 10-15 seconds.</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-xl text-center border border-blue-100">
-                  <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Technical</p>
-                  <p className="text-3xl font-black text-blue-900">{evaluation.technical_score}<span className="text-lg text-blue-400">/10</span></p>
-                </div>
-                <div className="bg-emerald-50 p-4 rounded-xl text-center border border-emerald-100">
-                  <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Comm.</p>
-                  <p className="text-3xl font-black text-emerald-900">{evaluation.communication_score}<span className="text-lg text-emerald-400">/10</span></p>
-                </div>
+              )}
+
+              {/* Score Dials Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <CircularScore 
+                  score={evaluation.overall_score} 
+                  label="Overall Score" 
+                  colorClass="text-indigo-600" 
+                  bgClass="bg-indigo-50 border-indigo-100" 
+                  textClass="text-indigo-900" 
+                />
+                <CircularScore 
+                  score={evaluation.technical_score} 
+                  label="Technical Depth" 
+                  colorClass="text-blue-500" 
+                  bgClass="bg-blue-50 border-blue-100" 
+                  textClass="text-blue-900" 
+                />
+                <CircularScore 
+                  score={evaluation.communication_score} 
+                  label="Communication" 
+                  colorClass="text-emerald-500" 
+                  bgClass="bg-emerald-50 border-emerald-100" 
+                  textClass="text-emerald-900" 
+                />
+              </div>
+
+              {/* Encouraging Action Plan Banner */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-400/10 rounded-full blur-2xl"></div>
+                <h3 className="text-amber-900 font-black flex items-center gap-2 text-lg mb-1">
+                  🚀 Your Path to Success
+                </h3>
+                <p className="text-amber-800/80 text-sm font-medium mb-3">
+                  Don't worry about the raw scores—interviews are about improvement! Review the Enterprise Assessment below, study your specific knowledge gaps, and practice the suggested better answers. You've got this!
+                </p>
               </div>
               
               <div>
@@ -181,38 +282,72 @@ function FeedbackModal({ feedback: session, onClose }) {
                     </div>
                   )}
 
-                  {enterprise.interview_timeline && enterprise.interview_timeline.length > 0 && (
-                    <div className="pt-6 border-t border-slate-100 mt-6">
-                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Question-by-Question Breakdown</h4>
-                      <div className="space-y-4">
-                        {enterprise.interview_timeline.map((item, i) => (
-                          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                            <div className="flex items-center justify-between mb-3">
-                              <h5 className="font-bold text-slate-800 text-sm">{item.question}</h5>
-                              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 font-black text-xs rounded-lg">Score: {item.score}/10</span>
+                  {/* Speech Analytics Section */}
+                  {enterprise.speech_analysis && (
+                    <div className="bg-purple-50/50 rounded-xl p-5 border border-purple-100 mt-6 shadow-sm">
+                      <h4 className="text-xs font-bold text-purple-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        🎙️ Speech & Delivery Analytics
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                        <div className="bg-white p-4 rounded-xl border border-purple-100 shadow-sm flex items-center justify-between group hover:border-purple-300 transition-colors">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 group-hover:text-purple-500 transition-colors">Confidence Score</p>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-black text-purple-900">{enterprise.speech_analysis.confidence_score}</span>
+                              <span className="text-sm font-bold text-purple-400">/100</span>
                             </div>
-                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3 text-sm text-slate-600">
-                              <strong className="text-slate-700 text-xs uppercase block mb-1">Your Answer Summary:</strong>
-                              {item.candidate_answer_summary}
-                            </div>
-                            {item.suggested_better_answer && (
-                              <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100 mb-3 text-sm text-emerald-800">
-                                <strong className="text-emerald-700 text-xs uppercase block mb-1">How you could have improved:</strong>
-                                {item.suggested_better_answer}
-                              </div>
-                            )}
-                            {item.learning_resource && (
-                              <p className="text-xs text-indigo-600 font-medium">
-                                📚 <span className="underline decoration-indigo-300 underline-offset-2 cursor-pointer">{item.learning_resource}</span>
-                              </p>
-                            )}
                           </div>
-                        ))}
+                          <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                            <Star size={24} className="fill-current" />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm flex items-center justify-between group hover:border-rose-300 transition-colors">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 group-hover:text-rose-500 transition-colors">Filler Words Detected</p>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-black text-rose-600">{enterprise.speech_analysis.filler_words_used}</span>
+                              <span className="text-sm font-bold text-slate-400">times</span>
+                            </div>
+                          </div>
+                          <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
+                            <Clock size={24} />
+                          </div>
+                        </div>
                       </div>
+
+                      {enterprise.speech_analysis.frequent_filler_words && enterprise.speech_analysis.frequent_filler_words.length > 0 && (
+                        <div className="mb-4 bg-white p-3 rounded-lg border border-purple-100">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Most frequent filler words:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {enterprise.speech_analysis.frequent_filler_words.map((word, idx) => (
+                              <span key={idx} className="px-3 py-1 bg-rose-50 text-rose-700 font-black text-xs rounded-full border border-rose-200">
+                                "{word}"
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {enterprise.speech_analysis.speech_feedback && (
+                        <div className="bg-white p-4 rounded-lg border border-purple-200 text-sm text-purple-900 relative overflow-hidden">
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+                          <strong className="text-purple-700 text-[10px] uppercase block mb-1">Delivery Critique:</strong>
+                          <p className="font-medium leading-relaxed">{enterprise.speech_analysis.speech_feedback}</p>
+                        </div>
+                      )}
                     </div>
                   )}
+
                 </div>
               )}
+            </div>
+          ) : isRetrying ? (
+            <div className="bg-indigo-50/80 p-8 rounded-2xl border border-indigo-200 text-center flex flex-col items-center justify-center space-y-4 mb-8">
+              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+              <p className="text-indigo-800 font-black text-lg">AI is evaluating your transcript...</p>
+              <p className="text-indigo-600/80 text-sm font-medium">This usually takes about 10-15 seconds. Please don't close this window.</p>
             </div>
           ) : (
             <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-8">

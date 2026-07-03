@@ -409,3 +409,24 @@ exports.deleteSession = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+exports.retryEvaluation = async (req, res) => {
+  const sessionId = req.params.id;
+  const userId = req.user.id || req.user.unifiedUserId;
+
+  try {
+    const session = await InterviewSession.findOne({ _id: sessionId, userId });
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    // Reset status to EVALUATION_PENDING so processEvaluation can run it
+    session.status = 'EVALUATION_PENDING';
+    await session.save();
+
+    return exports.processEvaluation(req, res);
+  } catch (error) {
+    console.error('Error retrying evaluation:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
