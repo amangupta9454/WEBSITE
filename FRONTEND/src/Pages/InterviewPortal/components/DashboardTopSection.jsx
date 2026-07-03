@@ -141,7 +141,7 @@ export default function DashboardTopSection() {
         <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-row divide-x divide-slate-100 overflow-hidden relative items-center justify-between">
           
           {/* Profile Section */}
-          <div className="flex-1 p-2 sm:p-5 flex flex-row items-center justify-start gap-2 sm:gap-4 relative z-10 hover:bg-slate-50 transition-colors duration-300 min-w-0">
+          <div className="w-[60%] sm:w-auto sm:flex-1 p-2 sm:p-5 flex flex-row items-center justify-start gap-2 sm:gap-4 relative z-10 hover:bg-slate-50 transition-colors duration-300 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm shrink-0">
               {userData?.profileImage ? (
                 <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
@@ -167,28 +167,32 @@ export default function DashboardTopSection() {
               )}
               <button
                 onClick={() => setIsProfileModalOpen(true)}
-                className="mt-1 sm:mt-2 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1 transition-colors bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md"
+                className="mt-0.5 sm:mt-2 text-[9px] sm:text-[10px] font-bold text-indigo-500 hover:text-indigo-700 uppercase tracking-wider flex items-center gap-1 transition-colors sm:bg-indigo-50 sm:hover:bg-indigo-100 sm:px-2 sm:py-1 rounded-md w-fit"
               >
-                <Settings size={12} /> Edit Profile
+                <Settings size={10} className="sm:w-3 sm:h-3" /> 
+                <span className="hidden sm:inline">Edit Profile</span>
+                <span className="sm:hidden">Edit</span>
               </button>
             </div>
           </div>
           
           {/* Wallet Section */}
-          <div className="p-2 sm:p-5 flex items-center justify-end relative z-10 bg-slate-50/30 hover:bg-slate-50/80 transition-all duration-300 shrink-0">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-white items-center justify-center border border-indigo-100 shadow-sm text-indigo-600 shrink-0">
+          <div className="w-[40%] sm:w-auto sm:flex-1 p-2 sm:p-5 flex items-center justify-center sm:justify-end relative z-10 bg-slate-50/30 hover:bg-slate-50/80 transition-all duration-300 shrink-0">
+            
+            {/* Desktop Wallet View */}
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600 shrink-0">
                 <Tag size={18} />
               </div>
-              <div className="flex flex-col min-w-0 items-end sm:items-start">
-                <span className={`hidden sm:block text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${!isUnlimited && credits <= 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>Wallet</span>
+              <div className="flex flex-col min-w-0 items-start">
+                <span className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${!isUnlimited && credits <= 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>Wallet</span>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-xl sm:text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+                  <span className={`text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                     {isUnlimited ? '∞' : credits}
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-widest ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
                 </div>
-                <div className="hidden sm:block mt-1">
+                <div className="mt-1">
                   {isUnlimited ? (
                     <p className="text-[9px] font-bold text-teal-700 bg-teal-100/80 border border-teal-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
                       <span>💎</span> Premium Active
@@ -204,17 +208,35 @@ export default function DashboardTopSection() {
                   )}
                 </div>
               </div>
+              {!isUnlimited && (
+                <button 
+                  onClick={() => setIsBuyModalOpen(true)}
+                  className={`text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md text-xs flex items-center justify-center shrink-0 ml-3 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+                >
+                  Add Tokens
+                </button>
+              )}
             </div>
-            
-            {!isUnlimited && (
-              <button 
-                onClick={() => setIsBuyModalOpen(true)}
-                className={`text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-all shadow-md text-[10px] sm:text-xs flex items-center justify-center shrink-0 ml-2 sm:ml-3 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
-              >
-                <span className="hidden sm:inline">Add Tokens</span>
-                <span className="sm:hidden">Buy Token</span>
-              </button>
-            )}
+
+            {/* Mobile Wallet View */}
+            <div className="flex sm:hidden items-center justify-center gap-3 w-full px-2">
+              <span className={`text-4xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+                {isUnlimited ? '∞' : credits}
+              </span>
+              
+              <div className="flex flex-col items-center justify-between h-[38px]">
+                <span className={`text-[9px] font-bold uppercase tracking-widest leading-none ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
+                {!isUnlimited && (
+                  <button 
+                    onClick={() => setIsBuyModalOpen(true)}
+                    className={`text-white font-bold w-5 h-5 rounded-full shadow-md text-sm leading-none flex items-center justify-center transition-all ${credits <= 0 ? 'bg-red-600 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+                  >
+                    +
+                  </button>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
