@@ -34,6 +34,7 @@ import {
   Linkedin,
   PlayCircle,
   Info,
+  ChevronDown,
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
@@ -563,44 +564,42 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-tight">
               {internship.domain}
             </h2>
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2">
+              <span className="bg-amber-100 text-amber-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                 Summer Internship
               </span>
-              <span className="text-slate-500 text-sm font-medium">
+              <span className="text-slate-500 text-[11px] sm:text-sm font-medium">
                 • ID: {internship.studentId}
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 items-start md:items-end">
             {internship.startDate && (
-              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200">
-                Start Date:{" "}
-                {new Date(internship.startDate).toLocaleDateString("en-IN")}
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
+                Start Date: {new Date(internship.startDate).toLocaleDateString("en-IN")}
               </span>
             )}
             {internship.endDate && (
-              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-red-50 text-red-700 border-red-200">
-                End Date:{" "}
-                {new Date(internship.endDate).toLocaleDateString("en-IN")}
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-red-50 text-red-700 border-red-200 shadow-sm leading-none flex items-center">
+                End Date: {new Date(internship.endDate).toLocaleDateString("en-IN")}
               </span>
             )}
             <span
-              className={`px-4 py-2 rounded-lg text-sm font-bold border ${internship.offerLetterStatus === "Sent" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border shadow-sm leading-none flex items-center ${internship.offerLetterStatus === "Sent" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
             >
               Offer Letter: {internship.offerLetterStatus || "Pending"}
             </span>
           </div>
         </div>
 
-        {/* Timeline Horizontal view (circles) */}
-        <div className="pt-10 pb-16 overflow-x-auto">
+        {/* Timeline Desktop Horizontal view (circles) */}
+        <div className="hidden sm:block pt-10 pb-16 overflow-x-auto">
           <div className="flex items-center justify-between min-w-[700px] relative px-10">
             <div className="absolute left-[72px] right-[72px] top-8 h-2 bg-slate-100 -z-10 rounded-full shadow-inner"></div>
             <div
@@ -614,10 +613,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
               const isActive = idx === currentStage;
 
               return (
-                <div
-                  key={idx}
-                  className="flex flex-col items-center relative z-10 group cursor-default"
-                >
+                <div key={idx} className="flex flex-col items-center relative z-10 group cursor-default">
                   <div className="bg-white p-1 rounded-full relative">
                     {isActive && (
                       <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-40"></div>
@@ -638,9 +634,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       )}
                     </div>
                   </div>
-                  <div
-                    className={`absolute top-20 flex flex-col items-center transition-all duration-300 ${isActive ? "scale-110 translate-y-1" : ""}`}
-                  >
+                  <div className={`absolute top-20 flex flex-col items-center transition-all duration-300 ${isActive ? "scale-110 translate-y-1" : ""}`}>
                     <span
                       className={`text-[10px] sm:text-xs font-black uppercase tracking-wider w-24 sm:w-28 text-center leading-tight ${
                         isCompleted
@@ -653,6 +647,61 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       {stage}
                     </span>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Timeline Mobile Vertical view */}
+        <div className="sm:hidden pt-2 pb-2">
+          <div className="flex flex-col gap-4 relative pl-2">
+            <div className="absolute left-[26px] top-[20px] bottom-[20px] w-1 bg-slate-100 -z-10 rounded-full shadow-inner"></div>
+            <div
+              className="absolute left-[26px] top-[20px] w-1 bg-gradient-to-b from-amber-400 via-orange-400 to-orange-500 -z-10 rounded-full transition-all duration-700 ease-out"
+              style={{
+                height: `calc(${(clampedStage / (stages.length - 1)) * 100}% - ${(clampedStage / (stages.length - 1)) * 40}px)`,
+              }}
+            ></div>
+            {stages.map((stage, idx) => {
+              const isCompleted = idx < currentStage;
+              const isActive = idx === currentStage;
+
+              return (
+                <div key={idx} className="flex items-center gap-3 relative z-10 group cursor-default">
+                  <div className="bg-white p-1 rounded-full relative shrink-0">
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-40"></div>
+                    )}
+                    <div
+                      className={`w-8 h-8 relative rounded-full flex items-center justify-center font-bold transition-all duration-300 border-2 ${
+                        isCompleted
+                          ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white border-white shadow-sm shadow-orange-500/40"
+                          : isActive
+                            ? "bg-white text-orange-600 border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+                            : "bg-slate-50 text-slate-300 border-slate-100"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle size={16} strokeWidth={3} />
+                      ) : (
+                        <div className="scale-75 origin-center flex items-center justify-center">
+                          {getSummerStageIcon(stage)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[11px] font-black uppercase tracking-wider leading-tight ${
+                      isCompleted
+                        ? "text-orange-700"
+                        : isActive
+                          ? "text-orange-600 drop-shadow-sm"
+                          : "text-slate-400"
+                    }`}
+                  >
+                    {stage}
+                  </span>
                 </div>
               );
             })}
@@ -1286,22 +1335,26 @@ const StudentDashboard = () => {
           {data?.internships?.length > 0 ? (
             <>
               {data.internships.length > 1 && (
-                <div className="mb-4 sm:mb-6 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-                  <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
-                    <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                    Select Internship
+                <div className="mb-3 sm:mb-6 bg-white p-2 px-3 sm:p-4 rounded-lg sm:rounded-2xl shadow-sm border border-slate-200 flex flex-row items-center justify-between gap-3 sm:gap-4 overflow-x-auto">
+                  <h3 className="text-[11px] sm:text-base font-bold text-slate-800 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <Briefcase className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-blue-600" />
+                    <span className="hidden sm:inline">Select Internship</span>
+                    <span className="sm:hidden">Internship</span>
                   </h3>
-                  <select
-                    value={selectedInternshipId || ""}
-                    onChange={(e) => setSelectedInternshipId(e.target.value)}
-                    className="w-full sm:w-auto min-w-[200px] sm:min-w-[250px] px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
-                  >
-                    {data.internships.map(internship => (
-                      <option key={internship._id} value={internship._id}>
-                        {internship.domain} • {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB') : "N/A"}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative shrink-0 flex-1 flex justify-end">
+                    <select
+                      value={selectedInternshipId || ""}
+                      onChange={(e) => setSelectedInternshipId(e.target.value)}
+                      className="w-full sm:w-auto appearance-none pl-3 pr-8 py-1.5 sm:pl-4 sm:pr-10 sm:py-2.5 text-[11px] sm:text-sm rounded-md sm:rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-800 font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all cursor-pointer shadow-sm text-right sm:text-left"
+                    >
+                      {data.internships.map(internship => (
+                        <option key={internship._id} value={internship._id}>
+                          {internship.domain} • {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB') : "N/A"}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               )}
               

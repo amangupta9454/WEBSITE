@@ -30,7 +30,7 @@ export default function UnifiedDashboard() {
       <div className="absolute top-20 right-10 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
       <div className="absolute top-40 left-10 w-72 h-72 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
 
-      <div className="relative z-50 w-full max-w-6xl mx-auto mb-8">
+      <div className="relative z-50 w-full max-w-6xl mx-auto mb-3 sm:mb-6">
         {/* Top Header Section (Welcome and Profile/Wallet) */}
         <DashboardTopSection />
 
