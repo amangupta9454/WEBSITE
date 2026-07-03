@@ -80,7 +80,7 @@ function InterviewActive() {
         const token = localStorage.getItem('interviewToken');
         // We actually just get it from the backend if we created a route for it, 
         // but we can also just fetch all my-sessions and find it.
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-sessions`, {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-sessions`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {
@@ -165,7 +165,7 @@ function InterviewActive() {
       if (timeRef.current < 60) {
         try {
           const token = localStorage.getItem('interviewToken');
-          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
+          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/end`, {
             sessionId,
             status: 'Aborted'
           }, {
@@ -236,7 +236,7 @@ function InterviewActive() {
     
     try {
       const token = localStorage.getItem('interviewToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/end`, {
         sessionId,
         status: 'Completed',
         feedback: {
@@ -308,7 +308,7 @@ Begin the interview now.
       if (timeRef.current < 60) {
         try {
           const token = localStorage.getItem('interviewToken');
-          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/end`, {
+          await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/end`, {
             sessionId,
             status: 'Aborted'
           }, {

@@ -10,7 +10,7 @@ const MockInterviewCTA = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/interview-settings`);
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/interview-settings`);
         if (res.data.success && res.data.enabled !== undefined) {
           setIsEnabled(res.data.enabled);
         }

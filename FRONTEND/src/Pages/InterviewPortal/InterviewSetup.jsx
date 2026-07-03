@@ -18,7 +18,7 @@ const InterviewSetup = () => {
   React.useEffect(() => {
     const token = localStorage.getItem('interviewToken');
     if(token) {
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
             headers: { Authorization: `Bearer ${token}` }
         }).then(res => {
             if(res.data.success) {
@@ -38,7 +38,7 @@ const InterviewSetup = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('interviewToken');
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/create`, formData, {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/create`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

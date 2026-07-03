@@ -38,7 +38,7 @@ const InterviewLogin = () => {
     try {
       // Custom button returns access_token
       const { access_token } = credentialResponse;
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-auth/google`, {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-auth/google`, {
         accessToken: access_token
       });
 

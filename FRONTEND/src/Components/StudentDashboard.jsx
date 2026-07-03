@@ -1043,10 +1043,10 @@ const StudentDashboard = () => {
       setIsInterviewLoading(true);
       const token = localStorage.getItem("studentToken");
       const [creditsRes, sessionsRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-sessions`, {
+        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-sessions`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

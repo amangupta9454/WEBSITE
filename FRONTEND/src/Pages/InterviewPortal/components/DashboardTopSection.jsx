@@ -26,7 +26,7 @@ export default function DashboardTopSection() {
     const token = localStorage.getItem('interviewToken');
     if (!token) return;
     try {
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-session/my-credits`, {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -60,7 +60,7 @@ export default function DashboardTopSection() {
       const toastId = toast.loading("Initializing payment...");
       
       const orderRes = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-payment/create-order`,
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-payment/create-order`,
         { packageId: pkg.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -84,7 +84,7 @@ export default function DashboardTopSection() {
         handler: async function (response) {
           try {
             const verifyRes = await axios.post(
-              `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/interview-payment/verify`,
+              `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-payment/verify`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

@@ -261,7 +261,7 @@ function UserCard({ user }) {
                 setOverride(newValue);
                 try {
                   const token = localStorage.getItem("adminToken");
-                  await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/interview-settings/override/${user._id}`, { override: newValue }, {
+                  await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/interview-settings/override/${user._id}`, { override: newValue }, {
                     headers: { Authorization: `Bearer ${token}` }
                   });
                   toast.success(newValue ? "Granted feature access to this user." : "Revoked feature access from this user.");

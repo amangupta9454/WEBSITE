@@ -1749,7 +1749,7 @@ const AdminDashboard = () => {
       setImpersonating(true);
       try {
         const token = localStorage.getItem("adminToken");
-        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004'}/api/admin/impersonate`, {
+        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/impersonate`, {
           email: impersonateForm.email
         }, {
           headers: { Authorization: `Bearer ${token}` }
