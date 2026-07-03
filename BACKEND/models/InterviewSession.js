@@ -7,7 +7,7 @@ const interviewSessionSchema = new mongoose.Schema(
     jobDescription: { type: String, required: true },
     experienceYears: { type: String, required: true },
     durationMinutes: { type: Number, required: true },
-    status: { type: String, enum: ["Started", "Completed", "Failed", "EVALUATION_PENDING", "EVALUATION_RUNNING"], default: "Started" },
+    status: { type: String, enum: ["Started", "Completed", "Failed", "EVALUATION_PENDING", "EVALUATION_RUNNING", "Aborted"], default: "Started" },
     feedback: { type: Object, default: {} }, // Detailed feedback (JSON)
     messages: { type: Array, default: [] }, // Chat transcript if needed
     recruiterMemory: { type: Object, default: {} },

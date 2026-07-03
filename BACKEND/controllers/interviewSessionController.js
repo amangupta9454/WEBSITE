@@ -300,7 +300,21 @@ exports.processEvaluation = async (req, res) => {
       console.error('Error generating AI feedback:', aiErr);
     }
 
-    session.feedback = aiEvaluation;
+    const mappedEvaluation = {
+      overall_score: aiEvaluation.confidence_scores?.overall?.score ? Math.round(aiEvaluation.confidence_scores.overall.score / 10) : 0,
+      technical_score: aiEvaluation.confidence_scores?.technical?.score ? Math.round(aiEvaluation.confidence_scores.technical.score / 10) : 0,
+      communication_score: aiEvaluation.confidence_scores?.communication?.score ? Math.round(aiEvaluation.confidence_scores.communication.score / 10) : 0,
+      detailed_feedback: aiEvaluation.executive_summary || "No feedback generated.",
+      strengths: aiEvaluation.strengths || [],
+      weaknesses: aiEvaluation.weaknesses || [],
+      enhancements: aiEvaluation.learning_roadmap ? Object.values(aiEvaluation.learning_roadmap).flat() : []
+    };
+
+    session.feedback = {
+      ...(session.feedback || {}),
+      ai_evaluation: mappedEvaluation,
+      enterprise_evaluation: aiEvaluation
+    };
     session.status = 'Completed';
     await session.save();
     auditLogger.log('EVALUATION_FINISHED', { sessionId: session._id, status: session.status });

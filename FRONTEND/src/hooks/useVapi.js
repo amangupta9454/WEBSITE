@@ -379,7 +379,7 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
         language: interviewLanguage,
         smartFormat: true, // helps with filler words
       },
-      silenceTimeoutSeconds: 5,
+      silenceTimeoutSeconds: 60,
       responseDelaySeconds: 0.6, // Wait 600ms before replying to prevent robotic instantaneity
       maxDurationSeconds: 1800, // 30 minutes max call duration
       backchannelingEnabled: false, // Turn off automatic backchanneling to prevent weird "mhmm" artifacts during tech answers

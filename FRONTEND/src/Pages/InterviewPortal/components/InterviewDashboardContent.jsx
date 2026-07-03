@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 
-function FeedbackModal({ feedback, onClose }) {
-  if (!feedback) return null;
-  const evaluation = feedback.ai_evaluation;
+function FeedbackModal({ feedback: session, onClose }) {
+  if (!session) return null;
+  const evaluation = session.feedback?.ai_evaluation || session.feedback;
+  const enterprise = session.feedback?.enterprise_evaluation;
   
-  const deduplicatedConversation = feedback.conversation?.reduce((acc, curr) => {
+  const deduplicatedConversation = session.messages?.reduce((acc, curr) => {
     if (acc.length === 0) return [{ ...curr }];
     const last = acc[acc.length - 1];
     const currText = (curr.transcript || curr.text || '').trim();
@@ -110,6 +111,108 @@ function FeedbackModal({ feedback, onClose }) {
                   </div>
                 </div>
               )}
+              
+              {enterprise && (
+                <div className="space-y-6 pt-6 border-t border-slate-100">
+                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                    <Briefcase className="text-indigo-500" /> Enterprise Hiring Assessment
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Recommendation</p>
+                      <p className="text-sm font-bold text-slate-700">{enterprise.final_recommendation || "N/A"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Experience Level</p>
+                      <p className="text-sm font-bold text-slate-700">{enterprise.estimated_experience_level || "N/A"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Hiring Risk</p>
+                      <p className="text-sm font-bold text-slate-700">{enterprise.hiring_risk || "N/A"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Salary Band</p>
+                      <p className="text-sm font-bold text-slate-700">{enterprise.estimated_salary_band || "N/A"}</p>
+                    </div>
+                  </div>
+
+                  {enterprise.recommendation_reason && (
+                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                      <p className="text-xs font-bold text-indigo-800 mb-1">Reasoning</p>
+                      <p className="text-sm text-indigo-900/80">{enterprise.recommendation_reason}</p>
+                    </div>
+                  )}
+
+                  {enterprise.skill_matrix && enterprise.skill_matrix.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Skill Matrix</h4>
+                      <div className="grid gap-2">
+                        {enterprise.skill_matrix.map((sk, i) => (
+                          <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase ${
+                                sk.status?.toLowerCase() === 'verified' ? 'bg-emerald-100 text-emerald-700' :
+                                sk.status?.toLowerCase() === 'weak' ? 'bg-amber-100 text-amber-700' :
+                                'bg-rose-100 text-rose-700'
+                              }`}>
+                                {sk.status}
+                              </span>
+                              <span className="font-bold text-slate-700 text-sm">{sk.skill}</span>
+                            </div>
+                            <span className="text-xs text-slate-500 italic">{sk.evidence}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {enterprise.knowledge_gaps && enterprise.knowledge_gaps.length > 0 && (
+                    <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100 mt-4">
+                      <h4 className="text-xs font-bold text-rose-700 uppercase tracking-wider mb-3">Critical Knowledge Gaps Detected</h4>
+                      <ul className="space-y-2 text-sm text-rose-900/80">
+                        {enterprise.knowledge_gaps.map((gap, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-rose-500 mt-0.5">•</span>
+                            <span>{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {enterprise.interview_timeline && enterprise.interview_timeline.length > 0 && (
+                    <div className="pt-6 border-t border-slate-100 mt-6">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Question-by-Question Breakdown</h4>
+                      <div className="space-y-4">
+                        {enterprise.interview_timeline.map((item, i) => (
+                          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-bold text-slate-800 text-sm">{item.question}</h5>
+                              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 font-black text-xs rounded-lg">Score: {item.score}/10</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3 text-sm text-slate-600">
+                              <strong className="text-slate-700 text-xs uppercase block mb-1">Your Answer Summary:</strong>
+                              {item.candidate_answer_summary}
+                            </div>
+                            {item.suggested_better_answer && (
+                              <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100 mb-3 text-sm text-emerald-800">
+                                <strong className="text-emerald-700 text-xs uppercase block mb-1">How you could have improved:</strong>
+                                {item.suggested_better_answer}
+                              </div>
+                            )}
+                            {item.learning_resource && (
+                              <p className="text-xs text-indigo-600 font-medium">
+                                📚 <span className="underline decoration-indigo-300 underline-offset-2 cursor-pointer">{item.learning_resource}</span>
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-8">
@@ -119,11 +222,11 @@ function FeedbackModal({ feedback, onClose }) {
 
           <div className="space-y-8 mt-8 pt-8 border-t border-slate-100">
             {/* Attention Metrics Section */}
-            {feedback.attentionMetrics && (
+            {session.attentionReport && Object.keys(session.attentionReport).length > 0 && (
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {Object.entries(feedback.attentionMetrics).map(([k, v]) => (
+                  {Object.entries(session.attentionReport).map(([k, v]) => (
                     <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
                       <p className="text-lg font-black text-slate-700">{formatMetricValue(k, v)}</p>
@@ -280,7 +383,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
                       <PlayCircle size={14} /> Re-practice
                     </button>
                   ) : session.feedback ? (
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session.feedback)}>
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session)}>
                       View Feedback
                     </button>
                   ) : (
