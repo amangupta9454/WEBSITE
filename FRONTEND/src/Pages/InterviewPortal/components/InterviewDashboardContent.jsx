@@ -59,7 +59,7 @@ function FeedbackModal({ feedback: session, onClose }) {
         setIsRetrying(false);
       });
     }
-  }, [localSession._id]); // Run only when session ID changes
+  }, [localSession?._id]); // Run only when session ID changes
 
   if (!localSession) return null;
   const evaluation = localSession.feedback?.ai_evaluation || localSession.feedback;
