@@ -1223,35 +1223,35 @@ const StudentDashboard = () => {
 
 
         {/* Synergy Points Summary Card */}
-        <div className="bg-gradient-to-br from-white to-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-6 items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <Trophy className="w-8 h-8 text-white" />
+        <div className="bg-gradient-to-br from-white to-slate-50 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-6 items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Your Synergy Score</h2>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-slate-800 tracking-tight">{totalSynergyPoints}</span>
-                <span className="text-slate-500 font-medium">Points</span>
+              <h2 className="text-[10px] sm:text-sm font-bold text-slate-400 uppercase tracking-wider mb-0.5 sm:mb-1">Your Synergy Score</h2>
+              <div className="flex items-baseline gap-1 sm:gap-2">
+                <span className="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight leading-none">{totalSynergyPoints}</span>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">Points</span>
               </div>
             </div>
           </div>
           
-          <div className="flex-1 w-full md:w-auto bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-4 justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold text-slate-800">How to earn more points?</h3>
+          <div className="flex-1 w-full md:w-auto bg-white p-3 sm:p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-between">
+            <div className="w-full text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2 mb-1">
+                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800">How to earn more points?</h3>
               </div>
-              <p className="text-xs text-slate-500">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 leading-tight">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
             </div>
-            <div className="flex flex-col gap-2">
-              <div className={`px-4 py-2 rounded-lg border ${currentTier.color} font-bold text-sm text-center min-w-[120px]`}>
+            <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto mt-1 sm:mt-0">
+              <div className={`flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border ${currentTier.color} font-bold text-[10px] sm:text-sm text-center min-w-[100px] sm:min-w-[120px] flex items-center justify-center leading-none`}>
                 {currentTier.title}
               </div>
               {data?.internships?.[0]?.globalRank && (
-                <div className="px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold text-sm text-center min-w-[120px] shadow-sm flex items-center justify-center gap-1">
-                  Global Rank: <span className="text-lg">#{data.internships[0].globalRank}</span>
+                <div className="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold text-[10px] sm:text-sm text-center min-w-[100px] sm:min-w-[120px] shadow-sm flex items-center justify-center gap-1 leading-none">
+                  Rank: <span className="text-xs sm:text-lg">#{data.internships[0].globalRank}</span>
                 </div>
               )}
             </div>
@@ -1263,15 +1263,15 @@ const StudentDashboard = () => {
           {data?.internships?.length > 0 ? (
             <>
               {data.internships.length > 1 && (
-                <div className="mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-blue-600" />
+                <div className="mb-4 sm:mb-6 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+                    <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                     Select Internship
                   </h3>
                   <select
                     value={selectedInternshipId || ""}
                     onChange={(e) => setSelectedInternshipId(e.target.value)}
-                    className="w-full sm:w-auto min-w-[250px] px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+                    className="w-full sm:w-auto min-w-[200px] sm:min-w-[250px] px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
                   >
                     {data.internships.map(internship => (
                       <option key={internship._id} value={internship._id}>
