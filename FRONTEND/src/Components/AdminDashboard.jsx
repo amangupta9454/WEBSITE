@@ -1528,6 +1528,165 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const BannerManager = () => {
+    const [banner, setBanner] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const [enabled, setEnabled] = useState(false);
+
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5004';
+    const adminToken = localStorage.getItem('adminToken');
+
+    useEffect(() => {
+      fetch(`${BACKEND_URL}/api/admin/banner`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.banner) {
+            setBanner(data.banner);
+            setEnabled(data.banner.enabled);
+          }
+        })
+        .finally(() => setLoading(false));
+    }, []);
+
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      setSelectedFile(file);
+      setPreview(URL.createObjectURL(file));
+    };
+
+    const handleSave = async () => {
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('enabled', enabled);
+        if (selectedFile) formData.append('bannerImage', selectedFile);
+
+        const res = await axios.post(`${BACKEND_URL}/api/admin/banner`, formData, {
+          headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (res.data.success) {
+          setBanner(res.data.banner);
+          setEnabled(res.data.banner.enabled);
+          setSelectedFile(null);
+          setPreview(null);
+          toast.success('Banner updated successfully!');
+        }
+      } catch (err) {
+        toast.error('Failed to update banner.');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    const handleRemove = async () => {
+      if (!window.confirm('Remove banner image?')) return;
+      try {
+        await axios.delete(`${BACKEND_URL}/api/admin/banner`, {
+          headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        setBanner(null);
+        setEnabled(false);
+        setPreview(null);
+        setSelectedFile(null);
+        toast.success('Banner removed.');
+      } catch {
+        toast.error('Failed to remove banner.');
+      }
+    };
+
+    const currentImage = preview || banner?.imageUrl;
+
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in max-w-2xl">
+        <div className="p-5 border-b border-slate-200 bg-indigo-50/30 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 text-lg">Promotional Banner</h3>
+            <p className="text-sm text-slate-500">Upload an image to show as a popup banner to all visitors.</p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {loading ? (
+            <div className="text-center py-8 text-slate-400">Loading...</div>
+          ) : (
+            <>
+              {/* Current / Preview Image */}
+              {currentImage ? (
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                  <img src={currentImage} alt="Banner Preview" className="w-full max-h-64 object-contain" />
+                  {preview && (
+                    <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-md">Preview</div>
+                  )}
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-400">
+                  <Zap className="mx-auto mb-2 opacity-50" size={32} />
+                  <p className="text-sm font-medium">No banner image uploaded</p>
+                </div>
+              )}
+
+              {/* Upload input */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Upload New Banner Image
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                />
+                <p className="text-xs text-slate-400 mt-1">Recommended: 800×600px or similar. PNG/JPG.</p>
+              </div>
+
+              {/* Enable toggle */}
+              <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div>
+                  <p className="font-bold text-slate-700 text-sm">Banner Enabled</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Toggle whether banner shows to visitors</p>
+                </div>
+                <button
+                  onClick={() => setEnabled(v => !v)}
+                  className={`relative w-12 h-6 rounded-full transition-all ${enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabled ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={uploading}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {uploading ? 'Saving...' : 'Save Changes'}
+                </button>
+                {banner?.imageUrl && (
+                  <button
+                    onClick={handleRemove}
+                    className="px-5 py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-all text-sm"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const ImpersonateIntern = () => {
     const [impersonateForm, setImpersonateForm] = useState({ email: "" });
     const [impersonating, setImpersonating] = useState(false);
@@ -1782,6 +1941,12 @@ const AdminDashboard = () => {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "impersonate" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
               <LogOut size={18} className="rotate-180" /> Impersonate
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("banner")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "banner" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Zap size={18} /> Banner
             </button>
             <button
               onClick={() => setActiveSidebarTab("submissions")}
@@ -2781,6 +2946,11 @@ const AdminDashboard = () => {
           {activeSidebarTab === "impersonate" && (
             <div className="w-full">
               <ImpersonateIntern />
+            </div>
+          )}
+          {activeSidebarTab === "banner" && (
+            <div className="w-full">
+              <BannerManager />
             </div>
           )}
           {activeSidebarTab === "settings" && (
