@@ -220,18 +220,20 @@ export default function DashboardTopSection() {
 
             {/* Mobile Wallet View */}
             <div className="flex sm:hidden items-center justify-center gap-3 w-full px-2">
-              <span className={`text-4xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+              <span className={`${credits > 999 ? 'text-3xl' : 'text-4xl'} font-black italic bg-clip-text text-transparent tracking-tighter leading-none drop-shadow-md pr-1 sm:pr-0 ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 10 ? 'bg-gradient-to-r from-orange-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                 {isUnlimited ? '∞' : credits}
               </span>
               
-              <div className="flex flex-col items-center justify-between h-[38px]">
-                <span className={`text-[9px] font-bold uppercase tracking-widest leading-none ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
+              <div className="flex flex-col items-center justify-center gap-1 h-[38px]">
+                <span className={`text-[9px] font-bold uppercase tracking-widest leading-none flex items-center gap-0.5 ${!isUnlimited && credits <= 10 ? 'text-red-500' : 'text-slate-500'}`}>
+                  {!isUnlimited && credits <= 10 ? 'Low Token' : 'Tokens'} {(!isUnlimited && credits <= 10) && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>}
+                </span>
                 {!isUnlimited && (
                   <button 
                     onClick={() => setIsBuyModalOpen(true)}
-                    className={`text-white font-bold w-5 h-5 rounded-full shadow-md text-sm leading-none flex items-center justify-center transition-all ${credits <= 0 ? 'bg-red-600 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+                    className={`text-white font-bold px-3 py-0.5 rounded shadow-sm text-[9px] uppercase tracking-wider leading-tight flex items-center justify-center transition-all ${credits <= 10 ? 'bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
                   >
-                    +
+                    {credits <= 10 ? 'RECHARGE NOW' : 'ADD'}
                   </button>
                 )}
               </div>
