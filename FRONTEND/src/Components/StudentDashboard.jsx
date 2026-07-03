@@ -1001,7 +1001,25 @@ const StudentDashboard = () => {
 
       setData(response.data);
       if (response.data.internships?.length > 0) {
-        setSelectedInternshipId(response.data.internships[0]._id);
+        const now = new Date();
+        const activeInternship = response.data.internships.find(internship => {
+          if (!internship.startDate) return false;
+          const start = new Date(internship.startDate);
+          const end = internship.endDate ? new Date(internship.endDate) : new Date(8640000000000000); // Max date
+          
+          // Consider it active if we are past the start date and before the end date.
+          // Also set end to end of day to be generous
+          end.setHours(23, 59, 59, 999);
+          
+          return start <= now && end >= now;
+        });
+
+        if (activeInternship) {
+          setSelectedInternshipId(activeInternship._id);
+        } else {
+          // Fallback to the first one if no active internship is found
+          setSelectedInternshipId(response.data.internships[0]._id);
+        }
       }
       
       // Also fetch interview data
