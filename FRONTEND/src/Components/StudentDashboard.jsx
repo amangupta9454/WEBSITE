@@ -156,39 +156,42 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-tight">
               {internship.domain}
             </h2>
-            <p className="text-slate-500 font-medium mt-1">
-              Normal Intern • ID: {internship.studentId}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2">
+              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                Normal Intern
+              </span>
+              <span className="text-slate-500 text-[11px] sm:text-sm font-medium">
+                • ID: {internship.studentId}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 items-start md:items-end">
             {internship.startDate && (
-              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200">
-                Start Date:{" "}
-                {new Date(internship.startDate).toLocaleDateString("en-IN")}
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
+                Start Date: {new Date(internship.startDate).toLocaleDateString("en-IN")}
               </span>
             )}
             {internship.endDate && (
-              <span className="px-4 py-2 rounded-lg text-sm font-bold border bg-red-50 text-red-700 border-red-200">
-                End Date:{" "}
-                {new Date(internship.endDate).toLocaleDateString("en-IN")}
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-red-50 text-red-700 border-red-200 shadow-sm leading-none flex items-center">
+                End Date: {new Date(internship.endDate).toLocaleDateString("en-IN")}
               </span>
             )}
             <span
-              className={`px-4 py-2 rounded-lg text-sm font-bold border ${internship.offerLetterStatus === "Sent" ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border shadow-sm leading-none flex items-center ${internship.offerLetterStatus === "Sent" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
             >
               Offer Letter: {internship.offerLetterStatus || "Pending"}
             </span>
           </div>
         </div>
 
-        {/* Timeline Horizontal view (dots) */}
-        <div className="pt-8 pb-12">
+        {/* Timeline Desktop Horizontal view (dots) */}
+        <div className="hidden sm:block pt-8 pb-12">
           <div className="flex items-center justify-between relative px-8">
             <div className="absolute left-[52px] right-[52px] top-5 h-1.5 bg-slate-100 -z-10 rounded-full overflow-hidden shadow-inner"></div>
             <div
@@ -241,6 +244,47 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
                       {stage}
                     </span>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Timeline Mobile Horizontal Chip view */}
+        <div className="sm:hidden mt-2 mb-2">
+          <p className="text-[10px] font-bold text-slate-400 mb-2.5 uppercase tracking-wider flex items-center justify-between">
+            <span>Internship Progress</span>
+            <span className="text-blue-600 font-black">{Math.round((clampedStage / (stages.length - 1)) * 100)}%</span>
+          </p>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full mb-3 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${(clampedStage / (stages.length - 1)) * 100}%` }}
+            ></div>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {stages.map((stage, idx) => {
+              const isCompleted = idx < currentStage;
+              const isActive = idx === currentStage;
+
+              return (
+                <div key={idx} className="flex items-center shrink-0">
+                  <div
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black tracking-wide uppercase transition-all ${
+                      isCompleted
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : isActive
+                          ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/30"
+                          : "bg-slate-50 border-slate-200 text-slate-400"
+                    }`}
+                  >
+                    {isCompleted && <CheckCircle size={12} strokeWidth={3} className="text-blue-600" />}
+                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>}
+                    {stage}
+                  </div>
+                  {idx < stages.length - 1 && (
+                    <div className={`w-3 h-0.5 mx-1 rounded-full ${isCompleted ? "bg-blue-300" : "bg-slate-200"}`}></div>
+                  )}
                 </div>
               );
             })}
