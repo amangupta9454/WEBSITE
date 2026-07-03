@@ -297,12 +297,14 @@ router.post("/impersonate", auth, async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, message: "User not found with this email" });
 
-    // Generate token matching normal student login
-    const payload = {
-      user: {
-        id: user.id,
-        role: "student"
-      }
+    // Extract the first studentId if available
+    const studentId = user.internships?.length > 0 ? user.internships[0].studentId : null;
+
+    // Generate token matching normal student login exactly
+    const payload = { 
+      id: user._id, 
+      email: user.email, 
+      studentId 
     };
     
     jwt.sign(
@@ -311,7 +313,17 @@ router.post("/impersonate", auth, async (req, res) => {
       { expiresIn: "5d" },
       (err, token) => {
         if (err) throw err;
-        res.json({ success: true, token, user });
+        res.json({ 
+          success: true, 
+          token, 
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            studentId,
+            isFirstLogin: user.isFirstLogin === undefined ? true : user.isFirstLogin,
+          }
+        });
       }
     );
   } catch (err) {
