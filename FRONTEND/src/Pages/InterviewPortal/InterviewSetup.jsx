@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AlertCircle, Eye, ShieldAlert, Video } from 'lucide-react';
+import { AlertCircle, Eye, ShieldAlert, Video, Upload, FileText, X } from 'lucide-react';
 
 const InterviewSetup = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +13,8 @@ const InterviewSetup = () => {
   const [loading, setLoading] = useState(false);
   const [cost, setCost] = useState(10);
   const [isUnlimited, setIsUnlimited] = useState(false);
+  const [resume, setResume] = useState(null);
+  const [resumeError, setResumeError] = useState('');
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -33,13 +35,55 @@ const InterviewSetup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    validateAndSetFile(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    validateAndSetFile(file);
+  };
+
+  const validateAndSetFile = (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setResumeError('Only PDF files are supported.');
+      setResume(null);
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setResumeError('File size must be less than 4MB.');
+      setResume(null);
+      return;
+    }
+    setResumeError('');
+    setResume(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (resumeError) return;
+    
     setLoading(true);
     try {
       const token = localStorage.getItem('interviewToken');
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/create`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      let data = formData;
+      let headers = { Authorization: `Bearer ${token}` };
+
+      if (resume) {
+        data = new FormData();
+        data.append('jobTitle', formData.jobTitle);
+        data.append('jobDescription', formData.jobDescription);
+        data.append('experienceYears', formData.experienceYears);
+        data.append('durationMinutes', formData.durationMinutes);
+        data.append('resume', resume);
+        // Let browser set Content-Type for FormData
+      }
+
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/create`, data, {
+        headers
       });
 
       if (res.data.success) {
@@ -148,6 +192,64 @@ const InterviewSetup = () => {
               />
             </div>
           </div>
+          
+          <div className="space-y-1.5">
+            <label className="block text-sm font-bold text-slate-700">Resume (Optional)</label>
+            <div 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              className={`relative flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-all ${
+                resume ? 'border-indigo-400 bg-indigo-50' : 
+                resumeError ? 'border-red-400 bg-red-50' : 
+                'border-slate-300 hover:border-indigo-300 bg-white hover:bg-slate-50'
+              }`}
+            >
+              <div className="text-center">
+                {resume ? (
+                  <div className="flex flex-col items-center">
+                    <div className="h-12 w-12 text-indigo-500 bg-indigo-100 rounded-full flex items-center justify-center mb-3">
+                      <FileText size={24} />
+                    </div>
+                    <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                      <span className="truncate max-w-[200px] sm:max-w-xs">{resume.name}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setResume(null)}
+                        className="text-indigo-400 hover:text-indigo-600 focus:outline-none"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-indigo-500 mt-1">Ready to be parsed by AI</p>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="mx-auto h-12 w-12 text-slate-400" />
+                    <div className="mt-4 flex text-sm text-slate-600 justify-center">
+                      <label
+                        htmlFor="file-upload"
+                        className="relative cursor-pointer bg-white rounded-md font-bold text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                      >
+                        <span>Upload a PDF file</span>
+                        <input id="file-upload" name="file-upload" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={handleFileChange} />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">PDF up to 4MB</p>
+                  </>
+                )}
+              </div>
+            </div>
+            {resumeError && (
+              <p className="text-red-500 text-sm font-semibold mt-1 flex items-center gap-1">
+                <AlertCircle size={14} /> {resumeError}
+              </p>
+            )}
+            <p className="text-xs text-slate-400 mt-2">
+              Uploading a resume helps the AI tailor the interview specifically to your background and prior projects.
+            </p>
+          </div>
+
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"

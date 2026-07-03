@@ -1,0 +1,60 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    # Backend
+    - name: Install Backend Dependencies
+      run: npm install
+      working-directory: ./BACKEND
+
+    - name: Backend ESLint
+      run: npm run lint --if-present
+      working-directory: ./BACKEND
+
+    - name: Backend Security Audit
+      run: npm audit --audit-level=high
+      working-directory: ./BACKEND
+
+    - name: Run AI QA Regression
+      run: node scripts/run-qa.js
+      working-directory: ./BACKEND
+      env:
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+    # Frontend
+    - name: Install Frontend Dependencies
+      run: npm install
+      working-directory: ./FRONTEND
+
+    - name: Frontend ESLint
+      run: npm run lint --if-present
+      working-directory: ./FRONTEND
+
+    - name: Frontend Build
+      run: npm run build
+      working-directory: ./FRONTEND
+
+    - name: Frontend Security Audit
+      run: npm audit --audit-level=high
+      working-directory: ./FRONTEND

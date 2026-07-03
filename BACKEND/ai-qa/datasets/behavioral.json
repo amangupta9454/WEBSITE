@@ -1,0 +1,8 @@
+{
+  "name": "Behavioral Conflict Test",
+  "resume": "Software Engineer, 6 years.",
+  "jobDescription": "Senior Software Engineer.",
+  "transcript": "AI: Tell me about a time you disagreed with your manager.\nCANDIDATE: We disagreed on the tech stack. I wanted to use Go, he wanted Node. I built a quick prototype in Go to show the performance benefits, and presented it with metrics. He agreed and we moved forward with Go.",
+  "expected_score_range": [85, 100],
+  "expected_recommendation": "Hire"
+}

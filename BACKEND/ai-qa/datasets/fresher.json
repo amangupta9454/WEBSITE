@@ -1,0 +1,8 @@
+{
+  "name": "Fresher Test",
+  "resume": "Recent CS Grad from MIT.",
+  "jobDescription": "Entry Level Software Engineer.",
+  "transcript": "AI: What is polymorphism?\nCANDIDATE: It means many forms. In OOP, it allows objects of different classes to be treated as objects of a common superclass.\nAI: What is your favorite programming language?\nCANDIDATE: Python, because it's readable and great for interviews.",
+  "expected_score_range": [75, 95],
+  "expected_recommendation": "Hire"
+}

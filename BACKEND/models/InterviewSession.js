@@ -7,11 +7,23 @@ const interviewSessionSchema = new mongoose.Schema(
     jobDescription: { type: String, required: true },
     experienceYears: { type: String, required: true },
     durationMinutes: { type: Number, required: true },
-    status: { type: String, enum: ["Started", "Completed", "Failed"], default: "Started" },
+    status: { type: String, enum: ["Started", "Completed", "Failed", "EVALUATION_PENDING", "EVALUATION_RUNNING"], default: "Started" },
     feedback: { type: Object, default: {} }, // Detailed feedback (JSON)
-    messages: { type: Array, default: [] } // Chat transcript if needed
+    messages: { type: Array, default: [] }, // Chat transcript if needed
+    recruiterMemory: { type: Object, default: {} },
+    attentionReport: { type: Object, default: {} },
+    resumeText: { type: String, default: "" }
   },
   { timestamps: true }
+);
+
+// Indexes for Scalability
+interviewSessionSchema.index({ userId: 1, createdAt: -1 });
+interviewSessionSchema.index({ status: 1 });
+// TTL Index: expire abandoned interviews after 48 hours (only if status is still 'Started')
+interviewSessionSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 172800, partialFilterExpression: { status: 'Started' } }
 );
 
 module.exports = mongoose.model("InterviewSession", interviewSessionSchema);

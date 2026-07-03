@@ -1,0 +1,8 @@
+{
+  "name": "HR Screen Test",
+  "resume": "Product Manager with 2 years experience.",
+  "jobDescription": "Product Manager, looking for cultural fit and strong communication.",
+  "transcript": "AI: What are your salary expectations?\nCANDIDATE: I am looking for around $130,000.\nAI: Why do you want to leave your current job?\nCANDIDATE: I want more ownership and the ability to lead a product from 0 to 1.",
+  "expected_score_range": [70, 90],
+  "expected_recommendation": "Hire"
+}

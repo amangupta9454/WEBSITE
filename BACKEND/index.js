@@ -2,7 +2,15 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const auditLogger = require("./utils/auditLogger");
 require("dotenv").config();
+const { validateEnv } = require('./utils/envValidator');
+validateEnv(); // Fail fast if missing required environment variables
+
+const Sentry = require("@sentry/node");
+const { nodeProfilingIntegration } = require("@sentry/profiling-node");
 
 const registerRoutes = require("./routes/register");
 const adminRoutes = require("./routes/admin");
@@ -25,8 +33,8 @@ async function connectToDatabase() {
   try {
     const db = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 10, // reasonable for serverless
-      minPoolSize: 2,
+      maxPoolSize: 10, // Tuned for Vercel Serverless
+      minPoolSize: 1,  // Allow connections to scale to 0 when idle
       socketTimeoutMS: 20000,
     });
     cachedDb = db;
@@ -41,8 +49,48 @@ async function connectToDatabase() {
 // Create Express app
 const app = express();
 
+// Sentry Initialization
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    integrations: [
+      nodeProfilingIntegration(),
+    ],
+    tracesSampleRate: 1.0, 
+    profilesSampleRate: 1.0,
+  });
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
+
+// Security Headers
+app.use(helmet());
+app.disable('x-powered-by');
+
 app.use(cors({ origin: "*" }));
 app.use(express.json());
+
+// Rate Limiting Config
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000,
+  message: { success: false, message: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: { success: false, message: 'Too many authentication attempts, please try again later.' }
+});
+
+const interviewLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50,
+  message: { success: false, message: 'Too many interview requests, please try again later.' }
+});
+
+// Apply General Rate Limiter globally
+app.use(generalLimiter);
 
 // Connect DB before routes (but Vercel runs per request → we connect lazily)
 app.use(async (req, res, next) => {
@@ -55,21 +103,38 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
-app.use("/api/register", registerRoutes);
+app.use("/api/register", authLimiter, registerRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/interview-auth", authLimiter, interviewAuthRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/verify", verifyRoutes);
 app.use("/api/project", projectRoutes);
-app.use("/api/auth", authRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/cron", cronRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/interview-auth", interviewAuthRoutes);
-app.use("/api/interview-session", interviewSessionRoutes);
+app.use("/api/interview-session", interviewLimiter, interviewSessionRoutes);
 app.use("/api/interview-payment", interviewPaymentRoutes);
+
+// Production Health Endpoint
+app.get("/healthz", async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version,
+    mongodb: dbStatus
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("API is running on Vercel...");
 });
+
+// Sentry Error Handler (must be before any other error middleware)
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
 
 // Export for Vercel serverless
 const PORT = process.env.PORT || 5000;

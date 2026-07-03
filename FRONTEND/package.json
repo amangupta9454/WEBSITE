@@ -12,6 +12,8 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@react-oauth/google": "^0.13.5",
+    "@sentry/react": "^10.63.0",
+    "@sentry/tracing": "^7.120.4",
     "@tailwindcss/vite": "^4.1.18",
     "@vapi-ai/web": "^2.5.2",
     "axios": "^1.13.2",

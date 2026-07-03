@@ -1,0 +1,8 @@
+{
+  "name": "Frontend Engineer Test",
+  "resume": "5 years experience in React and Vue. Worked at Meta on Ads Manager.",
+  "jobDescription": "Frontend Engineer, 3-5 years experience, React, Redux, Webpack.",
+  "transcript": "AI: Tell me about a time you optimized a React app.\nCANDIDATE: I used React.memo and useMemo to prevent unnecessary re-renders in a large data table. I also code-split the routes using React.lazy.\nAI: How does virtual DOM work?\nCANDIDATE: It's an in-memory representation of the real DOM. React diffs it with the previous version and batches updates to the real DOM.",
+  "expected_score_range": [85, 95],
+  "expected_recommendation": "Hire"
+}
