@@ -141,7 +141,7 @@ export default function DashboardTopSection() {
         <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-row divide-x divide-slate-100 overflow-hidden relative items-center justify-between">
           
           {/* Profile Section */}
-          <div className="w-[60%] sm:w-auto sm:flex-1 p-2 sm:p-5 flex flex-row items-center justify-start gap-2 sm:gap-4 relative z-10 hover:bg-slate-50 transition-colors duration-300 min-w-0">
+          <div className="w-[60%] p-2 sm:p-5 flex flex-row items-center justify-start gap-2 sm:gap-4 relative z-10 hover:bg-slate-50 transition-colors duration-300 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-indigo-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm shrink-0">
               {userData?.profileImage ? (
                 <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
@@ -177,61 +177,21 @@ export default function DashboardTopSection() {
           </div>
           
           {/* Wallet Section */}
-          <div className="w-[40%] sm:w-auto sm:flex-1 p-2 sm:p-5 flex items-center justify-center sm:justify-end relative z-10 bg-slate-50/30 hover:bg-slate-50/80 transition-all duration-300 shrink-0">
+          <div className="w-[40%] p-2 sm:p-5 flex items-center justify-center relative z-10 bg-slate-50/30 hover:bg-slate-50/80 transition-all duration-300 shrink-0">
             
-            {/* Desktop Wallet View */}
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600 shrink-0">
-                <Tag size={18} />
-              </div>
-              <div className="flex flex-col min-w-0 items-start">
-                <span className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${!isUnlimited && credits <= 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>Wallet</span>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-2xl font-black bg-clip-text text-transparent tracking-tight leading-none ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 0 ? 'bg-gradient-to-r from-red-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
-                    {isUnlimited ? '∞' : credits}
-                  </span>
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${!isUnlimited && credits <= 0 ? 'text-red-500' : 'text-slate-500'}`}>Tokens</span>
-                </div>
-                <div className="mt-1">
-                  {isUnlimited ? (
-                    <p className="text-[9px] font-bold text-teal-700 bg-teal-100/80 border border-teal-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
-                      <span>💎</span> Premium Active
-                    </p>
-                  ) : credits <= 0 ? (
-                    <p className="text-[9px] font-bold text-red-700 bg-red-100/80 border border-red-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap animate-pulse">
-                      <span>⚠️</span> Recharge Now
-                    </p>
-                  ) : (
-                    <p className="text-[9px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200/50 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm leading-none whitespace-nowrap">
-                      <span className="animate-pulse">✨</span> Upgrade
-                    </p>
-                  )}
-                </div>
-              </div>
-              {!isUnlimited && (
-                <button 
-                  onClick={() => setIsBuyModalOpen(true)}
-                  className={`text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md text-xs flex items-center justify-center shrink-0 ml-3 hover:-translate-y-0.5 ${credits <= 0 ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
-                >
-                  Add Tokens
-                </button>
-              )}
-            </div>
-
-            {/* Mobile Wallet View */}
-            <div className="flex sm:hidden items-center justify-center gap-3 w-full px-2">
-              <span className={`${credits > 999 ? 'text-3xl' : 'text-4xl'} font-black italic bg-clip-text text-transparent tracking-tighter leading-none drop-shadow-md pr-2 sm:pr-0 ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 10 ? 'bg-gradient-to-r from-orange-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 w-full px-1 sm:px-2">
+              <span className={`${credits > 999 ? 'text-3xl' : 'text-4xl'} font-black italic bg-clip-text text-transparent tracking-tighter leading-none drop-shadow-md pr-2 ${isUnlimited ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : credits <= 10 ? 'bg-gradient-to-r from-orange-600 to-red-500' : 'bg-gradient-to-r from-indigo-700 to-blue-600'}`}>
                 {isUnlimited ? '∞' : credits}
               </span>
               
-              <div className="flex flex-col items-center justify-center gap-1 h-[38px]">
-                <span className={`text-[9px] font-bold uppercase tracking-widest leading-none flex items-center gap-0.5 ${!isUnlimited && credits <= 10 ? 'text-red-500' : 'text-slate-500'}`}>
+              <div className="flex flex-col items-center justify-center gap-1 h-[38px] sm:h-[42px]">
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest leading-none flex items-center gap-0.5 ${!isUnlimited && credits <= 10 ? 'text-red-500' : 'text-slate-500'}`}>
                   {!isUnlimited && credits <= 10 ? 'Low Token' : 'Tokens'} {(!isUnlimited && credits <= 10) && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>}
                 </span>
                 {!isUnlimited && (
                   <button 
                     onClick={() => setIsBuyModalOpen(true)}
-                    className={`text-white font-bold px-3 py-0.5 rounded shadow-sm text-[9px] uppercase tracking-wider leading-tight flex items-center justify-center transition-all ${credits <= 10 ? 'bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
+                    className={`text-white font-bold px-3 sm:px-4 py-0.5 sm:py-1 rounded shadow-sm text-[9px] sm:text-[10px] uppercase tracking-wider leading-tight flex items-center justify-center transition-all ${credits <= 10 ? 'bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}
                   >
                     {credits <= 10 ? 'RECHARGE NOW' : 'ADD'}
                   </button>
