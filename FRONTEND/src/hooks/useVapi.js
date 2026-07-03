@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Vapi from '@vapi-ai/web';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
@@ -329,7 +329,7 @@ Role: ${interviewData.jobTitle}
 Candidate Experience: ${interviewData.experienceYears}
 Duration: ${interviewData.durationMinutes} minutes.
 ${interviewData.jobDescription ? `\n# JOB DESCRIPTION\n${interviewData.jobDescription}` : ""}
-${(interviewData.resumeText || interviewData.resume) ? `\n# CANDIDATE RESUME\n${interviewData.resumeText || interviewData.resume}` : ""}
+${(interviewData.resumeText || interviewData.resume) ? `\n# CANDIDATE RESUME\n${(interviewData.resumeText || interviewData.resume).substring(0, 3000)}` : ""}
 
 # RECRUITER MEMORY (Current State)
 Verified Skills: ${recruiterMemoryRef.current.verifiedSkills.join(', ') || 'None yet'}
@@ -379,12 +379,9 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
         language: interviewLanguage,
         smartFormat: true, // helps with filler words
       },
-      silenceTimeoutSeconds: 1.5,
+      silenceTimeoutSeconds: 5,
       responseDelaySeconds: 0.6, // Wait 600ms before replying to prevent robotic instantaneity
       maxDurationSeconds: 1800, // 30 minutes max call duration
-      interruptionHandling: {
-        enabled: true, // immediately stop TTS on interruption
-      },
       backchannelingEnabled: false, // Turn off automatic backchanneling to prevent weird "mhmm" artifacts during tech answers
       firstMessage: `Hi, ready for your interview for ${interviewData.jobTitle}?`,
       endCallFunctionEnabled: true,

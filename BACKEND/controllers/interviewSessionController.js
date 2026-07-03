@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const InterviewSession = require('../models/InterviewSession');
 const Settings = require('../models/Settings');
 const { sanitizeText } = require('../utils/sanitizer');
 const auditLogger = require('../utils/auditLogger');
@@ -52,7 +53,7 @@ exports.createSession = async (req, res) => {
           .trim();
         
         if (extractedResumeText.length > 15000) {
-          extractedResumeText = extractedResumeText.substring(0, 15000);
+          extractedResumeText = extractedResumeText.substring(0, 3000);
         }
       } catch (pdfError) {
         console.error('PDF parsing error:', pdfError);
@@ -375,6 +376,22 @@ exports.getUserCredits = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching credits:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+exports.deleteSession = async (req, res) => {
+  const sessionId = req.params.id;
+  const userId = req.user.id || req.user.unifiedUserId;
+
+  try {
+    const session = await InterviewSession.findOneAndDelete({ _id: sessionId, userId });
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+    res.status(200).json({ success: true, message: 'Session deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting session:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
