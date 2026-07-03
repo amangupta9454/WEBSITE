@@ -30,12 +30,12 @@ const CircularScore = ({ score, max = 10, label, colorClass, bgClass, textClass 
   );
 };
 
-function FeedbackModal({ feedback: session, onClose }) {
+export function FeedbackModal({ feedback: session, onClose }) {
   const [localSession, setLocalSession] = useState(session);
   const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => {
-    if (session) setLocalSession(session);
+    setLocalSession(session);
   }, [session]);
 
   useEffect(() => {
@@ -357,11 +357,11 @@ function FeedbackModal({ feedback: session, onClose }) {
 
           <div className="space-y-8 mt-8 pt-8 border-t border-slate-100">
             {/* Attention Metrics Section */}
-            {session.attentionReport && Object.keys(session.attentionReport).length > 0 && (
+            {localSession.attentionReport && Object.keys(localSession.attentionReport).length > 0 && (
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attention Metrics</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {Object.entries(session.attentionReport).map(([k, v]) => (
+                  {Object.entries(localSession.attentionReport).map(([k, v]) => (
                     <div key={k} className="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{k.replace(/([A-Z])/g, ' $1').trim()}</p>
                       <p className="text-lg font-black text-slate-700">{formatMetricValue(k, v)}</p>

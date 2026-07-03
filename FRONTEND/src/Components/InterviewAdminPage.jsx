@@ -6,6 +6,7 @@ import {
   CheckCircle, Search, RefreshCw, Star, TrendingUp, IndianRupee,
   ToggleLeft, ToggleRight, Calendar, Database, Save
 } from "lucide-react";
+import { FeedbackModal } from "../Pages/InterviewPortal/components/InterviewDashboardContent";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL;
 
@@ -25,6 +26,7 @@ function StatCard({ label, value, icon: Icon, color }) {
 
 function SessionRow({ session }) {
   const [open, setOpen] = useState(false);
+  const [showFullReport, setShowFullReport] = useState(false);
   const feedback = session.feedback || {};
   const evaluation = feedback.ai_evaluation;
   
@@ -90,58 +92,22 @@ function SessionRow({ session }) {
             <div className="space-y-4">
               {/* AI Evaluation Section */}
               {feedback.ai_evaluation ? (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">AI Evaluation</h4>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="bg-white p-2 rounded-lg text-center border border-slate-200">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Overall</p>
-                      <p className="text-lg font-black text-indigo-600">{feedback.ai_evaluation.overall_score}/10</p>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg text-center border border-slate-200">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Technical</p>
-                      <p className="text-lg font-black text-blue-600">{feedback.ai_evaluation.technical_score}/10</p>
-                    </div>
-                    <div className="bg-white p-2 rounded-lg text-center border border-slate-200">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Comm.</p>
-                      <p className="text-lg font-black text-emerald-600">{feedback.ai_evaluation.communication_score}/10</p>
-                    </div>
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 mb-1">Premium AI Evaluation Report</h4>
+                    <p className="text-xs text-slate-500">Includes Enterprise Feedback, Speech Analytics, Knowledge Gaps, and Hiring Recommendation.</p>
                   </div>
-                  <div className="mb-3">
-                    <p className="text-sm text-slate-700 leading-relaxed bg-white p-3 rounded-lg border border-slate-200">
-                      {feedback.ai_evaluation.detailed_feedback}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-emerald-600 uppercase mb-2">Strengths</p>
-                      <ul className="list-disc pl-4 space-y-1">
-                        {feedback.ai_evaluation.strengths?.map((s, i) => <li key={i} className="text-xs text-slate-600">{s}</li>)}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-amber-600 uppercase mb-2">Areas to Improve</p>
-                      <ul className="list-disc pl-4 space-y-1">
-                        {feedback.ai_evaluation.weaknesses?.map((w, i) => <li key={i} className="text-xs text-slate-600">{w}</li>)}
-                      </ul>
-                    </div>
-                  </div>
+                  <button onClick={() => setShowFullReport(true)} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors whitespace-nowrap">
+                    View Full Report
+                  </button>
                   
-                  {feedback.ai_evaluation.enhancements && feedback.ai_evaluation.enhancements.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <p className="text-[10px] font-bold text-blue-600 uppercase mb-2">Actionable Enhancements</p>
-                      <ul className="list-disc pl-4 space-y-2">
-                        {feedback.ai_evaluation.enhancements.map((e, i) => (
-                          <li key={i} className="text-xs text-slate-600 font-medium">{e}</li>
-                        ))}
-                      </ul>
-                    </div>
+                  {showFullReport && <FeedbackModal feedback={session} onClose={() => setShowFullReport(false)} />}
+                </div>
+              ) : (
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-6">
+                  <p className="text-amber-700 font-medium text-sm">No structured AI evaluation available for this session.</p>
+                </div>
               )}
-            </div>
-          ) : (
-            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center mb-6">
-              <p className="text-amber-700 font-medium text-sm">No structured AI evaluation available for this session.</p>
-            </div>
-          )}
           
           <div className="space-y-6 mt-6 pt-6 border-t border-slate-100">
             {/* Attention Metrics Section */}
