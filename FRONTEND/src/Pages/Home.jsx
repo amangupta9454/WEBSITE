@@ -3,6 +3,7 @@ import MainLayout from '../layouts/MainLayout';
 import Hero from '../sections/Hero';
 import Stats from '../sections/Stats';
 import ServicesOverview from '../sections/ServicesOverview';
+import MockInterviewCTA from '../sections/MockInterviewCTA';
 import ProblemSolution from '../sections/ProblemSolution';
 import IndustriesServed from '../sections/IndustriesServed';
 import PortfolioPreview from '../sections/PortfolioPreview';
@@ -18,6 +19,7 @@ const Home = () => {
       <Stats />
       <ProblemSolution />
       <ServicesOverview />
+      <MockInterviewCTA />
       <IndustriesServed />
       <PortfolioPreview />
       <WhyWebsite />
