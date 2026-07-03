@@ -1567,12 +1567,14 @@ const AdminDashboard = () => {
 
         // Step 1: If new file selected, upload directly to Cloudinary
         if (selectedFile) {
+          const isVideoFile = selectedFile.type.startsWith('video/');
           const formData = new FormData();
           formData.append('file', selectedFile);
           formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+          if (isVideoFile) formData.append('resource_type', 'video');
 
           const cloudRes = await axios.post(
-            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/${isVideoFile ? 'video' : 'image'}/upload`,
             formData
           );
           imageUrl = cloudRes.data.secure_url;
@@ -1634,10 +1636,14 @@ const AdminDashboard = () => {
             <div className="text-center py-8 text-slate-400">Loading...</div>
           ) : (
             <>
-              {/* Current / Preview Image */}
+              {/* Current / Preview */}
               {currentImage ? (
                 <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-100 bg-slate-50 shadow-sm">
-                  <img src={currentImage} alt="Banner Preview" className="w-full max-h-72 object-contain p-2" />
+                  {selectedFile?.type?.startsWith('video/') || (!selectedFile && banner?.imageUrl?.includes('/video/')) ? (
+                    <video src={currentImage} controls muted className="w-full max-h-72 object-contain p-2 rounded-xl" />
+                  ) : (
+                    <img src={currentImage} alt="Banner Preview" className="w-full max-h-72 object-contain p-2" />
+                  )}
                   {preview && (
                     <div className="absolute top-3 left-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">📷 New Preview</div>
                   )}
@@ -1650,8 +1656,8 @@ const AdminDashboard = () => {
                   <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
                     <Zap className="text-indigo-400" size={28} />
                   </div>
-                  <p className="text-sm font-bold text-slate-500 mb-1">No banner image uploaded yet</p>
-                  <p className="text-xs text-slate-400">Select a file below to upload</p>
+                  <p className="text-sm font-bold text-slate-500 mb-1">No banner uploaded yet</p>
+                  <p className="text-xs text-slate-400">Select an image or video below to upload</p>
                 </div>
               )}
 
@@ -1679,15 +1685,15 @@ const AdminDashboard = () => {
                     </div>
                     <div className="bg-white rounded-lg px-3 py-2 border border-indigo-100">
                       <p className="text-slate-400 font-medium">Format</p>
-                      <p className="font-bold text-slate-700">PNG / JPG / WebP</p>
+                      <p className="font-bold text-slate-700">PNG/JPG/WebP/MP4</p>
                     </div>
                   </div>
-                  <p className="text-[10px] text-indigo-500 mt-2 font-medium">💡 Tip: Use a poster-style image with text. It will be shown centered in a popup with padding.</p>
+                  <p className="text-[10px] text-indigo-500 mt-2 font-medium">💡 Supports image & video. Banner shows with 10px white border — natural size of your media.</p>
                 </div>
 
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/mp4,video/webm,video/ogg"
                   onChange={handleFileChange}
                   className="block w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer transition-all"
                 />
