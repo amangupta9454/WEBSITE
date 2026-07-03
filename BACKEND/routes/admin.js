@@ -287,4 +287,36 @@ router.get("/interview-data", auth, async (req, res) => {
   }
 });
 
+// Impersonate intern using email
+const jwt = require("jsonwebtoken");
+router.post("/impersonate", auth, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+    
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: "User not found with this email" });
+
+    // Generate token matching normal student login
+    const payload = {
+      user: {
+        id: user.id,
+        role: "student"
+      }
+    };
+    
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'codeanova',
+      { expiresIn: "5d" },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ success: true, token, user });
+      }
+    );
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 module.exports = router;

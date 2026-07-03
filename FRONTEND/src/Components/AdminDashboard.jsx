@@ -1529,16 +1529,18 @@ const AdminDashboard = () => {
   );
 
   const ImpersonateIntern = () => {
-    const [impersonateForm, setImpersonateForm] = useState({ studentId: "", email: "" });
+    const [impersonateForm, setImpersonateForm] = useState({ email: "" });
     const [impersonating, setImpersonating] = useState(false);
 
     const handleImpersonate = async (e) => {
       e.preventDefault();
       setImpersonating(true);
       try {
-        const res = await axios.post(`${BACKEND}/api/auth/login`, {
-          studentId: impersonateForm.studentId,
+        const token = localStorage.getItem("adminToken");
+        const res = await axios.post(`${BACKEND}/api/admin/impersonate`, {
           email: impersonateForm.email
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         
         if (res.data.token) {
@@ -1573,19 +1575,7 @@ const AdminDashboard = () => {
           </div>
         </div>
         <form onSubmit={handleImpersonate} className="p-6 space-y-5 bg-slate-50/50">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Student ID
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. CAN-0001"
-              value={impersonateForm.studentId}
-              onChange={e => setImpersonateForm({ ...impersonateForm, studentId: e.target.value })}
-              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
-            />
-          </div>
+
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Email Address
@@ -1601,7 +1591,7 @@ const AdminDashboard = () => {
           </div>
           <button
             type="submit"
-            disabled={impersonating || !impersonateForm.studentId || !impersonateForm.email}
+            disabled={impersonating || !impersonateForm.email}
             className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all transform hover:-translate-y-0.5"
           >
             {impersonating ? (
