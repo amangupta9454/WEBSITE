@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { clearAllUserData } from '../utils/auth';
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -32,6 +33,7 @@ import {
   ImagePlus,
   Linkedin,
   PlayCircle,
+  Info,
 } from "lucide-react";
 
 // Normal Intern Dashboard Component
@@ -965,6 +967,7 @@ const StudentDashboard = () => {
   const { width, height } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiRecycle, setConfettiRecycle] = useState(false);
+  const [isSynergyInfoOpen, setIsSynergyInfoOpen] = useState(false);
 
   // Interview state
   const [interviewCredits, setInterviewCredits] = useState(0);
@@ -1223,8 +1226,8 @@ const StudentDashboard = () => {
 
 
         {/* Synergy Points Summary Card */}
-        <div className="bg-gradient-to-br from-white to-slate-50 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-6 items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto">
+        <div className="bg-gradient-to-br from-white to-slate-50 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 sm:mb-8 flex items-center justify-between relative">
+          <div className="flex items-center gap-3 sm:gap-5 w-full">
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
               <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
@@ -1236,27 +1239,47 @@ const StudentDashboard = () => {
               </div>
             </div>
           </div>
-          
-          <div className="flex-1 w-full md:w-auto bg-white p-3 sm:p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-between">
-            <div className="w-full text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2 mb-1">
-                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
-                <h3 className="text-xs sm:text-sm font-bold text-slate-800">How to earn more points?</h3>
-              </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 leading-tight">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
-            </div>
-            <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto mt-1 sm:mt-0">
-              <div className={`flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border ${currentTier.color} font-bold text-[10px] sm:text-sm text-center min-w-[100px] sm:min-w-[120px] flex items-center justify-center leading-none`}>
-                {currentTier.title}
-              </div>
-              {data?.internships?.[0]?.globalRank && (
-                <div className="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold text-[10px] sm:text-sm text-center min-w-[100px] sm:min-w-[120px] shadow-sm flex items-center justify-center gap-1 leading-none">
-                  Rank: <span className="text-xs sm:text-lg">#{data.internships[0].globalRank}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <button 
+            onClick={() => setIsSynergyInfoOpen(true)}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 bg-white hover:bg-blue-50 rounded-full shadow-sm border border-slate-200 transition-all"
+          >
+            <Info className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
         </div>
+
+        {/* Synergy Info Modal */}
+        {isSynergyInfoOpen && createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative animate-fade-in-up">
+              <button 
+                onClick={() => setIsSynergyInfoOpen(false)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <X size={18} />
+              </button>
+              
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Zap className="w-6 h-6 text-amber-500" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">How to earn more points?</h3>
+                <p className="text-sm text-slate-500">Submit projects early, write clean code, and help others to climb the leaderboard.</p>
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <div className={`px-4 py-3 rounded-xl border ${currentTier.color} font-bold text-sm text-center w-full`}>
+                  {currentTier.title}
+                </div>
+                {data?.internships?.[0]?.globalRank && (
+                  <div className="px-4 py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-bold text-sm text-center w-full shadow-sm flex items-center justify-center gap-2">
+                    Global Rank: <span className="text-xl">#{data.internships[0].globalRank}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
         {/* Dashboard Content */}
         <main>
