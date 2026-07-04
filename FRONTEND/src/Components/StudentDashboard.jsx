@@ -919,18 +919,19 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                           <div className={`p-2.5 rounded-xl shadow-sm mt-0.5 ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-100/80 text-emerald-600' : 'bg-rose-100/80 text-rose-600'}`}>
                             {proj.reviewStatus === 'Accepted' ? <CheckCircle size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
                           </div>
-                          <div className="w-full flex justify-between items-start">
-                            <div>
-                              <h5 className={`font-bold text-sm mb-1 ${proj.reviewStatus === 'Accepted' ? 'text-emerald-900' : 'text-rose-900'}`}>
-                                Admin Review: {proj.reviewStatus}
-                              </h5>
+                          <div className="w-full">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className={`font-bold text-sm mb-1 ${proj.reviewStatus === 'Accepted' ? 'text-emerald-900' : 'text-rose-900'}`}>
+                                  Admin Review: {proj.reviewStatus}
+                                </h5>
+                              </div>
+                              {proj.spAwarded > 0 && (
+                                <span className="text-xs font-black bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                                  {proj.spAwarded} SP
+                                </span>
+                              )}
                             </div>
-                            {proj.spAwarded > 0 && (
-                              <span className="text-xs font-black bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
-                                {proj.spAwarded} SP
-                              </span>
-                            )}
-                          </div>
                             {proj.feedback && (
                               <div className={`text-sm leading-relaxed font-medium mt-2 p-3 rounded-lg border ${proj.reviewStatus === 'Accepted' ? 'text-emerald-800 bg-emerald-100/50 border-emerald-200' : 'text-rose-800 bg-rose-100/50 border-rose-200'}`}>
                                 <strong className="block text-[10px] uppercase tracking-wider mb-1 opacity-70">AI Feedback</strong>
