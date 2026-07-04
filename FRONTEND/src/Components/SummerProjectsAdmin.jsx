@@ -406,11 +406,18 @@ const SummerProjectsAdmin = ({ applications }) => {
                                         <div>
                                           <div className="flex justify-between items-start">
                                             <h5 className="font-bold text-slate-800">{proj.name}</h5>
-                                            {repo?.reviewStatus && (
-                                              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${repo.reviewStatus === 'Accepted' ? 'bg-emerald-100 text-emerald-700' : repo.reviewStatus === 'Changes Requested' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {repo.reviewStatus}
-                                              </span>
-                                            )}
+                                            <div className="flex items-center gap-2">
+                                              {repo?.spAwarded > 0 && (
+                                                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700 shadow-sm border border-blue-200">
+                                                  {repo.spAwarded} SP
+                                                </span>
+                                              )}
+                                              {repo?.reviewStatus && (
+                                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border ${repo.reviewStatus === 'Accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : repo.reviewStatus === 'Changes Requested' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                                  {repo.reviewStatus}
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                           <p className="text-xs text-slate-500 mt-1 line-clamp-1">{proj.description}</p>
                                         </div>

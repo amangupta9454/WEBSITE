@@ -135,6 +135,7 @@ const getDashboardInfo = async (req, res) => {
                 : false,
               reviewStatus: assignedRepo ? assignedRepo.reviewStatus : 'Pending',
               feedback: assignedRepo ? assignedRepo.feedback : '',
+              spAwarded: assignedRepo ? assignedRepo.spAwarded : 0,
             };
           });
       }
