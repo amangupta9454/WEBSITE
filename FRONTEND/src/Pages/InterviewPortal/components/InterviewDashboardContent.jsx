@@ -435,11 +435,8 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <div className={`w-8 h-8 sm:w-12 sm:h-12 ${resumeEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10`}>
             <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <div className="relative z-10">
-            <h3 className="font-bold text-slate-800 text-sm sm:text-lg">AI Resume</h3>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Bypass ATS smartly</p>
-            {!resumeEnabled && <span className="inline-block mt-2 bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Currently Not Available</span>}
-          </div>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
+          <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">{resumeEnabled ? 'Bypass ATS smartly' : 'Currently Not Available'}</p>
         </div>
 
         {interviewEnabled ? (
