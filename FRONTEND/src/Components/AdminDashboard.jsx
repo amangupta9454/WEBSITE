@@ -1905,22 +1905,6 @@ const AdminDashboard = () => {
                 <h1 className="text-slate-900 font-bold text-base leading-tight">Admin Dashboard</h1>
                 <p className="text-slate-500 text-xs hidden sm:block">Code-A-Nova Management</p>
               </div>
-              <button 
-                onClick={handleMakeAllInterns} 
-                className="ml-4 px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Temporary Fix: Assign 'intern' role to all current database users"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Make All Users Interns
-              </button>
-              <button 
-                onClick={handleFixMergedAccounts} 
-                className="ml-2 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Fix: Un-merge students who were merged together due to shared dummy phone numbers"
-              >
-                <Database className="w-3.5 h-3.5" />
-                Fix DB Merge
-              </button>
             </div>
             {/* Main Tab Switcher */}
             <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
