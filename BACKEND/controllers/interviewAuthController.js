@@ -65,8 +65,8 @@ exports.googleLogin = async (req, res) => {
       await user.save();
     }
     
-    // Determine role based on whether they have internships
-    const isIntern = user.internships && user.internships.length > 0;
+    // Determine role based on explicit role field, fallback to internships array
+    const isIntern = user.role === 'intern' || (user.internships && user.internships.length > 0);
     const role = isIntern ? 'intern' : 'interview_user';
 
     // Generate JWT token

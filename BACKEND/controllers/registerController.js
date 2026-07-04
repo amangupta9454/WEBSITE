@@ -175,6 +175,7 @@ const registerInternship = async (req, res) => {
     }
 
     // Attach offer letter status defaults safely handled by schema
+    user.role = 'intern';
     user.internships.push(applicationData);
     await user.save();
 
@@ -437,6 +438,7 @@ const verifyRegistrationPayment = async (req, res) => {
       }
     }
 
+    user.role = 'intern';
     user.internships.push(applicationData);
     await user.save();
 

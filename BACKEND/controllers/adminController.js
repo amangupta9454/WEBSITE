@@ -1684,5 +1684,13 @@ module.exports = {
   getRecentPayments,
   sendEvaluationEmails,
   resetAIEvaluations,
-  migrateDates
+  migrateDates,
+  makeAllInterns: async (req, res) => {
+    try {
+      const result = await User.updateMany({}, { $set: { role: 'intern' } });
+      res.json({ success: true, message: `Updated ${result.modifiedCount} users to intern role.` });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
 };

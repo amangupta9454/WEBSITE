@@ -370,7 +370,7 @@ exports.getUserCredits = async (req, res) => {
       await user.save();
     }
 
-    const isInternRole = user.internships && user.internships.length > 0;
+    const isInternRole = user.role === 'intern' || (user.internships && user.internships.length > 0);
     
     const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
     const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;

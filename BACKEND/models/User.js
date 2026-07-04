@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true }, // No unique constraint needed if duplicates allowed
     mobile: { type: String, required: true },
+    role: { type: String, default: 'user' },
 
     // Student Auth & Profile Fields
     password: { type: String },
