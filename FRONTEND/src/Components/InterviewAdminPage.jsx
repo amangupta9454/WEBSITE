@@ -305,8 +305,10 @@ export default function InterviewAdminPage() {
       ]);
       
       if (dataRes.data.success) {
-        setData(dataRes.data.users);
-        setEarnings(dataRes.data.earnings);
+        const usersArray = dataRes.data.data || [];
+        const filteredUsers = usersArray.filter(u => (u.sessions && u.sessions.length > 0) || u.interviewAccessOverride);
+        setData(filteredUsers);
+        setEarnings(dataRes.data.earnings || null);
       }
       if (settingRes.data.success) {
         setFeatureEnabled(settingRes.data.enabled);

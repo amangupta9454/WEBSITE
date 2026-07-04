@@ -953,6 +953,7 @@ const reviewSummerProject = async (req, res) => {
     // Add Synergy Points if Accepted and points not already awarded
     if (reviewStatus === 'Accepted' && !internship.assignedRepos[repoIndex].pointsAwarded) {
       internship.assignedRepos[repoIndex].pointsAwarded = true;
+      internship.assignedRepos[repoIndex].spAwarded = 50;
       internship.synergyPoints = (internship.synergyPoints || 0) + 50;
       if (!internship.pointsHistory) internship.pointsHistory = [];
       
@@ -1347,7 +1348,7 @@ const evaluatePendingAI = async (req, res) => {
                   if (!internship.pointsHistory) internship.pointsHistory = [];
                   internship.pointsHistory.push({
                     reason: `AI Verified Summer Project (Batch): ${projectName}`,
-                    pointsAdded: 50,
+                    pointsAdded: awardedSP,
                     date: repo.submittedAt || (project ? project.dueDate : new Date())
                   });
                 }
@@ -1529,7 +1530,7 @@ const sendEvaluationEmails = async (req, res) => {
             if (repo.reviewStatus !== 'Pending' && repo.emailSent === false) {
               const project = await SummerProject.findById(repo.projectId);
               const projectName = project ? project.name : 'Summer Project';
-              const spToEmail = repo.spAwarded || (repo.pointsAwarded ? 50 : 0);
+              const spToEmail = repo.spAwarded > 0 ? repo.spAwarded : (repo.pointsAwarded ? 50 : 0);
               
               await sendAIEvaluationEmail(
                 user.email, 
@@ -1611,8 +1612,9 @@ const resetAIEvaluations = async (req, res) => {
           for (let repo of internship.assignedRepos) {
             if (repo.reviewStatus !== 'Pending') {
               if (repo.pointsAwarded) {
-                totalSPToDeduct += 50;
+                totalSPToDeduct += (repo.spAwarded > 0 ? repo.spAwarded : 50);
                 repo.pointsAwarded = false;
+                repo.spAwarded = 0;
               }
               repo.reviewStatus = 'Pending';
               repo.feedback = '';
