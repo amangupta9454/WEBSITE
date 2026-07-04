@@ -1692,5 +1692,61 @@ module.exports = {
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
     }
+  },
+  fixMergedAccounts: async (req, res) => {
+    try {
+      // Find all users with internships
+      const users = await User.find({ "internships.0": { $exists: true } });
+      let extractedCount = 0;
+      
+      for (let user of users) {
+        const rootEmail = user.email.toLowerCase();
+        
+        // Find internships that don't match the root email
+        const mismatchedInternships = user.internships.filter(
+          app => app.email && app.email.toLowerCase() !== rootEmail
+        );
+        
+        if (mismatchedInternships.length > 0) {
+          // Remove them from this user
+          user.internships = user.internships.filter(
+            app => !app.email || app.email.toLowerCase() === rootEmail
+          );
+          
+          if (user.internships.length === 0) {
+            user.role = 'user'; // Demote if they have no internships left
+          }
+          await user.save();
+          
+          // Re-insert them into their correct user documents
+          for (let app of mismatchedInternships) {
+            const correctEmail = app.email.toLowerCase();
+            let correctUser = await User.findOne({ email: correctEmail });
+            
+            if (!correctUser) {
+              const bcrypt = require('bcrypt');
+              const hashedPassword = await bcrypt.hash("Welcome@123", 10);
+              correctUser = new User({
+                name: app.name,
+                email: correctEmail,
+                mobile: app.mobile || "0000000000",
+                password: hashedPassword,
+                role: 'intern'
+              });
+            } else {
+              correctUser.role = 'intern';
+            }
+            
+            correctUser.internships.push(app);
+            await correctUser.save();
+            extractedCount++;
+          }
+        }
+      }
+      
+      res.json({ success: true, message: `Fixed ${extractedCount} improperly merged internships.` });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 };

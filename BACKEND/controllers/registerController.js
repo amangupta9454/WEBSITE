@@ -65,10 +65,8 @@ const registerInternship = async (req, res) => {
     // Map whatsapp to mobile for legacy checks
     const normalizedMobile = normalizedWhatsapp;
 
-    // Check duplicate by email OR mobile
-    let user = await User.findOne({
-      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
-    });
+    // Check duplicate strictly by email to prevent merging different users who entered dummy/shared phone numbers
+    let user = await User.findOne({ email: normalizedEmail });
 
     if (user && user.internships.length > 0) {
       // Find the most recent application
@@ -246,9 +244,7 @@ const createRegistrationOrder = async (req, res) => {
     const normalizedMobile = mobile ? mobile.trim() : "";
 
     // 1. Validation for 15-day restriction
-    let user = await User.findOne({
-      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
-    });
+    let user = await User.findOne({ email: normalizedEmail });
 
     if (user && user.internships.length > 0) {
       const sortedInternships = [...user.internships].sort(
@@ -337,9 +333,7 @@ const verifyRegistrationPayment = async (req, res) => {
     const normalizedMobile = whatsapp ? whatsapp.trim() : "";
 
     // Extra safety duplicate check
-    let user = await User.findOne({
-      $or: [{ email: normalizedEmail }, { mobile: normalizedMobile }],
-    });
+    let user = await User.findOne({ email: normalizedEmail });
 
     if (user && user.internships.length > 0) {
       const sortedInternships = [...user.internships].sort(

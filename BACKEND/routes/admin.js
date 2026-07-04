@@ -46,6 +46,7 @@ const {
   resetAIEvaluations,
   migrateDates,
   makeAllInterns,
+  fixMergedAccounts,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -105,6 +106,9 @@ router.post("/migrate-dates", auth, migrateDates);
 
 // Temporary endpoint to make all existing users interns
 router.post("/make-all-interns", auth, makeAllInterns);
+
+// Endpoint to fix improperly merged user accounts
+router.post("/fix-merged-accounts", auth, fixMergedAccounts);
 
 router.post("/sync-refunds", auth, syncRefunds);
 

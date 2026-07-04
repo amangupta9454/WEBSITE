@@ -700,6 +700,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleFixMergedAccounts = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/fix-merged-accounts`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message || "Successfully fixed merged accounts!");
+    } catch (err) {
+      toast.error("Failed to fix merged accounts");
+      console.error(err);
+    }
+  };
+
   const handleOfferLetterChange = async (appId, newStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
@@ -1897,6 +1912,14 @@ const AdminDashboard = () => {
               >
                 <Zap className="w-3.5 h-3.5" />
                 Make All Users Interns
+              </button>
+              <button 
+                onClick={handleFixMergedAccounts} 
+                className="ml-2 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                title="Fix: Un-merge students who were merged together due to shared dummy phone numbers"
+              >
+                <Database className="w-3.5 h-3.5" />
+                Fix DB Merge
               </button>
             </div>
             {/* Main Tab Switcher */}
