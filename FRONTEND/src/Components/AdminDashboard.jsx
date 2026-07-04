@@ -46,6 +46,7 @@ import NotificationsAdmin from "./NotificationsAdmin";
 import SubmissionsAdmin from "./SubmissionsAdmin";
 import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
+import AdminResumeView from "./AdminResumeView";
 import { Bell, Settings, Zap, Database } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -1936,6 +1937,12 @@ const AdminDashboard = () => {
                 >
                   <Zap className="w-4 h-4" /> Banner
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("resume")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "resume" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <FileText className="w-4 h-4" /> Resume
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -1965,6 +1972,15 @@ const AdminDashboard = () => {
                     <p className="text-sm text-slate-500 mt-1">Upload and manage the popup banner shown to visitors on the website.</p>
                   </div>
                   <BannerManager />
+                </div>
+              )}
+              {activeFeatureTab === "resume" && (
+                <div className="animate-fade-in">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-black text-slate-800">Resume Feature</h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage global settings, whitelists, and view analytics for the AI Resume feature.</p>
+                  </div>
+                  <AdminResumeView />
                 </div>
               )}
             </div>
@@ -2041,6 +2057,12 @@ const AdminDashboard = () => {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "settings" ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
               <Settings className="w-4 h-4" /> Settings
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("resumes")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "resumes" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <FileText className="w-4 h-4" /> AI Resumes
             </button>
           </div>
         </div>
@@ -3019,6 +3041,15 @@ const AdminDashboard = () => {
           {activeSidebarTab === "banner" && (
             <div className="w-full">
               <BannerManager />
+            </div>
+          )}
+          {activeSidebarTab === "resumes" && (
+            <div className="w-full flex-1 min-w-0 animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-800">Resume Management</h2>
+                <p className="text-sm text-slate-500 mt-1">Manage AI Resumes and Token Economics.</p>
+              </div>
+              <AdminResumeView />
             </div>
           )}
           {activeSidebarTab === "settings" && (

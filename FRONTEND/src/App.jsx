@@ -16,7 +16,8 @@ import Privacy from "./Pages/Privacy";
 import Term from "./Pages/Term";
 import Refund from "./Pages/Refund";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
-import ResumeEmbed from "./Pages/ResumeEmbed";
+import MyResumes from "./Pages/MyResumes";
+import ResumeBuilder from "./Pages/ResumeBuilder/ResumeBuilder";
 import Registration from "./Components/Registration";
 import SetupPassword from "./Components/SetupPassword";
 import StudentDashboard from "./Components/StudentDashboard";
@@ -79,6 +80,9 @@ function App() {
 
         {/* InterviewActive needs full screen, so it doesn't get UnifiedLayout */}
         <Route path="/interview-active/:sessionId" element={<InterviewActive />} />
+        
+        {/* ResumeBuilder needs full screen without navbar */}
+        <Route path="/resume-builder/:id" element={<ResumeBuilder />} />
 
         {/* Old Legacy Functional Pages and Interview Portal */}
         <Route element={<UnifiedLayout />}>
@@ -88,7 +92,7 @@ function App() {
           <Route path="/interview-setup" element={<InterviewSetup />} />
           <Route path="/setup-password" element={<SetupPassword />} />
           <Route path="/project-submission" element={<Project />} />
-          <Route path="/resume-builder" element={<ResumeEmbed />} />
+          <Route path="/my-resumes" element={<MyResumes />} />
           <Route path="/verify" element={<Verify />} />
         </Route>
       </Routes>

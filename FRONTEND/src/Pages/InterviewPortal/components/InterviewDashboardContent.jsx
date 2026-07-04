@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2 } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
@@ -395,7 +395,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
   );
 }
 
-export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
+export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, resumeEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [rePracticeSession, setRePracticeSession] = useState(null);
   const navigate = useNavigate();
@@ -418,9 +418,30 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-
       {/* Feature Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
+        
+        {/* AI Resume Builder Card */}
+        <div 
+          className={`bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${resumeEnabled ? 'border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer' : 'border-slate-200 opacity-75 cursor-not-allowed'} relative overflow-hidden group transition-all duration-300`} 
+          onClick={() => {
+            if (resumeEnabled) navigate('/my-resumes');
+            else toast.error("Resume feature is currently disabled.");
+          }}
+        >
+          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <FileText className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className={`w-8 h-8 sm:w-12 sm:h-12 ${resumeEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10`}>
+            <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
+          </div>
+          <div className="relative z-10">
+            <h3 className="font-bold text-slate-800 text-sm sm:text-lg">AI Resume</h3>
+            <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Bypass ATS smartly</p>
+            {!resumeEnabled && <span className="inline-block mt-2 bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Disabled</span>}
+          </div>
+        </div>
+
         {interviewEnabled ? (
           <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onStartInterview}>
             <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">

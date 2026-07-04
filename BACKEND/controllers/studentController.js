@@ -290,10 +290,16 @@ const submitProjectRepo = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find internship by studentId from JWT
-    const internship = user.internships.find(
-      (app) => app.studentId === studentId,
-    );
+    // Find internship by studentId from JWT or fallback to first internship
+    let internship;
+    if (studentId) {
+      internship = user.internships.find((app) => app.studentId === studentId);
+    } else if (req.body.internshipId) {
+      internship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
+    } else if (user.internships && user.internships.length > 0) {
+      internship = user.internships[0];
+    }
+
     if (!internship)
       return res.status(404).json({ message: "Internship not found" });
 
@@ -335,10 +341,16 @@ const finalSubmitProjectRepo = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find internship by studentId from JWT
-    const internship = user.internships.find(
-      (app) => app.studentId === studentId,
-    );
+    // Find internship by studentId from JWT or fallback to first internship
+    let internship;
+    if (studentId) {
+      internship = user.internships.find((app) => app.studentId === studentId);
+    } else if (req.body.internshipId) {
+      internship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
+    } else if (user.internships && user.internships.length > 0) {
+      internship = user.internships[0];
+    }
+
     if (!internship)
       return res.status(404).json({ message: "Internship not found" });
 
@@ -513,7 +525,14 @@ const updateProjectLink = async (req, res) => {
       return res.status(400).json({ message: 'Valid GitHub repository link is required' });
     }
 
-    const targetInternship = user.internships.find((app) => app.studentId === studentId);
+    let targetInternship;
+    if (studentId) {
+      targetInternship = user.internships.find((app) => app.studentId === studentId);
+    } else if (req.body.internshipId) {
+      targetInternship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
+    } else if (user.internships && user.internships.length > 0) {
+      targetInternship = user.internships[0];
+    }
 
     if (!targetInternship) {
       return res.status(404).json({ message: 'Active internship not found' });

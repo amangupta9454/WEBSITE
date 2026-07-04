@@ -300,6 +300,54 @@ router.get("/interview-data", auth, async (req, res) => {
   }
 });
 
+// ─── Resume Feature Settings ──────────────────────────────────────────────────
+
+router.get("/resume-settings", async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: "resumeEnabled" });
+    const isEnabled = setting ? setting.value : true;
+    res.json({ success: true, enabled: isEnabled });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post("/resume-settings/toggle", auth, async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "resumeEnabled" });
+    if (!setting) {
+      setting = new Settings({ key: "resumeEnabled", value: false });
+    } else {
+      setting.value = !setting.value;
+    }
+    await setting.save();
+    res.json({ success: true, enabled: setting.value });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post("/resume-settings/override-by-email", auth, async (req, res) => {
+  try {
+    const { email, override } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    
+    // Support unified user model search
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    
+    user.resumeAccessOverride = !!override;
+    await user.save();
+    res.json({ success: true, message: 'Override updated', override: user.resumeAccessOverride, user: { name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Banner Management ─────────────────────────────────────────────────────
 
 // Public: anyone can fetch banner settings (used by frontend FeatureBanner)

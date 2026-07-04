@@ -567,6 +567,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/student/update-project-link`,
         {
+          internshipId: internship._id,
           internshipType: 'Summer Intern',
           projectId: projectId,
           newRepoLink: link,

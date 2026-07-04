@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
     interviewCredits: { type: Number, default: 30 },
     interviewIsUnlimited: { type: Boolean, default: false },
     interviewAccessOverride: { type: Boolean, default: false },
+    resumeAccessOverride: { type: Boolean, default: false },
     interviewUnlimitedExpiresAt: { type: Date },
     interviewPendingOrders: [
       {
