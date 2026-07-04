@@ -685,6 +685,21 @@ const AdminDashboard = () => {
     navigate("/admin-login");
   };
 
+  const handleMakeAllInterns = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/make-all-interns`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message || "All users updated to intern successfully!");
+    } catch (err) {
+      toast.error("Failed to update users");
+      console.error(err);
+    }
+  };
+
   const handleOfferLetterChange = async (appId, newStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
@@ -1875,6 +1890,14 @@ const AdminDashboard = () => {
                 <h1 className="text-slate-900 font-bold text-base leading-tight">Admin Dashboard</h1>
                 <p className="text-slate-500 text-xs hidden sm:block">Code-A-Nova Management</p>
               </div>
+              <button 
+                onClick={handleMakeAllInterns} 
+                className="ml-4 px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                title="Temporary Fix: Assign 'intern' role to all current database users"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Make All Users Interns
+              </button>
             </div>
             {/* Main Tab Switcher */}
             <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
