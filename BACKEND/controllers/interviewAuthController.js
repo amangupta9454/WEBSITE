@@ -40,9 +40,12 @@ exports.googleLogin = async (req, res) => {
     const normalizedEmail = email ? email.toLowerCase() : 'no-email@google.com';
     
     // Find in the unified User collection by email (case-insensitive)
-    // Prioritize the document that has an internship, in case of duplicate records
+    // Prioritize the document that has an internship matching this email, either as root email or within the internships array
     let user = await User.findOne({ 
-      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') },
+      $or: [
+        { email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } },
+        { "internships.email": { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } }
+      ],
       "internships.0": { $exists: true }
     });
     
