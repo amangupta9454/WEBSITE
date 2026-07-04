@@ -37,13 +37,26 @@ exports.googleLogin = async (req, res) => {
     
     const { email, name, picture } = payload;
     
-    // Find in the unified User collection by email
-    let user = await User.findOne({ email });
+    const normalizedEmail = email ? email.toLowerCase() : 'no-email@google.com';
+    
+    // Find in the unified User collection by email (case-insensitive)
+    // Prioritize the document that has an internship, in case of duplicate records
+    let user = await User.findOne({ 
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') },
+      "internships.0": { $exists: true }
+    });
+    
+    // If no intern account found, look for any account with this email
+    if (!user) {
+      user = await User.findOne({ 
+        email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } 
+      });
+    }
     
     if (!user) {
       // Create a new normal user (who is not an intern yet)
       user = new User({
-        email: email || 'no-email@google.com',
+        email: normalizedEmail,
         name: name || 'Unknown User',
         profileImage: picture || '',
         mobile: 'Google Auth', // Required by User schema
