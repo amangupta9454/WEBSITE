@@ -438,7 +438,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <div className="relative z-10">
             <h3 className="font-bold text-slate-800 text-sm sm:text-lg">AI Resume</h3>
             <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-2">Bypass ATS smartly</p>
-            {!resumeEnabled && <span className="inline-block mt-2 bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Disabled</span>}
+            {!resumeEnabled && <span className="inline-block mt-2 bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Currently Not Available</span>}
           </div>
         </div>
 
@@ -462,7 +462,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
               <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
-            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Not Available</p>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Currently Not Available</p>
           </div>
         )}
         
@@ -471,7 +471,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Coding Challenges</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
         </div>
 
         <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
@@ -479,7 +479,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Project Sandbox</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
         </div>
 
         <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
@@ -487,7 +487,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <Tag className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Certifications</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Not Available</p>
+          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
         </div>
       </div>
 

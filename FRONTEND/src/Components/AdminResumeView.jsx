@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FileText, Download, Loader2, Coins, Search, User, Shield, CheckCircle, Power, UserPlus } from 'lucide-react';
+import { FileText, Download, Loader2, Coins, Search, User, Shield, CheckCircle, Power, UserPlus, ToggleLeft, ToggleRight, Activity, CreditCard, RefreshCw } from 'lucide-react';
+
+function StatCard({ label, value, icon: Icon, color }) {
+  return (
+    <div className={`bg-white rounded-2xl border p-5 flex items-center gap-4 shadow-sm ${color.border}`}>
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color.iconBg}`}>
+        <Icon className={`w-5 h-5 ${color.icon}`} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-black text-slate-800">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 const AdminResumeView = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -74,80 +88,64 @@ const AdminResumeView = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Feature Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Global Toggle */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-5 h-5 text-indigo-500" />
-              <h3 className="font-bold text-slate-800">Global Feature Access</h3>
-            </div>
-            <p className="text-sm text-slate-500 mb-6">Enable or disable the AI Resume Builder for all users globally.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleResumeFeature}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${resumeEnabled ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}
-            >
-              <Power className="w-4 h-4" />
-              {resumeEnabled ? 'Feature Enabled' : 'Feature Disabled'}
-            </button>
-            <span className="text-xs text-slate-400 font-medium">{resumeEnabled ? 'Visible to everyone' : 'Hidden from everyone (except whitelisted)'}</span>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      
+      {/* Feature Toggle Banner */}
+      <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-4 rounded-2xl border gap-4 ${resumeEnabled ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+        <div>
+          <p className={`font-black text-base ${resumeEnabled ? 'text-emerald-800' : 'text-red-800'}`}>
+            Resume Feature is {resumeEnabled ? '✅ Active' : '🔴 Disabled'}
+          </p>
+          <p className={`text-xs font-medium mt-0.5 ${resumeEnabled ? 'text-emerald-600' : 'text-red-500'}`}>
+            {resumeEnabled ? 'Students can access the AI Resume Builder.' : 'Students will see the feature greyed out on the dashboard.'}
+          </p>
         </div>
-
-        {/* Whitelist Input */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <UserPlus className="w-5 h-5 text-blue-500" />
-            <h3 className="font-bold text-slate-800">Grant Exclusive Access</h3>
-          </div>
-          <p className="text-sm text-slate-500 mb-4">Give a specific user access to the Resume feature even if it is globally disabled.</p>
-          
-          <form onSubmit={handleWhitelist} className="flex gap-2">
-            <input 
-              type="email" 
-              required
-              value={whitelistEmail}
-              onChange={(e) => setWhitelistEmail(e.target.value)}
-              placeholder="user@example.com"
-              className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-            />
-            <button
-              type="submit"
-              disabled={whitelistLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 disabled:opacity-70"
-            >
-              {whitelistLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-              Grant Access
-            </button>
-          </form>
-        </div>
+        <button
+          onClick={toggleResumeFeature}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${resumeEnabled ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200'}`}
+        >
+          {resumeEnabled ? <ToggleLeft className="w-5 h-5" /> : <ToggleRight className="w-5 h-5" />}
+          {resumeEnabled ? 'Disable Feature' : 'Enable Feature'}
+        </button>
       </div>
 
-      {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-slate-400 text-xs font-bold uppercase mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-blue-500"/> Total Resumes</div>
-          <div className="text-3xl font-black text-slate-800">{analytics?.totalResumes}</div>
-          <div className="text-xs font-medium text-slate-500 mt-1">Today: {analytics?.todayResumes}</div>
+      {/* Grant Access by Email */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Grant Individual Access</h3>
+            <p className="text-xs text-slate-500">Provide feature access to a user by email even if disabled.</p>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-slate-400 text-xs font-bold uppercase mb-1 flex items-center gap-2"><Download className="w-4 h-4 text-purple-500"/> Total PDF Downloads</div>
-          <div className="text-3xl font-black text-slate-800">{analytics?.totalDownloads}</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-slate-400 text-xs font-bold uppercase mb-1 flex items-center gap-2"><Coins className="w-4 h-4 text-amber-500"/> Token Economics</div>
-          <div className="text-lg font-black text-slate-800">{analytics?.totalTokensEarned} Tokens Earned</div>
-          <div className="text-xs font-medium text-slate-500 mt-1">{analytics?.paidDownloads} Paid Downloads</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-slate-400 text-xs font-bold uppercase mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-emerald-500"/> Free Usage</div>
-          <div className="text-lg font-black text-slate-800">{analytics?.freeDownloads} Free DLs</div>
-          <div className="text-xs font-medium text-slate-500 mt-1">First Resume is Free</div>
-        </div>
+        <form onSubmit={handleWhitelist} className="flex w-full sm:w-auto items-center gap-3">
+          <input 
+            type="email" 
+            required
+            value={whitelistEmail}
+            onChange={(e) => setWhitelistEmail(e.target.value)}
+            placeholder="User Email"
+            className="flex-1 sm:w-64 px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+          />
+          <button 
+            type="submit"
+            disabled={whitelistLoading}
+            className="px-4 py-2 bg-emerald-600 text-white font-bold text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap shadow-sm"
+          >
+            {whitelistLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            {whitelistLoading ? "Granting..." : "Grant Access"}
+          </button>
+        </form>
+      </div>
+
+      {/* User Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Resumes" value={analytics?.totalResumes || 0} icon={FileText} color={{ border: "border-indigo-200", iconBg: "bg-indigo-100", icon: "text-indigo-600" }} />
+        <StatCard label="PDF Downloads" value={analytics?.totalDownloads || 0} icon={Download} color={{ border: "border-blue-200", iconBg: "bg-blue-100", icon: "text-blue-600" }} />
+        <StatCard label="Tokens Earned" value={analytics?.totalTokensEarned || 0} icon={Coins} color={{ border: "border-emerald-200", iconBg: "bg-emerald-100", icon: "text-emerald-600" }} />
+        <StatCard label="Free Downloads" value={analytics?.freeDownloads || 0} icon={Activity} color={{ border: "border-amber-200", iconBg: "bg-amber-100", icon: "text-amber-600" }} />
       </div>
 
       {/* Resumes Table */}

@@ -366,6 +366,10 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       {/* Dynamic Sections Based on Order */}
       {sectionOrder.map(key => renderSectionContent(key))}
 
+      {/* Watermark */}
+      <div className="absolute bottom-6 left-0 w-full text-center text-[10px] text-slate-400 opacity-40 font-medium pointer-events-none select-none print:fixed print:bottom-6">
+        Powered by <span className="font-bold tracking-wide">Code-A-Nova</span>
+      </div>
     </div>
   );
 };
