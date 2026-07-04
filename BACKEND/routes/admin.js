@@ -152,6 +152,19 @@ router.post("/interview-settings/override/:id", auth, async (req, res) => {
   }
 });
 
+router.post("/interview-settings/override-by-email", auth, async (req, res) => {
+  try {
+    const { email, override } = req.body;
+    const user = await User.findOne({ email: new RegExp('^' + email + '$', 'i') });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found with this email' });
+    user.interviewAccessOverride = !!override;
+    await user.save();
+    res.json({ success: true, message: 'Override updated', override: user.interviewAccessOverride });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get("/interview-settings/tokens", auth, async (req, res) => {
   try {
     let freeTokens = await Settings.findOne({ key: "interviewFreeTokens" });

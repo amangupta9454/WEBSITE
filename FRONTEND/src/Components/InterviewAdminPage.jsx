@@ -271,6 +271,26 @@ export default function InterviewAdminPage() {
   const [toggling, setToggling] = useState(false);
   const [tokenSettings, setTokenSettings] = useState({ freeTokens: 30, interviewCost: 10 });
   const [savingTokens, setSavingTokens] = useState(false);
+  const [grantEmail, setGrantEmail] = useState("");
+  const [granting, setGranting] = useState(false);
+
+  const handleGrantAccessByEmail = async () => {
+    if (!grantEmail) return toast.error("Please enter an email");
+    setGranting(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.post(`${BACKEND}/api/admin/interview-settings/override-by-email`, { email: grantEmail, override: true }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Access granted successfully to ${grantEmail}`);
+      setGrantEmail("");
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to grant access");
+    } finally {
+      setGranting(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -283,8 +303,8 @@ export default function InterviewAdminPage() {
       ]);
       
       if (dataRes.data.success) {
-        // Filter out users who have 0 sessions
-        const filteredUsers = dataRes.data.data.filter(u => u.sessions && u.sessions.length > 0);
+        // Filter out users who have 0 sessions, unless they have override enabled
+        const filteredUsers = dataRes.data.data.filter(u => (u.sessions && u.sessions.length > 0) || u.interviewAccessOverride);
         setData(filteredUsers);
         setEarnings(dataRes.data.earnings || null);
       }
@@ -398,6 +418,36 @@ export default function InterviewAdminPage() {
           >
             {savingTokens ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {savingTokens ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
+
+      {/* Grant Access by Email */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Grant Individual Access</h3>
+            <p className="text-xs text-slate-500">Provide feature access to a user by email.</p>
+          </div>
+        </div>
+        <div className="flex w-full sm:w-auto items-center gap-3">
+          <input 
+            type="email" 
+            placeholder="User Email"
+            value={grantEmail} 
+            onChange={(e) => setGrantEmail(e.target.value)}
+            className="flex-1 sm:w-64 px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+          />
+          <button 
+            onClick={handleGrantAccessByEmail}
+            disabled={granting}
+            className="px-4 py-2 bg-emerald-600 text-white font-bold text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap shadow-sm"
+          >
+            {granting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            {granting ? "Granting..." : "Grant Access"}
           </button>
         </div>
       </div>
