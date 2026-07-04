@@ -165,6 +165,25 @@ router.post("/interview-settings/override-by-email", auth, async (req, res) => {
   }
 });
 
+router.get("/whitelisted-users", auth, async (req, res) => {
+  try {
+    const users = await User.find({
+      $or: [
+        { interviewAccessOverride: true },
+        { resumeAccessOverride: true }
+      ]
+    }).select('name email interviewAccessOverride resumeAccessOverride');
+    
+    res.json({
+      success: true,
+      interview: users.filter(u => u.interviewAccessOverride),
+      resume: users.filter(u => u.resumeAccessOverride)
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.get("/interview-settings/tokens", auth, async (req, res) => {
   try {
     let freeTokens = await Settings.findOne({ key: "interviewFreeTokens" });

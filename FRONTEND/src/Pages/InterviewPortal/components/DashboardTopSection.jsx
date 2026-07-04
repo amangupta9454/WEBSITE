@@ -35,6 +35,9 @@ export default function DashboardTopSection() {
         if (res.data.user) {
           setUserData(res.data.user);
         }
+        if (res.data.role) {
+          localStorage.setItem('interviewUserRole', res.data.role);
+        }
       }
     } catch (err) {
       console.error(err);
