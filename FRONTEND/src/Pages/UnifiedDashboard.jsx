@@ -64,7 +64,7 @@ export default function UnifiedDashboard() {
         </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto">
+      <div className="relative z-[60] w-full max-w-6xl mx-auto">
         {activeTab === "overview" && <InterviewDashboard />}
         {activeTab === "internship" && isIntern && <StudentDashboard />}
       </div>

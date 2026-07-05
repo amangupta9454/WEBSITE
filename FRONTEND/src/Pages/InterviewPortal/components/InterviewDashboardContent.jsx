@@ -578,9 +578,9 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <PlayCircle size={32} />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Resume Session</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Re-practice Session</h3>
             <p className="text-slate-500 text-sm mb-6">
-              You are about to resume your unfinished interview for <strong>{rePracticeSession.jobTitle}</strong>. No extra credits will be deducted.
+              You are about to re-practice your interview for <strong>{rePracticeSession.jobTitle}</strong>. No extra credits will be deducted.
             </p>
             <button 
               onClick={() => {
