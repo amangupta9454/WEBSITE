@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ResumeForm = ({ resume, setResume }) => {
+  const [openSection, setOpenSection] = React.useState('personalInfo');
   const data = resume?.data || {};
 
-  const defaultSectionOrder = ['experience', 'projects', 'education', 'skills', 'achievements', 'certifications'];
+  const defaultSectionOrder = ['skills', 'experience', 'projects', 'education', 'achievements', 'certifications'];
   const sectionOrder = data?.sectionOrder?.length > 0 ? data.sectionOrder : defaultSectionOrder;
 
   // Ensure missing sections are populated with empty arrays/objects
@@ -84,38 +85,47 @@ const ResumeForm = ({ resume, setResume }) => {
     });
   };
 
-  const renderSectionHeader = (title, key, index) => (
-    <div className="flex justify-between items-center mb-4 border-b pb-2">
+  const renderSectionHeader = (title, key, index) => {
+    const isOpen = openSection === key;
+    return (
+    <div className="flex justify-between items-center mb-0 pb-2 cursor-pointer group" onClick={() => setOpenSection(isOpen ? null : key)}>
       <div className="flex items-center gap-2">
-        <div className="flex flex-col bg-slate-100 rounded-md">
-          <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="p-0.5 text-slate-400 hover:text-slate-800 disabled:opacity-30"><ArrowUp size={12}/></button>
-          <button onClick={() => moveSection(index, 'down')} disabled={index === sectionOrder.length - 1} className="p-0.5 text-slate-400 hover:text-slate-800 disabled:opacity-30"><ArrowDown size={12}/></button>
+        <div className="flex flex-col opacity-40 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+          <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="text-slate-400 hover:text-blue-600 disabled:opacity-0 hover:bg-blue-50 rounded"><ChevronUp size={16}/></button>
+          <button onClick={() => moveSection(index, 'down')} disabled={index === sectionOrder.length - 1} className="text-slate-400 hover:text-blue-600 disabled:opacity-0 hover:bg-blue-50 rounded"><ChevronDown size={16}/></button>
         </div>
-        <h2 className="text-lg font-black text-slate-800 capitalize">{title}</h2>
+        <h2 className="text-lg font-black text-slate-800 capitalize -ml-1">{title}</h2>
       </div>
-      {key !== 'skills' && (
-        <button onClick={() => {
-          let defaultItem = {};
-          if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
-          else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
-          else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
-          else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
-          else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
-          addItem(key, defaultItem);
-        }} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
-          <Plus size={16}/> Add
+      <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+        {key !== 'skills' && (
+          <button onClick={() => {
+            let defaultItem = {};
+            if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
+            else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
+            else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
+            else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
+            else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
+            addItem(key, defaultItem);
+            setOpenSection(key);
+          }} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
+            <Plus size={16}/> Add
+          </button>
+        )}
+        <button className="text-slate-500" onClick={() => setOpenSection(isOpen ? null : key)}>
+          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
-      )}
+      </div>
     </div>
-  );
+  )};
 
   const renderSection = (key, index) => {
     switch (key) {
       case 'experience':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Experience', key, index)}
-            <div className="space-y-4">
+            {openSection === key && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
               {(data.experience || []).map((exp, idx) => (
                 <div key={exp.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -133,13 +143,15 @@ const ResumeForm = ({ resume, setResume }) => {
                 </div>
               ))}
             </div>
+            )}
           </section>
         );
       case 'projects':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Projects', key, index)}
-            <div className="space-y-4">
+            {openSection === key && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
               {(data.projects || []).map((proj, idx) => (
                 <div key={proj.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -159,13 +171,15 @@ const ResumeForm = ({ resume, setResume }) => {
                 </div>
               ))}
             </div>
+            )}
           </section>
         );
       case 'education':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Education', key, index)}
-            <div className="space-y-4">
+            {openSection === key && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
               {(data.education || []).map((edu, idx) => (
                 <div key={edu.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -183,13 +197,15 @@ const ResumeForm = ({ resume, setResume }) => {
                 </div>
               ))}
             </div>
+            )}
           </section>
         );
       case 'achievements':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Achievements', key, index)}
-            <div className="space-y-4">
+            {openSection === key && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
               {(data.achievements || []).map((ach, idx) => (
                 <div key={ach.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -205,13 +221,15 @@ const ResumeForm = ({ resume, setResume }) => {
                 </div>
               ))}
             </div>
+            )}
           </section>
         );
       case 'certifications':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Certifications', key, index)}
-            <div className="space-y-4">
+            {openSection === key && (
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
               {(data.certifications || []).map((cert, idx) => (
                 <div key={cert.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -219,8 +237,8 @@ const ResumeForm = ({ resume, setResume }) => {
                     <button onClick={() => moveItem('certifications', idx, 'down')} className="p-1 hover:bg-white rounded"><ArrowDown size={14} /></button>
                     <button onClick={() => removeItem('certifications', idx)} className="p-1 text-red-500 hover:bg-red-50 rounded"><Trash2 size={14} /></button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 pr-10">
-                    <input className="input-field" placeholder="Certificate Name" value={cert.name || ''} onChange={(e) => updateNested('certifications', idx, 'name', e.target.value)} />
+                  <div className="grid grid-cols-2 gap-3 pr-20">
+                    <input className="input-field" placeholder="Certification Name" value={cert.name || ''} onChange={(e) => updateNested('certifications', idx, 'name', e.target.value)} />
                     <input className="input-field" placeholder="Issuer" value={cert.issuer || ''} onChange={(e) => updateNested('certifications', idx, 'issuer', e.target.value)} />
                     <input className="input-field" placeholder="Date" value={cert.date || ''} onChange={(e) => updateNested('certifications', idx, 'date', e.target.value)} />
                     <input className="input-field" placeholder="Link" value={cert.link || ''} onChange={(e) => updateNested('certifications', idx, 'link', e.target.value)} />
@@ -228,17 +246,20 @@ const ResumeForm = ({ resume, setResume }) => {
                 </div>
               ))}
             </div>
+            )}
           </section>
         );
       case 'skills':
         return (
-          <section key={key}>
+          <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Skills', key, index)}
-            <div className="space-y-3">
-              <input className="input-field w-full" placeholder="Languages (e.g. JavaScript, Python, C++)" value={(data.skills?.languages || []).join(', ')} onChange={(e) => updateSkills('languages', e.target.value)} />
-              <input className="input-field w-full" placeholder="Frameworks (e.g. React, Node.js, Django)" value={(data.skills?.frameworks || []).join(', ')} onChange={(e) => updateSkills('frameworks', e.target.value)} />
-              <input className="input-field w-full" placeholder="Tools (e.g. Git, Docker, AWS)" value={(data.skills?.tools || []).join(', ')} onChange={(e) => updateSkills('tools', e.target.value)} />
+            {openSection === key && (
+            <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
+              <input className="input-field w-full" placeholder="Languages (e.g. Java, Python)" value={(data.skills?.languages || []).join(', ')} onChange={(e) => updateSkills('languages', e.target.value)} />
+              <input className="input-field w-full" placeholder="Frameworks/Libraries" value={(data.skills?.frameworks || []).join(', ')} onChange={(e) => updateSkills('frameworks', e.target.value)} />
+              <input className="input-field w-full" placeholder="Developer Tools" value={(data.skills?.tools || []).join(', ')} onChange={(e) => updateSkills('tools', e.target.value)} />
             </div>
+            )}
           </section>
         );
       default:
@@ -247,26 +268,33 @@ const ResumeForm = ({ resume, setResume }) => {
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      
-      {/* Personal Info (Always First) */}
-      <section>
-        <h2 className="text-lg font-black text-slate-800 mb-4 border-b pb-2">Personal Information</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <input className="input-field" placeholder="First Name" value={data.personalInfo?.firstName || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), firstName: e.target.value})} />
-          <input className="input-field" placeholder="Last Name" value={data.personalInfo?.lastName || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), lastName: e.target.value})} />
-          <input className="input-field" placeholder="Email" value={data.personalInfo?.email || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), email: e.target.value})} />
-          <input className="input-field" placeholder="Phone" value={data.personalInfo?.phone || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), phone: e.target.value})} />
-          <input className="input-field" placeholder="Location" value={data.personalInfo?.location || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), location: e.target.value})} />
-          <input className="input-field" placeholder="LinkedIn URL" value={data.personalInfo?.linkedin || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), linkedin: e.target.value})} />
-          <input className="input-field" placeholder="GitHub URL" value={data.personalInfo?.github || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), github: e.target.value})} />
-          <input className="input-field" placeholder="Portfolio URL" value={data.personalInfo?.portfolio || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), portfolio: e.target.value})} />
+    <div className="space-y-4">
+      <section className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+        <div className="flex justify-between items-center mb-0 pb-2 cursor-pointer" onClick={() => setOpenSection(openSection === 'personalInfo' ? null : 'personalInfo')}>
+          <h2 className="text-lg font-black text-slate-800">Personal Information</h2>
+          <button className="text-slate-500">
+            {openSection === 'personalInfo' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
         </div>
-        <textarea className="input-field mt-4 w-full h-24" placeholder="Professional Summary" value={data.personalInfo?.summary || ''} onChange={(e) => updateData('personalInfo', {...(data.personalInfo || {}), summary: e.target.value})} />
+        
+        {openSection === 'personalInfo' && (
+        <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
+          <div className="grid grid-cols-2 gap-4">
+            <input className="input-field" placeholder="First Name" value={data.personalInfo?.firstName || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, firstName: e.target.value })} />
+            <input className="input-field" placeholder="Last Name" value={data.personalInfo?.lastName || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, lastName: e.target.value })} />
+            <input className="input-field" placeholder="Email" value={data.personalInfo?.email || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, email: e.target.value })} />
+            <input className="input-field" placeholder="Phone Number" value={data.personalInfo?.phone || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, phone: e.target.value })} />
+            <input className="input-field" placeholder="Location" value={data.personalInfo?.location || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, location: e.target.value })} />
+            <input className="input-field" placeholder="LinkedIn URL" value={data.personalInfo?.linkedin || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, linkedin: e.target.value })} />
+            <input className="input-field" placeholder="GitHub URL" value={data.personalInfo?.github || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, github: e.target.value })} />
+            <input className="input-field" placeholder="Portfolio/Website URL" value={data.personalInfo?.portfolio || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, portfolio: e.target.value })} />
+          </div>
+          <textarea className="input-field w-full h-24" placeholder="Professional Summary" value={data.personalInfo?.summary || ''} onChange={(e) => updateData('personalInfo', { ...data.personalInfo, summary: e.target.value })} />
+        </div>
+        )}
       </section>
 
-      {/* Dynamic Reorderable Sections */}
-      {sectionOrder.map((sectionKey, index) => renderSection(sectionKey, index))}
+      {sectionOrder.map((key, index) => renderSection(key, index))}
 
       <style>{`
         .input-field {

@@ -7,6 +7,8 @@ import ResumeForm from './ResumeForm';
 import ResumePreview from './ResumePreview';
 import { useReactToPrint } from 'react-to-print';
 import { useDebounce } from 'react-use';
+import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
 
 const ResumeBuilder = () => {
   const { id } = useParams();
@@ -124,13 +126,22 @@ const ResumeBuilder = () => {
   if (loading || !resume) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600 w-12 h-12" /></div>;
 
   return (
-    <div className="h-screen flex flex-col bg-slate-100 overflow-hidden">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/my-resumes')} className="text-slate-500 hover:text-slate-800 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans pt-16">
+      <Navbar />
+      
+      {/* Builder Container */}
+      <div className="flex-1 flex flex-col max-w-[1920px] w-full mx-auto shadow-2xl bg-white overflow-hidden rounded-t-2xl border-t border-l border-r border-slate-200 mt-6" style={{ height: 'calc(100vh - 64px - 24px)', minHeight: '800px' }}>
+        
+        {/* Top Toolbar */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => navigate('/my-resumes')} 
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           <input 
             type="text" 
             value={resume.name}
@@ -142,14 +153,14 @@ const ResumeBuilder = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          <button 
-            onClick={handlePrint}
-            disabled={downloading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20"
-          >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export PDF
-          </button>
+            <button 
+              onClick={handlePrint}
+              disabled={downloading}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Export PDF
+            </button>
         </div>
       </header>
 
@@ -189,11 +200,14 @@ const ResumeBuilder = () => {
           >
             <ResumePreview data={resume.data} template={resume.template} isWebPreview={true} />
           </div>
+          </div>
         </div>
       </div>
 
+      <Footer />
+
       {/* Hidden container strictly for foolproof PDF generation (avoids all CSS scale/transition bugs) */}
-      <div style={{ display: 'none' }}>
+      <div className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" aria-hidden="true">
         <div ref={downloadRef} className="w-[210mm] min-h-[297mm] bg-white">
           <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
         </div>
