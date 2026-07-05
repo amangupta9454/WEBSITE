@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { FileText, Zap, CheckCircle, Award, ArrowRight, Plus, Eye, Sparkles } from 'lucide-react';
 
 const ResumeBuilderCTA = () => {
   const navigate = useNavigate();
+  const [isEnabled, setIsEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/resume-settings`);
+        if (res.data.success && res.data.enabled !== undefined) {
+          setIsEnabled(res.data.enabled);
+        }
+      } catch (error) {
+        console.error("Failed to fetch resume settings", error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const isLoggedIn = () => {
     return !!localStorage.getItem('studentToken');
@@ -26,6 +42,10 @@ const ResumeBuilderCTA = () => {
       navigate('/student-login');
     }
   };
+
+  if (!isEnabled) {
+    return null;
+  }
 
   return (
     <section className="relative py-24 overflow-hidden bg-gradient-to-b from-slate-50 to-white font-sans">
