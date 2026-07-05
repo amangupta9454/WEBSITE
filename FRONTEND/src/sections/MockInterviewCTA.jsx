@@ -56,14 +56,14 @@ const MockInterviewCTA = () => {
             </div>
             
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] mb-6 tracking-tight">
-              Master Your Next <br />
+              AI-Powered <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">
-                Tech Interview
+                Mock Interview Practice
               </span>
             </h2>
             
             <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-xl">
-              Don't leave your career to chance. Practice with our advanced AI Interviewer that simulates real-world tech interviews, provides instant feedback, and helps you land your dream job.
+              Don't leave your career to chance. Practice with our advanced online AI Mock Interview platform that simulates real-world tech interviews, provides instant feedback, and helps you land your dream job faster.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">

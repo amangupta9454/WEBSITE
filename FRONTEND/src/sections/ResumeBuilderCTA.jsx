@@ -20,7 +20,11 @@ const ResumeBuilderCTA = () => {
   };
 
   const handleViewResumes = () => {
-    navigate('/my-resumes');
+    if (isLoggedIn()) {
+      navigate('/my-resumes');
+    } else {
+      navigate('/student-login');
+    }
   };
 
   return (
@@ -40,13 +44,13 @@ const ResumeBuilderCTA = () => {
             <span>AI-Powered Resume Builder</span>
           </div>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] mb-5 tracking-tight">
-            Build a Resume That{' '}
+            Free Online{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-500">
-              Gets You Hired
+              Resume Builder
             </span>
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Create ATS-friendly resumes that bypass automated filters and land directly in front of hiring managers at top tech companies.
+            Create professional, ATS-friendly resumes online for free. Bypass automated filters and land directly in front of hiring managers with our advanced resume maker.
           </p>
         </div>
 
