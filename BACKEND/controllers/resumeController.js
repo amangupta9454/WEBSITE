@@ -136,12 +136,19 @@ exports.recordDownload = async (req, res) => {
     if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
 
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const currentDownloads = resume.downloadsUsed || 0;
+    const newDownloads = currentDownloads + 1;
 
     // Check if we have free downloads left for this resume
-    if (resume.downloadsUsed < FREE_DOWNLOAD_LIMIT) {
-      resume.downloadsUsed += 1;
-      await resume.save();
-      return res.json({ success: true, freeDownload: true, downloadsUsed: resume.downloadsUsed });
+    if (currentDownloads < FREE_DOWNLOAD_LIMIT) {
+      // Use targeted update to avoid schema conflict with legacy skills data format
+      await Resume.updateOne(
+        { _id: req.params.id },
+        { $set: { downloadsUsed: newDownloads } }
+      );
+      return res.json({ success: true, freeDownload: true, downloadsUsed: newDownloads });
     }
 
     // Otherwise deduct 2 tokens
@@ -150,10 +157,13 @@ exports.recordDownload = async (req, res) => {
       return res.status(403).json({ success: false, message: `Insufficient tokens. Premium downloads cost ${RESUME_DOWNLOAD_COST} tokens.` });
     }
 
-    resume.downloadsUsed += 1;
-    await resume.save();
+    // Use targeted update to avoid schema conflict with legacy skills data format
+    await Resume.updateOne(
+      { _id: req.params.id },
+      { $set: { downloadsUsed: newDownloads } }
+    );
 
-    res.json({ success: true, freeDownload: false, downloadsUsed: resume.downloadsUsed, creditsRemaining: user.interviewCredits });
+    res.json({ success: true, freeDownload: false, downloadsUsed: newDownloads, creditsRemaining: user.interviewCredits });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });

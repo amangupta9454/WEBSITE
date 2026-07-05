@@ -72,56 +72,51 @@ const ResumeBuilder = () => {
     [resume]
   );
 
-  const handlePrint = useReactToPrint({
+  const triggerPrint = useReactToPrint({
     contentRef: downloadRef,
     documentTitle: resume?.name || 'Resume',
-    onBeforePrint: async () => {
-      if (resume?.downloadsUsed >= 3) {
-        const confirm = window.confirm("You have used your 3 free downloads for this resume.\n\nExporting this resume again will cost 2 tokens. Do you wish to continue?");
-        if (!confirm) {
-          return Promise.reject(new Error("Cancelled by user"));
-        }
-      }
-
-      setDownloading(true);
-      try {
-        const token = localStorage.getItem("studentToken");
-        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/download`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (!res.data.success) {
-          throw new Error(res.data.message);
-        }
-
-        if (res.data.freeDownload) {
-          toast.success(`Print dialog opened! (${res.data.downloadsUsed}/3 Free used)`);
-        } else {
-          toast.success(`Print dialog opened! (2 Tokens deducted)`);
-        }
-
-        setResume(prev => ({ ...prev, downloadsUsed: res.data.downloadsUsed }));
-        return Promise.resolve();
-      } catch (err) {
-        if (err.message === "Cancelled by user") {
-          return Promise.reject(err);
-        }
-        
-        const errorMsg = err.response?.data?.message || err.message || 'Failed to download';
-        
-        if (err.response?.status === 403 && errorMsg.toLowerCase().includes('tokens')) {
-          toast.error(`${errorMsg} Please purchase more tokens from your dashboard.`, { duration: 5000 });
-        } else {
-          toast.error(errorMsg);
-        }
-        
-        setDownloading(false);
-        return Promise.reject(err);
-      }
-    },
     onAfterPrint: () => setDownloading(false),
     onPrintError: () => setDownloading(false)
   });
+
+  const handleExport = async () => {
+    if (downloading) return;
+
+    if ((resume?.downloadsUsed || 0) >= 3) {
+      const confirmed = window.confirm("You have used your 3 free downloads for this resume.\n\nExporting again will cost 2 tokens. Do you wish to continue?");
+      if (!confirmed) return;
+    }
+
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem("studentToken");
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/download`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.data.success) throw new Error(res.data.message);
+
+      setResume(prev => ({ ...prev, downloadsUsed: res.data.downloadsUsed }));
+
+      if (res.data.freeDownload) {
+        toast.success(`Exporting PDF... (${res.data.downloadsUsed}/3 Free used)`);
+      } else {
+        toast.success(`Exporting PDF... (2 Tokens deducted)`);
+      }
+
+      // Directly trigger print - contentRef works with v3
+      triggerPrint();
+
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Export failed';
+      if (err.response?.status === 403 && errorMsg.toLowerCase().includes('tokens')) {
+        toast.error(`${errorMsg} Please purchase more tokens.`, { duration: 5000 });
+      } else {
+        toast.error(errorMsg);
+      }
+      setDownloading(false);
+    }
+  };
 
   if (loading || !resume) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600 w-12 h-12" /></div>;
 
@@ -154,7 +149,7 @@ const ResumeBuilder = () => {
         
         <div className="flex items-center gap-3">
             <button 
-              onClick={handlePrint}
+              onClick={handleExport}
               disabled={downloading}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5"
             >
@@ -206,12 +201,20 @@ const ResumeBuilder = () => {
 
       <Footer />
 
-      {/* Hidden container strictly for foolproof PDF generation (avoids all CSS scale/transition bugs) */}
-      <div className="w-0 h-0 overflow-hidden relative">
-        <div className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" aria-hidden="true">
-          <div ref={downloadRef} className="w-[210mm] min-h-[297mm] bg-white">
-            <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
-          </div>
+      {/* Hidden print container - positioned off-screen so react-to-print can access the DOM */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px',
+          width: '210mm',
+          pointerEvents: 'none',
+          zIndex: -9999
+        }}
+      >
+        <div ref={downloadRef} style={{ width: '210mm', minHeight: '297mm', background: 'white' }}>
+          <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
         </div>
       </div>
     </div>

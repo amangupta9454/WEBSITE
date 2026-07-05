@@ -64,9 +64,8 @@ const resumeSchema = new mongoose.Schema(
         }
       ],
       skills: {
-        languages: [{ type: String }],
-        frameworks: [{ type: String }],
-        tools: [{ type: String }]
+        type: mongoose.Schema.Types.Mixed,
+        default: []
       },
       projects: [
         {

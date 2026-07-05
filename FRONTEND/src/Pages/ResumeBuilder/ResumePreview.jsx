@@ -22,15 +22,53 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
     const PAGE_HEIGHT = 1123; // A4 physical height
     const GAP = 0; // Visual gap between pages is handled by background page CSS border
     const TOP_PADDING = 25; // Padding from top on Page 2 and onwards
-    const BOTTOM_PADDING = 50; // Reserved space at bottom of each page for watermark
+    const BOTTOM_PADDING = 20; // Reduced padding so larger fonts still fit at relaxed levels
+    const targetLimit = PAGE_HEIGHT - BOTTOM_PADDING;
     
-    let currentPage = 1;
-    let currentLimit = PAGE_HEIGHT - BOTTOM_PADDING;
+    // Extensively defined scales ranging from extremely tight to spacious
+    const layoutScales = [
+      { '--section-mb': '2px', '--item-mb': '0px', '--title-size': '19px', '--h2-size': '11.5px', '--h3-size': '11px', '--text-size': '9.5px', '--text-sm-size': '8.5px', '--line-height': '1.15', '--list-pl': '12px' }, // Level 0: Extreme Compact
+      { '--section-mb': '4px', '--item-mb': '2px', '--title-size': '21px', '--h2-size': '12.5px', '--h3-size': '12px', '--text-size': '10.5px', '--text-sm-size': '9.5px', '--line-height': '1.2', '--list-pl': '14px' }, // Level 1: Super Compact
+      { '--section-mb': '6px', '--item-mb': '4px', '--title-size': '23px', '--h2-size': '13px', '--h3-size': '12.5px', '--text-size': '11px', '--text-sm-size': '10px', '--line-height': '1.25', '--list-pl': '16px' }, // Level 2: Compact
+      { '--section-mb': '10px', '--item-mb': '6px', '--title-size': '27px', '--h2-size': '14.5px', '--h3-size': '13.5px', '--text-size': '12px', '--text-sm-size': '11px', '--line-height': '1.35', '--list-pl': '16px' }, // Level 3: Normal
+      { '--section-mb': '14px', '--item-mb': '8px', '--title-size': '33px', '--h2-size': '16px', '--h3-size': '15px', '--text-size': '13px', '--text-sm-size': '12px', '--line-height': '1.45', '--list-pl': '16px' }, // Level 4: Relaxed
+      { '--section-mb': '20px', '--item-mb': '12px', '--title-size': '37px', '--h2-size': '18px', '--h3-size': '16.5px', '--text-size': '14.5px', '--text-sm-size': '13px', '--line-height': '1.55', '--list-pl': '16px' }, // Level 5: Spacious
+    ];
+
+    // Temporarily remove forced height to measure true content size
+    const originalHeight = container.style.height;
+    container.style.height = 'auto';
+    
+    let bestLevel = 0;
     
     // Allow DOM to settle before calculating heights
     setTimeout(() => {
+      // Find the best fit scale
+      for (let i = layoutScales.length - 1; i >= 0; i--) {
+        Object.entries(layoutScales[i]).forEach(([key, value]) => {
+          container.style.setProperty(key, value);
+        });
+        
+        const totalH = container.offsetHeight;
+        if (totalH <= targetLimit) {
+          bestLevel = i;
+          break;
+        }
+      }
+
+      // If it doesn't fit even on level 0, DO NOT jump to a larger level.
+      // Leave it at level 0 to maximize content on page 1, let it paginate gracefully.
+      if (container.offsetHeight > targetLimit && bestLevel === 0) {
+        // Just keep it at Level 0 (Extreme Compact)
+        Object.entries(layoutScales[0]).forEach(([key, value]) => {
+          container.style.setProperty(key, value);
+        });
+      }
+
+      let currentPage = 1;
+      let currentLimit = targetLimit;
+      
       items.forEach(item => {
-        // Calculate true unscaled offset relative to container
         let currentItem = item;
         let itemTop = 0;
         while (currentItem && currentItem !== container) {
@@ -50,19 +88,16 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
           item.style.paddingTop = `${TOP_PADDING}px`;
           
           currentPage++;
-          currentLimit = (currentPage - 1) * PAGE_HEIGHT + PAGE_HEIGHT - BOTTOM_PADDING;
+          currentLimit = (currentPage - 1) * PAGE_HEIGHT + targetLimit;
         }
       });
       
-      // Temporarily remove forced height to measure true content size
-      const originalHeight = container.style.height;
-      container.style.height = 'auto';
-      const totalH = container.offsetHeight;
+      const finalTotalH = container.offsetHeight;
       container.style.height = originalHeight;
       
-      const pages = Math.ceil(totalH / (PAGE_HEIGHT + GAP));
+      const pages = Math.ceil(finalTotalH / (PAGE_HEIGHT + GAP));
       setTotalPages(Math.max(1, pages));
-    }, 100);
+    }, 50);
   }, [data, template, isWebPreview]);
 
   const defaultSectionOrder = ['skills', 'experience', 'projects', 'education', 'achievements', 'certifications'];
@@ -71,7 +106,7 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
   const renderBulletPoints = (text) => {
     if (!text) return null;
     return text.split('\n').filter(line => line.trim() !== '').map((line, idx) => (
-      <li key={idx} className="ml-4 list-disc pl-1 text-[12px] leading-[1.4] text-gray-800">
+      <li key={idx} className="list-disc text-gray-800" style={{ fontSize: 'var(--text-size)', lineHeight: 'var(--line-height)', marginLeft: 'var(--list-pl)', paddingLeft: '2px' }}>
         {line}
       </li>
     ));
@@ -92,43 +127,32 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       case 'experience':
         if (!experience || experience.length === 0) return null;
         return (
-          <div className="mb-3" key={key}>
-            <div className="space-y-2">
-              {experience.map((exp, index) => {
-                const content = (
-                  <>
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
+              Experience
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {experience.map((exp, index) => (
+                <div key={exp.id} className="break-inside-avoid">
+                  {index > 0 && (
+                    <div style={{ height: '5px' }} />
+                  )}
+                  <div className="flex flex-col">
                     <div className="flex justify-between items-baseline">
-                      <h3 className="text-[14px] font-bold text-gray-900">{exp.position}</h3>
-                      <span className="text-[12px] text-gray-600 font-medium">
+                      <h3 className="font-bold text-gray-900 leading-tight" style={{ fontSize: 'var(--h3-size)' }}>{exp.position}</h3>
+                      <span className="text-gray-600 font-medium whitespace-nowrap ml-4" style={{ fontSize: 'var(--text-size)' }}>
                         {exp.startDate} {exp.endDate && `- ${exp.endDate}`}
                       </span>
                     </div>
-                    <div className="mb-1">
-                      <span className="text-[12px] font-semibold text-gray-700 italic">{exp.company}</span>
+                    <div className="leading-none" style={{ marginTop: '-2px' }}>
+                      <span className="font-semibold text-gray-700 italic" style={{ fontSize: 'var(--text-size)' }}>{exp.company}</span>
                     </div>
-                    <ul className="mt-0.5">
+                    <ul className="mt-1">
                       {renderBulletPoints(exp.description)}
                     </ul>
-                  </>
-                );
-
-                if (index === 0) {
-                  return (
-                    <div key={exp.id} className="break-inside-avoid">
-                      <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
-                        Experience
-                      </h2>
-                      {content}
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div key={exp.id} className="break-inside-avoid">
-                    {content}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -136,50 +160,50 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       case 'projects':
         if (!projects || projects.length === 0) return null;
         return (
-          <div className="mb-3" key={key}>
-            <div className="space-y-1.5">
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--item-mb)' }}>
               {projects.map((proj, index) => {
                 const content = (
-                  <>
-                    <div className="flex justify-between items-baseline mb-1">
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-baseline">
                       <div className="flex items-baseline gap-2">
-                        <h3 className="text-[14px] font-bold text-gray-900">{proj.title}</h3>
+                        <h3 className="font-bold text-gray-900 leading-tight" style={{ fontSize: 'var(--h3-size)' }}>{proj.title}</h3>
                         <div className="flex gap-2">
                           {(proj.liveLink || proj.link) && (
                             <div className="flex items-center gap-1">
-                              <span className="text-[11px] font-bold text-gray-700">Live:</span>
-                              <a href={proj.liveLink || proj.link} className="text-[11px] text-blue-800 hover:underline">{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
+                              <span className="font-bold text-gray-700" style={{ fontSize: 'var(--text-sm-size)' }}>Live:</span>
+                              <a href={proj.liveLink || proj.link} className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
                             </div>
                           )}
                           {proj.githubLink && (
                             <>
-                              <span className="text-gray-300 text-[11px]">|</span>
-                              <a href={proj.githubLink} className="text-[11px] text-blue-800 hover:underline">GitHub</a>
+                              <span className="text-gray-300 leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>|</span>
+                              <a href={proj.githubLink} className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>GitHub</a>
                             </>
                           )}
                         </div>
                       </div>
                       {(proj.startDate || proj.endDate) && (
-                        <span className="text-[12px] text-gray-600 font-medium">
+                        <span className="text-gray-600 font-medium whitespace-nowrap ml-4" style={{ fontSize: 'var(--text-size)' }}>
                           {proj.startDate} {proj.endDate && `- ${proj.endDate}`}
                         </span>
                       )}
                     </div>
                     {proj.technologies && (
-                      <div className="mb-1 text-[12px]">
+                      <div className="leading-tight mt-[1px]" style={{ fontSize: 'var(--text-size)' }}>
                         <span className="font-semibold text-gray-700">Technologies:</span> <span className="text-gray-600">{proj.technologies}</span>
                       </div>
                     )}
                     <ul className="mt-1">
                       {renderBulletPoints(proj.description)}
                     </ul>
-                  </>
+                  </div>
                 );
 
                 if (index === 0) {
                   return (
                     <div key={proj.id} className="break-inside-avoid">
-                      <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+                      <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
                         Projects
                       </h2>
                       {content}
@@ -200,24 +224,24 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       case 'education':
         if (!education || education.length === 0) return null;
         return (
-          <div className="mb-3 break-inside-avoid" key={key}>
-            <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
               Education
             </h2>
-            <div className="space-y-1.5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--item-mb)' }}>
               {education.map(edu => (
                 <div key={edu.id}>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h3 className="text-[14px] font-bold text-gray-900">
+                  <div className="flex justify-between items-baseline" style={{ marginBottom: 'var(--item-mb)' }}>
+                    <h3 className="font-bold text-gray-900" style={{ fontSize: 'var(--h3-size)' }}>
                       {edu.institution} {edu.location && <span className="text-gray-500 font-normal ml-1">({edu.location})</span>}
                     </h3>
-                    <span className="text-[12px] text-gray-600 font-medium">
+                    <span className="text-gray-600 font-medium" style={{ fontSize: 'var(--text-size)' }}>
                       {edu.startDate} {edu.endDate && `- ${edu.endDate}`}
                     </span>
                   </div>
                   <div className="flex justify-between items-baseline">
-                    <span className="text-[12px] text-gray-800 italic">{edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}</span>
-                    {edu.score && <span className="text-[12px] text-gray-600 font-medium">Score: {edu.score}</span>}
+                    <span className="text-gray-800 italic" style={{ fontSize: 'var(--text-size)' }}>{edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}</span>
+                    {edu.score && <span className="text-gray-600 font-medium" style={{ fontSize: 'var(--text-size)' }}>Score: {edu.score}</span>}
                   </div>
                 </div>
               ))}
@@ -230,15 +254,15 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         if (validSkills.length === 0) return null;
         
         return (
-          <div className="mb-3 break-inside-avoid" key={key}>
-            <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
               Technical Skills
             </h2>
-            <div className="text-[12px] leading-[1.6] space-y-1">
+            <div style={{ fontSize: 'var(--text-size)', lineHeight: '1.6' }}>
               {validSkills.map((skill, idx) => {
                 if (!skill.items || skill.items.trim() === '') return null;
                 return (
-                  <div key={idx}>
+                  <div key={idx} style={{ marginBottom: 'var(--item-mb)' }}>
                     {skill.category && <span className="font-bold text-gray-800">{skill.category}: </span>}
                     <span className="text-gray-700">{skill.items}</span>
                   </div>
@@ -251,18 +275,18 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       case 'achievements':
         if (!achievements || achievements.length === 0) return null;
         return (
-          <div className="mb-3 break-inside-avoid" key={key}>
-            <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
               Achievements
             </h2>
-            <div className="space-y-1.5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--item-mb)' }}>
               {achievements.map(ach => (
                 <div key={ach.id}>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <h3 className="text-[14px] font-bold text-gray-900">{ach.title}</h3>
-                    <span className="text-[12px] text-gray-600 font-medium">{ach.date}</span>
+                  <div className="flex justify-between items-baseline" style={{ marginBottom: 'var(--item-mb)' }}>
+                    <h3 className="font-bold text-gray-900" style={{ fontSize: 'var(--h3-size)' }}>{ach.title}</h3>
+                    <span className="text-gray-600 font-medium" style={{ fontSize: 'var(--text-size)' }}>{ach.date}</span>
                   </div>
-                  <div className="text-[12px] text-gray-800 leading-[1.5] mt-1">
+                  <div className="text-gray-800" style={{ fontSize: 'var(--text-size)', lineHeight: '1.5' }}>
                     {renderTextWithNewlines(ach.description, "")}
                   </div>
                 </div>
@@ -274,24 +298,24 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       case 'certifications':
         if (!certifications || certifications.length === 0) return null;
         return (
-          <div className="mb-3 break-inside-avoid" key={key}>
-            <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+          <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+            <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
               Certifications
             </h2>
-            <div className="space-y-1.5">
-              {certifications.map(cert => (
-                <div key={cert.id} className="flex justify-between items-baseline mb-1">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--item-mb)' }}>
+              {certifications.map((cert) => (
+                <div key={cert.id} className="flex justify-between items-baseline">
                   <div>
-                    <h3 className="text-[14px] font-bold text-gray-900 inline">{cert.name}</h3>
-                    {cert.issuer && <span className="text-[12px] text-gray-700 italic ml-2">by {cert.issuer}</span>}
+                    <h3 className="font-bold text-gray-900 inline" style={{ fontSize: 'var(--h3-size)' }}>{cert.name}</h3>
+                    {cert.issuer && <span className="text-gray-700 italic ml-2" style={{ fontSize: 'var(--text-size)' }}>by {cert.issuer}</span>}
                     {cert.link && (
                       <>
-                        <span className="text-gray-300 text-[11px] mx-2">|</span>
-                        <a href={cert.link} className="text-[11px] text-blue-800 hover:underline">View Credential</a>
+                        <span className="text-gray-300 mx-2" style={{ fontSize: 'var(--text-sm-size)' }}>|</span>
+                        <a href={cert.link} className="text-blue-800 hover:underline" style={{ fontSize: 'var(--text-sm-size)' }}>View Credential</a>
                       </>
                     )}
                   </div>
-                  <span className="text-[12px] text-gray-600 font-medium whitespace-nowrap ml-4">{cert.date}</span>
+                  <span className="text-gray-600 font-medium whitespace-nowrap ml-4" style={{ fontSize: 'var(--text-size)' }}>{cert.date}</span>
                 </div>
               ))}
             </div>
@@ -303,20 +327,34 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
     }
   };
 
+  const initialVars = {
+    '--section-mb': '10px',
+    '--item-mb': '6px',
+    '--title-size': '26px',
+    '--h2-size': '13.5px',
+    '--h3-size': '12.5px',
+    '--text-size': '11px',
+    '--text-sm-size': '10px',
+    '--line-height': '1.35',
+    '--list-pl': '16px'
+  };
+
   const previewStyle = isWebPreview ? {
     fontFamily: "'Inter', sans-serif",
     height: `${totalPages * 1123}px`,
-    position: 'relative'
+    position: 'relative',
+    ...initialVars
   } : {
     fontFamily: "'Inter', sans-serif",
     backgroundColor: 'white',
-    position: 'relative'
+    position: 'relative',
+    ...initialVars
   };
 
   return (
     <div 
       ref={containerRef}
-      className={`w-full h-full text-black pt-[5mm] pb-[8mm] px-[8mm] box-border`} 
+      className={`w-full h-full text-black pt-[4mm] pb-[6mm] px-[8mm] box-border`} 
       style={previewStyle}
     >
       <style>{`
@@ -348,10 +386,10 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       ))}
       
       <div className="text-center mb-2">
-        <h1 className="text-[32px] font-bold uppercase tracking-wide text-gray-900 mb-0">
+        <h1 className="font-bold uppercase tracking-wide text-gray-900 mb-0" style={{ fontSize: 'var(--title-size)', lineHeight: '1.2' }}>
           {personalInfo?.firstName} {personalInfo?.lastName}
         </h1>
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-gray-700 mt-1">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-gray-700 mt-1" style={{ fontSize: 'var(--text-size)' }}>
           {personalInfo?.email && <span>{personalInfo.email}</span>}
           {personalInfo?.phone && (
             <>
@@ -366,7 +404,7 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
             </>
           )}
         </div>
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-gray-700 mt-0.5">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-gray-700 mt-0.5" style={{ fontSize: 'var(--text-size)' }}>
           {personalInfo?.linkedin && (
             <a href={personalInfo.linkedin} className="text-blue-800 hover:underline">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</a>
           )}
@@ -387,11 +425,11 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
 
       {/* Summary (Always Second if exists) */}
       {personalInfo?.summary && (
-        <div className="mb-3 break-inside-avoid">
-          <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+        <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }}>
+          <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
             Professional Summary
           </h2>
-          <div className="text-[12px] leading-[1.6] text-gray-800">
+          <div className="text-gray-800" style={{ fontSize: 'var(--text-size)', lineHeight: '1.6' }}>
             {renderTextWithNewlines(personalInfo.summary, "")}
           </div>
         </div>
@@ -400,10 +438,22 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       {/* Dynamic Sections Based on Order */}
       {sectionOrder.map(key => renderSectionContent(key))}
 
-      {/* Watermark */}
-      <div className="absolute bottom-6 left-0 w-full text-center text-[11px] text-slate-400 opacity-40 font-medium pointer-events-none select-none print:fixed print:bottom-6">
-        Powered by <span className="font-bold tracking-wide">Code-A-Nova</span>
-      </div>
+      {/* Watermark (Always at the exact bottom of each page) */}
+      {isWebPreview ? (
+        Array.from({ length: totalPages }).map((_, i) => (
+          <div 
+            key={`watermark-${i}`}
+            className="absolute w-full text-center text-slate-400 opacity-50 font-medium select-none pointer-events-none" 
+            style={{ fontSize: 'var(--text-sm-size)', top: `${(i * 1123) + 1123 - 20}px`, left: 0 }}
+          >
+            Powered by <a href="https://code-a-nova.online/" target="_blank" rel="noopener noreferrer" className="font-bold tracking-wide pointer-events-auto hover:underline text-slate-400">Code-A-Nova</a>
+          </div>
+        ))
+      ) : (
+        <div className="absolute bottom-4 left-0 w-full text-center text-slate-400 opacity-50 font-medium select-none pointer-events-none print:fixed print:bottom-4" style={{ fontSize: 'var(--text-sm-size)' }}>
+          Powered by <a href="https://code-a-nova.online/" target="_blank" rel="noopener noreferrer" className="font-bold tracking-wide pointer-events-auto text-slate-400">Code-A-Nova</a>
+        </div>
+      )}
     </div>
   );
 };
