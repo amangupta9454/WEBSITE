@@ -8,6 +8,7 @@ import ResumePreview from './ResumePreview';
 import { useReactToPrint } from 'react-to-print';
 import { useDebounce } from 'react-use';
 import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
 
 const ResumeBuilder = () => {
   const { id } = useParams();
@@ -125,11 +126,11 @@ const ResumeBuilder = () => {
   if (loading || !resume) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600 w-12 h-12" /></div>;
 
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col bg-slate-50 font-sans pt-16">
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans pt-16">
       <Navbar />
       
       {/* Builder Container */}
-      <div className="flex-1 flex flex-col max-w-[1920px] w-full mx-auto shadow-2xl bg-white overflow-hidden rounded-t-2xl border-t border-l border-r border-slate-200 mt-6">
+      <div className="flex flex-col h-[85vh] min-h-[600px] max-w-[1920px] w-[95%] mx-auto shadow-2xl bg-white overflow-hidden rounded-2xl border border-slate-200 mt-6 mb-12">
         
         {/* Top Toolbar */}
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
@@ -203,10 +204,14 @@ const ResumeBuilder = () => {
         </div>
       </div>
 
+      <Footer />
+
       {/* Hidden container strictly for foolproof PDF generation (avoids all CSS scale/transition bugs) */}
-      <div className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" aria-hidden="true">
-        <div ref={downloadRef} className="w-[210mm] min-h-[297mm] bg-white">
-          <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
+      <div className="w-0 h-0 overflow-hidden relative">
+        <div className="absolute top-0 left-0 opacity-0 pointer-events-none -z-50" aria-hidden="true">
+          <div ref={downloadRef} className="w-[210mm] min-h-[297mm] bg-white">
+            <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
+          </div>
         </div>
       </div>
     </div>
