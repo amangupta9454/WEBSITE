@@ -4,6 +4,7 @@ import {
   Route,
   Outlet,
 } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
 import Home from "./Pages/Home";
 import Contact from "./Pages/Contact";
 import About from "./Pages/About";
@@ -17,6 +18,7 @@ import Term from "./Pages/Term";
 import Refund from "./Pages/Refund";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import MyResumes from "./Pages/MyResumes";
+import MyProfile from "./Pages/MyProfile";
 import ResumeBuilder from "./Pages/ResumeBuilder/ResumeBuilder";
 import Registration from "./Components/Registration";
 import SetupPassword from "./Components/SetupPassword";
@@ -42,6 +44,7 @@ const UnifiedLayout = () => (
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" containerStyle={{ top: 80 }} />
       <FeatureBanner />
       <Routes>
         {/* New Marketing Pages (Navbar & Footer handled by MainLayout internally) */}
@@ -89,6 +92,7 @@ function App() {
           {/* Interview Portal Routes */}
           <Route path="/student-login" element={<InterviewLogin />} />
           <Route path="/dashboard" element={<UnifiedDashboard />} />
+          <Route path="/profile" element={<MyProfile />} />
           <Route path="/interview-setup" element={<InterviewSetup />} />
           <Route path="/setup-password" element={<SetupPassword />} />
           <Route path="/project-submission" element={<Project />} />

@@ -3,7 +3,7 @@ import { Settings, Tag } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import BuyTokensModal from "./BuyTokensModal";
-import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
+import { useNavigate } from "react-router-dom";
 
 function loadScript(src) {
   return new Promise((resolve) => {
@@ -20,7 +20,7 @@ export default function DashboardTopSection() {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [userData, setUserData] = useState(null);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     const token = localStorage.getItem('interviewToken');
@@ -169,7 +169,7 @@ export default function DashboardTopSection() {
                 </p>
               )}
               <button
-                onClick={() => setIsProfileModalOpen(true)}
+                onClick={() => navigate('/profile')}
                 className="mt-0.5 sm:mt-2 text-[9px] sm:text-[10px] font-bold text-indigo-500 hover:text-indigo-700 uppercase tracking-wider flex items-center gap-1 transition-colors sm:bg-indigo-50 sm:hover:bg-indigo-100 sm:px-2 sm:py-1 rounded-md w-fit"
               >
                 <Settings size={10} className="sm:w-3 sm:h-3" /> 
@@ -210,15 +210,6 @@ export default function DashboardTopSection() {
         isOpen={isBuyModalOpen} 
         onClose={() => setIsBuyModalOpen(false)} 
         onSelectPackage={handleBuyPackage} 
-      />
-      
-      <ProfileSettingsModal 
-        isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
-        user={userData}
-        onSaveSuccess={() => {
-          fetchData();
-        }}
       />
     </div>
   );

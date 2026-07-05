@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react';
-import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const ResumeForm = ({ resume, setResume }) => {
   const [openSection, setOpenSection] = React.useState('personalInfo');
@@ -19,10 +21,91 @@ const ResumeForm = ({ resume, setResume }) => {
     if (!newData.achievements) { newData.achievements = []; needsUpdate = true; }
     if (!newData.certifications) { newData.certifications = []; needsUpdate = true; }
     
+    // Auto-migrate legacy skills object to array
+    if (newData.skills && !Array.isArray(newData.skills)) {
+      const oldSkills = newData.skills;
+      const newSkillsArray = [];
+      if (oldSkills.languages && oldSkills.languages.length > 0) {
+        newSkillsArray.push({ id: Date.now().toString() + '1', category: 'Languages', items: oldSkills.languages.join(', ') });
+      }
+      if (oldSkills.frameworks && oldSkills.frameworks.length > 0) {
+        newSkillsArray.push({ id: Date.now().toString() + '2', category: 'Frameworks/Libraries', items: oldSkills.frameworks.join(', ') });
+      }
+      if (oldSkills.tools && oldSkills.tools.length > 0) {
+        newSkillsArray.push({ id: Date.now().toString() + '3', category: 'Developer Tools', items: oldSkills.tools.join(', ') });
+      }
+      if (newSkillsArray.length === 0) {
+        newSkillsArray.push({ id: Date.now().toString() + '4', category: 'Languages', items: '' });
+      }
+      newData.skills = newSkillsArray;
+      needsUpdate = true;
+    } else if (!newData.skills) {
+      newData.skills = [{ id: Date.now().toString(), category: 'Languages', items: '' }];
+      needsUpdate = true;
+    }
+
     if (needsUpdate) {
       setResume(prev => ({ ...prev, data: newData }));
     }
   }, []);
+
+  const [masterData, setMasterData] = useState(null);
+
+  useEffect(() => {
+    const fetchMaster = async () => {
+      try {
+        const token = localStorage.getItem('studentToken');
+        if (!token) return;
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.user?.resumeData) {
+          setMasterData(res.data.user.resumeData);
+        }
+      } catch (err) {
+        console.error('Failed to load master profile', err);
+      }
+    };
+    fetchMaster();
+  }, []);
+
+  const handleImport = (section) => {
+    if (!masterData) {
+      toast.error('Master Profile data not available');
+      return;
+    }
+    const sectionData = masterData[section];
+    
+    if (section === 'skills') {
+      if (!sectionData) {
+        toast.error('No skills found in Master Profile');
+        return;
+      }
+      setResume(prev => ({
+        ...prev,
+        data: { ...prev.data, [section]: sectionData }
+      }));
+      toast.success(`Imported skills from Master Profile`);
+      return;
+    }
+
+    if (!sectionData || (Array.isArray(sectionData) && sectionData.length === 0)) {
+      toast.error('No data found in Master Profile for this section');
+      return;
+    }
+
+    const imported = sectionData.map(item => ({
+      ...item, 
+      id: Date.now().toString() + Math.random().toString(36).substring(7)
+    }));
+    
+    setResume(prev => ({
+      ...prev,
+      data: { ...prev.data, [section]: imported }
+    }));
+    
+    toast.success(`Imported ${imported.length} items from Master Profile`);
+  };
 
   const updateData = (field, value) => {
     setResume({
@@ -78,12 +161,7 @@ const ResumeForm = ({ resume, setResume }) => {
     updateData('sectionOrder', newOrder);
   };
 
-  const updateSkills = (category, val) => {
-    updateData('skills', {
-      ...(data.skills || {}),
-      [category]: val.split(',').map(s => s.trim())
-    });
-  };
+  // updateSkills removed, using updateNested instead
 
   const renderSectionHeader = (title, key, index) => {
     const isOpen = openSection === key;
@@ -97,20 +175,22 @@ const ResumeForm = ({ resume, setResume }) => {
         <h2 className="text-lg font-black text-slate-800 capitalize -ml-1">{title}</h2>
       </div>
       <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
-        {key !== 'skills' && (
-          <button onClick={() => {
-            let defaultItem = {};
-            if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
-            else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
-            else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
-            else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
-            else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
-            addItem(key, defaultItem);
-            setOpenSection(key);
-          }} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
-            <Plus size={16}/> Add
-          </button>
-        )}
+        <button onClick={() => handleImport(key)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold border border-indigo-100">
+          <Download size={14}/> Import
+        </button>
+        <button onClick={() => {
+          let defaultItem = {};
+          if (key === 'skills') defaultItem = { category: '', items: '' };
+          else if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
+          else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
+          else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
+          else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
+          else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
+          addItem(key, defaultItem);
+          setOpenSection(key);
+        }} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
+          <Plus size={16}/> Add
+        </button>
         <button className="text-slate-500" onClick={() => setOpenSection(isOpen ? null : key)}>
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
@@ -254,10 +334,24 @@ const ResumeForm = ({ resume, setResume }) => {
           <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
             {renderSectionHeader('Skills', key, index)}
             {openSection === key && (
-            <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
-              <input className="input-field w-full" placeholder="Languages (e.g. Java, Python)" value={(data.skills?.languages || []).join(', ')} onChange={(e) => updateSkills('languages', e.target.value)} />
-              <input className="input-field w-full" placeholder="Frameworks/Libraries" value={(data.skills?.frameworks || []).join(', ')} onChange={(e) => updateSkills('frameworks', e.target.value)} />
-              <input className="input-field w-full" placeholder="Developer Tools" value={(data.skills?.tools || []).join(', ')} onChange={(e) => updateSkills('tools', e.target.value)} />
+            <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
+              {(data.skills || []).map((skill, idx) => (
+                <div key={skill.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => moveItem('skills', idx, 'up')} className="p-1 hover:bg-white rounded"><ArrowUp size={14} /></button>
+                    <button onClick={() => moveItem('skills', idx, 'down')} className="p-1 hover:bg-white rounded"><ArrowDown size={14} /></button>
+                    <button onClick={() => removeItem('skills', idx)} className="p-1 text-red-500 hover:bg-red-50 rounded"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pr-20">
+                    <div className="md:col-span-1">
+                      <input className="input-field" placeholder="Heading (e.g. Backend)" value={skill.category || ''} onChange={(e) => updateNested('skills', idx, 'category', e.target.value)} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <input className="input-field w-full" placeholder="Skills (e.g. Node.js, Express)" value={skill.items || ''} onChange={(e) => updateNested('skills', idx, 'items', e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             )}
           </section>

@@ -52,7 +52,7 @@ const MyResumes = () => {
   const handleCreate = async () => {
     const hasFree = resumes.length === 0;
     if (!hasFree && credits < 10) {
-      toast.error("Insufficient tokens. Creating a resume costs 10 tokens.");
+      toast.error("Oops! Not enough tokens. Creating a new resume costs 10 tokens. Please purchase more.");
       return;
     }
 
@@ -92,7 +92,7 @@ const MyResumes = () => {
 
   const handleDuplicate = async (id) => {
     if (credits < 10) {
-      toast.error("Insufficient tokens to duplicate. Costs 10 tokens.");
+      toast.error("Oops! Not enough tokens. Duplicating a resume costs 10 tokens. Please purchase more.");
       return;
     }
     if (!window.confirm("Duplicating a resume costs 10 Tokens. Continue?")) return;
@@ -218,7 +218,7 @@ const MyResumes = () => {
                 <Sparkles className="w-4 h-4" /> Code-A-Nova Premium
               </div>
               <h1 className="text-4xl md:text-5xl font-black mb-4 leading-tight text-slate-900">
-                AI ATS-Friendly <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Resume Builder</span>
+                ATS-Friendly <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Resume Builder</span>
               </h1>
               <p className="text-slate-600 text-lg mb-8 leading-relaxed">
                 Build perfectly formatted resumes designed specifically for top tech companies. Our engine ensures 100% ATS compatibility so your application never gets auto-rejected.
@@ -403,7 +403,7 @@ const MyResumes = () => {
           </div>
         </div>
       </div>
-      {isBuyModalOpen && <BuyTokensModal onClose={() => setIsBuyModalOpen(false)} onSelectPackage={handleBuyPackage} />}
+      {isBuyModalOpen && <BuyTokensModal isOpen={isBuyModalOpen} onClose={() => setIsBuyModalOpen(false)} onSelectPackage={handleBuyPackage} />}
     </div>
   );
 };

@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema(
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date },
     dismissedNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
+    
+    // Master Profile / Resume Data
+    resumeData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
     interviewCredits: { type: Number, default: 30 },
     interviewIsUnlimited: { type: Boolean, default: false },
     interviewAccessOverride: { type: Boolean, default: false },

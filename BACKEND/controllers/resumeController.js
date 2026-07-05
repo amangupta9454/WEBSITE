@@ -65,10 +65,24 @@ exports.createResume = async (req, res) => {
       }
     }
 
+    // Default data from Master Profile (Only personal info, clean start for everything else)
+    let masterData = user.resumeData || {};
+    let initialData = {
+      personalInfo: masterData.personalInfo || {}
+    };
+    initialData.personalInfo.firstName = initialData.personalInfo.firstName || user.name?.split(' ')[0] || "";
+    initialData.personalInfo.lastName = initialData.personalInfo.lastName || user.name?.split(' ').slice(1).join(' ') || "";
+    initialData.personalInfo.email = initialData.personalInfo.email || user.email || "";
+    initialData.personalInfo.phone = initialData.personalInfo.phone || user.mobile || "";
+    initialData.personalInfo.github = initialData.personalInfo.github || user.github || "";
+    initialData.personalInfo.linkedin = initialData.personalInfo.linkedin || user.linkedin || "";
+    initialData.personalInfo.portfolio = initialData.personalInfo.portfolio || user.portfolio || "";
+
     const newResume = new Resume({
       userId: req.user.id,
       name: req.body.name || 'Untitled Resume',
-      isFree: isFree
+      isFree: isFree,
+      data: initialData
     });
 
     await newResume.save();
@@ -92,6 +106,22 @@ exports.updateResume = async (req, res) => {
     );
 
     if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
+
+    // --- 1st RESUME SMART SYNC ---
+    // Keep Master Profile perfectly in sync with the user's VERY FIRST resume, forever.
+    if (data) {
+      const firstResume = await Resume.findOne({ userId: req.user.id }).sort({ createdAt: 1 });
+      if (firstResume && firstResume._id.toString() === req.params.id) {
+        const user = await User.findById(req.user.id);
+        if (user) {
+          user.resumeData = data;
+          user.markModified('resumeData');
+          await user.save();
+        }
+      }
+    }
+    // -----------------------------
+
     res.json({ success: true, resume });
   } catch (err) {
     console.error(err);

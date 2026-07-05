@@ -203,6 +203,7 @@ const getDashboardInfo = async (req, res) => {
         github: user.github,
         linkedin: user.linkedin,
         portfolio: user.portfolio,
+        resumeData: user.resumeData || {}
       },
       internships: enrichedInternships,
       notifications: activeNotifications,
@@ -216,7 +217,7 @@ const getDashboardInfo = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, github, linkedin, portfolio, profileImage, mobile } = req.body;
+    const { name, github, linkedin, portfolio, profileImage, mobile, resumeData } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -229,6 +230,7 @@ const updateProfile = async (req, res) => {
     if (portfolio !== undefined) user.portfolio = portfolio;
     if (profileImage !== undefined) user.profileImage = profileImage; // Assuming frontend handles base64 or cloudinary url upload
     if (mobile !== undefined) user.mobile = mobile;
+    if (resumeData !== undefined) user.resumeData = resumeData;
 
     await user.save();
 
@@ -241,6 +243,7 @@ const updateProfile = async (req, res) => {
         portfolio: user.portfolio,
         profileImage: user.profileImage,
         mobile: user.mobile,
+        resumeData: user.resumeData || {}
       },
     });
   } catch (error) {

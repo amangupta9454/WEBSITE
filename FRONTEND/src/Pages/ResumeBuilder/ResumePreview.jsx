@@ -226,31 +226,24 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         );
 
       case 'skills':
-        if (!skills || (!skills.languages?.length && !skills.frameworks?.length && !skills.tools?.length)) return null;
+        const validSkills = Array.isArray(skills) ? skills.filter(s => s.category?.trim() || s.items?.trim()) : [];
+        if (validSkills.length === 0) return null;
+        
         return (
           <div className="mb-3 break-inside-avoid" key={key}>
             <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
               Technical Skills
             </h2>
             <div className="text-[12px] leading-[1.6] space-y-1">
-              {skills.languages?.length > 0 && (
-                <div>
-                  <span className="font-bold text-gray-800">Languages: </span>
-                  <span className="text-gray-700">{skills.languages.join(', ')}</span>
-                </div>
-              )}
-              {skills.frameworks?.length > 0 && (
-                <div>
-                  <span className="font-bold text-gray-800">Frameworks/Libraries: </span>
-                  <span className="text-gray-700">{skills.frameworks.join(', ')}</span>
-                </div>
-              )}
-              {skills.tools?.length > 0 && (
-                <div>
-                  <span className="font-bold text-gray-800">Developer Tools: </span>
-                  <span className="text-gray-700">{skills.tools.join(', ')}</span>
-                </div>
-              )}
+              {validSkills.map((skill, idx) => {
+                if (!skill.items || skill.items.trim() === '') return null;
+                return (
+                  <div key={idx}>
+                    {skill.category && <span className="font-bold text-gray-800">{skill.category}: </span>}
+                    <span className="text-gray-700">{skill.items}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
