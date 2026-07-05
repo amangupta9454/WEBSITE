@@ -125,7 +125,7 @@ const ResumeBuilder = () => {
   if (loading || !resume) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600 w-12 h-12" /></div>;
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-slate-50 font-sans pt-16">
+    <div className="relative h-screen overflow-hidden flex flex-col bg-slate-50 font-sans pt-16">
       <Navbar />
       
       {/* Builder Container */}
