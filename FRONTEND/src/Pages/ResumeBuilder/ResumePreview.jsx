@@ -93,26 +93,42 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         if (!experience || experience.length === 0) return null;
         return (
           <div className="mb-3" key={key}>
-            <h2 className="break-inside-avoid text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
-              Experience
-            </h2>
             <div className="space-y-2">
-              {experience.map(exp => (
-                <div key={exp.id} className="break-inside-avoid">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="text-[14px] font-bold text-gray-900">{exp.position}</h3>
-                    <span className="text-[12px] text-gray-600 font-medium">
-                      {exp.startDate} {exp.endDate && `- ${exp.endDate}`}
-                    </span>
+              {experience.map((exp, index) => {
+                const content = (
+                  <>
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="text-[14px] font-bold text-gray-900">{exp.position}</h3>
+                      <span className="text-[12px] text-gray-600 font-medium">
+                        {exp.startDate} {exp.endDate && `- ${exp.endDate}`}
+                      </span>
+                    </div>
+                    <div className="mb-1">
+                      <span className="text-[12px] font-semibold text-gray-700 italic">{exp.company}</span>
+                    </div>
+                    <ul className="mt-0.5">
+                      {renderBulletPoints(exp.description)}
+                    </ul>
+                  </>
+                );
+
+                if (index === 0) {
+                  return (
+                    <div key={exp.id} className="break-inside-avoid">
+                      <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+                        Experience
+                      </h2>
+                      {content}
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div key={exp.id} className="break-inside-avoid">
+                    {content}
                   </div>
-                  <div className="mb-1">
-                    <span className="text-[12px] font-semibold text-gray-700 italic">{exp.company}</span>
-                  </div>
-                  <ul className="mt-0.5">
-                    {renderBulletPoints(exp.description)}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -121,46 +137,62 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         if (!projects || projects.length === 0) return null;
         return (
           <div className="mb-3" key={key}>
-            <h2 className="break-inside-avoid text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
-              Projects
-            </h2>
             <div className="space-y-1.5">
-              {projects.map(proj => (
-                <div key={proj.id} className="break-inside-avoid">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="text-[14px] font-bold text-gray-900">{proj.title}</h3>
-                      <div className="flex gap-2">
-                        {(proj.liveLink || proj.link) && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-[11px] font-bold text-gray-700">Live:</span>
-                            <a href={proj.liveLink || proj.link} className="text-[11px] text-blue-800 hover:underline">{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
-                          </div>
-                        )}
-                        {proj.githubLink && (
-                          <>
-                            <span className="text-gray-300 text-[11px]">|</span>
-                            <a href={proj.githubLink} className="text-[11px] text-blue-800 hover:underline">GitHub</a>
-                          </>
-                        )}
+              {projects.map((proj, index) => {
+                const content = (
+                  <>
+                    <div className="flex justify-between items-baseline mb-1">
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-[14px] font-bold text-gray-900">{proj.title}</h3>
+                        <div className="flex gap-2">
+                          {(proj.liveLink || proj.link) && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[11px] font-bold text-gray-700">Live:</span>
+                              <a href={proj.liveLink || proj.link} className="text-[11px] text-blue-800 hover:underline">{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
+                            </div>
+                          )}
+                          {proj.githubLink && (
+                            <>
+                              <span className="text-gray-300 text-[11px]">|</span>
+                              <a href={proj.githubLink} className="text-[11px] text-blue-800 hover:underline">GitHub</a>
+                            </>
+                          )}
+                        </div>
                       </div>
+                      {(proj.startDate || proj.endDate) && (
+                        <span className="text-[12px] text-gray-600 font-medium">
+                          {proj.startDate} {proj.endDate && `- ${proj.endDate}`}
+                        </span>
+                      )}
                     </div>
-                    {(proj.startDate || proj.endDate) && (
-                      <span className="text-[12px] text-gray-600 font-medium">
-                        {proj.startDate} {proj.endDate && `- ${proj.endDate}`}
-                      </span>
+                    {proj.technologies && (
+                      <div className="mb-1 text-[12px]">
+                        <span className="font-semibold text-gray-700">Technologies:</span> <span className="text-gray-600">{proj.technologies}</span>
+                      </div>
                     )}
-                  </div>
-                  {proj.technologies && (
-                    <div className="mb-1 text-[12px]">
-                      <span className="font-semibold text-gray-700">Technologies:</span> <span className="text-gray-600">{proj.technologies}</span>
+                    <ul className="mt-1">
+                      {renderBulletPoints(proj.description)}
+                    </ul>
+                  </>
+                );
+
+                if (index === 0) {
+                  return (
+                    <div key={proj.id} className="break-inside-avoid">
+                      <h2 className="text-[15px] font-bold uppercase border-b border-gray-400 pb-0.5 mb-1.5 text-gray-900 tracking-wider">
+                        Projects
+                      </h2>
+                      {content}
                     </div>
-                  )}
-                  <ul className="mt-1">
-                    {renderBulletPoints(proj.description)}
-                  </ul>
-                </div>
-              ))}
+                  );
+                }
+                
+                return (
+                  <div key={proj.id} className="break-inside-avoid">
+                    {content}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
