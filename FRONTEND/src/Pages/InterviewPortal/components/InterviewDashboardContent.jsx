@@ -440,7 +440,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
         </div>
 
         {interviewEnabled ? (
-          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onStartInterview}>
+          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={() => navigate('/my-interviews')}>
             <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
               <Video className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>

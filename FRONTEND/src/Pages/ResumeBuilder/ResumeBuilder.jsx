@@ -18,7 +18,7 @@ const ResumeBuilder = () => {
   const [downloading, setDownloading] = useState(false);
   
   const [resume, setResume] = useState(null);
-  const [scale, setScale] = useState(0.8);
+  const [scale, setScale] = useState(window.innerWidth < 768 ? 0.4 : 0.8);
   const previewRef = useRef(null);
   const downloadRef = useRef(null);
 
@@ -125,49 +125,49 @@ const ResumeBuilder = () => {
       <Navbar />
       
       {/* Builder Container */}
-      <div className="flex flex-col h-[85vh] min-h-[600px] max-w-[1920px] w-[95%] mx-auto shadow-2xl bg-white overflow-hidden rounded-2xl border border-slate-200 mt-6 mb-12">
+      <div className="flex flex-col h-auto md:h-[85vh] min-h-[600px] max-w-[1920px] w-[95%] mx-auto shadow-2xl bg-white overflow-visible md:overflow-hidden rounded-2xl border border-slate-200 mt-6 mb-12">
         
         {/* Top Toolbar */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
-          <div className="flex items-center gap-4">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-3 sm:px-6 shrink-0 z-10">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button 
               onClick={() => navigate('/my-resumes')} 
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all"
+              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shrink-0"
               title="Back to Dashboard"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           <input 
             type="text" 
             value={resume.name}
             onChange={(e) => setResume({...resume, name: e.target.value})}
-            className="text-xl font-bold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-100 rounded px-2 py-1 w-64"
+            className="text-base sm:text-xl font-bold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-100 rounded px-1 sm:px-2 py-1 w-28 sm:w-48 md:w-64"
           />
-          {saving && <span className="text-xs text-slate-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving...</span>}
-          {!saving && <span className="text-xs text-slate-400 flex items-center gap-1">Saved</span>}
+          {saving && <span className="hidden sm:flex text-xs text-slate-400 items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving...</span>}
+          {!saving && <span className="hidden sm:flex text-xs text-slate-400 items-center gap-1">Saved</span>}
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={handleExport}
               disabled={downloading}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5"
+              className="hidden md:flex bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-bold items-center gap-1 sm:gap-2 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 shrink-0"
             >
-              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Export PDF
+              {downloading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4" />}
+              <span>Export PDF</span>
             </button>
         </div>
       </header>
 
       {/* Main Workspace */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-visible md:overflow-hidden">
         {/* Left Side: Editor */}
-        <div className="w-1/2 overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-xl z-20">
+        <div className="w-full md:w-1/2 flex-none md:flex-auto overflow-visible md:overflow-y-auto border-b md:border-b-0 md:border-r border-slate-200 bg-white p-3 sm:p-6 shadow-xl z-20">
           <ResumeForm resume={resume} setResume={setResume} />
         </div>
 
         {/* Right Side: Live Preview */}
-        <div className="w-1/2 overflow-y-auto bg-slate-500 p-8 flex flex-col items-center justify-start relative">
+        <div className="w-full md:w-1/2 flex-none md:flex-auto overflow-visible md:overflow-y-auto bg-slate-500 p-3 sm:p-8 flex flex-col items-center justify-start relative">
           
           {/* Zoom Controls */}
           <div className="sticky top-0 z-30 mb-4 flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-slate-200">
@@ -195,6 +195,19 @@ const ResumeBuilder = () => {
           >
             <ResumePreview data={resume.data} template={resume.template} isWebPreview={true} />
           </div>
+          
+          {/* Mobile Export Button */}
+          <div className="w-full md:hidden mt-8 mb-4">
+            <button 
+              onClick={handleExport}
+              disabled={downloading}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-6 py-4 rounded-xl text-lg font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/30 active:scale-95"
+            >
+              {downloading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
+              Export PDF
+            </button>
+          </div>
+
           </div>
         </div>
       </div>

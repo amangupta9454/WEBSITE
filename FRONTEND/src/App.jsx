@@ -18,6 +18,7 @@ import Term from "./Pages/Term";
 import Refund from "./Pages/Refund";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import MyResumes from "./Pages/MyResumes";
+import MyInterviews from "./Pages/MyInterviews";
 import MyProfile from "./Pages/MyProfile";
 import ResumeBuilder from "./Pages/ResumeBuilder/ResumeBuilder";
 import Registration from "./Components/Registration";
@@ -34,6 +35,7 @@ import InterviewDashboard from "./Pages/InterviewPortal/InterviewDashboard";
 import InterviewSetup from "./Pages/InterviewPortal/InterviewSetup";
 import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
 import FeatureBanner from "./Components/FeatureBanner";
+import ProtectedRoute from "./Components/ProtectedRoute";
 
 const UnifiedLayout = () => (
   <MainLayout>
@@ -96,7 +98,8 @@ function App() {
           <Route path="/interview-setup" element={<InterviewSetup />} />
           <Route path="/setup-password" element={<SetupPassword />} />
           <Route path="/project-submission" element={<Project />} />
-          <Route path="/my-resumes" element={<MyResumes />} />
+          <Route path="/my-resumes" element={<ProtectedRoute><MyResumes /></ProtectedRoute>} />
+          <Route path="/my-interviews" element={<ProtectedRoute><MyInterviews /></ProtectedRoute>} />
           <Route path="/verify" element={<Verify />} />
         </Route>
       </Routes>

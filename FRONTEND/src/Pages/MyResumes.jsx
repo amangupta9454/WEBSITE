@@ -217,14 +217,18 @@ const MyResumes = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest mb-6">
                 <Sparkles className="w-4 h-4" /> Code-A-Nova Premium
               </div>
-              <h1 className="text-4xl md:text-5xl font-black mb-4 leading-tight text-slate-900">
-                ATS-Friendly <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Resume Builder</span>
+              <h1 className="font-black mb-4 leading-none md:leading-tight text-slate-900">
+                <span className="block md:inline text-2xl sm:text-4xl md:text-5xl">ATS-Friendly</span>
+                <span className="hidden md:inline"> </span>
+                <span className="block md:inline text-4xl sm:text-5xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 -mt-1 md:mt-0">
+                  Resume Builder
+                </span>
               </h1>
               <p className="text-slate-600 text-lg mb-8 leading-relaxed">
                 Build perfectly formatted resumes designed specifically for top tech companies. Our engine ensures 100% ATS compatibility so your application never gets auto-rejected.
               </p>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 mb-8">
                 <div className="flex items-center gap-2 bg-emerald-50 rounded-xl p-3 border border-emerald-100">
                   <CheckCircle className="w-5 h-5 text-emerald-600" />
                   <span className="text-sm font-bold text-emerald-800">Bypass ATS Filters</span>
@@ -238,38 +242,45 @@ const MyResumes = () => {
                   <span className="text-sm font-bold text-blue-800">Industry Standard</span>
                 </div>
               </div>
+
+              <button 
+                onClick={handleCreate}
+                className="w-full md:w-fit bg-gradient-to-r from-brand-purple to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black py-4 px-8 rounded-xl transition-all shadow-xl shadow-brand-purple/30 flex items-center justify-center gap-2 hover:-translate-y-1 text-lg mb-6 md:mb-0"
+              >
+                <Plus className="w-6 h-6" /> Create New Resume
+              </button>
             </div>
 
             {/* Token Infographic Card */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 w-full md:w-80 shrink-0 shadow-xl shadow-slate-200/50">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-500 text-sm uppercase tracking-wider">Your Balance</h3>
-                <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-black text-lg border border-indigo-100">
-                  {credits} <span className="text-[10px] font-bold uppercase">Tokens</span>
+            <div className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 w-full md:w-80 shrink-0 shadow-xl shadow-slate-200/50">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <h3 className="font-bold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h3>
+                <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 md:px-3 md:py-1 rounded-lg font-black text-base md:text-lg border border-indigo-100">
+                  {credits} <span className="text-[9px] md:text-[10px] font-bold uppercase">Tokens</span>
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm items-center">
+              <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
+                <div className="flex justify-between text-xs md:text-sm items-center">
                   <span className="text-slate-600 font-medium">1st Resume:</span>
-                  <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded text-xs">FREE</span>
+                  <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 md:px-2 rounded text-[10px] md:text-xs">FREE</span>
                 </div>
-                <div className="flex justify-between text-sm items-center">
+                <div className="flex justify-between text-xs md:text-sm items-center">
                   <span className="text-slate-600 font-medium">Export PDF (First 3):</span>
-                  <span className="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded text-xs">FREE</span>
+                  <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 md:px-2 rounded text-[10px] md:text-xs">FREE</span>
                 </div>
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="flex justify-between text-sm">
+                <div className="w-full h-px bg-slate-100 my-2"></div>
+                <div className="flex justify-between text-xs md:text-sm">
                   <span className="text-slate-600 font-medium">New Resume:</span>
                   <span className="text-slate-800 font-bold">10 Tokens</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs md:text-sm">
                   <span className="text-slate-600 font-medium">Premium Export:</span>
                   <span className="text-slate-800 font-bold">2 Tokens</span>
                 </div>
               </div>
 
-              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all text-sm shadow-md shadow-indigo-600/20 hover:-translate-y-0.5" onClick={() => setIsBuyModalOpen(true)}>
+              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 md:py-3 rounded-xl transition-all text-xs md:text-sm shadow-md shadow-indigo-600/20 hover:-translate-y-0.5" onClick={() => setIsBuyModalOpen(true)}>
                 Purchase More Tokens
               </button>
             </div>
@@ -281,33 +292,33 @@ const MyResumes = () => {
 
         {/* Recent Resume Highlight */}
         {recentResume && (
-          <div className="mb-12">
-            <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" /> Recently Edited
+          <div className="mb-10 md:mb-12">
+            <h2 className="text-lg md:text-xl font-black text-slate-800 mb-4 md:mb-6 flex items-center gap-2">
+              <Clock className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" /> Recently Edited
             </h2>
-            <div className="bg-white rounded-3xl border border-indigo-100 p-6 md:p-8 shadow-xl shadow-indigo-50 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
+            <div className="bg-white rounded-3xl border border-indigo-100 p-5 md:p-8 shadow-xl shadow-indigo-50 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full blur-3xl -mr-20 -mt-20 z-0 transition-transform duration-700 group-hover:scale-150"></div>
 
               <div className="relative z-10 flex-1 w-full">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-black uppercase tracking-widest mb-4">
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 md:px-3 md:py-1 rounded-md bg-emerald-100 text-emerald-700 text-[10px] md:text-xs font-black uppercase tracking-widest mb-3 md:mb-4">
                   {recentResume.status}
                 </div>
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">{recentResume.name}</h3>
-                <p className="text-slate-500 mb-6 flex items-center gap-2 text-sm font-medium">
-                  <Briefcase className="w-4 h-4" /> Updated {new Date(recentResume.updatedAt).toLocaleDateString()}
+                <h3 className="text-xl md:text-3xl font-black text-slate-900 mb-1.5 md:mb-2">{recentResume.name}</h3>
+                <p className="text-slate-500 mb-4 md:mb-6 flex items-center gap-2 text-xs md:text-sm font-medium">
+                  <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" /> Updated {new Date(recentResume.updatedAt).toLocaleDateString()}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4">
                   <button
                     onClick={() => navigate(`/resume-builder/${recentResume._id}`)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/30 hover:-translate-y-0.5"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 md:px-8 md:py-3.5 rounded-xl text-sm md:text-base font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/30 hover:-translate-y-0.5"
                   >
-                    <Edit2 className="w-5 h-5" /> Continue Editing
+                    <Edit2 className="w-4 h-4 md:w-5 md:h-5" /> Continue Editing
                   </button>
-                  <div className="flex items-center gap-2 bg-slate-50 px-4 py-3.5 rounded-xl border border-slate-200">
-                    <Download className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-bold text-slate-700">{recentResume.downloadsUsed}</span>
-                    <span className="text-xs font-medium text-slate-400">/ 3 Free Used</span>
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-2.5 md:px-4 md:py-3.5 rounded-xl border border-slate-200">
+                    <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400" />
+                    <span className="text-xs md:text-sm font-bold text-slate-700">{recentResume.downloadsUsed}</span>
+                    <span className="text-[10px] md:text-xs font-medium text-slate-400">/ 3 Free Used</span>
                   </div>
                 </div>
               </div>
@@ -330,37 +341,37 @@ const MyResumes = () => {
 
         {/* All Resumes Grid */}
         <div>
-          <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-indigo-600" /> All Resumes
+          <h2 className="text-lg md:text-xl font-black text-slate-800 mb-4 md:mb-6 flex items-center gap-2">
+            <FileText className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" /> All Resumes
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
 
             {/* Create New Card */}
             <div
               onClick={handleCreate}
-              className="bg-indigo-50/30 border-2 border-dashed border-indigo-200 rounded-3xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group min-h-[280px]"
+              className="bg-indigo-50/30 border-2 border-dashed border-indigo-200 rounded-3xl p-6 md:p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group min-h-[200px] md:min-h-[280px]"
             >
-              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Plus className="w-8 h-8 text-indigo-600" />
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Plus className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
               </div>
-              <h3 className="text-lg font-bold text-indigo-900 mb-2">Create New Resume</h3>
-              <p className="text-sm text-indigo-600/80 px-4 font-medium">
+              <h3 className="text-base md:text-lg font-bold text-indigo-900 mb-1 md:mb-2">Create New Resume</h3>
+              <p className="text-xs md:text-sm text-indigo-600/80 px-2 md:px-4 font-medium">
                 {resumes.length === 0 ? "Build your first ATS-friendly resume for free." : "Start a new tailored resume (10 Tokens)"}
               </p>
             </div>
 
             {/* Other Resumes */}
             {resumes.map(resume => (
-              <div key={resume._id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-900/5 transition-all group flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest">
+              <div key={resume._id} className="bg-white rounded-3xl border border-slate-200 p-5 md:p-6 shadow-sm hover:shadow-xl hover:shadow-indigo-900/5 transition-all group flex flex-col">
+                <div className="flex justify-between items-start mb-3 md:mb-4">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-slate-100 text-slate-600 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
                     {resume.status}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-800 line-clamp-1 mb-1">{resume.name}</h3>
-                <p className="text-xs text-slate-400 font-medium mb-6">
+                <h3 className="text-lg md:text-xl font-bold text-slate-800 line-clamp-1 mb-1">{resume.name}</h3>
+                <p className="text-[10px] md:text-xs text-slate-400 font-medium mb-4 md:mb-6">
                   Updated {new Date(resume.updatedAt).toLocaleDateString()}
                 </p>
 

@@ -24,7 +24,7 @@ const MockInterviewCTA = () => {
   const handleCTAClick = () => {
     const token = localStorage.getItem('interviewToken');
     if (token) {
-      navigate('/dashboard');
+      navigate('/my-interviews');
     } else {
       navigate('/student-login');
     }

@@ -56,7 +56,7 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${
         scrolled || location.pathname === '/leaderboard'
           ? 'bg-white border-b border-gray-200 py-4 shadow-sm' 
-          : 'bg-white md:bg-transparent border-b border-gray-200 md:border-transparent py-4 md:py-6 shadow-sm md:shadow-none'
+          : 'bg-white min-[920px]:bg-transparent border-b border-gray-200 min-[920px]:border-transparent py-4 min-[920px]:py-6 shadow-sm min-[920px]:shadow-none'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
@@ -67,7 +67,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden min-[920px]:flex items-center gap-8">
           {navLinks.map((link) => {
             if (link.name === 'Internship' && showLeaderboard) {
               return (
@@ -138,7 +138,7 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <button 
-          className="md:hidden relative z-50 p-2 -mr-2 text-gray-900 focus:outline-none"
+          className="min-[920px]:hidden relative z-50 p-2 -mr-2 text-gray-900 focus:outline-none"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <div className="w-6 flex flex-col items-end gap-1.5">
@@ -158,14 +158,14 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm z-[9998] md:hidden"
+              className="fixed inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm z-[9998] min-[920px]:hidden"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-              className="fixed top-0 right-0 bottom-0 w-72 bg-white z-[9999] md:hidden flex flex-col shadow-2xl rounded-l-2xl border-l border-gray-100 overflow-hidden"
+              className="fixed top-0 right-0 bottom-0 w-72 bg-white z-[9999] min-[920px]:hidden flex flex-col shadow-2xl rounded-l-2xl border-l border-gray-100 overflow-hidden"
             >
               {/* Fixed Top Header */}
               <div className="flex justify-between items-center px-6 pt-8 pb-6 shrink-0">
@@ -230,47 +230,50 @@ const Navbar = () => {
               </div>
               
               {/* Fixed Bottom Footer */}
-              <div className="shrink-0 px-6 pt-6 pb-8 bg-gray-50/50 border-t border-gray-100 mt-auto">
-                <div className="space-y-6">
+              <div className="shrink-0 px-5 pt-4 pb-6 bg-gray-50/50 border-t border-gray-100 mt-auto">
+                <div className="space-y-4">
                   <div>
-                    <span className="block text-xs font-bold tracking-widest text-gray-400 uppercase mb-3">Get in Touch</span>
-                    <a href="mailto:codeanova26@gmail.com" className="block text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">codeanova26@gmail.com</a>
+                    <span className="block text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-1.5">Get in Touch</span>
+                    <a href="mailto:codeanova26@gmail.com" className="block text-xs font-medium text-gray-900 hover:text-blue-600 transition-colors">codeanova26@gmail.com</a>
                   </div>
-                  {isLoggedIn ? (
-                    <>
+                  
+                  <div className="space-y-2.5">
+                    {isLoggedIn ? (
+                      <>
+                        <Link 
+                          to={dashboardLink} 
+                          onClick={() => setMobileMenuOpen(false)} 
+                          className="flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold transition-all hover:shadow-md"
+                        >
+                          <span>Dashboard</span>
+                        </Link>
+                        <button 
+                          onClick={handleLogout} 
+                          className="flex items-center justify-center w-full py-3 px-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold transition-all hover:shadow-md"
+                        >
+                          <span>Logout</span>
+                        </button>
+                      </>
+                    ) : (
                       <Link 
-                        to={dashboardLink} 
+                        to="/student-login" 
                         onClick={() => setMobileMenuOpen(false)} 
-                        className="flex items-center justify-center w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold transition-all hover:shadow-lg mb-2"
+                        className="flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-brand-purple text-white rounded-xl text-sm font-bold transition-all hover:shadow-md"
                       >
-                        <span>Dashboard</span>
+                        <span>Login to Practice</span>
                       </Link>
-                      <button 
-                        onClick={handleLogout} 
-                        className="flex items-center justify-center w-full p-4 bg-red-50 text-red-600 rounded-2xl font-bold transition-all hover:shadow-lg"
-                      >
-                        <span>Logout</span>
-                      </button>
-                    </>
-                  ) : (
+                    )}
                     <Link 
-                      to="/student-login" 
+                      to="/contact" 
                       onClick={() => setMobileMenuOpen(false)} 
-                      className="flex items-center justify-center w-full p-4 bg-gradient-to-r from-blue-600 to-brand-purple text-white rounded-2xl font-bold transition-all hover:shadow-lg"
+                      className="flex items-center justify-between w-full py-3 px-4 bg-gray-900 text-white rounded-xl text-sm font-bold group transition-all hover:shadow-md hover:shadow-gray-900/20"
                     >
-                      <span>Login to Practice</span>
+                      <span>Start a Project</span>
+                      <span className="bg-white/20 p-1 rounded-full group-hover:translate-x-1 transition-transform">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                      </span>
                     </Link>
-                  )}
-                  <Link 
-                    to="/contact" 
-                    onClick={() => setMobileMenuOpen(false)} 
-                    className="flex items-center justify-between w-full p-4 bg-gray-900 text-white rounded-2xl font-bold group transition-all hover:shadow-lg hover:shadow-gray-900/20"
-                  >
-                    <span>Start a Project</span>
-                    <span className="bg-white/20 p-1.5 rounded-full group-hover:translate-x-1 transition-transform">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </span>
-                  </Link>
+                  </div>
                 </div>
               </div>
             </motion.div>

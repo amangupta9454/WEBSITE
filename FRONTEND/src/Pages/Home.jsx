@@ -4,6 +4,7 @@ import Hero from '../sections/Hero';
 import Stats from '../sections/Stats';
 import ServicesOverview from '../sections/ServicesOverview';
 import MockInterviewCTA from '../sections/MockInterviewCTA';
+import ResumeBuilderCTA from '../sections/ResumeBuilderCTA';
 import ProblemSolution from '../sections/ProblemSolution';
 import IndustriesServed from '../sections/IndustriesServed';
 import PortfolioPreview from '../sections/PortfolioPreview';
@@ -20,6 +21,7 @@ const Home = () => {
       <ProblemSolution />
       <ServicesOverview />
       <MockInterviewCTA />
+      <ResumeBuilderCTA />
       <IndustriesServed />
       <PortfolioPreview />
       <WhyWebsite />

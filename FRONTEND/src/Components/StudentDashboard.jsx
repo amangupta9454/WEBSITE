@@ -850,7 +850,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
             {projects.map((proj, idx) => (
               <div
                 key={idx}
-                className="border border-slate-200 rounded-2xl p-6 transition-colors bg-slate-50"
+                className="border border-slate-200 rounded-2xl p-4 md:p-6 transition-colors bg-slate-50"
               >
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -863,14 +863,14 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       </p>
 
                       {(proj.createdAt || proj.dueDate) && (
-                        <div className="flex flex-wrap gap-2 md:gap-3 mt-4 text-xs font-bold">
+                        <div className="flex flex-wrap gap-2 md:gap-3 mt-3 md:mt-4 text-[10px] md:text-xs font-bold">
                           {proj.createdAt && (
-                            <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md border border-blue-100 flex items-center shadow-sm">
+                            <div className="bg-blue-50 text-blue-700 px-2 py-1 md:px-3 md:py-1.5 rounded-md border border-blue-100 flex items-center shadow-sm">
                               Assigned: {new Date(proj.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </div>
                           )}
                           {proj.dueDate && (
-                            <div className="bg-rose-50 text-rose-700 px-3 py-1.5 rounded-md border border-rose-100 flex items-center shadow-sm">
+                            <div className="bg-rose-50 text-rose-700 px-2 py-1 md:px-3 md:py-1.5 rounded-md border border-rose-100 flex items-center shadow-sm">
                               Due Date: {new Date(proj.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                             </div>
                           )}
@@ -882,24 +882,24 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                         href={proj.pdfUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center w-full md:w-auto gap-2 mt-2 md:mt-0 text-sm font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-5 py-2.5 rounded-xl transition-all whitespace-nowrap shrink-0 shadow-sm"
+                        className="flex items-center justify-center w-full md:w-auto gap-1.5 md:gap-2 mt-3 md:mt-0 text-xs md:text-sm font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 md:px-5 md:py-2.5 rounded-xl transition-all whitespace-nowrap shrink-0 shadow-sm"
                       >
-                        <FileText size={18} /> Download Project Document
+                        <FileText className="w-4 h-4 md:w-5 md:h-5" /> Download Project Document
                       </a>
                     )}
                   </div>
 
                   {proj.isFinalSubmitted ? (
                     <div className="flex flex-col gap-3 mt-4">
-                      <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl p-4 flex items-start gap-4 shadow-sm shadow-emerald-100/50">
-                        <div className="bg-emerald-100/80 p-2.5 rounded-xl text-emerald-600 shadow-sm mt-0.5">
-                          <CheckCircle size={20} strokeWidth={2.5} />
+                      <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl p-3 md:p-4 flex items-start gap-3 md:gap-4 shadow-sm shadow-emerald-100/50">
+                        <div className="bg-emerald-100/80 p-2 md:p-2.5 rounded-xl text-emerald-600 shadow-sm mt-0.5 shrink-0">
+                          <CheckCircle className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
                         </div>
                         <div>
-                          <h5 className="font-bold text-emerald-900 text-sm mb-1">
+                          <h5 className="font-bold text-emerald-900 text-xs md:text-sm mb-1">
                             Project Final Submitted Successfully
                           </h5>
-                          <p className="text-sm text-emerald-800 leading-relaxed font-medium mb-2">
+                          <p className="text-[10px] md:text-sm text-emerald-800 leading-relaxed font-medium mb-2">
                             Your GitHub repository and project has been locked and
                             submitted for admin review.
                           </p>
@@ -907,34 +907,34 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                             href={proj.repoLink}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-200/50 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-200/50 hover:bg-emerald-200 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg transition-colors"
                           >
-                            <Github size={14} /> View Repository
+                            <Github className="w-3.5 h-3.5 md:w-[14px] md:h-[14px]" /> View Repository
                           </a>
                         </div>
                       </div>
 
                       {proj.reviewStatus && proj.reviewStatus !== "Pending" && (
-                        <div className={`border rounded-xl p-4 flex items-start gap-4 shadow-sm ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50' : 'bg-rose-50 border-rose-200 shadow-rose-100/50'}`}>
-                          <div className={`p-2.5 rounded-xl shadow-sm mt-0.5 ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-100/80 text-emerald-600' : 'bg-rose-100/80 text-rose-600'}`}>
-                            {proj.reviewStatus === 'Accepted' ? <CheckCircle size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
+                        <div className={`border rounded-xl p-3 md:p-4 flex items-start gap-3 md:gap-4 shadow-sm ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50' : 'bg-rose-50 border-rose-200 shadow-rose-100/50'}`}>
+                          <div className={`p-2 md:p-2.5 rounded-xl shadow-sm mt-0.5 shrink-0 ${proj.reviewStatus === 'Accepted' ? 'bg-emerald-100/80 text-emerald-600' : 'bg-rose-100/80 text-rose-600'}`}>
+                            {proj.reviewStatus === 'Accepted' ? <CheckCircle className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} /> : <AlertCircle className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />}
                           </div>
                           <div className="w-full">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h5 className={`font-bold text-sm mb-1 ${proj.reviewStatus === 'Accepted' ? 'text-emerald-900' : 'text-rose-900'}`}>
+                                <h5 className={`font-bold text-xs md:text-sm mb-1 ${proj.reviewStatus === 'Accepted' ? 'text-emerald-900' : 'text-rose-900'}`}>
                                   Admin Review: {proj.reviewStatus}
                                 </h5>
                               </div>
                               {proj.spAwarded > 0 && (
-                                <span className="text-xs font-black bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
+                                <span className="text-[10px] md:text-xs font-black bg-blue-100 text-blue-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md">
                                   {proj.spAwarded} SP
                                 </span>
                               )}
                             </div>
                             {proj.feedback && (
-                              <div className={`text-sm leading-relaxed font-medium mt-2 p-3 rounded-lg border ${proj.reviewStatus === 'Accepted' ? 'text-emerald-800 bg-emerald-100/50 border-emerald-200' : 'text-rose-800 bg-rose-100/50 border-rose-200'}`}>
-                                <strong className="block text-[10px] uppercase tracking-wider mb-1 opacity-70">AI Feedback</strong>
+                              <div className={`text-[10px] md:text-sm leading-relaxed font-medium mt-2 p-2.5 md:p-3 rounded-lg border ${proj.reviewStatus === 'Accepted' ? 'text-emerald-800 bg-emerald-100/50 border-emerald-200' : 'text-rose-800 bg-rose-100/50 border-rose-200'}`}>
+                                <strong className="block text-[9px] md:text-[10px] uppercase tracking-wider mb-1 opacity-70">AI Feedback</strong>
                                 {proj.feedback}
                               </div>
                             )}
