@@ -74,7 +74,7 @@ const rzp = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'dummy_key' });
 
 async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
   try {
