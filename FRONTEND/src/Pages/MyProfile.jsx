@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Loader2, Save, ArrowLeft, User, Briefcase, Code, GraduationCap, Wrench, Trophy, Award, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, User, Briefcase, Code, GraduationCap, Wrench, Trophy, Award, Plus, Trash2, ArrowUp, ArrowDown, ChevronLeft, ExternalLink, RefreshCw, CheckCircle } from 'lucide-react';
 import { useDebounce } from 'react-use';
 
 export default function MyProfile() {
@@ -19,6 +19,14 @@ export default function MyProfile() {
   });
   
   const [activeTab, setActiveTab] = useState('personalInfo');
+
+  // OTP State
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -68,6 +76,12 @@ export default function MyProfile() {
         } else if (profileData.skills.length === 0) {
           profileData.skills = [{ id: Date.now().toString(), category: 'Languages', items: '' }];
         }
+        if (profileData.personalInfo?.phone) {
+          setOriginalPhone(profileData.personalInfo.phone);
+          setIsPhoneVerified(true);
+        } else {
+          setIsPhoneVerified(false);
+        }
         
         setData(profileData);
       }
@@ -91,6 +105,10 @@ export default function MyProfile() {
   );
 
   const saveProfile = async (isAuto = false) => {
+    if (!isPhoneVerified) {
+      if (!isAuto) toast.error("Please verify your new phone number before saving");
+      return;
+    }
     setSaving(true);
     try {
       const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
@@ -116,6 +134,54 @@ export default function MyProfile() {
       ...prev,
       personalInfo: { ...prev.personalInfo, [field]: value }
     }));
+  };
+
+  const handlePhoneChange = (e) => {
+    const val = e.target.value;
+    updatePersonalInfo('phone', val);
+    if (val !== originalPhone) {
+      setIsPhoneVerified(false);
+    } else {
+      setIsPhoneVerified(true);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    const phone = data.personalInfo?.phone;
+    if (!phone || phone.length !== 10) {
+      toast.error("Please enter a valid 10-digit WhatsApp number");
+      return;
+    }
+    setOtpSending(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/otp/send`, { phone });
+      setOtpStep(true);
+      toast.success("OTP sent to WhatsApp!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const phone = data.personalInfo?.phone;
+    if (!otpValue || otpValue.length !== 3) {
+      toast.error("Please enter a valid 3-digit OTP");
+      return;
+    }
+    setOtpVerifying(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/otp/verify`, { phone, otp: otpValue });
+      setIsPhoneVerified(true);
+      setOriginalPhone(phone); // Update original phone so it stays verified
+      setOtpStep(false);
+      toast.success("Phone number verified successfully!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setOtpVerifying(false);
+    }
   };
 
   const updateNested = (section, index, field, value) => {
@@ -180,7 +246,64 @@ export default function MyProfile() {
               <div><label className="block text-sm font-medium text-slate-600 mb-1">Last Name</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.lastName || ''} onChange={(e) => updatePersonalInfo('lastName', e.target.value)} /></div>
               <div><label className="block text-sm font-medium text-slate-600 mb-1">Job Title</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.jobTitle || ''} onChange={(e) => updatePersonalInfo('jobTitle', e.target.value)} /></div>
               <div><label className="block text-sm font-medium text-slate-600 mb-1">Email</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.email || ''} onChange={(e) => updatePersonalInfo('email', e.target.value)} /></div>
-              <div><label className="block text-sm font-medium text-slate-600 mb-1">Phone</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.phone || ''} onChange={(e) => updatePersonalInfo('phone', e.target.value)} /></div>
+              
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1">Phone</label>
+                {isPhoneVerified ? (
+                  <div className="flex items-center gap-3">
+                    <input className="w-full px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl focus:outline-none transition-all" value={data.personalInfo.phone || ''} onChange={handlePhoneChange} />
+                    <span className="flex items-center text-green-600 font-bold whitespace-nowrap bg-green-100 px-3 py-2.5 rounded-lg border border-green-200">
+                      <CheckCircle size={20} className="mr-1" /> Verified
+                    </span>
+                  </div>
+                ) : otpStep ? (
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="text" 
+                      maxLength="3" 
+                      value={otpValue} 
+                      onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))} 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-blue-400 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none text-center tracking-widest font-bold" 
+                      placeholder="3-digit OTP" 
+                      autoFocus
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={otpVerifying || otpValue.length !== 3}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                    >
+                      {otpVerifying ? "Verifying..." : "Verify OTP"}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setOtpStep(false); setOtpValue(""); }}
+                      className="text-gray-500 hover:text-gray-700 text-sm font-medium underline whitespace-nowrap"
+                    >
+                      Change number
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <input 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" 
+                      value={data.personalInfo.phone || ''} 
+                      onChange={handlePhoneChange} 
+                      maxLength="10"
+                      placeholder="10-digit number"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={otpSending || data.personalInfo?.phone?.length !== 10}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                    >
+                      {otpSending ? "Sending..." : "Verify"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div><label className="block text-sm font-medium text-slate-600 mb-1">Location</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.location || ''} onChange={(e) => updatePersonalInfo('location', e.target.value)} /></div>
               <div><label className="block text-sm font-medium text-slate-600 mb-1">LinkedIn URL</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.linkedin || ''} onChange={(e) => updatePersonalInfo('linkedin', e.target.value)} /></div>
               <div><label className="block text-sm font-medium text-slate-600 mb-1">GitHub URL</label><input className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none" value={data.personalInfo.github || ''} onChange={(e) => updatePersonalInfo('github', e.target.value)} /></div>

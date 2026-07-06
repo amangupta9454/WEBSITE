@@ -438,22 +438,21 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
       {/* Dynamic Sections Based on Order */}
       {sectionOrder.map(key => renderSectionContent(key))}
 
-      {/* Watermark (Always at the exact bottom of each page) */}
-      {isWebPreview ? (
-        Array.from({ length: totalPages }).map((_, i) => (
-          <div 
-            key={`watermark-${i}`}
-            className="absolute w-full text-center text-slate-400 opacity-50 font-medium select-none pointer-events-none" 
-            style={{ fontSize: 'var(--text-sm-size)', top: `${(i * 1123) + 1123 - 20}px`, left: 0 }}
-          >
-            Powered by <a href="https://code-a-nova.online/" target="_blank" rel="noopener noreferrer" className="font-bold tracking-wide pointer-events-auto hover:underline text-slate-400">Code-A-Nova</a>
-          </div>
-        ))
-      ) : (
-        <div className="absolute bottom-4 left-0 w-full text-center text-slate-400 opacity-50 font-medium select-none pointer-events-none print:fixed print:bottom-4" style={{ fontSize: 'var(--text-sm-size)' }}>
-          Powered by <a href="https://code-a-nova.online/" target="_blank" rel="noopener noreferrer" className="font-bold tracking-wide pointer-events-auto text-slate-400">Code-A-Nova</a>
+      {/* Watermark (Always at the exact bottom center of EACH page) */}
+      {Array.from({ length: totalPages }).map((_, i) => (
+        <div 
+          key={`watermark-${i}`}
+          className="absolute w-full text-center text-slate-400 opacity-60 font-medium select-none pointer-events-none" 
+          style={{ 
+            fontSize: '11px', 
+            top: `${(i * 1123) + 1123 - 25}px`, // 25px from the bottom of each A4 page
+            left: 0, 
+            zIndex: 50 
+          }}
+        >
+          Powered by <a href="https://code-a-nova.online/" target="_blank" rel="noopener noreferrer" className="font-bold tracking-wide pointer-events-auto hover:underline text-slate-400">Code-A-Nova</a>
         </div>
-      )}
+      ))}
     </div>
   );
 };

@@ -47,6 +47,8 @@ const {
   migrateDates,
   makeAllInterns,
   fixMergedAccounts,
+  getJobPortalSetting,
+  toggleJobPortalSetting,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -94,6 +96,8 @@ router.get("/settings/registration", getRegistrationSetting);
 router.post("/settings/registration", auth, toggleRegistrationSetting);
 router.get("/settings/leaderboard", getLeaderboardSetting);
 router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
+router.get("/settings/job-portal", getJobPortalSetting);
+router.post("/settings/job-portal", auth, toggleJobPortalSetting);
 
 // Submissions
 router.get("/all-submissions", auth, getAllSubmissions);

@@ -54,7 +54,7 @@ const ResumeForm = ({ resume, setResume }) => {
   useEffect(() => {
     const fetchMaster = async () => {
       try {
-        const token = localStorage.getItem('studentToken');
+        const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
         if (!token) return;
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }

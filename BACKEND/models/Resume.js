@@ -24,6 +24,10 @@ const resumeSchema = new mongoose.Schema(
       type: Number, 
       default: 0 
     },
+    whatsappDownloadsUsed: {
+      type: Number,
+      default: 0
+    },
     status: { 
       type: String, 
       enum: ["Draft", "Completed"], 

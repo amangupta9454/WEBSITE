@@ -398,7 +398,20 @@ export function FeedbackModal({ feedback: session, onClose }) {
 export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, resumeEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [rePracticeSession, setRePracticeSession] = useState(null);
+  const [showJobPortal, setShowJobPortal] = useState(true);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const fetchSetting = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/job-portal`);
+        setShowJobPortal(res.data.jobPortalEnabled);
+      } catch (error) {
+        console.error('Failed to fetch job portal setting', error);
+      }
+    };
+    fetchSetting();
+  }, []);
   
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
 
@@ -463,7 +476,24 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
         )}
         
+        {showJobPortal && (
+          <div 
+            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+            onClick={() => navigate('/jobs')}
+          >
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Briefcase className="w-12 h-12 sm:w-20 sm:h-20" />
+            </div>
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+              <Briefcase className="w-4 h-4 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Latest Jobs</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Apply to verified jobs</p>
+          </div>
+        )}
+
         <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
+
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
@@ -486,6 +516,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Certifications</h3>
           <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
         </div>
+
       </div>
 
       {/* Mock Interviews Section */}

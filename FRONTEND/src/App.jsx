@@ -21,6 +21,9 @@ import MyResumes from "./Pages/MyResumes";
 import MyInterviews from "./Pages/MyInterviews";
 import MyProfile from "./Pages/MyProfile";
 import ResumeBuilder from "./Pages/ResumeBuilder/ResumeBuilder";
+import Jobs from "./Pages/Jobs";
+import JobDetail from "./Pages/JobDetail";
+import SavedJobs from "./Pages/SavedJobs";
 import Registration from "./Components/Registration";
 import SetupPassword from "./Components/SetupPassword";
 import StudentDashboard from "./Components/StudentDashboard";
@@ -58,6 +61,13 @@ function App() {
         <Route path="/industries" element={<Industries />} />
         <Route path="/industries/:slug" element={<IndustryDetail />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/jobs" element={<Jobs />} />
+        <Route path="/jobs/:id" element={<JobDetail />} />
+        <Route path="/saved-jobs" element={
+          <ProtectedRoute>
+            <SavedJobs />
+          </ProtectedRoute>
+        } />
         <Route
           path="/registration"
           element={

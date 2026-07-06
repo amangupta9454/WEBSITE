@@ -25,6 +25,8 @@ const interviewSessionRoutes = require("./routes/interviewSession");
 const interviewPaymentRoutes = require("./routes/interviewPayment");
 const resumeRoutes = require("./routes/resume");
 const adminResumeRoutes = require("./routes/adminResume");
+const jobRoutes = require("./routes/jobs");
+const otpRoutes = require("./routes/otp");
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
@@ -70,7 +72,8 @@ app.use(helmet());
 app.disable('x-powered-by');
 
 app.use(cors({ origin: "*" }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Rate Limiting Config
 const generalLimiter = rateLimit({
@@ -118,6 +121,8 @@ app.use("/api/interview-session", interviewLimiter, interviewSessionRoutes);
 app.use("/api/interview-payment", interviewPaymentRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/admin/resume", adminResumeRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/otp", otpRoutes);
 
 // Production Health Endpoint
 app.get("/healthz", async (req, res) => {
@@ -140,7 +145,20 @@ if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
+// Initialize WhatsApp Web JS Client
+const { initializeWhatsApp, queueWhatsAppMessage } = require('./utils/whatsappClient');
+initializeWhatsApp();
+
 // Export for Vercel serverless
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Test WhatsApp Endpoint (Remove in production)
+app.post("/api/test-wa", (req, res) => {
+  const { phone, message } = req.body;
+  if (!phone || !message) return res.status(400).json({ error: "Missing phone or message" });
+  queueWhatsAppMessage(phone, message);
+  res.json({ success: true, message: "Message added to queue!" });
+});
+
 module.exports = app;

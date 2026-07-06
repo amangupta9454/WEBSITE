@@ -564,6 +564,38 @@ const markProjectExported = async (req, res) => {
   }
 };
 
+
+const getJobPortalSetting = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "jobPortalEnabled" });
+    if (!setting) {
+      setting = await Settings.create({ key: "jobPortalEnabled", value: true });
+    }
+    res.status(200).json({ jobPortalEnabled: setting.value });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+const toggleJobPortalSetting = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "jobPortalEnabled" });
+    if (!setting) {
+      setting = new Settings({ key: "jobPortalEnabled", value: true });
+    }
+
+    setting.value = !setting.value;
+    await setting.save();
+
+    res.status(200).json({
+      message: `Job Portal is now ${setting.value ? "Enabled" : "Disabled"}`,
+      jobPortalEnabled: setting.value,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
 const getPaymentSetting = async (req, res) => {
   try {
     let setting = await Settings.findOne({ key: "paymentEnabled" });
@@ -1653,6 +1685,8 @@ module.exports = {
   getLeaderboardSetting,
   manualAcceptAssignment,
   toggleLeaderboardSetting,
+  getJobPortalSetting,
+  toggleJobPortalSetting,
   setStartDate,
   updateBatch,
   updateInternshipType,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -125,7 +125,7 @@ const ProtectedRoute = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(null); // null = checking
 
   useEffect(() => {
-    const token = localStorage.getItem('studentToken');
+    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
     setIsLoggedIn(!!token);
   }, []);
 
@@ -133,7 +133,7 @@ const ProtectedRoute = ({ children }) => {
   if (isLoggedIn === null) return null;
 
   if (!isLoggedIn) {
-    return <LoginWall redirectTo={location.pathname} />;
+    return <Navigate to="/student-login" state={{ from: location.pathname }} replace />;
   }
 
   return children;

@@ -22,7 +22,7 @@ const ResumeBuilderCTA = () => {
   }, []);
 
   const isLoggedIn = () => {
-    return !!localStorage.getItem('studentToken');
+    return !!(localStorage.getItem('interviewToken') || localStorage.getItem('studentToken'));
   };
 
   const handleCreateResume = () => {

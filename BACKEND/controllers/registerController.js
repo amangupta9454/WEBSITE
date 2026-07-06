@@ -10,6 +10,7 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
+const { queueWhatsAppMessage } = require('../utils/whatsappClient');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -230,6 +231,12 @@ const registerInternship = async (req, res) => {
       message: "Application submitted successfully",
       studentId,
     });
+
+    // Queue WhatsApp Welcome Message safely in background
+    if (normalizedMobile && normalizedMobile !== "0000000000") {
+      const welcomeText = `🎉 *Welcome to Code-A-Nova, ${name}!*\n\nYour application for *${domain}* has been received successfully. ✅\n\n🆔 *Your Student ID:* ${studentId}\n📧 *Registered Email:* ${email}\n⏳ *Duration:* ${duration}\n\n🌐 *Join our Official Community:*\nhttps://chat.whatsapp.com/Eq34ntRCH4164W98bols7p\n\nWe will share further updates regarding your internship via email. Please keep an eye on your inbox! 📧\n\nRegards,\n*Team Code-A-Nova*`;
+      queueWhatsAppMessage(normalizedMobile, welcomeText);
+    }
   } catch (error) {
     console.error("[Backend] Internship registration error:", error);
     res.status(500).json({ message: "Server error" });
@@ -489,6 +496,12 @@ const verifyRegistrationPayment = async (req, res) => {
       message: "Application submitted successfully",
       studentId,
     });
+
+    // Queue WhatsApp Welcome Message safely in background
+    if (normalizedMobile && normalizedMobile !== "0000000000") {
+      const welcomeText = `🎉 *Welcome to Code-A-Nova, ${name}!*\n\nYour application for *${domain}* has been received successfully. ✅\n\n🆔 *Your Student ID:* ${studentId}\n📧 *Registered Email:* ${email}\n⏳ *Duration:* ${duration}\n\n🌐 *Join our Official Community:*\nhttps://chat.whatsapp.com/Eq34ntRCH4164W98bols7p\n\nWe will share further updates regarding your internship via email. Please keep an eye on your inbox! 📧\n\nRegards,\n*Team Code-A-Nova*`;
+      queueWhatsAppMessage(normalizedMobile, welcomeText);
+    }
   } catch (error) {
     console.error("[Backend] Verify registration payment error:", error);
     res.status(500).json({ message: "Server error" });

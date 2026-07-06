@@ -47,6 +47,7 @@ import SubmissionsAdmin from "./SubmissionsAdmin";
 import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
 import AdminResumeView from "./AdminResumeView";
+import JobAdminPage from "./JobAdminPage";
 import { Bell, Settings, Zap, Database } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -1973,6 +1974,12 @@ const AdminDashboard = () => {
                 >
                   <FileText className="w-4 h-4" /> Resume
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("jobs")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "jobs" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <Briefcase className="w-4 h-4" /> Job Portal
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -2011,6 +2018,11 @@ const AdminDashboard = () => {
                     <p className="text-sm text-slate-500 mt-1">Manage global settings, whitelists, and view analytics for the AI Resume feature.</p>
                   </div>
                   <AdminResumeView />
+                </div>
+              )}
+              {activeFeatureTab === "jobs" && (
+                <div className="animate-fade-in">
+                  <JobAdminPage />
                 </div>
               )}
             </div>

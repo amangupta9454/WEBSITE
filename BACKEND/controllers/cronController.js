@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const jobController = require('./jobController');
 
 // Setup Nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -104,6 +105,15 @@ const runDailyCron = async (req, res) => {
     }
 
     console.log(`[Cron] Check complete. Generated ${alertsGenerated} new alert(s).`);
+    
+    // Sync Jobs from RapidAPI
+    try {
+      const jobSyncResult = await jobController.syncJobsFromAPI();
+      console.log('[Cron] Job Sync Result:', jobSyncResult);
+    } catch (jobErr) {
+      console.error('[Cron] Error syncing jobs:', jobErr);
+    }
+
     return res.status(200).json({ success: true, alertsGenerated });
 
   } catch (error) {

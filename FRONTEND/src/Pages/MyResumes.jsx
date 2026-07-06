@@ -30,7 +30,7 @@ const MyResumes = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem("studentToken");
+      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
       const [resumesRes, creditsRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/resume`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/interview-session/my-credits`, { headers: { Authorization: `Bearer ${token}` } })
@@ -62,7 +62,7 @@ const MyResumes = () => {
     }
 
     try {
-      const token = localStorage.getItem("studentToken");
+      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/create`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -79,7 +79,7 @@ const MyResumes = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this resume?")) return;
     try {
-      const token = localStorage.getItem("studentToken");
+      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -98,7 +98,7 @@ const MyResumes = () => {
     if (!window.confirm("Duplicating a resume costs 10 Tokens. Continue?")) return;
 
     try {
-      const token = localStorage.getItem("studentToken");
+      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/duplicate`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -114,7 +114,7 @@ const MyResumes = () => {
 
   const handleBuyPackage = async (pkg) => {
     setIsBuyModalOpen(false);
-    const token = localStorage.getItem('studentToken');
+    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
     if (!token) return;
 
     const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");

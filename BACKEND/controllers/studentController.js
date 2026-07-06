@@ -6,6 +6,7 @@ const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
+const { queueWhatsAppMessage } = require('../utils/whatsappClient');
 
 const getInternshipType = (duration) => {
   const months = parseInt(String(duration || "").match(/\d+/)?.[0] || "1", 10);
@@ -25,10 +26,8 @@ const getDashboardInfo = async (req, res) => {
     const allSummerProjects = await SummerProject.find({});
     const allNormalTasks = await NormalTask.find({});
 
-    // Determine which internships to process
-    if (!user.internships || user.internships.length === 0) {
-      return res.status(404).json({ message: "No internships found for this user" });
-    }
+    // Default to empty array if no internships exist yet
+    const internships = user.internships || [];
 
     const enrichedInternships = [];
 
@@ -45,7 +44,7 @@ const getDashboardInfo = async (req, res) => {
     
     allInterns.sort((a, b) => b.sp - a.sp);
 
-    for (const targetInternship of user.internships) {
+    for (const targetInternship of internships) {
       // Fetch submissions for the specific internship
       const submissions = await ProjectSubmission.find({
         studentId: targetInternship.studentId,
@@ -224,15 +223,32 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const oldMobile = user.mobile;
+
     if (name !== undefined) user.name = name;
     if (github !== undefined) user.github = github;
+    let extractedMobile = mobile;
+
     if (linkedin !== undefined) user.linkedin = linkedin;
     if (portfolio !== undefined) user.portfolio = portfolio;
-    if (profileImage !== undefined) user.profileImage = profileImage; // Assuming frontend handles base64 or cloudinary url upload
-    if (mobile !== undefined) user.mobile = mobile;
-    if (resumeData !== undefined) user.resumeData = resumeData;
+    if (profileImage !== undefined) user.profileImage = profileImage;
+    
+    if (resumeData !== undefined) {
+      user.resumeData = resumeData;
+      // Extract phone from Master Profile if available
+      if (resumeData.personalInfo && resumeData.personalInfo.phone) {
+        extractedMobile = resumeData.personalInfo.phone;
+      }
+    }
+
+    if (extractedMobile !== undefined) user.mobile = extractedMobile;
 
     await user.save();
+
+    if (oldMobile === 'Google Auth' && extractedMobile && extractedMobile !== 'Google Auth') {
+      const welcomeText = `👋 *Hi ${user.name || 'there'}!*\n\nWelcome to the *Code-A-Nova Student Dashboard*! 🚀\n\nYour WhatsApp number has been successfully linked. We will send you important updates and notifications right here. 🔔\n\nRegards,\n*Team Code-A-Nova*`;
+      queueWhatsAppMessage(extractedMobile, welcomeText);
+    }
 
     res.json({
       message: "Profile updated successfully",

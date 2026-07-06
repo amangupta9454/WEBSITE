@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AlertCircle, Eye, ShieldAlert, Video, Upload, FileText, X } from 'lucide-react';
+import { AlertCircle, Eye, ShieldAlert, Video, Upload, FileText, X, Send, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const InterviewSetup = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,14 @@ const InterviewSetup = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [resume, setResume] = useState(null);
   const [resumeError, setResumeError] = useState('');
+  
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -64,8 +73,24 @@ const InterviewSetup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (resumeError) return;
+    if (resumeError) {
+      alert("Please fix resume errors before starting.");
+      return;
+    }
+
+    const userStr = localStorage.getItem('interviewUser');
+    const user = userStr ? JSON.parse(userStr) : null;
     
+    if (!user?.isPhoneVerified || !user?.mobile) {
+      toast("Your mobile no. is not registered with us, kindly register and start practicing.", { icon: '📱' });
+      setShowPhoneModal(true);
+      return;
+    }
+
+    await startInterviewSession();
+  };
+
+  const startInterviewSession = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('interviewToken');
@@ -103,6 +128,57 @@ const InterviewSetup = () => {
       alert(error.response?.data?.message || 'Failed to start interview.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (phone.length !== 10) {
+      toast.error("Enter a valid 10-digit number");
+      return;
+    }
+    setOtpSending(true);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/send`, { phone });
+      if (res.data.success) {
+        toast.success("OTP sent to your WhatsApp!");
+        setOtpStep(true);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtpAndStart = async () => {
+    if (otpCode.length !== 3) return;
+    setOtpVerifying(true);
+    try {
+      const token = localStorage.getItem('interviewToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/verify`, {
+        phone, code: otpCode, role: 'user'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success("Phone verified successfully!");
+        
+        // Update user state
+        const userStr = localStorage.getItem('interviewUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          user.isPhoneVerified = true;
+          user.mobile = phone;
+          localStorage.setItem('interviewUser', JSON.stringify(user));
+        }
+        
+        setShowPhoneModal(false);
+        await startInterviewSession(); // automatically start
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setOtpVerifying(false);
     }
   };
 
@@ -273,6 +349,70 @@ const InterviewSetup = () => {
           </div>
         </form>
       </div>
+      
+      {/* OTP Verification Modal */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm relative mx-4">
+            <button 
+              onClick={() => {
+                setShowPhoneModal(false);
+                setOtpStep(false);
+                setOtpCode('');
+              }} 
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <ShieldAlert className="text-blue-500" /> Verify Phone
+            </h3>
+            
+            {!otpStep ? (
+              <>
+                <p className="text-sm text-slate-500 mb-4">Please verify a WhatsApp number to receive your interview feedback PDF.</p>
+                <input 
+                  type="text"
+                  maxLength="10"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter 10-digit number"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500 font-medium tracking-wider"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSendOtp}
+                  disabled={otpSending || phone.length !== 10}
+                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex justify-center items-center gap-2"
+                >
+                  {otpSending ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...</> : 'Send OTP'}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-slate-500 mb-4">Enter the 3-digit verification code sent to +91 {phone}</p>
+                <input 
+                  type="text"
+                  maxLength="3"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter 3-digit OTP"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500 font-bold tracking-[0.5em] text-center text-lg"
+                  autoFocus
+                />
+                <button
+                  onClick={handleVerifyOtpAndStart}
+                  disabled={otpVerifying || otpCode.length !== 3 || loading}
+                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex justify-center items-center gap-2"
+                >
+                  {otpVerifying || loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify & Start'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -39,7 +39,14 @@ exports.getResume = async (req, res) => {
   try {
     const resume = await Resume.findOne({ _id: req.params.id, userId: req.user.id });
     if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
-    res.json({ success: true, resume });
+    
+    const user = await User.findById(req.user.id);
+    let verifiedPhone = null;
+    if (user && user.mobile && user.mobile !== 'Google Auth') {
+      verifiedPhone = user.mobile;
+    }
+
+    res.json({ success: true, resume, verifiedPhone });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });
@@ -207,6 +214,64 @@ exports.deleteResume = async (req, res) => {
     const resume = await Resume.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
     res.json({ success: true, message: 'Resume deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// POST /api/resume/:id/send-whatsapp
+exports.sendWhatsapp = async (req, res) => {
+  try {
+    const { phone, pdfBase64 } = req.body;
+    
+    if (!phone || !pdfBase64) {
+      return res.status(400).json({ success: false, message: 'Phone and PDF data are required' });
+    }
+
+    const resume = await Resume.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const currentDownloads = resume.whatsappDownloadsUsed || 0;
+    const newDownloads = currentDownloads + 1;
+
+    // Check if we have free whatsapp sends left for this resume (limit 3)
+    if (currentDownloads < 3) {
+      await Resume.updateOne(
+        { _id: req.params.id },
+        { $set: { whatsappDownloadsUsed: newDownloads } }
+      );
+    } else {
+      // Otherwise deduct 2 tokens
+      const deducted = await deductTokens(user, 2, `Sent PDF via WhatsApp for resume: ${resume.name}`);
+      if (!deducted) {
+        return res.status(403).json({ success: false, message: `Insufficient tokens. Premium WhatsApp sends cost 2 tokens.` });
+      }
+      await Resume.updateOne(
+        { _id: req.params.id },
+        { $set: { whatsappDownloadsUsed: newDownloads } }
+      );
+    }
+
+    // Queue WhatsApp Media Message
+    // Strip the data: URI prefix if it exists
+    const base64Data = pdfBase64.includes('base64,') ? pdfBase64.split('base64,')[1] : pdfBase64;
+    const caption = `📄 *Your Resume is Ready!*\n\nHello *${user.name.split(' ')[0]}*,\nHere is your requested resume from Code-A-Nova: *${resume.name}*\n\n📧 Email: codeanova26@gmail.com\n🌐 Website: https://code-a-nova.online\n\nThank you for choosing us!`;
+    const filename = `${resume.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    
+    const { queueWhatsAppMedia } = require("../utils/whatsappClient");
+    queueWhatsAppMedia(phone, caption, 'application/pdf', base64Data, filename);
+
+    res.json({ 
+      success: true, 
+      freeSend: currentDownloads < 3, 
+      whatsappDownloadsUsed: newDownloads,
+      creditsRemaining: user.interviewCredits 
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });

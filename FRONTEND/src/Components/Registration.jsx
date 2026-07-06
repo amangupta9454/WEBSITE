@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Send, Upload } from 'lucide-react';
+import { Loader2, Send, Upload, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const states = [
@@ -34,6 +34,14 @@ const Registration = () => {
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  
+  // OTP State
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+
   const [waitlistData, setWaitlistData] = useState({ name: '', email: '' });
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
@@ -65,8 +73,47 @@ const Registration = () => {
     }
   };
 
+  const handleSendOtp = async () => {
+    if (!formData.whatsapp || formData.whatsapp.length !== 10) {
+      toast.error("Please enter a valid 10-digit WhatsApp number");
+      return;
+    }
+    setOtpSending(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/send`, { phone: formData.whatsapp });
+      setOtpStep(true);
+      toast.success("OTP sent to WhatsApp!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpValue || otpValue.length !== 3) {
+      toast.error("Please enter a valid 3-digit OTP");
+      return;
+    }
+    setOtpVerifying(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/verify`, { phone: formData.whatsapp, otp: otpValue });
+      setIsPhoneVerified(true);
+      setOtpStep(false);
+      toast.success("Phone number verified successfully!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isPhoneVerified) {
+      toast.error("Please verify your WhatsApp number first");
+      return;
+    }
     if (!resume) {
       toast.error('Please upload your resume');
       return;
@@ -262,7 +309,63 @@ const Registration = () => {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-700 mb-2">WhatsApp Number *</label>
-                  <input required name="whatsapp" pattern="[0-9]{10}" maxLength="10" value={formData.whatsapp} onChange={handleChange} className={inputClasses} placeholder="10-digit number" />
+                  
+                  {isPhoneVerified ? (
+                    <div className="flex items-center gap-3">
+                      <input disabled value={formData.whatsapp} className={`${inputClasses} bg-green-50/50 border-green-500 text-green-700 font-medium`} />
+                      <span className="flex items-center text-green-600 font-bold whitespace-nowrap bg-green-100 px-3 py-2.5 rounded-lg border border-green-200">
+                        <CheckCircle size={20} className="mr-1" /> Verified
+                      </span>
+                    </div>
+                  ) : otpStep ? (
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="text" 
+                        maxLength="3" 
+                        value={otpValue} 
+                        onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))} 
+                        className={`${inputClasses} text-center tracking-widest font-bold`} 
+                        placeholder="3-digit OTP" 
+                        autoFocus
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        disabled={otpVerifying || otpValue.length !== 3}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                      >
+                        {otpVerifying ? "Verifying..." : "Verify OTP"}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setOtpStep(false); setOtpValue(""); }}
+                        className="text-gray-500 hover:text-gray-700 text-sm font-medium underline whitespace-nowrap"
+                      >
+                        Change number
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <input 
+                        required 
+                        name="whatsapp" 
+                        pattern="[0-9]{10}" 
+                        maxLength="10" 
+                        value={formData.whatsapp} 
+                        onChange={handleChange} 
+                        className={inputClasses} 
+                        placeholder="10-digit number" 
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={otpSending || formData.whatsapp?.length !== 10}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                      >
+                        {otpSending ? "Sending..." : "Verify"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
