@@ -153,31 +153,31 @@ const ResumeBuilder = () => {
       await new Promise(r => setTimeout(r, 100));
 
       const element = downloadRef.current;
-      const canvas = await html2canvas(element, { 
-        scale: 4, 
-        useCORS: true,
-        logging: false
-      });
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white; }
+          </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: white;">
+          ${element.outerHTML}
+        </body>
+        </html>
+      `;
       
       setScale(originalScale);
-
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      
-      // Convert to base64 data URI
-      const pdfBase64 = pdf.output('datauristring');
-      
-      toast.loading("Sending to WhatsApp...", { id: "generating" });
+      toast.loading("Generating True PDF...", { id: "generating" });
 
       const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/send-whatsapp`, {
         phone: whatsappNumber,
-        pdfBase64
+        htmlContent
+
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

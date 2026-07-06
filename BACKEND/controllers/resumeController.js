@@ -228,13 +228,12 @@ exports.deleteResume = async (req, res) => {
   }
 };
 
-// POST /api/resume/:id/send-whatsapp
 exports.sendWhatsapp = async (req, res) => {
   try {
-    const { phone, pdfBase64 } = req.body;
+    const { phone, htmlContent } = req.body;
     
-    if (!phone || !pdfBase64) {
-      return res.status(400).json({ success: false, message: 'Phone and PDF data are required' });
+    if (!phone || !htmlContent) {
+      return res.status(400).json({ success: false, message: 'Phone and htmlContent are required' });
     }
 
     const resume = await Resume.findOne({ _id: req.params.id, userId: req.user.id });
@@ -264,14 +263,12 @@ exports.sendWhatsapp = async (req, res) => {
       );
     }
 
-    // Queue WhatsApp Media Message
-    // Strip the data: URI prefix if it exists
-    const base64Data = pdfBase64.includes('base64,') ? pdfBase64.split('base64,')[1] : pdfBase64;
+    // Queue WhatsApp True PDF Generation Message
     const caption = `📄 *Your Resume is Ready!*\n\nHello *${user.name.split(' ')[0]}*,\nHere is your requested resume from Code-A-Nova: *${resume.name}*\n\n📧 Email: codeanova26@gmail.com\n🌐 Website: https://code-a-nova.online\n\nThank you for choosing us!`;
     const filename = `${resume.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
-    const { queueWhatsAppMedia } = require("../utils/whatsappClient");
-    queueWhatsAppMedia(phone, caption, 'application/pdf', base64Data, filename);
+    const { queueWhatsAppPdf } = require("../utils/whatsappClient");
+    queueWhatsAppPdf(phone, caption, htmlContent, filename);
 
     res.json({ 
       success: true, 

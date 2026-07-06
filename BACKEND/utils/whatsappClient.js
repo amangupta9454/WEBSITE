@@ -67,9 +67,36 @@ const queueWhatsAppMedia = async (phoneNumber, caption, mimetype, data, filename
   }
 };
 
+/**
+ * Adds a new true PDF generation message to the queue.
+ */
+const queueWhatsAppPdf = async (phoneNumber, caption, htmlContent, filename) => {
+  try {
+    console.log(`Delegating WhatsApp True PDF for ${phoneNumber} to Microservice...`);
+    
+    await axios.post(`${getServiceUrl()}/send-pdf-html`, {
+      phoneNumber,
+      caption,
+      htmlContent,
+      filename
+    }, {
+      headers: {
+        'x-api-key': getApiKey(),
+        'Content-Type': 'application/json'
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity
+    });
+    console.log(`Successfully delegated true PDF for ${phoneNumber}`);
+  } catch (error) {
+    console.error(`Failed to delegate WhatsApp true PDF to ${phoneNumber}:`, error.message);
+  }
+};
+
 module.exports = {
   initializeWhatsApp,
   queueWhatsAppMessage,
-  queueWhatsAppMedia
+  queueWhatsAppMedia,
+  queueWhatsAppPdf
 };
 

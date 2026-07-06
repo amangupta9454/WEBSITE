@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -36,7 +37,7 @@ const processQueue = async () => {
   while (messageQueue.length > 0) {
     if (!isClientReady) break;
 
-    const { phoneNumber, message, type, caption, mimetype, data, filename, resolve, reject } = messageQueue[0];
+    const { phoneNumber, message, type, caption, mimetype, data, filename, htmlContent, resolve, reject } = messageQueue[0];
     try {
       const formattedNumber = phoneNumber.replace(/[^0-9]/g, '');
       const finalNumber = (formattedNumber.length === 10 ? '91' + formattedNumber : formattedNumber) + '@s.whatsapp.net';
@@ -49,6 +50,24 @@ const processQueue = async () => {
           document: buffer, 
           mimetype: mimetype || 'application/pdf', 
           fileName: filename || 'document.pdf',
+          caption: caption || ''
+        });
+      } else if (type === 'pdf_html') {
+        console.log('Generating true PDF from HTML...');
+        const browser = await puppeteer.launch({
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable',
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
+          headless: 'new'
+        });
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+        await browser.close();
+        
+        await sock.sendMessage(finalNumber, { 
+          document: pdfBuffer, 
+          mimetype: 'application/pdf', 
+          fileName: filename || 'Resume.pdf',
           caption: caption || ''
         });
       } else {
@@ -157,6 +176,24 @@ app.post('/send-media', checkApiKey, (req, res) => {
   }
 
   res.json({ success: true, message: 'Media queued successfully' });
+});
+
+app.post('/send-pdf-html', checkApiKey, (req, res) => {
+  const { phoneNumber, caption, htmlContent, filename } = req.body;
+  if (!phoneNumber || !htmlContent) {
+    return res.status(400).json({ error: 'phoneNumber and htmlContent are required' });
+  }
+
+  const resolve = (val) => console.log('PDF HTML Queue processed:', val);
+  const reject = (err) => console.error('PDF HTML Queue error:', err);
+
+  messageQueue.push({ phoneNumber, caption, htmlContent, filename, type: 'pdf_html', resolve, reject });
+  
+  if (isClientReady && !isProcessingQueue) {
+    processQueue();
+  }
+
+  res.json({ success: true, message: 'True PDF Generation queued successfully' });
 });
 
 app.listen(PORT, () => {
