@@ -6,7 +6,6 @@ const auditLogger = require('../utils/auditLogger');
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
-const { generateFeedbackPDF } = require('../utils/pdfGenerator');
 const { queueWhatsAppMedia } = require('../utils/whatsappClient');
 
 const validateEvaluationSchema = (data) => {
@@ -326,25 +325,6 @@ exports.processEvaluation = async (req, res) => {
     session.status = 'Completed';
     await session.save();
     auditLogger.log('EVALUATION_FINISHED', { sessionId: session._id, status: session.status });
-
-    // Background task: Generate PDF and send via WhatsApp if mobile is verified
-    (async () => {
-      try {
-        const user = await User.findById(userId);
-        if (user && user.isPhoneVerified && user.mobile) {
-          const pdfBuffer = await generateFeedbackPDF(aiEvaluation, user, session);
-          const base64Data = pdfBuffer.toString('base64');
-          
-          const caption = `🎯 *Mock Interview Completed!*\n\nHello *${user.name.split(' ')[0]}*,\nYour detailed AI feedback for the *${session.jobTitle}* role is ready.\n\n📧 Email: codeanova26@gmail.com\n🌐 Website: https://code-a-nova.online\n\nKeep practicing and keep growing!`;
-          const filename = `Interview_Feedback_${session.jobTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-          
-          queueWhatsAppMedia(user.mobile, caption, 'application/pdf', base64Data, filename);
-          console.log(`WhatsApp feedback queued for ${user.mobile}`);
-        }
-      } catch (err) {
-        console.error('Failed to generate and send feedback PDF via WhatsApp:', err);
-      }
-    })();
 
     res.status(200).json({ success: true, session });
   } catch (error) {
