@@ -1082,7 +1082,6 @@ const reviewSummerProject = async (req, res) => {
       await transporter.sendMail(mailOptions);
     } catch (emailError) {
       console.error("[Admin] Failed to send email notification for project review:", emailError);
-      // Don't fail the request if email fails, but log it
     }
 
     res.json({ message: "Project review updated successfully" });
