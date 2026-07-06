@@ -226,7 +226,7 @@ const assignNormalTasks = async (req, res) => {
 
     // Send WhatsApp notification
     const whatsappNumber = internship.whatsapp || internship.mobile || user.phone;
-    if (whatsappNumber && whatsappNumber.length === 10) {
+    if (whatsappNumber && String(whatsappNumber).replace(/[^0-9]/g, '').length >= 10) {
       const projectNames = tasks.map(t => t.projectName).join(', ');
       const message = `Hello! 👋\n\nA new project has been assigned to you.\n\n` +
         `📁 *Project Name:* ${projectNames}\n` +
@@ -759,7 +759,7 @@ const updateAssignedRepo = async (req, res) => {
     const projectName = projectInfo ? projectInfo.name : "Summer Project";
 
     const whatsappNumber = internship.whatsapp || internship.mobile || user.phone;
-    if (whatsappNumber && whatsappNumber.length === 10) {
+    if (whatsappNumber && String(whatsappNumber).replace(/[^0-9]/g, '').length >= 10) {
       const message = `Hello! 👋\n\nA new project has been assigned to you.\n\n` +
         `📁 *Project Name:* ${projectName}\n` +
         `📧 *Email:* ${internship.email || user.email}\n` +
