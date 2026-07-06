@@ -83,12 +83,15 @@ const processQueue = async () => {
 
 // Initialize WhatsApp
 console.log('Initializing WhatsApp Client...');
+const puppeteer = require('puppeteer');
+
 client = new Client({
   authStrategy: new LocalAuth({
     dataPath: './whatsapp-session'
   }),
   puppeteer: {
     headless: true,
+    executablePath: puppeteer.executablePath(),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -96,7 +99,10 @@ client = new Client({
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--single-process', // Memory saving on Render
+      '--disable-software-rasterizer',
+      '--mute-audio'
     ],
   }
 });
