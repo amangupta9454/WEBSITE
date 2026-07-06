@@ -112,6 +112,11 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
     ));
   };
 
+  const formatUrl = (url) => {
+    if (!url) return '';
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  };
+
   const renderTextWithNewlines = (text, className) => {
     if (!text) return null;
     return text.split('\n').map((line, idx) => (
@@ -172,13 +177,13 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
                           {(proj.liveLink || proj.link) && (
                             <div className="flex items-center gap-1">
                               <span className="font-bold text-gray-700" style={{ fontSize: 'var(--text-sm-size)' }}>Live:</span>
-                              <a href={proj.liveLink || proj.link} className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
+                              <a href={formatUrl(proj.liveLink || proj.link)} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>{(proj.liveLink || proj.link).replace(/^https?:\/\/(www\.)?/, '')}</a>
                             </div>
                           )}
                           {proj.githubLink && (
                             <>
                               <span className="text-gray-300 leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>|</span>
-                              <a href={proj.githubLink} className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>GitHub</a>
+                              <a href={formatUrl(proj.githubLink)} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline leading-tight" style={{ fontSize: 'var(--text-sm-size)' }}>GitHub</a>
                             </>
                           )}
                         </div>
@@ -406,18 +411,18 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         </div>
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-gray-700 mt-0.5" style={{ fontSize: 'var(--text-size)' }}>
           {personalInfo?.linkedin && (
-            <a href={personalInfo.linkedin} className="text-blue-800 hover:underline">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</a>
+            <a href={formatUrl(personalInfo.linkedin)} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</a>
           )}
           {personalInfo?.github && (
             <>
               <span className="text-gray-300">|</span>
-              <a href={personalInfo.github} className="text-blue-800 hover:underline">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</a>
+              <a href={formatUrl(personalInfo.github)} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</a>
             </>
           )}
           {personalInfo?.portfolio && (
             <>
               <span className="text-gray-300">|</span>
-              <a href={personalInfo.portfolio} className="text-blue-800 hover:underline">{personalInfo.portfolio.replace(/^https?:\/\/(www\.)?/, '')}</a>
+              <a href={formatUrl(personalInfo.portfolio)} target="_blank" rel="noopener noreferrer" className="text-blue-800 hover:underline">{personalInfo.portfolio.replace(/^https?:\/\/(www\.)?/, '')}</a>
             </>
           )}
         </div>
