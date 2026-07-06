@@ -268,7 +268,7 @@ exports.sendWhatsapp = async (req, res) => {
     const filename = `${resume.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
     const { queueWhatsAppPdf } = require("../utils/whatsappClient");
-    queueWhatsAppPdf(phone, caption, htmlContent, filename);
+    await queueWhatsAppPdf(phone, caption, htmlContent, filename);
 
     res.json({ 
       success: true, 

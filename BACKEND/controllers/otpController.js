@@ -24,7 +24,7 @@ exports.sendOtp = async (req, res) => {
 
     // Send the OTP via WhatsApp
     const message = `🔐 *Verification Code*\n\nYour Code-A-Nova verification code is: *${otpCode}*\n\n_This code is only for verifying your phone number in the application form. If you did not request this, please ignore it. Do not share this code with anyone._`;
-    queueWhatsAppMessage(phone, message);
+    await queueWhatsAppMessage(phone, message);
 
     res.status(200).json({ success: true, message: "OTP sent successfully via WhatsApp" });
   } catch (error) {

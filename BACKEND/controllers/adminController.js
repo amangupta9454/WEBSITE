@@ -236,7 +236,7 @@ const assignNormalTasks = async (req, res) => {
         `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
       
       const { queueWhatsAppMessage } = require("../utils/whatsappClient");
-      queueWhatsAppMessage(whatsappNumber, message);
+      await queueWhatsAppMessage(whatsappNumber, message);
     }
 
     res.json({ message: "Tasks assigned successfully", assignedNormalTasks: tasks });
@@ -768,7 +768,7 @@ const updateAssignedRepo = async (req, res) => {
         `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
       
       const { queueWhatsAppMessage } = require("../utils/whatsappClient");
-      queueWhatsAppMessage(whatsappNumber, message);
+      await queueWhatsAppMessage(whatsappNumber, message);
     }
 
     res.json({ message: "Repository tracked successfully" });
