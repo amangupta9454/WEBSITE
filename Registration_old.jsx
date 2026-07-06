@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Send, Upload, CheckCircle } from 'lucide-react';
+import { Loader2, Send, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const states = [
@@ -31,11 +31,9 @@ const Registration = () => {
   });
   const [resume, setResume] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(true);
-  const [paymentEnabled, setPaymentEnabled] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
-  const [otpVerifying, setOtpVerifying] = useState(false);
-
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
+  const [checkingStatus, setCheckingStatus] = useState(true);
   const [waitlistData, setWaitlistData] = useState({ name: '', email: '' });
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
