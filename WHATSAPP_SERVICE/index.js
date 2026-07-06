@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const puppeteer = require('puppeteer');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
