@@ -208,8 +208,6 @@ const updateInternshipDetails = async (req, res) => {
   }
 };
 
-const axios = require('axios');
-
 const assignNormalTasks = async (req, res) => {
   try {
     const { applicationId, tasks } = req.body;
@@ -237,16 +235,8 @@ const assignNormalTasks = async (req, res) => {
         `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
         `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
       
-      try {
-        await axios.post(`${process.env.WHATSAPP_SERVICE_URL}/send-message`, {
-          phoneNumber: whatsappNumber,
-          message: message
-        }, {
-          headers: { 'x-api-key': process.env.WHATSAPP_API_KEY }
-        });
-      } catch (waError) {
-        console.error("[Admin] Error sending WhatsApp message for normal tasks:", waError.message);
-      }
+      const { queueWhatsAppMessage } = require("../utils/whatsappClient");
+      queueWhatsAppMessage(whatsappNumber, message);
     }
 
     res.json({ message: "Tasks assigned successfully", assignedNormalTasks: tasks });
@@ -777,16 +767,8 @@ const updateAssignedRepo = async (req, res) => {
         `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
         `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
       
-      try {
-        await axios.post(`${process.env.WHATSAPP_SERVICE_URL}/send-message`, {
-          phoneNumber: whatsappNumber,
-          message: message
-        }, {
-          headers: { 'x-api-key': process.env.WHATSAPP_API_KEY }
-        });
-      } catch (waError) {
-        console.error("[Admin] Error sending WhatsApp message for summer project:", waError.message);
-      }
+      const { queueWhatsAppMessage } = require("../utils/whatsappClient");
+      queueWhatsAppMessage(whatsappNumber, message);
     }
 
     res.json({ message: "Repository tracked successfully" });
