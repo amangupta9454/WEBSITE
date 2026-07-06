@@ -114,14 +114,18 @@ app.post('/send-message', checkApiKey, (req, res) => {
     return res.status(400).json({ error: 'phoneNumber and message are required' });
   }
 
-  return new Promise((resolve, reject) => {
-    messageQueue.push({ phoneNumber, message, resolve, reject });
-    if (isClientReady && !isProcessingQueue) {
-      processQueue();
-    }
-  })
-    .then(() => res.json({ success: true, message: 'Message sent or queued successfully' }))
-    .catch((error) => res.status(500).json({ error: 'Failed to queue message', details: error.message }));
+  // Dummy resolve/reject to satisfy the queue processor without hanging the response
+  const resolve = (val) => console.log('Queue processed:', val);
+  const reject = (err) => console.error('Queue error:', err);
+
+  messageQueue.push({ phoneNumber, message, resolve, reject });
+  
+  if (isClientReady && !isProcessingQueue) {
+    processQueue();
+  }
+
+  // Return immediately so Vercel does not time out
+  res.json({ success: true, message: 'Message queued successfully' });
 });
 
 app.listen(PORT, () => {
