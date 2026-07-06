@@ -29,10 +29,6 @@ const ResumeBuilder = () => {
   const [whatsappSending, setWhatsappSending] = useState(false);
   
   const [verifiedPhone, setVerifiedPhone] = useState(null);
-  const [otpStep, setOtpStep] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpVerifying, setOtpVerifying] = useState(false);
 
   useEffect(() => {
     fetchResume();
@@ -131,53 +127,6 @@ const ResumeBuilder = () => {
         toast.error(errorMsg);
       }
       setDownloading(false);
-    }
-  };
-
-  const handleSendOtp = async () => {
-    if (!whatsappNumber || whatsappNumber.length !== 10) {
-      toast.error("Please enter a valid 10-digit WhatsApp number");
-      return;
-    }
-    setOtpSending(true);
-    try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/send`, { phone: whatsappNumber });
-      setOtpStep(true);
-      toast.success("OTP sent to WhatsApp!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send OTP");
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
-  const handleVerifyOtpAndSend = async () => {
-    if (!otpCode || otpCode.length !== 3) {
-      toast.error("Please enter a valid 3-digit OTP");
-      return;
-    }
-    setOtpVerifying(true);
-    try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/otp/verify`, { phone: whatsappNumber, otp: otpCode });
-      
-      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
-      // Save phone to profile
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/student/profile`, {
-        mobile: whatsappNumber
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setVerifiedPhone(whatsappNumber);
-      toast.success("Phone verified successfully!");
-      setOtpVerifying(false);
-      
-      // Proceed to send whatsapp
-      await handleSendWhatsapp();
-      
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Invalid OTP");
-      setOtpVerifying(false);
     }
   };
 
@@ -288,7 +237,13 @@ const ResumeBuilder = () => {
         
         <div className="flex items-center gap-2 sm:gap-3">
             <button 
-              onClick={() => setShowWhatsappPopup(true)}
+              onClick={() => {
+                if (verifiedPhone) {
+                  setShowWhatsappPopup(true);
+                } else {
+                  toast.error("Please verify your phone number through master profile");
+                }
+              }}
               disabled={downloading || saving || whatsappSending}
               className="hidden md:flex bg-[#25D366] hover:bg-[#128C7E] disabled:opacity-70 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-bold items-center gap-1 sm:gap-2 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5 shrink-0"
             >
@@ -346,7 +301,13 @@ const ResumeBuilder = () => {
           {/* Mobile Action Buttons */}
           <div className="w-full md:hidden mt-8 mb-4 flex flex-col gap-3">
             <button 
-              onClick={() => setShowWhatsappPopup(true)}
+              onClick={() => {
+                if (verifiedPhone) {
+                  setShowWhatsappPopup(true);
+                } else {
+                  toast.error("Please verify your phone number through master profile");
+                }
+              }}
               disabled={downloading || saving || whatsappSending}
               className="w-full bg-[#25D366] hover:bg-[#128C7E] disabled:opacity-70 text-white px-6 py-4 rounded-xl text-lg font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-green-500/30 active:scale-95"
             >
@@ -385,16 +346,11 @@ const ResumeBuilder = () => {
           <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
         </div>
       </div>
-      {/* WhatsApp Popup Modal */}
-      {showWhatsappPopup && (
+      {showWhatsappPopup && verifiedPhone && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm relative mx-4">
             <button 
-              onClick={() => {
-                setShowWhatsappPopup(false);
-                setOtpStep(false);
-                setOtpCode('');
-              }} 
+              onClick={() => setShowWhatsappPopup(false)} 
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors"
             >
               <X size={20} />
@@ -403,70 +359,22 @@ const ResumeBuilder = () => {
               <Send className="text-green-500" /> Send to WhatsApp
             </h3>
             
-            {verifiedPhone ? (
-              <>
-                <p className="text-sm text-slate-500 mb-6">Are you sure you want to send your resume to your verified number <strong>+91 {verifiedPhone}</strong>?</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowWhatsappPopup(false)}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSendWhatsapp}
-                    disabled={whatsappSending}
-                    className="flex-1 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-500/30 flex justify-center items-center gap-2"
-                  >
-                    {whatsappSending ? <><Loader2 className="w-5 h-5 animate-spin" /></> : 'Yes, Send'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {!otpStep ? (
-                  <>
-                    <p className="text-sm text-slate-500 mb-4">Please verify a WhatsApp number to receive the PDF.</p>
-                    <input 
-                      type="text"
-                      maxLength="10"
-                      value={whatsappNumber}
-                      onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter 10-digit number"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-green-500 font-medium tracking-wider"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSendOtp}
-                      disabled={otpSending || whatsappNumber.length !== 10}
-                      className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-500/30 flex justify-center items-center gap-2"
-                    >
-                      {otpSending ? <><Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...</> : 'Send OTP'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-slate-500 mb-4">Enter the 3-digit verification code sent to +91 {whatsappNumber}</p>
-                    <input 
-                      type="text"
-                      maxLength="3"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter 3-digit OTP"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-green-500 font-bold tracking-[0.5em] text-center text-lg"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleVerifyOtpAndSend}
-                      disabled={otpVerifying || otpCode.length !== 3 || whatsappSending}
-                      className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-500/30 flex justify-center items-center gap-2"
-                    >
-                      {otpVerifying || whatsappSending ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : 'Verify & Send'}
-                    </button>
-                  </>
-                )}
-              </>
-            )}
+            <p className="text-sm text-slate-500 mb-6">Are you sure you want to send your resume to your verified number <strong>+91 {verifiedPhone}</strong>?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWhatsappPopup(false)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendWhatsapp}
+                disabled={whatsappSending}
+                className="flex-1 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-500/30 flex justify-center items-center gap-2"
+              >
+                {whatsappSending ? <><Loader2 className="w-5 h-5 animate-spin" /></> : 'Yes, Send'}
+              </button>
+            </div>
           </div>
         </div>
       )}
