@@ -35,6 +35,19 @@ const loginStudent = async (req, res) => {
       { expiresIn: "7d" },
     );
 
+    let verifiedPhone = null;
+    if (user.mobile && user.mobile !== 'Google Auth') {
+      verifiedPhone = user.mobile;
+    } else if (user.internships && user.internships.length > 0) {
+      for (let i = user.internships.length - 1; i >= 0; i--) {
+        const intern = user.internships[i];
+        if (intern.whatsapp || intern.mobile) {
+          verifiedPhone = intern.whatsapp || intern.mobile;
+          break;
+        }
+      }
+    }
+
     res.json({
       token,
       user: {
@@ -44,6 +57,8 @@ const loginStudent = async (req, res) => {
         studentId: internship.studentId,
         isFirstLogin:
           user.isFirstLogin === undefined ? true : user.isFirstLogin,
+        isPhoneVerified: !!verifiedPhone,
+        mobile: verifiedPhone || ''
       },
     });
   } catch (err) {

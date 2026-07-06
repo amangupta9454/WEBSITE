@@ -192,12 +192,26 @@ const getDashboardInfo = async (req, res) => {
       (n) => !user.dismissedNotifications.includes(n._id)
     );
 
+    let verifiedPhone = user.mobile;
+    if (verifiedPhone === 'Google Auth') {
+      verifiedPhone = '';
+      if (user.internships && user.internships.length > 0) {
+        for (let i = user.internships.length - 1; i >= 0; i--) {
+          const intern = user.internships[i];
+          if (intern.whatsapp || intern.mobile) {
+            verifiedPhone = intern.whatsapp || intern.mobile;
+            break;
+          }
+        }
+      }
+    }
+
     res.json({
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        mobile: user.mobile,
+        mobile: verifiedPhone,
         profileImage: user.profileImage,
         github: user.github,
         linkedin: user.linkedin,
