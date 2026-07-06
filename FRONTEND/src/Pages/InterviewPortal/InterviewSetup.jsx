@@ -9,7 +9,8 @@ const InterviewSetup = () => {
     jobTitle: '',
     jobDescription: '',
     experienceYears: '',
-    durationMinutes: 15
+    durationMinutes: 15,
+    mode: 'Standard'
   });
   const [loading, setLoading] = useState(false);
   const [isUnlimited, setIsUnlimited] = useState(false);
@@ -94,6 +95,7 @@ const InterviewSetup = () => {
         data.append('jobDescription', formData.jobDescription);
         data.append('experienceYears', formData.experienceYears);
         data.append('durationMinutes', formData.durationMinutes);
+        data.append('mode', formData.mode);
         data.append('resume', resume);
         // Let browser set Content-Type for FormData
       }
@@ -112,7 +114,11 @@ const InterviewSetup = () => {
         }
 
         // Navigate to active interview
-        navigate(`/interview-active/${res.data.session._id}`);
+        if (formData.mode === 'Panel') {
+          navigate(`/panel-interview-active/${res.data.session._id}`);
+        } else {
+          navigate(`/interview-active/${res.data.session._id}`);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -206,6 +212,28 @@ const InterviewSetup = () => {
                 onChange={handleChange}
                 className="block w-full rounded-xl border border-slate-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 p-2.5 sm:p-3 text-sm sm:text-base text-slate-700 transition-all outline-none"
               />
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-bold text-slate-700">Interview Mode</label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, mode: 'Standard'})}
+                className={`p-3 border rounded-xl text-left transition-all ${formData.mode === 'Standard' ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
+              >
+                <h4 className="font-bold text-slate-800">Standard</h4>
+                <p className="text-xs text-slate-500 mt-1">Single AI interviewer</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, mode: 'Panel'})}
+                className={`p-3 border rounded-xl text-left transition-all ${formData.mode === 'Panel' ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
+              >
+                <h4 className="font-bold text-slate-800">FAANG Panel</h4>
+                <p className="text-xs text-slate-500 mt-1">Dual AI interviewers (HR + Tech)</p>
+              </button>
             </div>
           </div>
           

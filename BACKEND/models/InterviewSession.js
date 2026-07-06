@@ -12,7 +12,10 @@ const interviewSessionSchema = new mongoose.Schema(
     messages: { type: Array, default: [] }, // Chat transcript if needed
     recruiterMemory: { type: Object, default: {} },
     attentionReport: { type: Object, default: {} },
-    resumeText: { type: String, default: "" }
+    resumeText: { type: String, default: "" },
+    mode: { type: String, enum: ["Standard", "Panel"], default: "Standard" },
+    stageHistory: { type: Array, default: [] }, // Array of { stage, timestamp }
+    panelFeedback: { type: Object, default: {} } // Dedicated structured feedback for panel mode
   },
   { timestamps: true }
 );

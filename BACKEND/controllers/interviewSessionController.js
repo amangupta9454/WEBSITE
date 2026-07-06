@@ -37,7 +37,7 @@ const validateEvaluationSchema = (data) => {
 };
 
 exports.createSession = async (req, res) => {
-  const { jobTitle, jobDescription, experienceYears, durationMinutes } = req.body;
+  const { jobTitle, jobDescription, experienceYears, durationMinutes, mode } = req.body;
   const userId = req.user.id || req.user.unifiedUserId;
 
   try {
@@ -112,6 +112,7 @@ exports.createSession = async (req, res) => {
       jobDescription,
       experienceYears,
       durationMinutes,
+      mode: mode || "Standard",
       resumeText: extractedResumeText
     });
 
@@ -206,8 +207,13 @@ exports.processEvaluation = async (req, res) => {
         let promptTemplate = "";
         try {
           const registryData = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
-          const activePrompt = registryData.prompts.find(p => p.version === registryData.activeVersion);
-          promptTemplate = activePrompt ? activePrompt.content : "";
+          if (session.mode === 'Panel' && registryData.panelPrompts) {
+            const activePanelPrompt = registryData.panelPrompts.find(p => p.version === registryData.activePanelVersion);
+            promptTemplate = activePanelPrompt ? activePanelPrompt.content : "";
+          } else {
+            const activePrompt = registryData.prompts.find(p => p.version === registryData.activeVersion);
+            promptTemplate = activePrompt ? activePrompt.content : "";
+          }
         } catch (err) {
           console.error("Failed to load prompt registry:", err);
         }
@@ -454,5 +460,31 @@ exports.retryEvaluation = async (req, res) => {
   } catch (error) {
     console.error('Error retrying evaluation:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const panelRouterService = require('../services/panelRouterService');
+
+exports.panelRouter = async (req, res) => {
+  const { transcript, resumeText, jobTitle, currentStage } = req.body;
+  if (!transcript || !Array.isArray(transcript)) {
+    return res.status(400).json({ success: false, message: 'Invalid transcript array' });
+  }
+
+  try {
+    const result = await panelRouterService.routeConversation(transcript, jobTitle, currentStage);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error in panel router:', error);
+    // Graceful fallback so interview doesn't crash
+    res.status(200).json({ 
+      success: true, 
+      speaker: "Sarah", 
+      currentStage: currentStage || "Introduction", 
+      nextStage: currentStage || "Introduction",
+      stageComplete: false,
+      topic: "Error Recovery",
+      reason: "Error fallback" 
+    });
   }
 };

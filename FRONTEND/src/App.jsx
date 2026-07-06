@@ -37,6 +37,7 @@ import InterviewLogin from "./Pages/InterviewPortal/InterviewLogin";
 import InterviewDashboard from "./Pages/InterviewPortal/InterviewDashboard";
 import InterviewSetup from "./Pages/InterviewPortal/InterviewSetup";
 import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
+import PanelInterviewActive from "./Pages/InterviewPortal/PanelInterviewActive";
 import FeatureBanner from "./Components/FeatureBanner";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
@@ -95,6 +96,7 @@ function App() {
 
         {/* InterviewActive needs full screen, so it doesn't get UnifiedLayout */}
         <Route path="/interview-active/:sessionId" element={<InterviewActive />} />
+        <Route path="/panel-interview-active/:sessionId" element={<PanelInterviewActive />} />
         
         {/* ResumeBuilder needs full screen without navbar */}
         <Route path="/resume-builder/:id" element={<ResumeBuilder />} />
