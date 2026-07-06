@@ -56,13 +56,15 @@ const processQueue = async () => {
   isProcessingQueue = false;
 };
 
+const qrcode = require('qrcode-terminal');
+
 const connectToWhatsApp = async () => {
   console.log('Initializing WhatsApp Baileys Client...');
   const { state, saveCreds } = await useMultiFileAuthState('whatsapp-session');
 
   sock = makeWASocket({
     auth: state,
-    printQRInTerminal: true,
+    printQRInTerminal: false, // We will print it manually
     logger: pino({ level: 'silent' }),
     browser: ["CodeaNova", "Chrome", "1.0.0"],
   });
@@ -73,6 +75,7 @@ const connectToWhatsApp = async () => {
     const { connection, lastDisconnect, qr } = update;
     
     if (qr) {
+      qrcode.generate(qr, { small: true });
       console.log('=========================================');
       console.log('SCAN THE QR CODE ABOVE TO LOGIN');
       console.log('=========================================');
