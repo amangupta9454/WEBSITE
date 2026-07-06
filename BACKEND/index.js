@@ -148,17 +148,14 @@ if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
-// Initialize WhatsApp Web JS Client (Only if not on Vercel, as Vercel serverless blocks Puppeteer)
+// Initialize WhatsApp Web JS Client (Delegated to external microservice)
 const { initializeWhatsApp, queueWhatsAppMessage } = require('./utils/whatsappClient');
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_WHATSAPP === 'true') {
-  try {
-    initializeWhatsApp();
-  } catch (error) {
-    console.error("Failed to initialize WhatsApp:", error);
-  }
-} else {
-  console.log("WhatsApp client initialization skipped (Serverless environment).");
+try {
+  initializeWhatsApp();
+} catch (error) {
+  console.error("Failed to initialize WhatsApp delegation:", error);
 }
+
 
 // Export for Vercel serverless
 const PORT = process.env.PORT || 5000;
