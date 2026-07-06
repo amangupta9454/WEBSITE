@@ -128,8 +128,10 @@ client.on('disconnected', (reason) => {
   isClientReady = false;
 });
 
-client.initialize();
-
+console.log('Starting puppeteer browser, please wait (this might take up to 60 seconds on Render)...');
+client.initialize().catch(err => {
+  console.error('CRITICAL ERROR: Failed to initialize WhatsApp client:', err);
+});
 // API Endpoints
 app.get('/', (req, res) => {
   res.json({ status: 'running', isClientReady, queueLength: messageQueue.length });
