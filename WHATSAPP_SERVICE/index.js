@@ -4,7 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -55,30 +55,7 @@ const processQueue = async () => {
       } else if (type === 'pdf_html') {
         console.log('Generating true PDF from HTML...');
         
-        const browserPaths = [
-          process.env.PUPPETEER_EXECUTABLE_PATH,
-          '/usr/bin/google-chrome-stable',
-          '/usr/bin/google-chrome',
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/usr/bin/chrome'
-        ];
-
-        let executablePath = null;
-        const fs = require('fs');
-        for (const path of browserPaths) {
-          if (path && fs.existsSync(path)) {
-            executablePath = path;
-            break;
-          }
-        }
-
-        if (!executablePath) {
-          throw new Error('Chrome/Chromium executable not found in expected paths');
-        }
-
         const browser = await puppeteer.launch({
-          executablePath,
           args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
           headless: 'new'
         });
