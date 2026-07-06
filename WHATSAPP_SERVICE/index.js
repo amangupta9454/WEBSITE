@@ -36,13 +36,25 @@ const processQueue = async () => {
   while (messageQueue.length > 0) {
     if (!isClientReady) break;
 
-    const { phoneNumber, message, resolve, reject } = messageQueue[0];
+    const { phoneNumber, message, type, caption, mimetype, data, filename, resolve, reject } = messageQueue[0];
     try {
       const formattedNumber = phoneNumber.replace(/[^0-9]/g, '');
       const finalNumber = (formattedNumber.length === 10 ? '91' + formattedNumber : formattedNumber) + '@s.whatsapp.net';
       
       console.log(`Sending WhatsApp message to ${finalNumber}...`);
-      await sock.sendMessage(finalNumber, { text: message });
+      
+      if (type === 'media') {
+        const buffer = Buffer.from(data, 'base64');
+        await sock.sendMessage(finalNumber, { 
+          document: buffer, 
+          mimetype: mimetype || 'application/pdf', 
+          fileName: filename || 'document.pdf',
+          caption: caption || ''
+        });
+      } else {
+        await sock.sendMessage(finalNumber, { text: message });
+      }
+      
       console.log(`Successfully sent message to ${finalNumber}`);
       
       resolve({ success: true, message: 'Sent via Baileys queue' });
@@ -119,7 +131,7 @@ app.post('/send-message', checkApiKey, (req, res) => {
   const resolve = (val) => console.log('Queue processed:', val);
   const reject = (err) => console.error('Queue error:', err);
 
-  messageQueue.push({ phoneNumber, message, resolve, reject });
+  messageQueue.push({ phoneNumber, message, type: 'text', resolve, reject });
   
   if (isClientReady && !isProcessingQueue) {
     processQueue();
@@ -127,6 +139,24 @@ app.post('/send-message', checkApiKey, (req, res) => {
 
   // Return immediately so Vercel does not time out
   res.json({ success: true, message: 'Message queued successfully' });
+});
+
+app.post('/send-media', checkApiKey, (req, res) => {
+  const { phoneNumber, caption, mimetype, data, filename } = req.body;
+  if (!phoneNumber || !data) {
+    return res.status(400).json({ error: 'phoneNumber and data are required' });
+  }
+
+  const resolve = (val) => console.log('Media Queue processed:', val);
+  const reject = (err) => console.error('Media Queue error:', err);
+
+  messageQueue.push({ phoneNumber, caption, mimetype, data, filename, type: 'media', resolve, reject });
+  
+  if (isClientReady && !isProcessingQueue) {
+    processQueue();
+  }
+
+  res.json({ success: true, message: 'Media queued successfully' });
 });
 
 app.listen(PORT, () => {
