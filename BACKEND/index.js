@@ -68,7 +68,10 @@ if (process.env.SENTRY_DSN) {
 }
 
 // Security Headers
-app.use(helmet());
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.disable('x-powered-by');
 
 app.use(cors({ origin: "*" }));
