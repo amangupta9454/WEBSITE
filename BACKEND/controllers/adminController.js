@@ -30,8 +30,8 @@ const multer = require("multer");
 const Settings = require("../models/Settings");
 const Razorpay = require("razorpay");
 const rzp = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
 const upload = multer({ storage: multer.memoryStorage() });
 

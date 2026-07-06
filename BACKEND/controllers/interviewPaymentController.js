@@ -3,8 +3,8 @@ const crypto = require('crypto');
 const User = require('../models/User');
 
 const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
 
 const amountMap = { '50_tokens': 199, '100_tokens': 299, '200_tokens': 499, 'unlimited': 999 };
