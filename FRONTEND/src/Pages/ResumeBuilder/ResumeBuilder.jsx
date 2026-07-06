@@ -237,19 +237,7 @@ const ResumeBuilder = () => {
         
         <div className="flex items-center gap-2 sm:gap-3">
             <button 
-              onClick={() => {
-                if (verifiedPhone) {
-                  setShowWhatsappPopup(true);
-                } else {
-                  toast.error("Please verify your phone number through master profile");
-                }
-              }}
-              disabled={downloading || saving || whatsappSending}
-              className="hidden md:flex bg-[#25D366] hover:bg-[#128C7E] disabled:opacity-70 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-bold items-center gap-1 sm:gap-2 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5 shrink-0"
-            >
-              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>WhatsApp</span>
-            </button>
+
             <button 
               onClick={handleExport}
               disabled={downloading}
@@ -300,20 +288,7 @@ const ResumeBuilder = () => {
           
           {/* Mobile Action Buttons */}
           <div className="w-full md:hidden mt-8 mb-4 flex flex-col gap-3">
-            <button 
-              onClick={() => {
-                if (verifiedPhone) {
-                  setShowWhatsappPopup(true);
-                } else {
-                  toast.error("Please verify your phone number through master profile");
-                }
-              }}
-              disabled={downloading || saving || whatsappSending}
-              className="w-full bg-[#25D366] hover:bg-[#128C7E] disabled:opacity-70 text-white px-6 py-4 rounded-xl text-lg font-bold flex justify-center items-center gap-2 transition-all shadow-lg shadow-green-500/30 active:scale-95"
-            >
-              <Send className="w-6 h-6" />
-              Send to WhatsApp
-            </button>
+
             <button 
               onClick={handleExport}
               disabled={downloading}
