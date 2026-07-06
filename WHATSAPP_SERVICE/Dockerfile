@@ -4,6 +4,10 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 USER root
 WORKDIR /app
 
+# Tell Puppeteer to skip downloading Chrome and use the installed one
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
 COPY package*.json ./
 RUN npm install
 
