@@ -208,6 +208,8 @@ const updateInternshipDetails = async (req, res) => {
   }
 };
 
+const axios = require('axios');
+
 const assignNormalTasks = async (req, res) => {
   try {
     const { applicationId, tasks } = req.body;
@@ -223,6 +225,29 @@ const assignNormalTasks = async (req, res) => {
 
     internship.assignedNormalTasks = tasks;
     await user.save();
+
+    // Send WhatsApp notification
+    const whatsappNumber = internship.whatsapp || internship.mobile || user.phone;
+    if (whatsappNumber && whatsappNumber.length === 10) {
+      const projectNames = tasks.map(t => t.projectName).join(', ');
+      const message = `Hello! 👋\n\nA new project has been assigned to you.\n\n` +
+        `📁 *Project Name:* ${projectNames}\n` +
+        `📧 *Email:* ${internship.email || user.email}\n` +
+        `🆔 *Student ID:* ${internship.studentId}\n\n` +
+        `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
+        `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
+      
+      try {
+        await axios.post(`${process.env.WHATSAPP_SERVICE_URL}/send-message`, {
+          phoneNumber: whatsappNumber,
+          message: message
+        }, {
+          headers: { 'x-api-key': process.env.WHATSAPP_API_KEY }
+        });
+      } catch (waError) {
+        console.error("[Admin] Error sending WhatsApp message for normal tasks:", waError.message);
+      }
+    }
 
     res.json({ message: "Tasks assigned successfully", assignedNormalTasks: tasks });
   } catch (error) {
@@ -737,6 +762,33 @@ const updateAssignedRepo = async (req, res) => {
     }
 
     await user.save();
+
+    // Fetch summer project name to send WhatsApp notification
+    const SummerProject = require("../models/SummerProject");
+    const projectInfo = await SummerProject.findById(projectId);
+    const projectName = projectInfo ? projectInfo.name : "Summer Project";
+
+    const whatsappNumber = internship.whatsapp || internship.mobile || user.phone;
+    if (whatsappNumber && whatsappNumber.length === 10) {
+      const message = `Hello! 👋\n\nA new project has been assigned to you.\n\n` +
+        `📁 *Project Name:* ${projectName}\n` +
+        `📧 *Email:* ${internship.email || user.email}\n` +
+        `🆔 *Student ID:* ${internship.studentId}\n\n` +
+        `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
+        `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
+      
+      try {
+        await axios.post(`${process.env.WHATSAPP_SERVICE_URL}/send-message`, {
+          phoneNumber: whatsappNumber,
+          message: message
+        }, {
+          headers: { 'x-api-key': process.env.WHATSAPP_API_KEY }
+        });
+      } catch (waError) {
+        console.error("[Admin] Error sending WhatsApp message for summer project:", waError.message);
+      }
+    }
+
     res.json({ message: "Repository tracked successfully" });
   } catch (error) {
     console.error("[Admin] Error updating assigned repo:", error);
