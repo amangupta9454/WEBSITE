@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Set Puppeteer Cache Dir so Render Node.js environment can find the installed Chromium
+process.env.PUPPETEER_CACHE_DIR = process.env.PUPPETEER_CACHE_DIR || '/opt/render/project/puppeteer';
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -85,7 +87,6 @@ client = new Client({
   }),
   puppeteer: {
     headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
