@@ -232,8 +232,8 @@ const assignNormalTasks = async (req, res) => {
         `📁 *Project Name:* ${projectNames}\n` +
         `📧 *Email:* ${internship.email || user.email}\n` +
         `🆔 *Student ID:* ${internship.studentId}\n\n` +
-        `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
-        `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
+        `Please log in to your dashboard to view the details.\n\n` +
+        `Best of luck,\nCode-A-Nova Team`;
       
       const { queueWhatsAppMessage } = require("../utils/whatsappClient");
       await queueWhatsAppMessage(whatsappNumber, message);
@@ -764,8 +764,8 @@ const updateAssignedRepo = async (req, res) => {
         `📁 *Project Name:* ${projectName}\n` +
         `📧 *Email:* ${internship.email || user.email}\n` +
         `🆔 *Student ID:* ${internship.studentId}\n\n` +
-        `Please log in to your dashboard to view the details and submit your project at the earliest.\n\n` +
-        `🔗 *Dashboard Link:* https://codeanova.com/student-login\n\nBest of luck,\nCode-A-Nova Team`;
+        `Please log in to your dashboard to view the details.\n\n` +
+        `Best of luck,\nCode-A-Nova Team`;
       
       const { queueWhatsAppMessage } = require("../utils/whatsappClient");
       await queueWhatsAppMessage(whatsappNumber, message);

@@ -148,6 +148,10 @@ app.post('/send-message', checkApiKey, (req, res) => {
     return res.status(400).json({ error: 'phoneNumber and message are required' });
   }
 
+  if (!isClientReady || !sock) {
+    return res.status(503).json({ error: 'WhatsApp bot is currently disconnected. Please restart the microservice and scan the QR code.' });
+  }
+
   // Dummy resolve/reject to satisfy the queue processor without hanging the response
   const resolve = (val) => console.log('Queue processed:', val);
   const reject = (err) => console.error('Queue error:', err);
@@ -168,6 +172,10 @@ app.post('/send-media', checkApiKey, (req, res) => {
     return res.status(400).json({ error: 'phoneNumber and data are required' });
   }
 
+  if (!isClientReady || !sock) {
+    return res.status(503).json({ error: 'WhatsApp bot is currently disconnected. Please restart the microservice and scan the QR code.' });
+  }
+
   const resolve = (val) => console.log('Media Queue processed:', val);
   const reject = (err) => console.error('Media Queue error:', err);
 
@@ -184,6 +192,10 @@ app.post('/send-pdf-html', checkApiKey, (req, res) => {
   const { phoneNumber, caption, htmlContent, filename } = req.body;
   if (!phoneNumber || !htmlContent) {
     return res.status(400).json({ error: 'phoneNumber and htmlContent are required' });
+  }
+
+  if (!isClientReady || !sock) {
+    return res.status(503).json({ error: 'WhatsApp bot is currently disconnected. Please restart the microservice and scan the QR code.' });
   }
 
   const resolve = (val) => console.log('PDF HTML Queue processed:', val);

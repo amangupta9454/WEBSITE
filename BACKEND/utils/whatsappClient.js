@@ -30,7 +30,8 @@ const queueWhatsAppMessage = async (phoneNumber, message) => {
     });
     console.log(`Successfully delegated message for ${phoneNumber}`);
   } catch (error) {
-    console.error(`Failed to delegate WhatsApp message to ${phoneNumber}:`, error.message);
+    console.error(`Failed to delegate WhatsApp message to ${phoneNumber}:`, error?.response?.data || error.message);
+    throw new Error('WhatsApp Service Error: ' + (error?.response?.data?.error || 'Bot is disconnected or offline'));
   }
 };
 
@@ -63,7 +64,8 @@ const queueWhatsAppMedia = async (phoneNumber, caption, mimetype, data, filename
     });
     console.log(`Successfully delegated media message for ${phoneNumber}`);
   } catch (error) {
-    console.error(`Failed to delegate WhatsApp media to ${phoneNumber}:`, error.message);
+    console.error(`Failed to delegate WhatsApp media to ${phoneNumber}:`, error?.response?.data || error.message);
+    throw new Error('WhatsApp Service Error: ' + (error?.response?.data?.error || 'Bot is disconnected or offline'));
   }
 };
 
@@ -89,7 +91,8 @@ const queueWhatsAppPdf = async (phoneNumber, caption, htmlContent, filename) => 
     });
     console.log(`Successfully delegated true PDF for ${phoneNumber}`);
   } catch (error) {
-    console.error(`Failed to delegate WhatsApp true PDF to ${phoneNumber}:`, error.message);
+    console.error(`Failed to delegate WhatsApp true PDF to ${phoneNumber}:`, error?.response?.data || error.message);
+    throw new Error('WhatsApp Service Error: ' + (error?.response?.data?.error || 'Bot is disconnected or offline'));
   }
 };
 
