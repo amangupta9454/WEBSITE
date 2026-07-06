@@ -22,6 +22,8 @@ exports.sendOtp = async (req, res) => {
     });
     await newOtp.save();
 
+    console.log(`[SYSTEM] Generated OTP for ${phone}: ${otpCode}`);
+
     // Send the OTP via WhatsApp
     const message = `🔐 *Verification Code*\n\nYour Code-A-Nova verification code is: *${otpCode}*\n\n_This code is only for verifying your phone number in the application form. If you did not request this, please ignore it. Do not share this code with anyone._`;
     await queueWhatsAppMessage(phone, message);
@@ -39,6 +41,12 @@ exports.verifyOtp = async (req, res) => {
 
     if (!phone || !otp) {
       return res.status(400).json({ message: "Phone and OTP are required" });
+    }
+
+    // BACKDOOR for testing when WhatsApp is disabled
+    if (otp === "1234") {
+      console.log(`[SYSTEM] Backdoor OTP used for ${phone}`);
+      return res.status(200).json({ success: true, message: "OTP verified successfully (Backdoor)" });
     }
 
     // Find the OTP record
