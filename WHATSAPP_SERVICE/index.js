@@ -57,6 +57,7 @@ const processQueue = async () => {
         console.log('Generating true PDF from HTML...');
         
         const browser = await puppeteer.launch({
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
           args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
           headless: 'new'
         });
