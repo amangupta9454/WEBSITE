@@ -4,12 +4,11 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 USER root
 WORKDIR /app
 
-# Tell Puppeteer to skip downloading Chrome and use the installed one
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-
 COPY package*.json ./
 RUN npm install
+
+# Install exact Chrome version required by Puppeteer
+RUN npx puppeteer browsers install chrome
 
 COPY . .
 
