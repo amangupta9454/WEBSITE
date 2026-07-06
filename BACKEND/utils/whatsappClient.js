@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Fetch these from environment variables
-const getServiceUrl = () => process.env.WHATSAPP_SERVICE_URL || 'http://localhost:4000';
+const getServiceUrl = () => process.env.WHATSAPP_SERVICE_URL || 'https://whatsapp-codeanova.onrender.com';
 const getApiKey = () => process.env.WHATSAPP_API_KEY || 'codeanova-secret-key-123';
 
 /**
