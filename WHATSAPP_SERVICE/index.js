@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const puppeteer = require('puppeteer');
+const { uploadPdfToDrive } = require('./utils/driveClient');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -64,12 +65,12 @@ const processQueue = async () => {
         const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
         await browser.close();
         
-        await sock.sendMessage(finalNumber, { 
-          document: pdfBuffer, 
-          mimetype: 'application/pdf', 
-          fileName: filename || 'Resume.pdf',
-          caption: caption || ''
-        });
+        console.log('Uploading PDF to Google Drive...');
+        const driveLink = await uploadPdfToDrive(pdfBuffer, filename || 'Resume.pdf');
+        
+        const messageText = `${caption}\n\n🔗 *Download/View your Resume here:*\n${driveLink}`;
+        
+        await sock.sendMessage(finalNumber, { text: messageText });
       } else {
         await sock.sendMessage(finalNumber, { text: message });
       }
