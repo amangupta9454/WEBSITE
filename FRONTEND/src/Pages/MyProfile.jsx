@@ -45,16 +45,43 @@ export default function MyProfile() {
       });
       
       const userData = res.data?.user;
-      if (userData && userData.resumeData) {
+      if (userData) {
         let profileData = {
-          personalInfo: userData.resumeData.personalInfo || {},
-          experience: userData.resumeData.experience || [],
-          projects: userData.resumeData.projects || [],
-          education: userData.resumeData.education || [],
-          skills: userData.resumeData.skills || [],
-          achievements: userData.resumeData.achievements || [],
-          certifications: userData.resumeData.certifications || []
+          personalInfo: userData.resumeData?.personalInfo || {},
+          experience: userData.resumeData?.experience || [],
+          projects: userData.resumeData?.projects || [],
+          education: userData.resumeData?.education || [],
+          skills: userData.resumeData?.skills || [],
+          achievements: userData.resumeData?.achievements || [],
+          certifications: userData.resumeData?.certifications || []
         };
+
+        // Pre-fill missing data from internship application
+        const latestInternship = userData.internships && userData.internships.length > 0 
+          ? userData.internships[userData.internships.length - 1] 
+          : {};
+
+        profileData.personalInfo = {
+          ...profileData.personalInfo,
+          name: profileData.personalInfo.name || latestInternship.name || userData.name || "",
+          email: profileData.personalInfo.email || latestInternship.email || userData.email || "",
+          phone: profileData.personalInfo.phone || latestInternship.whatsapp || latestInternship.mobile || userData.phone || userData.mobile || "",
+          github: profileData.personalInfo.github || latestInternship.github || userData.github || "",
+          linkedin: profileData.personalInfo.linkedin || latestInternship.linkedin || userData.linkedin || "",
+        };
+
+        if (profileData.education.length === 0 && (latestInternship.college || latestInternship.course)) {
+           profileData.education = [{
+              id: Date.now().toString(),
+              school: latestInternship.college || "",
+              degree: latestInternship.course || "",
+              field: latestInternship.branch || "",
+              location: "",
+              startDate: "",
+              endDate: latestInternship.year || "",
+              gpa: ""
+           }];
+        }
         
         // Auto-migrate legacy skills
         if (profileData.skills && !Array.isArray(profileData.skills)) {
