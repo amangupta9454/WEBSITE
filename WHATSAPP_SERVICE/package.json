@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "postinstall": "node -e \"if(process.env.RENDER) require('child_process').execSync('PUPPETEER_CACHE_DIR=/opt/render/project/puppeteer npx puppeteer browsers install chrome', {stdio: 'inherit'})\""
+    "postinstall": "node -e \"if(process.env.RENDER) { process.env.PUPPETEER_CACHE_DIR='/opt/render/project/puppeteer'; require('child_process').execSync('npx puppeteer browsers install chrome', {stdio: 'inherit'}) }\""
   },
   "keywords": [],
   "author": "",
