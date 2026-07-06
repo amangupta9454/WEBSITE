@@ -1,8 +1,7 @@
 const validateEnv = () => {
   const requiredEnvVars = [
     'MONGO_URI',
-    'JWT_SECRET',
-    'GROQ_API_KEY'
+    'JWT_SECRET'
   ];
 
   const missing = [];
@@ -12,6 +11,10 @@ const validateEnv = () => {
       missing.push(envVar);
     }
   });
+
+  if (!process.env.GROQ_API_KEY) {
+    console.warn('⚠️ WARNING: GROQ_API_KEY is missing. AI Panel Interview features will not work.');
+  }
 
   if (missing.length > 0) {
     console.error('❌ CRITICAL STARTUP ERROR: Missing Required Environment Variables ❌');
