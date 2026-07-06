@@ -54,8 +54,31 @@ const processQueue = async () => {
         });
       } else if (type === 'pdf_html') {
         console.log('Generating true PDF from HTML...');
+        
+        const browserPaths = [
+          process.env.PUPPETEER_EXECUTABLE_PATH,
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/chrome'
+        ];
+
+        let executablePath = null;
+        const fs = require('fs');
+        for (const path of browserPaths) {
+          if (path && fs.existsSync(path)) {
+            executablePath = path;
+            break;
+          }
+        }
+
+        if (!executablePath) {
+          throw new Error('Chrome/Chromium executable not found in expected paths');
+        }
+
         const browser = await puppeteer.launch({
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable',
+          executablePath,
           args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
           headless: 'new'
         });
