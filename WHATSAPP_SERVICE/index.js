@@ -12,9 +12,11 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const checkApiKey = (req, res, next) => {
+  console.log(`[API] Received request for ${req.path}`);
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
   const validApiKey = process.env.WHATSAPP_API_KEY || 'codeanova-secret-key-123';
   if (apiKey !== validApiKey) {
+    console.log(`[API] Unauthorized request. Provided key: ${apiKey}`);
     return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
   }
   next();
