@@ -51,75 +51,76 @@ const {
   toggleJobPortalSetting,
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
+const { verifyAdmin } = require("../middleware/verifyAdmin");
 
 const router = express.Router();
 
 router.post("/login", adminLogin);
-router.get("/internships", auth, getInternships);
-router.get("/recent-payments", auth, getRecentPayments);
-router.post("/mark-downloaded", auth, markDownloaded);
-router.post("/update-internship", auth, updateInternshipDetails);
+router.get("/internships", auth, verifyAdmin, getInternships);
+router.get("/recent-payments", auth, verifyAdmin, getRecentPayments);
+router.post("/mark-downloaded", auth, verifyAdmin, markDownloaded);
+router.post("/update-internship", auth, verifyAdmin, updateInternshipDetails);
 router.post(
   "/upload-certificates",
   auth,
   upload.single("excelFile"),
   uploadCertificates,
 );
-router.post("/update-offer-status", auth, updateOfferStatus);
-router.post("/set-start-date", auth, setStartDate);
-router.post("/update-batch", auth, updateBatch);
-router.post("/update-internship-type", auth, updateInternshipType);
-router.post("/update-paid-status", auth, updatePaidStatus);
-router.post("/update-certificate-sent", auth, updateCertificateSent);
-router.post("/mark-paid-exported", auth, markPaidExported);
-router.post("/mark-project-exported", auth, markProjectExported);
-router.post("/bulk-update", auth, bulkUpdate);
+router.post("/update-offer-status", auth, verifyAdmin, updateOfferStatus);
+router.post("/set-start-date", auth, verifyAdmin, setStartDate);
+router.post("/update-batch", auth, verifyAdmin, updateBatch);
+router.post("/update-internship-type", auth, verifyAdmin, updateInternshipType);
+router.post("/update-paid-status", auth, verifyAdmin, updatePaidStatus);
+router.post("/update-certificate-sent", auth, verifyAdmin, updateCertificateSent);
+router.post("/mark-paid-exported", auth, verifyAdmin, markPaidExported);
+router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
+router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
 // Summer Projects management routes
-router.get("/summer-projects", auth, getSummerProjects);
-router.post("/summer-projects", auth, upload.single("pdf"), createSummerProject);
-router.delete("/summer-projects/:id", auth, deleteSummerProject);
+router.get("/summer-projects", auth, verifyAdmin, getSummerProjects);
+router.post("/summer-projects", auth, verifyAdmin, upload.single("pdf"), createSummerProject);
+router.delete("/summer-projects/:id", auth, verifyAdmin, deleteSummerProject);
 
 // Student repository tracking route
-router.post("/update-assigned-repo", auth, updateAssignedRepo);
-router.post("/review-summer-project", auth, reviewSummerProject);
-router.post("/assign-normal-tasks", auth, assignNormalTasks);
-router.post("/manual-accept-assignment", auth, manualAcceptAssignment);
+router.post("/update-assigned-repo", auth, verifyAdmin, updateAssignedRepo);
+router.post("/review-summer-project", auth, verifyAdmin, reviewSummerProject);
+router.post("/assign-normal-tasks", auth, verifyAdmin, assignNormalTasks);
+router.post("/manual-accept-assignment", auth, verifyAdmin, manualAcceptAssignment);
 
-router.get("/normal-tasks", auth, getNormalTasks);
-router.post("/normal-tasks", auth, upload.single("pdf"), createNormalTask);
-router.delete("/normal-tasks/:id", auth, deleteNormalTask);
+router.get("/normal-tasks", auth, verifyAdmin, getNormalTasks);
+router.post("/normal-tasks", auth, verifyAdmin, upload.single("pdf"), createNormalTask);
+router.delete("/normal-tasks/:id", auth, verifyAdmin, deleteNormalTask);
 
 router.get("/settings/payment", getPaymentSetting);
-router.post("/settings/payment", auth, togglePaymentSetting);
+router.post("/settings/payment", auth, verifyAdmin, togglePaymentSetting);
 router.get("/settings/registration", getRegistrationSetting);
-router.post("/settings/registration", auth, toggleRegistrationSetting);
+router.post("/settings/registration", auth, verifyAdmin, toggleRegistrationSetting);
 router.get("/settings/leaderboard", getLeaderboardSetting);
-router.post("/settings/leaderboard", auth, toggleLeaderboardSetting);
+router.post("/settings/leaderboard", auth, verifyAdmin, toggleLeaderboardSetting);
 router.get("/settings/job-portal", getJobPortalSetting);
-router.post("/settings/job-portal", auth, toggleJobPortalSetting);
+router.post("/settings/job-portal", auth, verifyAdmin, toggleJobPortalSetting);
 
 // Submissions
-router.get("/all-submissions", auth, getAllSubmissions);
-router.post("/override-sp", auth, overrideSP);
-router.post("/evaluate-pending-ai", auth, evaluatePendingAI);
-router.post("/send-evaluation-emails", auth, sendEvaluationEmails);
-router.post("/summer-projects/reset-ai-evaluations", auth, resetAIEvaluations);
+router.get("/all-submissions", auth, verifyAdmin, getAllSubmissions);
+router.post("/override-sp", auth, verifyAdmin, overrideSP);
+router.post("/evaluate-pending-ai", auth, verifyAdmin, evaluatePendingAI);
+router.post("/send-evaluation-emails", auth, verifyAdmin, sendEvaluationEmails);
+router.post("/summer-projects/reset-ai-evaluations", auth, verifyAdmin, resetAIEvaluations);
 
-router.post("/migrate-dates", auth, migrateDates);
+router.post("/migrate-dates", auth, verifyAdmin, migrateDates);
 
 // Temporary endpoint to make all existing users interns
-router.post("/make-all-interns", auth, makeAllInterns);
+router.post("/make-all-interns", auth, verifyAdmin, makeAllInterns);
 
 // Endpoint to fix improperly merged user accounts
-router.post("/fix-merged-accounts", auth, fixMergedAccounts);
+router.post("/fix-merged-accounts", auth, verifyAdmin, fixMergedAccounts);
 
-router.post("/sync-refunds", auth, syncRefunds);
+router.post("/sync-refunds", auth, verifyAdmin, syncRefunds);
 
 // Admin Notification Routes
-router.post("/notifications", auth, createNotification);
-router.get("/notifications", auth, getAdminNotifications);
-router.delete("/notifications/:id", auth, deleteNotification);
+router.post("/notifications", auth, verifyAdmin, createNotification);
+router.get("/notifications", auth, verifyAdmin, getAdminNotifications);
+router.delete("/notifications/:id", auth, verifyAdmin, deleteNotification);
 
 // Interview Admin Route
 const User = require("../models/User");
@@ -136,7 +137,7 @@ router.get("/interview-settings", async (req, res) => {
   }
 });
 
-router.post("/interview-settings/toggle", auth, async (req, res) => {
+router.post("/interview-settings/toggle", auth, verifyAdmin, async (req, res) => {
   try {
     let setting = await Settings.findOne({ key: "interviewEnabled" });
     if (!setting) {
@@ -151,7 +152,7 @@ router.post("/interview-settings/toggle", auth, async (req, res) => {
   }
 });
 
-router.post("/interview-settings/override/:id", auth, async (req, res) => {
+router.post("/interview-settings/override/:id", auth, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { override } = req.body;
@@ -165,7 +166,7 @@ router.post("/interview-settings/override/:id", auth, async (req, res) => {
   }
 });
 
-router.post("/interview-settings/override-by-email", auth, async (req, res) => {
+router.post("/interview-settings/override-by-email", auth, verifyAdmin, async (req, res) => {
   try {
     const { email, override } = req.body;
     const user = await User.findOne({ email: new RegExp('^' + email + '$', 'i') });
@@ -178,7 +179,7 @@ router.post("/interview-settings/override-by-email", auth, async (req, res) => {
   }
 });
 
-router.get("/whitelisted-users", auth, async (req, res) => {
+router.get("/whitelisted-users", auth, verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({
       $or: [
@@ -197,7 +198,7 @@ router.get("/whitelisted-users", auth, async (req, res) => {
   }
 });
 
-router.get("/interview-settings/tokens", auth, async (req, res) => {
+router.get("/interview-settings/tokens", auth, verifyAdmin, async (req, res) => {
   try {
     let freeTokens = await Settings.findOne({ key: "interviewFreeTokens" });
     let interviewCost = await Settings.findOne({ key: "interviewCostTokens" });
@@ -212,7 +213,7 @@ router.get("/interview-settings/tokens", auth, async (req, res) => {
   }
 });
 
-router.post("/interview-settings/tokens", auth, async (req, res) => {
+router.post("/interview-settings/tokens", auth, verifyAdmin, async (req, res) => {
   try {
     const { freeTokens, interviewCost } = req.body;
     
@@ -239,7 +240,7 @@ router.post("/interview-settings/tokens", auth, async (req, res) => {
 });
 
 // Adjust tokens manually
-router.post("/interview-settings/tokens/adjust", auth, async (req, res) => {
+router.post("/interview-settings/tokens/adjust", auth, verifyAdmin, async (req, res) => {
   try {
     const { userId, type, amount, reason } = req.body;
     
@@ -275,7 +276,7 @@ router.post("/interview-settings/tokens/adjust", auth, async (req, res) => {
 });
 
 // Fetch token data specifically for Token Management page
-router.get("/token-data", auth, async (req, res) => {
+router.get("/token-data", auth, verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({}, 'name email interviewCredits interviewIsUnlimited tokenHistory interviewPayments').lean();
     res.json({ success: true, data: users });
@@ -284,7 +285,7 @@ router.get("/token-data", auth, async (req, res) => {
   }
 });
 
-router.get("/interview-data", auth, async (req, res) => {
+router.get("/interview-data", auth, verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({
       $or: [
@@ -344,7 +345,7 @@ router.get("/resume-settings", async (req, res) => {
   }
 });
 
-router.post("/resume-settings/toggle", auth, async (req, res) => {
+router.post("/resume-settings/toggle", auth, verifyAdmin, async (req, res) => {
   try {
     let setting = await Settings.findOne({ key: "resumeEnabled" });
     if (!setting) {
@@ -359,7 +360,7 @@ router.post("/resume-settings/toggle", auth, async (req, res) => {
   }
 });
 
-router.post("/resume-settings/override-by-email", auth, async (req, res) => {
+router.post("/resume-settings/override-by-email", auth, verifyAdmin, async (req, res) => {
   try {
     const { email, override } = req.body;
     if (!email) {
@@ -396,7 +397,7 @@ router.get("/banner", async (req, res) => {
 });
 
 // Admin: save banner settings (imageUrl already uploaded to Cloudinary by frontend)
-router.post("/banner", auth, async (req, res) => {
+router.post("/banner", auth, verifyAdmin, async (req, res) => {
   try {
     const { imageUrl, enabled } = req.body;
     const isEnabled = enabled === true || enabled === "true";
@@ -421,7 +422,7 @@ router.post("/banner", auth, async (req, res) => {
 });
 
 // Admin: remove banner image entirely
-router.delete("/banner", auth, async (req, res) => {
+router.delete("/banner", auth, verifyAdmin, async (req, res) => {
   try {
     await Settings.findOneAndUpdate(
       { key: "promoBanner" },
@@ -436,7 +437,7 @@ router.delete("/banner", auth, async (req, res) => {
 
 // Impersonate intern using email
 const jwt = require("jsonwebtoken");
-router.post("/impersonate", auth, async (req, res) => {
+router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: "Email is required" });
