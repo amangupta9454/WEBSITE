@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import BuyTokensModal from './InterviewPortal/components/BuyTokensModal';
 import { FeedbackModal } from './InterviewPortal/components/InterviewDashboardContent';
 import { clearAllUserData } from '../utils/auth';
+import { useInterviewConfig } from '../context/InterviewConfigContext';
 
 /* ─── Razorpay script loader ──────────────────────────────────────────────── */
 function loadScript(src) {
@@ -27,6 +28,7 @@ const MyInterviews = () => {
   const [credits, setCredits] = useState(0);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [interviewEnabled, setInterviewEnabled] = useState(true);
+  const { configs: interviewConfigs, getConfig } = useInterviewConfig();
   const [loading, setLoading] = useState(true);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
@@ -234,10 +236,18 @@ const MyInterviews = () => {
               </div>
 
               <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-                <div className="flex justify-between text-xs md:text-sm items-center">
-                  <span className="text-slate-600 font-medium">Per Interview:</span>
-                  <span className="text-slate-800 font-bold">1 Token</span>
-                </div>
+                {interviewConfigs.map((config) => (
+                  <div key={config.modeId} className="flex justify-between text-xs md:text-sm items-center">
+                    <span className="text-slate-600 font-medium">{config.name}:</span>
+                    <span className="text-slate-800 font-bold">{config.tokenCost} Token{config.tokenCost !== 1 ? 's' : ''}</span>
+                  </div>
+                ))}
+                {interviewConfigs.length === 0 && (
+                  <div className="flex justify-between text-xs md:text-sm items-center">
+                    <span className="text-slate-600 font-medium">Per Interview:</span>
+                    <span className="text-slate-800 font-bold">...</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xs md:text-sm items-center">
                   <span className="text-slate-600 font-medium">Feedback Report:</span>
                   <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 md:px-2 rounded text-[10px] md:text-xs">FREE</span>
@@ -461,9 +471,12 @@ const MyInterviews = () => {
             <button
               onClick={() => {
                 const id = rePracticeSession._id;
+                const mode = rePracticeSession.mode;
+                const config = getConfig(mode);
+                const targetRoute = config?.resumeRoute || '/interview-active';
                 localStorage.setItem(`repracticed_${id}`, 'true');
                 setRePracticeSession(null);
-                navigate(`/interview-active/${id}`);
+                navigate(`${targetRoute}/${id}`);
               }}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-indigo-200"
             >

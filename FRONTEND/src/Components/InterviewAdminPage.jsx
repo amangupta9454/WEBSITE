@@ -7,6 +7,7 @@ import {
   ToggleLeft, ToggleRight, Calendar, Database, Save
 } from "lucide-react";
 import { FeedbackModal } from "../Pages/InterviewPortal/components/InterviewDashboardContent";
+import { useInterviewConfig } from "../context/InterviewConfigContext";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL;
 
@@ -274,6 +275,15 @@ export default function InterviewAdminPage() {
   const [grantEmail, setGrantEmail] = useState("");
   const [granting, setGranting] = useState(false);
   const [whitelistedUsers, setWhitelistedUsers] = useState([]);
+  const { configs: contextConfigs, refreshConfigs } = useInterviewConfig();
+  const [interviewConfigs, setInterviewConfigs] = useState([]);
+  const [savingConfigId, setSavingConfigId] = useState(null);
+
+  useEffect(() => {
+    if (contextConfigs && contextConfigs.length > 0) {
+      setInterviewConfigs(contextConfigs);
+    }
+  }, [contextConfigs]);
 
   const handleGrantAccessByEmail = async (overrideStatus = true, emailToUpdate = grantEmail) => {
     if (!emailToUpdate) return toast.error("Please enter an email");
@@ -336,11 +346,32 @@ export default function InterviewAdminPage() {
       await axios.post(`${BACKEND}/api/admin/interview-settings/tokens`, tokenSettings, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success("Token settings updated successfully");
+      toast.success("Legacy token settings updated successfully");
     } catch (err) {
-      toast.error("Failed to update token settings");
+      toast.error("Failed to update legacy token settings");
     } finally {
       setSavingTokens(false);
+    }
+  };
+
+  const saveConfig = async (modeId, updatedConfig) => {
+    setSavingConfigId(modeId);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.put(`${BACKEND}/api/interview-config/admin/${modeId}`, {
+        tokenCost: updatedConfig.tokenCost,
+        enabled: updatedConfig.enabled
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success(`${updatedConfig.name} updated successfully!`);
+        refreshConfigs();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update configuration");
+    } finally {
+      setSavingConfigId(null);
     }
   };
 
@@ -398,32 +429,75 @@ export default function InterviewAdminPage() {
         </button>
       </div>
 
-      {/* Interview Token Cost Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* Interview Modes Configuration */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
             <Database className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">Token Cost</h3>
-            <p className="text-xs text-slate-500">Amount of tokens deducted per interview.</p>
+            <h3 className="text-lg font-bold text-slate-800">Interview Modes Configuration</h3>
+            <p className="text-sm text-slate-500">Manage pricing and availability for different interview types.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <input 
-            type="number" 
-            value={tokenSettings.interviewCost} 
-            onChange={(e) => setTokenSettings({...tokenSettings, interviewCost: Number(e.target.value)})}
-            className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-center font-bold" 
-          />
-          <button 
-            onClick={saveTokenSettings}
-            disabled={savingTokens}
-            className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {savingTokens ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {savingTokens ? "Saving..." : "Save"}
-          </button>
+
+        <div className="space-y-4">
+          {interviewConfigs.map((config) => (
+            <div key={config.modeId} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-slate-800 text-base">{config.name}</h4>
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${config.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {config.enabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 truncate">{config.description}</p>
+              </div>
+
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Token Cost</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={config.tokenCost}
+                    onChange={(e) => {
+                      const newCost = Number(e.target.value);
+                      setInterviewConfigs(prev => prev.map(c => c.modeId === config.modeId ? { ...c, tokenCost: newCost } : c));
+                    }}
+                    className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-center font-bold"
+                  />
+                </div>
+                
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</label>
+                  <button
+                    onClick={() => {
+                      const newEnabled = !config.enabled;
+                      setInterviewConfigs(prev => prev.map(c => c.modeId === config.modeId ? { ...c, enabled: newEnabled } : c));
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${config.enabled ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'}`}
+                  >
+                    {config.enabled ? 'Disable' : 'Enable'}
+                  </button>
+                </div>
+
+                <div className="flex flex-col self-end">
+                  <button
+                    onClick={() => saveConfig(config.modeId, config)}
+                    disabled={savingConfigId === config.modeId}
+                    className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2 h-[34px]"
+                  >
+                    {savingConfigId === config.modeId ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {interviewConfigs.length === 0 && (
+            <p className="text-center text-sm text-slate-500 py-4">No interview configurations found. Did the database seeder run?</p>
+          )}
         </div>
       </div>
 

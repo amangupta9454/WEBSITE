@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const InterviewSession = require('../models/InterviewSession');
 const Settings = require('../models/Settings');
+const InterviewConfig = require('../models/InterviewConfig');
 const { sanitizeText } = require('../utils/sanitizer');
 const auditLogger = require('../utils/auditLogger');
 const fs = require('fs');
@@ -76,7 +77,6 @@ exports.createSession = async (req, res) => {
       await user.save();
     }
 
-    // ✅ Check if interview feature is globally enabled or user has an override
     const featureSetting = await Settings.findOne({ key: 'interviewEnabled' });
     const isFeatureGloballyEnabled = featureSetting ? featureSetting.value === true || featureSetting.value === 'true' : true;
     const hasOverride = user.interviewAccessOverride === true;
@@ -85,11 +85,22 @@ exports.createSession = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Interview feature is currently disabled.' });
     }
 
-    const costSetting = await Settings.findOne({ key: 'interviewCostTokens' });
-    const interviewCost = costSetting && costSetting.value !== undefined ? Number(costSetting.value) : 10;
+    // Dynamic configuration fetch based on mode
+    const reqMode = mode || "Standard";
+    const modeConfig = await InterviewConfig.findOne({ modeId: reqMode });
+    
+    if (!modeConfig) {
+      return res.status(400).json({ success: false, message: 'Invalid interview mode selected.' });
+    }
+
+    if (!modeConfig.enabled) {
+      return res.status(403).json({ success: false, message: `${modeConfig.name} is currently disabled.` });
+    }
+
+    const interviewCost = modeConfig.tokenCost;
 
     if (!isUnlimited && credits < interviewCost) {
-      return res.status(403).json({ success: false, message: `Insufficient credits. Each interview costs ${interviewCost} tokens. Please purchase more.` });
+      return res.status(403).json({ success: false, message: `Insufficient credits. This interview costs ${interviewCost} tokens. Please purchase more.` });
     }
 
     // Deduct credit only if not unlimited
@@ -99,7 +110,7 @@ exports.createSession = async (req, res) => {
       user.tokenHistory.push({
         type: 'USE',
         amount: interviewCost,
-        reason: 'Started a mock interview',
+        reason: `Started a ${modeConfig.name} mock interview`,
         date: new Date()
       });
       await user.save();

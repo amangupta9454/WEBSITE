@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AlertCircle, Eye, ShieldAlert, Video, Upload, FileText, X, Send, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useInterviewConfig } from '../../context/InterviewConfigContext';
 
 const InterviewSetup = () => {
   const [formData, setFormData] = useState({
@@ -16,22 +17,32 @@ const InterviewSetup = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [resume, setResume] = useState(null);
   const [resumeError, setResumeError] = useState('');
-  const cost = 2; // Fixed cost for 1 session
+  
+  const { configs, getConfig, loading: configLoading } = useInterviewConfig();
+  
+  const currentConfig = getConfig(formData.mode);
+  const cost = currentConfig ? currentConfig.tokenCost : 0;
   
   const navigate = useNavigate();
 
   React.useEffect(() => {
     const token = localStorage.getItem('interviewToken');
-    if(token) {
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
-            headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
-            if(res.data.success) {
-                setIsUnlimited(res.data.isUnlimited || false);
-            }
-        }).catch(err => console.error(err));
+    if (token) {
+      axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        if (res.data.success) {
+          setIsUnlimited(res.data.isUnlimited || false);
+        }
+      }).catch(err => console.error(err));
     }
   }, []);
+
+  React.useEffect(() => {
+    if (configs.length > 0 && !configs.find(c => c.modeId === formData.mode)) {
+      setFormData(prev => ({ ...prev, mode: configs[0].modeId }));
+    }
+  }, [configs, formData.mode]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -108,12 +119,9 @@ const InterviewSetup = () => {
           localStorage.setItem('interviewUser', JSON.stringify(user));
         }
 
-        // Navigate to active interview
-        if (formData.mode === 'Panel') {
-          navigate(`/panel-interview-active/${res.data.session._id}`);
-        } else {
-          navigate(`/interview-active/${res.data.session._id}`);
-        }
+        // Navigate to active interview based on config's resumeRoute
+        const targetRoute = currentConfig?.resumeRoute || '/interview-active';
+        navigate(`${targetRoute}/${res.data.session._id}`);
       }
     } catch (error) {
       console.error(error);
@@ -212,23 +220,23 @@ const InterviewSetup = () => {
           
           <div className="space-y-1.5">
             <label className="block text-xs sm:text-sm font-bold text-slate-700">Interview Mode</label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setFormData({...formData, mode: 'Standard'})}
-                className={`p-3 border rounded-xl text-left transition-all ${formData.mode === 'Standard' ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
-              >
-                <h4 className="font-bold text-slate-800">Standard</h4>
-                <p className="text-xs text-slate-500 mt-1">Single AI interviewer</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({...formData, mode: 'Panel'})}
-                className={`p-3 border rounded-xl text-left transition-all ${formData.mode === 'Panel' ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
-              >
-                <h4 className="font-bold text-slate-800">FAANG Panel</h4>
-                <p className="text-xs text-slate-500 mt-1">Dual AI interviewers (HR + Tech)</p>
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {configs.map((config) => (
+                <button
+                  key={config.modeId}
+                  type="button"
+                  onClick={() => setFormData({...formData, mode: config.modeId})}
+                  className={`p-3 border rounded-xl text-left transition-all ${formData.mode === config.modeId ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
+                >
+                  <h4 className="font-bold text-slate-800">{config.name}</h4>
+                  <p className="text-xs text-slate-500 mt-1">{config.description}</p>
+                </button>
+              ))}
+              {configLoading && (
+                <div className="p-3 border border-slate-200 rounded-xl text-slate-500 text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading modes...
+                </div>
+              )}
             </div>
           </div>
           

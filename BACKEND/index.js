@@ -27,6 +27,8 @@ const resumeRoutes = require("./routes/resume");
 const adminResumeRoutes = require("./routes/adminResume");
 const jobRoutes = require("./routes/jobs");
 const otpRoutes = require("./routes/otp");
+const interviewConfigRoutes = require("./routes/interviewConfigRoutes");
+const InterviewConfigInitializer = require("./initializers/InterviewConfigInitializer");
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
@@ -43,6 +45,10 @@ async function connectToDatabase() {
     });
     cachedDb = db;
     console.log("MongoDB connected (cached)");
+    
+    // Seed default interview configurations if none exist
+    await InterviewConfigInitializer.seedDefaultConfigs();
+
     return db;
   } catch (err) {
     console.error("MongoDB connection error:", err);
@@ -126,6 +132,7 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/admin/resume", adminResumeRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/interview-config", interviewConfigRoutes);
 
 // Production Health Endpoint
 app.get("/healthz", async (req, res) => {

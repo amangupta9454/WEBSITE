@@ -5,6 +5,7 @@ import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { PANEL_CONFIG } from '../constants/panelConfig';
 import { buildInterviewContext, buildInterviewContextObject, buildRouterContextSummary } from '../utils/interviewContextBuilder';
+import { SystemMessageHandoffTransport } from '../services/HandoffTransportService';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
@@ -22,6 +23,7 @@ export const VAPI_STATES = {
 
 export function usePanelVapi(interviewData) {
   const vapiRef = useRef(null);
+  const handoffTransportRef = useRef(null);
   
   const [fsmState, setFsmState] = useState(VAPI_STATES.IDLE);
   const [isMuted, setIsMuted] = useState(false);
@@ -139,18 +141,12 @@ export function usePanelVapi(interviewData) {
     }
   };
 
-  const buildAssistantConfig = (speakerName, conversationHistory, transitionData = null) => {
-    const isSarah = speakerName === "Sarah";
-    const voiceId = isSarah ? "nova" : "onyx";
-    
+  const buildSquadConfig = (conversationHistory) => {
     // Evaluate Intelligence Engine metrics
     const currentConfidence = recruiterMemoryRef.current.confidenceHistory.length > 0 
         ? recruiterMemoryRef.current.confidenceHistory[recruiterMemoryRef.current.confidenceHistory.length - 1] 
         : 50;
     const currentDifficulty = recruiterMemoryRef.current.currentDifficulty || "Medium";
-    
-    // Determine dynamic programmatic mood
-    const interviewerMood = PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, speakerName);
 
     // Filter follow-up queue to show only up to 2 items
     const pendingFollowUps = recruiterMemoryRef.current.followUpQueue.slice(0, 2).join(', ') || 'None yet';
@@ -194,10 +190,8 @@ export function usePanelVapi(interviewData) {
       content: msg.transcript
     }));
 
-    // Build systemPrompt via Universal Interview Context Engine
-    const { systemPrompt } = buildInterviewContext({
+    const baseContextParams = {
       mode: 'panel',
-      interviewerName: speakerName,
       candidate: {
         resumeText: interviewData.resumeText || interviewData.resume || '',
         parsedResume: interviewData.parsedResume || null,
@@ -206,35 +200,86 @@ export function usePanelVapi(interviewData) {
         experienceYears: interviewData.experienceYears,
         language: interviewData.language,
         durationMinutes: interviewData.durationMinutes,
-      },
+      }
+    };
+
+    const sarahContext = buildInterviewContext({
+      ...baseContextParams,
+      interviewerName: 'Sarah',
       liveState: {
         currentStage: currentStageRef.current,
         currentDifficulty,
         currentConfidence,
-        interviewerMood,
+        interviewerMood: PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, "Sarah"),
         recruiterMemory: recruiterMemoryRef.current,
         conversationHistory,
       }
     });
 
-    const messages = [{ role: "system", content: systemPrompt }, ...mappedHistory];
+    const davidContext = buildInterviewContext({
+      ...baseContextParams,
+      interviewerName: 'David',
+      liveState: {
+        currentStage: currentStageRef.current,
+        currentDifficulty,
+        currentConfidence,
+        interviewerMood: PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, "David"),
+        recruiterMemory: recruiterMemoryRef.current,
+        conversationHistory,
+      }
+    });
+
+    const sarahMessages = [{ role: "system", content: sarahContext.systemPrompt }, ...mappedHistory];
+    const davidMessages = [{ role: "system", content: davidContext.systemPrompt }, ...mappedHistory];
+
+    const transcriber = { provider: "deepgram", model: "nova-3", language: interviewData.language || "en-IN", smartFormat: true };
+
+    const handoffToDavid = {
+       type: "handoff",
+       destinations: [{ type: "assistant", assistantName: "David" }],
+    };
+
+    const handoffToSarah = {
+       type: "handoff",
+       destinations: [{ type: "assistant", assistantName: "Sarah" }],
+    };
 
     return {
-      name: `AI Panel - ${speakerName}`,
-      model: {
-        provider: "openai",
-        model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
-        messages: messages,
-      },
-      voice: { provider: "openai", voiceId: voiceId, speed: 1.05 },
-      transcriber: { provider: "deepgram", model: "nova-3", language: interviewData.language || "en-IN", smartFormat: true },
-      silenceTimeoutSeconds: 60,
-      responseDelaySeconds: 0.6,
-      endCallFunctionEnabled: true,
-      // Inject context-aware firstMessage if this is a speaker transition
-      ...(transitionData && transitionData.greeting && transitionData.openingQuestion
-        ? { firstMessage: `${transitionData.greeting} ${transitionData.openingQuestion}` }
-        : {})
+      name: "Code A Nova FAANG Panel Squad",
+      members: [
+        {
+          assistant: {
+            name: "Sarah",
+            model: {
+              provider: "openai",
+              model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
+              messages: sarahMessages,
+            },
+            voice: { provider: "openai", voiceId: "nova", speed: 1.05 },
+            transcriber,
+            silenceTimeoutSeconds: 60,
+            responseDelaySeconds: 0.6,
+            endCallFunctionEnabled: true,
+            tools: [handoffToDavid]
+          }
+        },
+        {
+          assistant: {
+            name: "David",
+            model: {
+              provider: "openai",
+              model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
+              messages: davidMessages,
+            },
+            voice: { provider: "openai", voiceId: "onyx", speed: 1.05 },
+            transcriber,
+            silenceTimeoutSeconds: 60,
+            responseDelaySeconds: 0.6,
+            endCallFunctionEnabled: true,
+            tools: [handoffToSarah]
+          }
+        }
+      ]
     };
   };
 
@@ -369,17 +414,15 @@ export function usePanelVapi(interviewData) {
           setFsmState(VAPI_STATES.SPEAKER_SWITCHING);
           
           if (vapiRef.current) {
-            vapiRef.current.stop();
-            // Start safety timeout in case next speaker fails to connect
-            setTimeout(() => {
-              if (transitionContextRef.current.active) {
-                Logger.error("Speaker transition timeout!");
-                transitionContextRef.current = defaultTransition;
-                setTransitionContext(defaultTransition);
-                setFsmState(VAPI_STATES.FAILED);
-                setVapiError(INTERVIEW_ERRORS.UNKNOWN_ERROR);
-              }
-            }, 15000);
+            // TRANSITION MANAGER: Trigger Squad Handoff natively via WebRTC Transport Layer
+            if (handoffTransportRef.current) {
+              handoffTransportRef.current.transfer({
+                target: speaker,
+                greeting: routerTransition?.greeting || '',
+                openingQuestion: routerTransition?.openingQuestion || '',
+                reason: reason || "RouterDecision"
+              });
+            }
           }
         }
       }
@@ -392,36 +435,28 @@ export function usePanelVapi(interviewData) {
     if (!interviewData) return;
     const key = import.meta.env.VITE_VAPI_PUBLIC_API_KEY || '5195e2cd-7f02-4ec4-9d56-a9ff3360824b';
     vapiRef.current = new Vapi(key);
+    handoffTransportRef.current = new SystemMessageHandoffTransport(vapiRef.current);
 
     const vapi = vapiRef.current;
 
     const onCallStart = () => { 
-      if (transitionContextRef.current.active) {
-        transitionContextRef.current = defaultTransition;
-        setTransitionContext(defaultTransition);
-      }
       setFsmState(VAPI_STATES.LISTENING); 
       setVapiError(null); 
     };
     
     const onCallEnd = () => { 
-      if (transitionContextRef.current.active) {
-        // Speaker transition active: ignore end, and start next speaker with context-aware firstMessage
-        const ctx = transitionContextRef.current;
-        Logger.info(`Transitioning to ${ctx.to}... Greeting: ${ctx.greeting}`);
-        setTimeout(() => {
-           if (vapiRef.current && transitionContextRef.current.active) {
-             const newConfig = buildAssistantConfig(ctx.to, conversationRef.current, ctx);
-             vapiRef.current.start(newConfig);
-           }
-        }, 500); // Give WebRTC a brief moment to teardown
-        return;
-      }
       clearAllTimeouts(); 
       setFsmState(VAPI_STATES.COMPLETED); 
     };
     
-    const onSpeechStart = () => { setThinkingStatus(""); setFsmState(VAPI_STATES.SPEAKING); };
+    const onSpeechStart = () => { 
+      if (transitionContextRef.current.active) {
+        transitionContextRef.current = defaultTransition;
+        setTransitionContext(defaultTransition);
+      }
+      setThinkingStatus(""); 
+      setFsmState(VAPI_STATES.SPEAKING); 
+    };
     const onSpeechEnd = () => { setFsmState(VAPI_STATES.LISTENING); };
 
     const onMessage = (msg) => {
@@ -475,11 +510,11 @@ export function usePanelVapi(interviewData) {
     const micGranted = await requestMicrophone();
     if (!micGranted) return;
     
-    const config = buildAssistantConfig("Sarah", []);
-    config.firstMessage = `Hi, I'm Sarah from HR. We also have David here, our Tech Lead. Ready to start your panel interview for ${interviewData.jobTitle}?`;
+    const squadConfig = buildSquadConfig([]);
+    squadConfig.members[0].assistant.firstMessage = `Hi, I'm Sarah from HR. We also have David here, our Tech Lead. Ready to start your panel interview for ${interviewData.jobTitle}?`;
     
     try {
-      vapiRef.current.start(config);
+      vapiRef.current.start(undefined, undefined, squadConfig);
       if (onStart) onStart();
     } catch (err) {
       setVapiError(INTERVIEW_ERRORS.UNKNOWN_ERROR);
