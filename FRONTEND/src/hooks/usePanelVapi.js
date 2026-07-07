@@ -7,7 +7,7 @@ import { PANEL_CONFIG } from '../constants/panelConfig';
 import { buildInterviewContext, buildInterviewContextObject, buildRouterContextSummary, INTERVIEWER_PERSONAS } from '../utils/interviewContextBuilder';
 import { evaluateEscalation } from '../utils/interviewerEscalationEngine';
 import { SystemMessageHandoffTransport } from '../services/HandoffTransportService';
-
+import { InterviewTerminationController } from '../utils/InterviewTerminationController';
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
 export const VAPI_STATES = {
@@ -250,6 +250,7 @@ export function usePanelVapi(interviewData) {
           },
           voice: { provider: "openai", voiceId: INTERVIEWER_PERSONAS[personaName].voiceId || "nova", speed: 1.05 },
           transcriber,
+          maxDurationSeconds: 5400, // Enforce 90-minute hard limit over Vapi's 10-minute default
           silenceTimeoutSeconds: 60,
           responseDelaySeconds: 0.6,
           endCallFunctionEnabled: true
@@ -431,8 +432,16 @@ export function usePanelVapi(interviewData) {
     };
     
     const onCallEnd = () => { 
-      clearAllTimeouts(); 
-      setFsmState(VAPI_STATES.COMPLETED); 
+      const isRouterConcluded = recruiterMemoryRef.current?.orchestration?.action === "END_INTERVIEW";
+      const allowed = InterviewTerminationController.requestTermination("VAPI_COMPLETED_STATE", { 
+        elapsedSeconds: conversationRef.current.length * 15, // rough estimate, real time is in component
+        isRouterConcluded 
+      });
+
+      if (allowed) {
+        clearAllTimeouts(); 
+        setFsmState(VAPI_STATES.COMPLETED); 
+      }
     };
     
     const onSpeechStart = () => { 

@@ -3,6 +3,7 @@ import Vapi from '@vapi-ai/web';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { buildInterviewContext } from '../utils/interviewContextBuilder';
+import { InterviewTerminationController } from '../utils/InterviewTerminationController';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
@@ -192,10 +193,16 @@ export function useVapi(interviewData) {
     };
 
     const onCallEnd = () => {
-      clearAllTimeouts();
-      const duration = Date.now() - (callDurationTimerRef.current || Date.now());
-      Logger.metric('Call Ended', duration, { unit: 'ms' });
-      setFsmState(VAPI_STATES.COMPLETED);
+      const allowed = InterviewTerminationController.requestTermination("VAPI_COMPLETED_STATE", { 
+        elapsedSeconds: conversationRef.current.length * 15 // rough estimate
+      });
+
+      if (allowed) {
+        clearAllTimeouts();
+        const duration = Date.now() - (callDurationTimerRef.current || Date.now());
+        Logger.metric('Call Ended', duration, { unit: 'ms' });
+        setFsmState(VAPI_STATES.COMPLETED);
+      }
     };
 
     const onSpeechStart = () => {
@@ -360,7 +367,7 @@ export function useVapi(interviewData) {
       },
       silenceTimeoutSeconds: 60,
       responseDelaySeconds: 0.6, // Wait 600ms before replying to prevent robotic instantaneity
-      maxDurationSeconds: 1800, // 30 minutes max call duration
+      maxDurationSeconds: 5400, // 90 minutes max call duration
       backchannelingEnabled: false, // Turn off automatic backchanneling to prevent weird "mhmm" artifacts during tech answers
       firstMessage: `Hi, ready for your interview for ${interviewData.jobTitle}?`,
       endCallFunctionEnabled: true,

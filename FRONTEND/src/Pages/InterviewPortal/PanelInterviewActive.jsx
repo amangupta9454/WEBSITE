@@ -13,6 +13,7 @@ import { ERROR_MESSAGES } from "../../constants/errors";
 import toast from "react-hot-toast";
 import InterviewerCard from "./components/InterviewerCard";
 import { INTERVIEWER_PERSONAS } from "../../utils/interviewContextBuilder";
+import { InterviewTerminationController } from "../../utils/InterviewTerminationController";
 
 function PanelInterviewActive() {
   const { sessionId } = useParams();
@@ -219,12 +220,25 @@ function PanelInterviewActive() {
   // Auto-complete logic based on state machine ending naturally
   useEffect(() => {
     if (fsmState === VAPI_STATES.COMPLETED && !isSaving && isStarted) {
-      handleEndSession(true);
+      const isRouterConcluded = recruiterMemory?.orchestration?.action === "END_INTERVIEW";
+      const allowed = InterviewTerminationController.requestTermination("VAPI_COMPLETED_STATE", { 
+        elapsedSeconds: timeRef.current,
+        isRouterConcluded
+      });
+      if (allowed) {
+        handleEndSession(true);
+      }
     }
-  }, [fsmState, isSaving, isStarted]);
+  }, [fsmState, isSaving, isStarted, recruiterMemory]);
 
   const handleEndSession = useCallback(async (autoCompleted = false) => {
-    if (!autoCompleted) endCall(); // Instruct FSM to stop
+    if (!autoCompleted) {
+      const allowed = InterviewTerminationController.requestTermination("USER_CLICKED_END", { 
+        elapsedSeconds: timeRef.current 
+      });
+      if (!allowed) return;
+      endCall(); // Instruct FSM to stop
+    }
 
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
