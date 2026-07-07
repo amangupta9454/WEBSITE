@@ -20,6 +20,14 @@ import KnowledgeGapCard from "./reports/KnowledgeGapCard";
 import ImprovementRoadmapCard from "./reports/ImprovementRoadmapCard";
 import InterviewReplayTimeline from "./reports/InterviewReplayTimeline";
 import PerformanceAnalyticsCard from "./reports/PerformanceAnalyticsCard";
+import InterviewerReportCard from "./reports/InterviewerReportCard";
+
+// Enterprise Layer Components
+import EnterpriseCommitteeCard from "./reports/EnterpriseCommitteeCard";
+import EnterpriseSkillHeatmap from "./reports/EnterpriseSkillHeatmap";
+import EnterpriseKnowledgeDepth from "./reports/EnterpriseKnowledgeDepth";
+import EnterpriseResumeVerification from "./reports/EnterpriseResumeVerification";
+
 const CircularScore = ({ score, max = 10, label, colorClass, bgClass, textClass }) => {
   const percentage = (score / max) * 100;
   const radius = 34;
@@ -77,7 +85,8 @@ export function FeedbackModal({ feedback: session, onClose }) {
 
   if (!localSession) return null;
   const evaluation = localSession.feedback?.ai_evaluation || localSession.feedback;
-  const enterprise = localSession.feedback?.enterprise_evaluation;
+  const enterprise = localSession.feedback?.enterprise_evaluation || evaluation;
+  const isEnterpriseMode = !!enterprise?.enterprise_evaluation;
   
   const deduplicatedConversation = localSession.messages?.reduce((acc, curr) => {
     if (acc.length === 0) return [{ ...curr }];
@@ -142,12 +151,40 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 if (isPanelV2) {
                   return (
                     <div className="space-y-8">
+                      {/* --- ENTERPRISE LAYER COMPOSITION --- */}
+                      {isEnterpriseMode && (
+                        <div className="space-y-8 mb-12 border-b border-slate-200 pb-12 relative">
+                          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-50 px-4">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                              Enterprise Layer Active
+                            </span>
+                          </div>
+                          
+                          <EnterpriseCommitteeCard data={enterprise.enterprise_evaluation.committee} />
+                          
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <EnterpriseSkillHeatmap data={enterprise.enterprise_evaluation.skillHeatmap} />
+                            <EnterpriseKnowledgeDepth data={enterprise.enterprise_evaluation.knowledgeDepth} />
+                          </div>
+                          
+                          <EnterpriseResumeVerification data={enterprise.enterprise_evaluation.resumeVerification} />
+                        </div>
+                      )}
+
                       <ExecutiveSummaryCard data={enterprise.executive_summary} session={localSession} />
                       
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <SarahReportCard data={enterprise.sarah_report} />
-                        <DavidReportCard data={enterprise.david_report} />
-                      </div>
+                      {enterprise.interviewer_reports && enterprise.interviewer_reports.length > 0 ? (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                          {enterprise.interviewer_reports.map((report, i) => (
+                            <InterviewerReportCard key={i} data={report} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                          <SarahReportCard data={enterprise.sarah_report} />
+                          <DavidReportCard data={enterprise.david_report} />
+                        </div>
+                      )}
 
                       <CommitteeDecisionCard data={enterprise.hiring_committee} />
                       

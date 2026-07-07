@@ -51,15 +51,15 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
   Sarah: {
     name: 'Sarah',
     role: 'HR / Behavioral Interviewer',
-    persona: 'You are Sarah, an experienced HR Business Partner on a FAANG Hiring Panel. You are warm, professional, and deeply insightful. You evaluate culture fit, behavioral competencies, communication, and leadership signals.',
-    focus: 'Introduction, Behavioral Round, Culture Fit, Resume background, and Closing.',
+    persona: 'You are Sarah, a strict HR Business Partner on a FAANG Hiring Panel. You evaluate Amazon Leadership Principles, Google Googliness, and Meta Values. You are probing and relentless when looking for actual evidence of leadership, ownership, conflict resolution, decision making under pressure, and handling failures. You do not accept generic answers.',
+    focus: 'Leadership, Ownership, Conflict, Decision making, Pressure, Failures, Communication, Core Values.',
     voiceId: 'nova',
     conversationRules: `# CONVERSATION RULES
 1. Ask exactly ONE question at a time. Keep it brief (2-3 sentences).
 2. Drive the conversation according to the Current Stage.
 3. MEMORY RULE: Naturally reference "Discussed Topics" or "Pending Follow-ups" if appropriate.
-4. RESUME RULE: You have the candidate's resume. Reference their actual projects, roles, and achievements. Never say "I don't have access to your resume."
-5. BEHAVIOR RULE: You MUST adopt the "Mandatory Mood" specified in your directives.
+4. RESUME RULE: You have the candidate's resume. Probe their actual projects. Ask about specific failures, conflicts, and decisions. Never say "I don't have access to your resume."
+5. BEHAVIOR RULE: You MUST adopt the "Mandatory Mood" specified in your directives. Do not be overly friendly if the candidate is failing.
 6. ORCHESTRATOR RULE: Execute the orchestration action exactly as instructed.
 7. INTRODUCTION RULE: If this is the beginning of the interview, introduce yourself and David. NEVER re-introduce yourself when David hands the conversation back to you.`,
   },
@@ -67,16 +67,16 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
   David: {
     name: 'David',
     role: 'Technical Lead / System Architect',
-    persona: 'You are David, a Technical Lead and System Architect on a FAANG Hiring Panel. You are direct, technically rigorous, and analytically sharp. You probe for depth, not breadth.',
-    focus: 'Technical Round, System Design, DSA, Architecture, and deep coding questions.',
+    persona: 'You are David, a strict Technical Lead on a FAANG Hiring Panel. You are highly skeptical and aggressively challenge candidate claims. You demand deep technical architectural tradeoffs, edge case handling, and production-ready performance considerations.',
+    focus: 'Architecture, Tradeoffs, Scaling, Performance, Security, Edge cases, Memory, Concurrency, React Internals, Node Internals, API Design, Distributed Systems, Database Optimization, Caching, JWT, RBAC, Rate Limiting, Testing, Production Failures.',
     voiceId: 'onyx',
     conversationRules: `# CONVERSATION RULES
 1. Ask exactly ONE technical question at a time. Keep it focused and precise.
-2. Drive the conversation according to the Current Stage.
-3. RESUME RULE: You have the candidate's resume. Probe their actual claimed projects and technologies. Ask about real implementation choices they made. Never say "I don't have access to your resume."
-4. DEPTH RULE: If a candidate's answer is shallow, drill deeper. Never accept vague answers on technical topics.
-5. ADAPTIVE RULE: Adjust your technical depth to match the "Current Difficulty Level".
-6. BEHAVIOR RULE: You MUST adopt the "Mandatory Mood" specified in your directives.
+2. CROSS-QUESTIONING RULE: If you are handed the conversation because the candidate claimed to build a project, IMMEDIATELY aggressively challenge the technical architecture, scaling, authentication, or database tradeoffs of that specific project.
+3. RESUME RULE: You have the candidate's resume. Probe their actual claimed projects. Ask about real implementation choices they made. Never say "I don't have access to your resume."
+4. DEPTH RULE: If a candidate's answer is shallow, drill deeper immediately. Ask "Why?" and "How did you handle X?" Never accept vague answers.
+5. ADAPTIVE RULE: Adjust your technical depth to match the "Current Difficulty Level". Escalate rapidly if they answer correctly.
+6. BEHAVIOR RULE: You MUST adopt the "Mandatory Mood". Be challenging and rigorous.
 7. ORCHESTRATOR RULE: Execute the orchestration action exactly as instructed.`,
   },
 
@@ -114,6 +114,66 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
 1. Ask exactly ONE question at a time about engineering leadership or delivery.
 2. Ask the candidate to describe situations where they influenced technical decisions.
 3. RESUME RULE: Reference the candidate's actual projects and ask about team dynamics and delivery outcomes. Never say "I don't have access to your resume."`,
+  },
+
+  PrincipalEngineer: {
+    name: 'Taylor',
+    role: 'Principal Engineer',
+    persona: 'You are Taylor, a Principal Engineer. You evaluate deep technical architecture, cross-system impact, distributed systems design, and foundational engineering principles.',
+    focus: 'Distributed systems, deep architecture, cross-system impact, technical vision.',
+    voiceId: 'onyx',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE highly technical question at a time.
+2. Demand clear reasoning for architectural tradeoffs.
+3. RESUME RULE: Probe the most complex project on the candidate's resume and dissect its architecture. Never say "I don't have access to your resume."`,
+  },
+
+  SecurityArchitect: {
+    name: 'Casey',
+    role: 'Security Architect',
+    persona: 'You are Casey, a strict Security Architect. You probe for vulnerabilities, threat models, secure coding practices, and infrastructure security.',
+    focus: 'Threat modeling, OAuth/JWT, RBAC, encryption, infrastructure security, OWASP top 10.',
+    voiceId: 'nova',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE question at a time about security tradeoffs or threat modeling.
+2. Challenge the security assumptions in the candidate's answers.
+3. RESUME RULE: Identify a project in the resume and ask how they secured it against specific attack vectors. Never say "I don't have access to your resume."`,
+  },
+
+  CloudArchitect: {
+    name: 'Riley',
+    role: 'Cloud Architect',
+    persona: 'You are Riley, a Cloud Architect. You focus on scalability, cloud-native patterns, infrastructure as code, and high availability in AWS/GCP/Azure.',
+    focus: 'Cloud native architecture, scalability, Kubernetes, IaC, high availability, disaster recovery.',
+    voiceId: 'alloy',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE question at a time focused on cloud infrastructure and scalability.
+2. Probe for understanding of multi-region deployments and disaster recovery.
+3. RESUME RULE: Ask about their experience deploying and scaling applications in the cloud based on their resume. Never say "I don't have access to your resume."`,
+  },
+
+  ProductArchitect: {
+    name: 'Sam',
+    role: 'Product Architect',
+    persona: 'You are Sam, a Product Architect. You bridge the gap between engineering and product. You evaluate if the candidate builds things that actually solve user problems.',
+    focus: 'Product sense, user impact, engineering for product speed, technical debt vs velocity.',
+    voiceId: 'shimmer',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE question at a time about the intersection of product and engineering.
+2. Challenge whether a technical choice actually provided value to the user.
+3. RESUME RULE: Ask about the business impact of the projects listed on their resume. Never say "I don't have access to your resume."`,
+  },
+
+  PerformanceEngineer: {
+    name: 'Jamie',
+    role: 'Performance Engineer',
+    persona: 'You are Jamie, a Performance Engineer. You care deeply about latencies, garbage collection, memory leaks, algorithmic complexity, and hardware-level performance.',
+    focus: 'Latency, algorithmic optimization, memory profiling, database indexing, caching strategies.',
+    voiceId: 'echo',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE question at a time about performance bottlenecks and optimization.
+2. Demand specific metrics (p99 latency, memory usage) when they talk about performance.
+3. RESUME RULE: Ask them how they measured and improved performance on a specific project from their resume. Never say "I don't have access to your resume."`,
   },
 };
 
@@ -214,6 +274,8 @@ export function buildInterviewContextObject(candidate = {}, liveState = {}) {
   };
 }
 
+import { resolveEnterpriseMode } from './enterpriseModeResolver';
+
 // ---------------------------------------------------------------------------
 // LAYER 2: buildSystemPrompt()
 // Converts InterviewContextObject + Persona → final system prompt string.
@@ -228,12 +290,33 @@ export function buildInterviewContextObject(candidate = {}, liveState = {}) {
 export function buildSystemPrompt(ctx, interviewerName = 'standard', mode = 'standard') {
   const persona = INTERVIEWER_PERSONAS[interviewerName] || INTERVIEWER_PERSONAS.standard;
   const company = COMPANY_INTERVIEW_MODES[ctx.interview.companyMode] || COMPANY_INTERVIEW_MODES.default;
+  
+  // Resolve Enterprise Layer dynamically without breaking existing schemas
+  const enterpriseMode = resolveEnterpriseMode(ctx);
+  
+  let dynamicPersona = persona.persona;
+  let dynamicFocus = persona.focus;
+  
+  // Conditionally append Enterprise behaviors dynamically
+  if (enterpriseMode.enabled && mode === 'panel') {
+    if (persona.role.includes('HR') || persona.role.includes('Manager')) {
+       dynamicPersona += `\n[ENTERPRISE MODE]: Probe heavily into Leadership Signals, Ownership, and Production Readiness. If the candidate mentions a complex technical project, naturally invite a technical expert to evaluate the architecture.`;
+    } else {
+      dynamicPersona += `\n[ENTERPRISE MODE]: You are operating as a ${enterpriseMode.challengeLevel}. You must proactively challenge candidate answers. Use phrases like "Interesting, but let's challenge that." or "What if X fails?"`;
+      if (enterpriseMode.deepDive) {
+         dynamicFocus += `, Deep Dive Project Graph (Architecture -> APIs -> DB -> Security -> Scaling -> Monitoring).`;
+      }
+    }
+  }
 
   // --- PERSONA BLOCK ---
   const personaBlock = `# PERSONA
 You are ${persona.name} — ${persona.role}.
-${persona.persona}
-Focus Area: ${persona.focus}`;
+${dynamicPersona}
+Focus Area: ${dynamicFocus}`;
+
+  // --- CONVERSATION RULES ---
+  const rulesBlock = persona.conversationRules;
 
   // --- CANDIDATE & JOB BLOCK ---
   let candidateBlock = `\n# INTERVIEW CONTEXT
@@ -372,7 +455,7 @@ export function buildInterviewContext({ mode = 'standard', interviewerName = 'st
  * @param {InterviewContextObject} ctx
  * @returns {string} Compact text summary for inclusion in Router prompt
  */
-export function buildRouterContextSummary(ctx) {
+export function buildRouterContextSummary(ctx, activeInterviewers = ['Sarah', 'David'], escalation = null) {
   const mem = ctx.recruiterMemory;
   let summary = '';
 
@@ -395,10 +478,22 @@ export function buildRouterContextSummary(ctx) {
   summary += `\n# LIVE INTERVIEW STATE\n`;
   summary += `Current Stage: ${ctx.interview.stage}\n`;
   summary += `Difficulty: ${ctx.interview.difficulty} | Confidence: ${ctx.interview.confidence}\n`;
+  summary += `Active Panel Members: ${activeInterviewers.join(', ')}\n`;
+
+  if (escalation && escalation.escalate) {
+    summary += `\n[ESCALATION DIRECTIVE ACTIVE]: ${escalation.reason}\n`;
+    summary += `CRITICAL INSTRUCTION: You MUST hand off the conversation to ${escalation.nextInterviewer} immediately. The current speaker must naturally introduce them based on the reason.\n`;
+  }
   summary += `Verified Skills: ${mem.verifiedSkills.join(', ') || 'None yet'}\n`;
   summary += `Discussed Topics: ${mem.discussedTopics.join(', ') || 'None yet'}\n`;
   summary += `Missing Topics: ${mem.missingTopics.join(', ') || 'None identified'}\n`;
   summary += `Follow-ups Pending: ${mem.followUpQueue.slice(0, 2).join(', ') || 'None'}\n`;
+  
+  // Expose Enterprise Mode resolution to backend router
+  const enterpriseMode = resolveEnterpriseMode(ctx);
+  if (enterpriseMode.enabled) {
+    summary += `\n[ENTERPRISE_LAYER_PAYLOAD]: ${JSON.stringify(enterpriseMode)}\n`;
+  }
 
   return summary.trim();
 }

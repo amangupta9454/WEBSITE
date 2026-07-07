@@ -55,7 +55,7 @@ export default function ExecutiveSummaryCard({ data, session }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <CircularScore 
             score={data.overall_score || 0} 
-            max={100}
+            max={10}
             label="Overall Score" 
             colorClass="text-indigo-500" 
             bgClass="bg-indigo-50 border-indigo-100" 

@@ -50,9 +50,28 @@ export default function CommitteeDecisionCard({ data }) {
 
       <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 relative z-10 mb-6">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Committee Summary</p>
-        <p className="text-sm md:text-base font-medium text-slate-200 leading-relaxed italic">
+        <p className="text-sm md:text-base font-medium text-slate-200 leading-relaxed italic mb-6">
           "{data.committee_summary}"
         </p>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-700/50">
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Risk Assessment</p>
+            <p className={`text-sm font-bold ${data.risk_assessment?.includes('High') ? 'text-red-400' : 'text-emerald-400'}`}>{data.risk_assessment || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Technical Bar</p>
+            <p className="text-sm font-bold text-white">{data.technical_bar || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Behavioral Bar</p>
+            <p className="text-sm font-bold text-white">{data.behavioral_bar || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Production Readiness</p>
+            <p className="text-sm font-bold text-white">{data.production_readiness || 'N/A'}</p>
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10">

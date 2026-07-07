@@ -48,10 +48,10 @@ export default function ImprovementRoadmapCard({ data }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <div>
           <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <BookMarked size={14} className="text-indigo-400" /> Recommended Resources
+            <BookMarked size={14} className="text-indigo-400" /> Resources
           </h4>
           <ul className="space-y-2">
             {data.resources?.map((r, i) => (
@@ -66,6 +66,26 @@ export default function ImprovementRoadmapCard({ data }) {
           <ul className="space-y-2">
             {data.practice_areas?.map((p, i) => (
               <li key={i} className="text-sm text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">{p}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Code2 size={14} className="text-amber-400" /> Projects
+          </h4>
+          <ul className="space-y-2">
+            {data.projects?.map((p, i) => (
+              <li key={i} className="text-sm text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">{p}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <BookMarked size={14} className="text-rose-400" /> Books
+          </h4>
+          <ul className="space-y-2">
+            {data.books?.map((b, i) => (
+              <li key={i} className="text-sm text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">{b}</li>
             ))}
           </ul>
         </div>

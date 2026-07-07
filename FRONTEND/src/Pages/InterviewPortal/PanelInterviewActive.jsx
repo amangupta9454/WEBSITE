@@ -12,6 +12,7 @@ import { useAudioDeviceManager } from "../../hooks/useAudioDeviceManager";
 import { ERROR_MESSAGES } from "../../constants/errors";
 import toast from "react-hot-toast";
 import InterviewerCard from "./components/InterviewerCard";
+import { INTERVIEWER_PERSONAS } from "../../utils/interviewContextBuilder";
 
 function PanelInterviewActive() {
   const { sessionId } = useParams();
@@ -60,6 +61,14 @@ function PanelInterviewActive() {
   };
 
   const [showControls, setShowControls] = useState(true);
+  
+  const [participants, setParticipants] = useState(['Sarah', 'David']);
+
+  useEffect(() => {
+    if (activeSpeaker && !participants.includes(activeSpeaker)) {
+      setParticipants(prev => [...prev, activeSpeaker]);
+    }
+  }, [activeSpeaker, participants]);
 
   // Timer logic
   const [time, setTime] = useState(0);
@@ -342,24 +351,19 @@ function PanelInterviewActive() {
                 </div>
             )}
             
-            <div className="flex flex-col md:flex-row gap-6 w-full justify-center items-center">
-              {/* Sarah */}
-              <div className="w-full max-w-[300px] aspect-[3/4]">
-                 <InterviewerCard 
-                    name="Sarah" 
-                    role="HR / Behavioral" 
-                    state={getInterviewerState("Sarah")}
-                 />
-              </div>
-
-              {/* David */}
-              <div className="w-full max-w-[300px] aspect-[3/4]">
-                 <InterviewerCard 
-                    name="David" 
-                    role="Tech Lead" 
-                    state={getInterviewerState("David")}
-                 />
-              </div>
+            <div className="flex flex-col md:flex-row gap-6 w-full justify-center items-center flex-wrap">
+              {participants.map((name) => {
+                const persona = INTERVIEWER_PERSONAS[name] || INTERVIEWER_PERSONAS.standard;
+                return (
+                  <div key={name} className="w-full max-w-[280px] aspect-[3/4]">
+                     <InterviewerCard 
+                        name={persona.name} 
+                        role={persona.role} 
+                        state={getInterviewerState(name)}
+                     />
+                  </div>
+                );
+              })}
 
               {/* Candidate */}
               <div className="w-full max-w-[300px] aspect-[3/4]">

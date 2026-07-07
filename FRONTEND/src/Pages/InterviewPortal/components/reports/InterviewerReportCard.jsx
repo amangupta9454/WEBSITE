@@ -1,45 +1,43 @@
 import React from 'react';
-import { User, Code2, Database, ShieldAlert, Cpu, Network, Server, TrendingUp, AlertCircle } from 'lucide-react';
+import { User, TrendingUp, AlertCircle, Sparkles } from 'lucide-react';
 
-export default function DavidReportCard({ data }) {
+export default function InterviewerReportCard({ data }) {
   if (!data) return null;
 
-  const metrics = [
-    { label: 'Technical Depth', score: data.technical_depth, icon: <Code2 size={12} /> },
-    { label: 'Problem Solving', score: data.problem_solving, icon: <Cpu size={12} /> },
-    { label: 'Coding Fundamentals', score: data.coding_fundamentals, icon: <Code2 size={12} /> },
-    { label: 'Architecture', score: data.architecture, icon: <Server size={12} /> },
-    { label: 'System Design', score: data.system_design, icon: <Network size={12} /> },
-    { label: 'API Design', score: data.api_design, icon: <Network size={12} /> },
-    { label: 'Database Knowledge', score: data.database_knowledge, icon: <Database size={12} /> },
-    { label: 'Security Awareness', score: data.security_awareness, icon: <ShieldAlert size={12} /> }
-  ];
+  // Use a default theme color if needed, or stick to indigo/slate
+  const theme = "indigo";
+  const bg = `bg-${theme}-50/50`;
+  const border = `border-${theme}-100`;
+  const textTitle = `text-${theme}-900`;
+  const textIcon = `text-${theme}-500`;
 
   return (
-    <div className="bg-emerald-50/50 rounded-2xl border-2 border-emerald-100 p-6 shadow-sm">
-      <h3 className="text-xl font-black text-emerald-900 mb-6 flex items-center gap-2">
-        <User className="text-emerald-500" /> David (Tech Lead) Feedback
+    <div className={`bg-slate-50/50 rounded-2xl border-2 border-slate-200 p-6 shadow-sm`}>
+      <h3 className={`text-xl font-black text-slate-800 mb-6 flex items-center gap-2`}>
+        <User className="text-indigo-500" /> {data.interviewer_name || "Interviewer"} ({data.role || "Expert"}) Feedback
       </h3>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {metrics.map((m, i) => (
-          <div key={i} className="bg-white p-3 rounded-xl border border-emerald-50 shadow-sm flex flex-col justify-between">
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-              {m.icon} {m.label}
-            </p>
-            <div className="flex items-end justify-between">
-              <span className="text-xl font-black text-emerald-900">{m.score || 0}<span className="text-xs text-emerald-300">/10</span></span>
-              <div className={`w-2 h-2 rounded-full ${m.score >= 8 ? 'bg-emerald-400' : m.score >= 6 ? 'bg-amber-400' : 'bg-rose-400'}`}></div>
+      {/* Dynamic Scores Grid */}
+      {data.scores && Object.keys(data.scores).length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {Object.entries(data.scores).map(([key, score], i) => (
+            <div key={i} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+              <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1`}>
+                <Sparkles size={12} className="text-indigo-400" /> {key.replace(/_/g, ' ')}
+              </p>
+              <div className="flex items-end justify-between">
+                <span className={`text-xl font-black text-slate-800`}>{score || 0}<span className="text-xs text-slate-400">/10</span></span>
+                <div className={`w-2 h-2 rounded-full ${score >= 8 ? 'bg-emerald-400' : score >= 6 ? 'bg-amber-400' : 'bg-rose-400'}`}></div>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <TrendingUp size={14} /> Technical Strengths
+            <TrendingUp size={14} /> Key Strengths
           </h4>
           <div className="space-y-4">
             {data.strengths?.map((s, i) => (
@@ -76,13 +74,14 @@ export default function DavidReportCard({ data }) {
         </div>
       </div>
       
-      <div>
-        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Knowledge Gaps</h4>
-        <ul className="list-disc pl-4 space-y-1 mb-2">
-          {data.knowledge_gaps?.map((g, i) => <li key={i} className="text-sm text-slate-600">{g}</li>)}
-          {!data.knowledge_gaps?.length && <li className="text-sm text-slate-400 italic">No gaps noted.</li>}
-        </ul>
-      </div>
+      {data.questions_asked && data.questions_asked.length > 0 && (
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Questions Asked By {data.interviewer_name || "Interviewer"}</h4>
+          <ul className="list-disc pl-4 space-y-2">
+            {data.questions_asked.map((q, i) => <li key={i} className="text-sm text-slate-600 font-medium">{q}</li>)}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

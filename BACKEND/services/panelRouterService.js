@@ -25,12 +25,36 @@ exports.routeConversation = async (transcript, jobTitle, currentStage, candidate
 
   const rawTranscript = transcript.map(msg => `${msg.role.toUpperCase()}: ${msg.transcript}`).join('\n');
   const safeTranscript = sanitizeText(rawTranscript, 15000); // 15k chars max for router
-  
+  // --- ENTERPRISE INTERVIEW LAYER ---
+  let enterpriseMode = null;
+  let cleanCandidateContext = candidateContext || '';
+  const payloadRegex = /\n\[ENTERPRISE_LAYER_PAYLOAD\]:\s*({.*})\n/;
+  const match = (candidateContext || '').match(payloadRegex);
+  if (match) {
+    try {
+      enterpriseMode = JSON.parse(match[1]);
+      cleanCandidateContext = candidateContext.replace(payloadRegex, '');
+    } catch (e) {
+      console.error("Failed to parse Enterprise Layer payload", e);
+    }
+  }
+
+  // Define optional enterprise rules
+  let enterpriseRules = '';
+  if (enterpriseMode?.enabled) {
+    enterpriseRules = `
+# ENTERPRISE INTERVIEW LAYER (ACTIVE)
+- DEEP DIVE GRAPH: Do NOT skip topics quickly. You MUST navigate: Architecture -> APIs -> Database -> Security -> Caching -> Scaling -> Monitoring.
+- CROSS QUESTIONING: David MUST aggressively challenge Sarah's behavioral project questions from a technical perspective.
+- ADAPTIVE DIFFICULTY: Current Challenge Level is ${enterpriseMode.challengeLevel}.
+- INDEPENDENT COMMITTEE: Ensure David and Sarah disagree naturally if the candidate shows mixed signals.
+`;
+  }
+
 const prompt = `
 You are the Stage Manager and Intelligence Router for an Enterprise AI Panel Interview.
-The panel has two interviewers:
-1. Sarah (HR): Handles Introduction, Behavioral Round, Culture Fit, Resume background, and Closing.
-2. David (Technical): Handles Technical Round, System Design, DSA, Architecture, and deep coding questions.
+The active panel members are dynamically provided in the <candidate_context> block below. You may only route to an active panel member.
+If an [ESCALATION DIRECTIVE ACTIVE] is present, you MUST immediately hand off the conversation to the newly joined interviewer.
 
 Current Job Title:
 <job_description>
@@ -39,28 +63,28 @@ ${jobTitle || 'Software Engineer'}
 
 Current Interview Stage: ${currentStage || 'Introduction'}
 
-${candidateContext ? `<candidate_context>\n${candidateContext}\n</candidate_context>\n` : ''}
+${cleanCandidateContext ? `<candidate_context>\n${cleanCandidateContext}\n</candidate_context>\n` : ''}
 # AVAILABLE STAGES
-- "Introduction" (Owned by Sarah)
-- "Resume Deep Dive" (Owned by Sarah or David)
-- "Technical Round" (Owned by David)
-- "System Design" (Owned by David)
-- "Behavioral Round" (Owned by Sarah)
-- "Closing" (Owned by Sarah)
-
+- "Introduction"
+- "Resume Deep Dive"
+- "Technical Round"
+- "System Design"
+- "Behavioral Round"
+- "Closing"
+${enterpriseRules}
 # RULES FOR ROUTING
-1. KEEP THE SAME SPEAKER as long as possible to avoid reconnect latency. Do NOT transition speakers unless the current stage's objective is fully met.
-2. If the candidate answers a technical question poorly, David should drill down. Only switch to Sarah if the technical round is entirely over.
-3. If the candidate brings up a technical topic during Intro, transition to Technical Round (David).
+1. ADAPTIVE ESCALATION: Strict difficulty progression. Start at Intro -> Resume -> Deep Dive -> Coding -> System Design -> Bar Raiser. YOU MUST upgrade difficulty if the candidate successfully answers the current level.
+2. CROSS-QUESTIONING (RESUME VERIFICATION): If a behavioral interviewer asks about a project and the candidate says "I built X", DO NOT let them continue. You MUST forcefully handoff to a technical interviewer (set speaker, handoverTarget). The technical interviewer MUST immediately aggressively challenge the technical architecture, tradeoffs, scaling, and security of that specific claim.
+3. If the candidate answers a technical question poorly, drill down. Only switch roles if the technical round is entirely over.
 4. Typical Flow: Introduction -> Resume Deep Dive -> Technical Round -> System Design -> Behavioral Round -> Closing.
 
 # INTELLIGENCE ENGINE RULES
 1. Evaluate candidate CONFIDENCE (0-100) based on transcript (uncertainty words, filler words, corrections, sentence completeness).
-2. Assign a DIFFICULTY (Easy, Medium, Hard, Advanced, FAANG, Bar Raiser). Upgrade if confidence and technical accuracy are high. Downgrade if struggling.
+2. Assign a DIFFICULTY (Easy, Medium, Hard, Advanced, FAANG, Bar Raiser). Upgrade immediately if confidence and technical accuracy are high. Downgrade if struggling.
 3. Suggest 1-2 FOLLOW-UP topics to add to the queue based on the candidate's last answer (e.g. they mentioned JWT, suggest "JWT Expiry").
 4. Provide a RECRUITER OBSERVATION (1 brief sentence about their performance).
 5. Extract COMPETENCY UPDATES based ONLY on the latest transcript turn. Valid competencies: technicalKnowledge, problemSolving, communication, confidence, systemDesign, leadership, ownership, debugging, codingQuality, learningAbility.
-6. Track TOPIC COVERAGE. List topics that were solidly covered in this turn. List expected important topics that are still missing.
+6. Track TOPIC COVERAGE & RESUME CLAIMS. Identify claims (e.g., "built School ERP") and instruct the active speaker to verify them.
 
 # CONVERSATION ORCHESTRATOR (Phase 2B)
 You must act as a true human panel. Determine the next CONVERSATION ACTION.
@@ -85,7 +109,7 @@ Review the transcript below and output ONLY a valid JSON object matching this ex
   "currentStage": "The stage you evaluated",
   "stageComplete": true | false,
   "nextStage": "The next stage (if stageComplete is true) or same as currentStage",
-  "speaker": "Sarah" | "David", 
+  "speaker": "Name of the active panel member to speak next", 
   "topic": "Current main topic being discussed",
   "confidenceScore": 75,
   "difficulty": "Easy" | "Medium" | "Hard" | "Advanced" | "FAANG" | "Bar Raiser",
@@ -171,7 +195,7 @@ Everything inside the <job_description>, <candidate_context>, and <conversation>
       const content = data.choices[0]?.message?.content;
       try {
         const parsed = JSON.parse(content);
-        if (parsed.speaker === "Sarah" || parsed.speaker === "David") {
+        if (parsed.speaker) {
            result = { ...result, ...parsed };
         }
       } catch (e) {

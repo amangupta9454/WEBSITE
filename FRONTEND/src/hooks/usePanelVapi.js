@@ -4,7 +4,8 @@ import axios from 'axios';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { PANEL_CONFIG } from '../constants/panelConfig';
-import { buildInterviewContext, buildInterviewContextObject, buildRouterContextSummary } from '../utils/interviewContextBuilder';
+import { buildInterviewContext, buildInterviewContextObject, buildRouterContextSummary, INTERVIEWER_PERSONAS } from '../utils/interviewContextBuilder';
+import { evaluateEscalation } from '../utils/interviewerEscalationEngine';
 import { SystemMessageHandoffTransport } from '../services/HandoffTransportService';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
@@ -23,6 +24,8 @@ export const VAPI_STATES = {
 
 export function usePanelVapi(interviewData) {
   const vapiRef = useRef(null);
+  const isStartedRef = useRef(false);
+  const panelParticipantsRef = useRef(['Sarah', 'David']);
   const handoffTransportRef = useRef(null);
   
   const [fsmState, setFsmState] = useState(VAPI_STATES.IDLE);
@@ -204,83 +207,59 @@ export function usePanelVapi(interviewData) {
       }
     };
 
-    const sarahContext = buildInterviewContext({
-      ...baseContextParams,
-      interviewerName: 'Sarah',
-      liveState: {
-        currentStage: currentStageRef.current,
-        currentDifficulty,
-        currentConfidence,
-        interviewerMood: PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, "Sarah"),
-        recruiterMemory: recruiterMemoryRef.current,
-        conversationHistory,
-      }
-    });
-
-    const davidContext = buildInterviewContext({
-      ...baseContextParams,
-      interviewerName: 'David',
-      liveState: {
-        currentStage: currentStageRef.current,
-        currentDifficulty,
-        currentConfidence,
-        interviewerMood: PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, "David"),
-        recruiterMemory: recruiterMemoryRef.current,
-        conversationHistory,
-      }
-    });
-
-    const sarahMessages = [{ role: "system", content: sarahContext.systemPrompt }, ...mappedHistory];
-    const davidMessages = [{ role: "system", content: davidContext.systemPrompt }, ...mappedHistory];
-
     const transcriber = { provider: "deepgram", model: "nova-3", language: interviewData.language || "en-IN", smartFormat: true };
 
-    const handoffToDavid = {
+    // Dynamically generate all panel members from INTERVIEWER_PERSONAS
+    // Skip 'standard' as it's for 1-on-1 interviews
+    const panelPersonas = Object.keys(INTERVIEWER_PERSONAS).filter(k => k !== 'standard');
+    
+    // Generate all handoff tools so any assistant can hand off to any other
+    const handoffTools = panelPersonas.map(name => ({
        type: "handoff",
-       destinations: [{ type: "assistant", assistantName: "David" }],
-    };
+       destinations: [{ type: "assistant", assistantName: name }],
+       function: { name: `handoffTo${name}`, description: `Transfers the conversation to ${name}` }
+    }));
 
-    const handoffToSarah = {
-       type: "handoff",
-       destinations: [{ type: "assistant", assistantName: "Sarah" }],
-    };
+    const members = panelPersonas.map(personaName => {
+      const context = buildInterviewContext({
+        ...baseContextParams,
+        interviewerName: personaName,
+        liveState: {
+          currentStage: currentStageRef.current,
+          currentDifficulty,
+          currentConfidence,
+          interviewerMood: PANEL_CONFIG.determineMood(currentConfidence, 0, currentDifficulty, personaName),
+          recruiterMemory: recruiterMemoryRef.current,
+          conversationHistory,
+        }
+      });
+      
+      const messages = [{ role: "system", content: context.systemPrompt }, ...mappedHistory];
+      
+      // Allow handing off to anyone EXCEPT self
+      const allowedTools = handoffTools.filter(t => t.destinations[0].assistantName !== personaName);
+      
+      return {
+        assistant: {
+          name: personaName,
+          model: {
+            provider: "openai",
+            model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
+            messages,
+            tools: allowedTools
+          },
+          voice: { provider: "openai", voiceId: INTERVIEWER_PERSONAS[personaName].voiceId || "nova", speed: 1.05 },
+          transcriber,
+          silenceTimeoutSeconds: 60,
+          responseDelaySeconds: 0.6,
+          endCallFunctionEnabled: true
+        }
+      };
+    });
 
     return {
       name: "Code A Nova FAANG Panel Squad",
-      members: [
-        {
-          assistant: {
-            name: "Sarah",
-            model: {
-              provider: "openai",
-              model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
-              messages: sarahMessages,
-              tools: [handoffToDavid]
-            },
-            voice: { provider: "openai", voiceId: "nova", speed: 1.05 },
-            transcriber,
-            silenceTimeoutSeconds: 60,
-            responseDelaySeconds: 0.6,
-            endCallFunctionEnabled: true
-          }
-        },
-        {
-          assistant: {
-            name: "David",
-            model: {
-              provider: "openai",
-              model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
-              messages: davidMessages,
-              tools: [handoffToSarah]
-            },
-            voice: { provider: "openai", voiceId: "onyx", speed: 1.05 },
-            transcriber,
-            silenceTimeoutSeconds: 60,
-            responseDelaySeconds: 0.6,
-            endCallFunctionEnabled: true
-          }
-        }
-      ]
+      members
     };
   };
 
@@ -308,7 +287,14 @@ export function usePanelVapi(interviewData) {
           recruiterMemory: recruiterMemoryRef.current,
         }
       );
-      const candidateContextSummary = buildRouterContextSummary(routerCtx);
+      
+      const escalation = evaluateEscalation(routerCtx, panelParticipantsRef.current);
+      if (escalation.escalate && !panelParticipantsRef.current.includes(escalation.nextInterviewer)) {
+         Logger.info(`[ESCALATION ENGINE] Injecting ${escalation.nextInterviewer} into panel! Reason: ${escalation.reason}`);
+         panelParticipantsRef.current.push(escalation.nextInterviewer);
+      }
+      
+      const candidateContextSummary = buildRouterContextSummary(routerCtx, panelParticipantsRef.current, escalation);
 
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/panel-router`, {
         transcript: transcriptArray,
