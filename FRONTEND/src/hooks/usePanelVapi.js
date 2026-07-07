@@ -254,13 +254,13 @@ export function usePanelVapi(interviewData) {
               provider: "openai",
               model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
               messages: sarahMessages,
+              tools: [handoffToDavid]
             },
             voice: { provider: "openai", voiceId: "nova", speed: 1.05 },
             transcriber,
             silenceTimeoutSeconds: 60,
             responseDelaySeconds: 0.6,
-            endCallFunctionEnabled: true,
-            tools: [handoffToDavid]
+            endCallFunctionEnabled: true
           }
         },
         {
@@ -270,13 +270,13 @@ export function usePanelVapi(interviewData) {
               provider: "openai",
               model: import.meta.env.VITE_OPENAI_MODEL || "gpt-4o",
               messages: davidMessages,
+              tools: [handoffToSarah]
             },
             voice: { provider: "openai", voiceId: "onyx", speed: 1.05 },
             transcriber,
             silenceTimeoutSeconds: 60,
             responseDelaySeconds: 0.6,
-            endCallFunctionEnabled: true,
-            tools: [handoffToSarah]
+            endCallFunctionEnabled: true
           }
         }
       ]
