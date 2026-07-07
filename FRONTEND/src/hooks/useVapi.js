@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Vapi from '@vapi-ai/web';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
+import { buildInterviewContext } from '../utils/interviewContextBuilder';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
@@ -319,45 +320,23 @@ export function useVapi(interviewData) {
     const micGranted = await requestMicrophone();
     if (!micGranted) return;
 
-    const systemPrompt = `
-# PERSONA
-You are a Principal AI Architect, Senior Staff Engineer, and Hiring Committee Advisor at a top-tier tech company. You are conducting a rigorous technical interview for the "${interviewData.jobTitle}" position.
-Speak exactly like a calm, human senior engineering manager. Never sound robotic, overly enthusiastic, or scripted.
-
-# INTERVIEW CONTEXT
-Role: ${interviewData.jobTitle}
-Candidate Experience: ${interviewData.experienceYears}
-Duration: ${interviewData.durationMinutes} minutes.
-${interviewData.jobDescription ? `\n# JOB DESCRIPTION\n${interviewData.jobDescription}` : ""}
-${(interviewData.resumeText || interviewData.resume) ? `\n# CANDIDATE RESUME\n${(interviewData.resumeText || interviewData.resume).substring(0, 3000)}` : ""}
-
-# RECRUITER MEMORY (Current State)
-Verified Skills: ${recruiterMemoryRef.current.verifiedSkills.join(', ') || 'None yet'}
-Weak Skills: ${recruiterMemoryRef.current.weakSkills.join(', ') || 'None yet'}
-Missing Skills: ${recruiterMemoryRef.current.missingSkills.join(', ') || 'None yet'}
-Unverified Claims: ${recruiterMemoryRef.current.unverifiedClaims.join(', ') || 'None yet'}
-Already Asked Questions: ${recruiterMemoryRef.current.questionHistory.join(' | ') || 'None yet'}
-Contradictions: ${recruiterMemoryRef.current.contradictions.join(', ') || 'None yet'}
-
-# CONVERSATION RULES
-1. ONE QUESTION LIMIT: You must ask exactly ONE question at a time. Never combine multiple questions. Wait until the candidate answers before continuing. Never ask compound questions.
-2. MAX LENGTH: 2-3 short sentences. NEVER read long lectures.
-3. NATURAL REFERENCES: Use phrases like "You previously explained...", "Earlier you mentioned...".
-4. UNCERTAINTY: If the transcript is broken or low confidence, say "Could you repeat that?". Never guess. Ignore filler words ("umm", "uh").
-
-# REASONING ENGINE (Maintain internally)
-1. LIVE RECRUITER MEMORY: Track Candidate Skills (Verified/Missing/Weak), Unverified Claims, Contradictions, and JD Coverage matrix internally.
-2. CONTINUOUS REASONING: Before every response, silently evaluate: What is the highest information-gain question I can ask next?
-3. QUESTION PRIORITIZATION: 1. Unverified resume claims -> 2. JD critical skills -> 3. Weak skills -> 4. Contradictions -> 5. System Design -> 6. Behavior.
-4. ADAPTIVE DIFFICULTY: If candidate answers perfectly, immediately escalate difficulty. If they struggle, step down to fundamentals. Never ask repetitive easy questions.
-5. CONTRADICTION ENGINE: If they contradict a previous answer, politely clarify it ("Earlier you mentioned...").
-6. FOLLOW-UP ENGINE: Never ask generic follow-ups. Ask targeted questions like "What bottleneck? How was it measured?"
-
-# INTERVIEW TIMELINE FLOW
-Introduction -> Resume/Project Deep Dive -> Technical JD Coverage -> System Design/Architecture -> Behavioral (Ownership/Leadership) -> Closing.
-
-Never hallucinate technologies. Do not invent candidate experience. Maximize signal extraction.
-`.trim();
+    // Build systemPrompt via Universal Interview Context Engine
+    const { systemPrompt } = buildInterviewContext({
+      mode: 'standard',
+      interviewerName: 'standard',
+      candidate: {
+        resumeText: interviewData.resumeText || interviewData.resume || '',
+        parsedResume: interviewData.parsedResume || null,
+        jobTitle: interviewData.jobTitle,
+        jobDescription: interviewData.jobDescription || '',
+        experienceYears: interviewData.experienceYears,
+        durationMinutes: interviewData.durationMinutes,
+        language: interviewData.language,
+      },
+      liveState: {
+        recruiterMemory: recruiterMemoryRef.current,
+      }
+    });
 
     const interviewLanguage = interviewData.language || "en-IN";
 

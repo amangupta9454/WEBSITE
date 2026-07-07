@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { PANEL_CONFIG } from '../constants/panelConfig';
+import { buildInterviewContext } from '../utils/interviewContextBuilder';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
@@ -193,47 +194,28 @@ export function usePanelVapi(interviewData) {
       content: msg.transcript
     }));
 
-    const systemPrompt = `
-# PERSONA
-You are ${speakerName}, an interviewer on a FAANG Hiring Panel for the "${interviewData.jobTitle}" position.
-${isSarah ? "You are HR. You handle behavioral and culture fit." : "You are the Tech Lead. You handle technical depth."}
-
-# INTELLIGENCE ENGINE DIRECTIVES
-Current Difficulty Level: ${currentDifficulty}
-Candidate Confidence Score (0-100): ${currentConfidence}
-Your Mandatory Mood: ${interviewerMood}
-
-# INTERVIEW CONTEXT
-Role: ${interviewData.jobTitle}
-Candidate Experience: ${interviewData.experienceYears}
-Current Stage: ${currentStageRef.current}
-
-# RECRUITER MEMORY (Current State)
-Verified Skills: ${recruiterMemoryRef.current.verifiedSkills.join(', ') || 'None yet'}
-Discussed Topics: ${recruiterMemoryRef.current.discussedTopics.join(', ') || 'None yet'}
-Already Asked Questions: ${recruiterMemoryRef.current.questionHistory.join(' | ') || 'None yet'}
-Pending Follow-ups to Ask: ${pendingFollowUps}
-
-# CANDIDATE COMPETENCY SNAPSHOT (Live Evaluation)
-${competencySnapshot}
-
-# TOPIC COVERAGE
-Already Covered: ${coveredTopicsSnapshot}
-Still Missing: ${missingTopicsSnapshot}
-
-# CONVERSATION ORCHESTRATOR (Phase 2B)
-${orchestratorRule}
-Pacing Recommendation: ${pauseRecommendation}
-
-# CONVERSATION RULES
-1. You are picking up the conversation where it left off.
-2. Ask exactly ONE question at a time. Keep it brief (2-3 sentences).
-3. Drive the conversation according to the Current Stage: "${currentStageRef.current}".
-4. MEMORY RULE: Naturally reference "Discussed Topics" or "Pending Follow-ups" if appropriate.
-5. ADAPTIVE RULE: Adjust your technical depth to match the "Current Difficulty Level".
-6. BEHAVIOR RULE: You MUST adopt the "Mandatory Mood" specified above in your tone.
-7. ORCHESTRATOR RULE: You MUST execute the orchestration action exactly as instructed in the orchestrator block.
-`.trim();
+    // Build systemPrompt via Universal Interview Context Engine
+    const { systemPrompt } = buildInterviewContext({
+      mode: 'panel',
+      interviewerName: speakerName,
+      candidate: {
+        resumeText: interviewData.resumeText || interviewData.resume || '',
+        parsedResume: interviewData.parsedResume || null,
+        jobTitle: interviewData.jobTitle,
+        jobDescription: interviewData.jobDescription || '',
+        experienceYears: interviewData.experienceYears,
+        language: interviewData.language,
+        durationMinutes: interviewData.durationMinutes,
+      },
+      liveState: {
+        currentStage: currentStageRef.current,
+        currentDifficulty,
+        currentConfidence,
+        interviewerMood,
+        recruiterMemory: recruiterMemoryRef.current,
+        conversationHistory,
+      }
+    });
 
     const messages = [{ role: "system", content: systemPrompt }, ...mappedHistory];
 
