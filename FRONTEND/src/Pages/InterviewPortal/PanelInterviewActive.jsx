@@ -34,7 +34,8 @@ function PanelInterviewActive() {
     toggleMic,
     generateHealthScore,
     activeSpeaker,
-    currentStage
+    currentStage,
+    transitionContext
   } = usePanelVapi(interviewData);
 
   const isStarted = fsmState !== VAPI_STATES.IDLE;
@@ -221,6 +222,7 @@ function PanelInterviewActive() {
       case VAPI_STATES.CONNECTING: return "Connecting...";
       case VAPI_STATES.LISTENING: return "Listening...";
       case VAPI_STATES.THINKING: return "Thinking...";
+      case VAPI_STATES.SPEAKER_SWITCHING: return "Switching Speakers...";
       case VAPI_STATES.SPEAKING: return "Live Session";
       case VAPI_STATES.ENDING: return "Ending...";
       case VAPI_STATES.FAILED: return "Connection Failed";
@@ -327,7 +329,15 @@ function PanelInterviewActive() {
                 )}
                 
                 {/* Transition Overlay */}
-                {isStarted && thinkingStatus && thinkingStatus.includes('reviewing') && (
+                {isStarted && fsmState === VAPI_STATES.SPEAKER_SWITCHING && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-indigo-900/90 backdrop-blur-md rounded-[2.5rem] shadow-xl text-white animate-pulse">
+                    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <h3 className="font-black text-lg">Switching to {transitionContext.to || "next speaker"}...</h3>
+                    <p className="text-sm font-medium opacity-80">Passing the conversation floor</p>
+                  </div>
+                )}
+                
+                {isStarted && fsmState !== VAPI_STATES.SPEAKER_SWITCHING && thinkingStatus && thinkingStatus.includes('reviewing') && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-indigo-900/90 backdrop-blur-md rounded-[2.5rem] shadow-xl text-white animate-pulse">
                     <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
                     <h3 className="font-black text-lg">{thinkingStatus}</h3>

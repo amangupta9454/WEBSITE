@@ -15,7 +15,8 @@ export const VAPI_STATES = {
   SPEAKING: 'SPEAKING',
   ENDING: 'ENDING',
   COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED'
+  FAILED: 'FAILED',
+  SPEAKER_SWITCHING: 'SPEAKER_SWITCHING'
 };
 
 export function usePanelVapi(interviewData) {
@@ -34,6 +35,11 @@ export function usePanelVapi(interviewData) {
   // Stage Management
   const [currentStage, setCurrentStage] = useState("Introduction");
   const currentStageRef = useRef("Introduction");
+
+  // Speaker Transition Context
+  const defaultTransition = { active: false, from: null, to: null, reason: null, startedAt: null };
+  const [transitionContext, setTransitionContext] = useState(defaultTransition);
+  const transitionContextRef = useRef(defaultTransition);
 
   const conversationRef = useRef([]);
   const recruiterMemoryRef = useRef({
@@ -330,17 +336,33 @@ Pacing Recommendation: ${pauseRecommendation}
         if (speaker && speaker !== activeSpeakerRef.current) {
           Logger.info(`Router switching speaker from ${activeSpeakerRef.current} to ${speaker}`);
           
+          const newTransition = {
+            active: true,
+            from: activeSpeakerRef.current,
+            to: speaker,
+            reason: reason || "RouterDecision",
+            startedAt: Date.now()
+          };
+          transitionContextRef.current = newTransition;
+          setTransitionContext(newTransition);
+          
           activeSpeakerRef.current = speaker;
           setActiveSpeaker(speaker);
           setThinkingStatus(`${speaker} is reviewing...`);
+          setFsmState(VAPI_STATES.SPEAKER_SWITCHING);
           
           if (vapiRef.current) {
             vapiRef.current.stop();
-            // Wait briefly to allow WebRTC teardown, then restart
+            // Start safety timeout in case next speaker fails to connect
             setTimeout(() => {
-               const newConfig = buildAssistantConfig(speaker, conversationRef.current);
-               vapiRef.current.start(newConfig);
-            }, 1000);
+              if (transitionContextRef.current.active) {
+                Logger.error("Speaker transition timeout!");
+                transitionContextRef.current = defaultTransition;
+                setTransitionContext(defaultTransition);
+                setFsmState(VAPI_STATES.FAILED);
+                setVapiError(INTERVIEW_ERRORS.UNKNOWN_ERROR);
+              }
+            }, 15000);
           }
         }
       }
@@ -356,8 +378,31 @@ Pacing Recommendation: ${pauseRecommendation}
 
     const vapi = vapiRef.current;
 
-    const onCallStart = () => { setFsmState(VAPI_STATES.LISTENING); setVapiError(null); };
-    const onCallEnd = () => { clearAllTimeouts(); setFsmState(VAPI_STATES.COMPLETED); };
+    const onCallStart = () => { 
+      if (transitionContextRef.current.active) {
+        transitionContextRef.current = defaultTransition;
+        setTransitionContext(defaultTransition);
+      }
+      setFsmState(VAPI_STATES.LISTENING); 
+      setVapiError(null); 
+    };
+    
+    const onCallEnd = () => { 
+      if (transitionContextRef.current.active) {
+        // Speaker transition active: ignore end, and start next speaker
+        Logger.info(`Transitioning to ${transitionContextRef.current.to}...`);
+        setTimeout(() => {
+           if (vapiRef.current && transitionContextRef.current.active) {
+             const newConfig = buildAssistantConfig(transitionContextRef.current.to, conversationRef.current);
+             vapiRef.current.start(newConfig);
+           }
+        }, 500); // Give WebRTC a brief moment to teardown
+        return;
+      }
+      clearAllTimeouts(); 
+      setFsmState(VAPI_STATES.COMPLETED); 
+    };
+    
     const onSpeechStart = () => { setThinkingStatus(""); setFsmState(VAPI_STATES.SPEAKING); };
     const onSpeechEnd = () => { setFsmState(VAPI_STATES.LISTENING); };
 
@@ -443,6 +488,6 @@ Pacing Recommendation: ${pauseRecommendation}
     fsmState, isMuted, vapiError, currentQuestion, thinkingStatus,
     conversation: conversationRef.current, recruiterMemory: recruiterMemoryRef.current,
     sessionMetrics: sessionMetricsRef.current, startCall, endCall, toggleMic, generateHealthScore,
-    activeSpeaker, currentStage
+    activeSpeaker, currentStage, transitionContext
   };
 };
