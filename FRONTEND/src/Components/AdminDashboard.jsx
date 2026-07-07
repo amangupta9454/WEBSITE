@@ -39,6 +39,7 @@ import {
   ListTodo,
   BookOpen,
   Trophy,
+  Award,
 } from "lucide-react";
 import SummerProjectsAdmin from "./SummerProjectsAdmin";
 import NormalTasksAdmin from "./NormalTasksAdmin";
@@ -1003,7 +1004,9 @@ const AdminDashboard = () => {
   const realPayerCount = applications.filter((app) => (app.paymentAmount || 0) - (app.refundAmount || 0) > 0).length;
   const totalRevenue = applications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
   const displayedApps =
-    activeTab === "new" ? newApplications : downloadedApplications;
+    activeTab === "new" ? newApplications 
+    : activeTab === "certificates" ? applications.filter((app) => app.isCertificateSent) 
+    : downloadedApplications;
 
   const StatCard = ({ label, value, icon: Icon, color, sub }) => (
     <div
@@ -2362,6 +2365,20 @@ const AdminDashboard = () => {
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveTab("certificates")}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "certificates" ? "bg-slate-200 text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <Award className="w-4 h-4" />
+                  Certificates Sent
+                  {applications.filter(app => app.isCertificateSent).length > 0 && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "certificates" ? "bg-indigo-500/20 text-indigo-600" : "bg-slate-200 text-slate-500"}`}
+                    >
+                      {applications.filter(app => app.isCertificateSent).length}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -2370,6 +2387,8 @@ const AdminDashboard = () => {
                     <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
                       {activeTab === "new" ? (
                         <Clock className="w-8 h-8 text-slate-600" />
+                      ) : activeTab === "certificates" ? (
+                        <Award className="w-8 h-8 text-slate-600" />
                       ) : (
                         <CheckCircle className="w-8 h-8 text-slate-600" />
                       )}
@@ -2377,11 +2396,15 @@ const AdminDashboard = () => {
                     <p className="text-slate-900 font-medium text-lg">
                       {activeTab === "new"
                         ? "No new applications"
+                        : activeTab === "certificates"
+                        ? "No certificates sent"
                         : "No processed applications"}
                     </p>
                     <p className="text-slate-500 text-sm mt-1">
                       {activeTab === "new"
                         ? "All applications have been exported."
+                        : activeTab === "certificates"
+                        ? "Certificates haven't been marked as sent yet."
                         : "Export new applications to see them here."}
                     </p>
                     {searchQuery && (
