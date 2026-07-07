@@ -253,6 +253,7 @@ export function usePanelVapi(interviewData) {
           maxDurationSeconds: 5400, // Enforce 90-minute hard limit over Vapi's 10-minute default
           silenceTimeoutSeconds: 60,
           responseDelaySeconds: 0.6,
+          firstMessage: personaName === 'Sarah' ? `Hi, welcome to your panel interview for the ${interviewData?.jobTitle || 'role'}. I'm ${personaName}. Are you ready to begin?` : undefined,
           endCallFunctionEnabled: true
         }
       };
