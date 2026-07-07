@@ -253,7 +253,6 @@ export function usePanelVapi(interviewData) {
           maxDurationSeconds: 5400, // Enforce 90-minute hard limit over Vapi's 10-minute default
           silenceTimeoutSeconds: 60,
           responseDelaySeconds: 0.6,
-          firstMessage: personaName === 'Sarah' ? `Hi, welcome to your panel interview for the ${interviewData?.jobTitle || 'role'}. I'm ${personaName}. Are you ready to begin?` : undefined,
           endCallFunctionEnabled: true
         }
       };
@@ -430,6 +429,19 @@ export function usePanelVapi(interviewData) {
     const onCallStart = () => { 
       setFsmState(VAPI_STATES.LISTENING); 
       setVapiError(null); 
+
+      // Inject system message to force the first speaker to start the interview naturally
+      // This prevents Vapi Squad microphone bugs associated with static 'firstMessage'
+      if (vapiRef.current) {
+        vapiRef.current.send({
+          type: "add-message",
+          message: {
+            role: "system",
+            content: `The interview has just started. You must speak first and welcome the candidate to this panel interview for the ${interviewData?.jobTitle || 'role'} position. Introduce yourself.`
+          },
+          triggerResponseEnabled: true
+        });
+      }
     };
     
     const onCallEnd = () => { 
