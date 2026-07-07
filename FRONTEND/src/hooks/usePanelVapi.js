@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { PANEL_CONFIG } from '../constants/panelConfig';
-import { buildInterviewContext } from '../utils/interviewContextBuilder';
+import { buildInterviewContext, buildInterviewContextObject, buildRouterContextSummary } from '../utils/interviewContextBuilder';
 
 const AI_RESPONSE_TIMEOUT_MS = 15000;
 
@@ -241,11 +241,35 @@ export function usePanelVapi(interviewData) {
   const triggerRouter = async (transcriptArray) => {
     try {
       const token = localStorage.getItem('interviewToken');
+      
+      // Build structured context object for Router enrichment
+      const currentConfidenceForRouter = recruiterMemoryRef.current.confidenceHistory.length > 0
+        ? recruiterMemoryRef.current.confidenceHistory[recruiterMemoryRef.current.confidenceHistory.length - 1]
+        : 50;
+      const routerCtx = buildInterviewContextObject(
+        {
+          resumeText: interviewData.resumeText || interviewData.resume || '',
+          parsedResume: interviewData.parsedResume || null,
+          jobTitle: interviewData.jobTitle,
+          jobDescription: interviewData.jobDescription || '',
+          experienceYears: interviewData.experienceYears,
+        },
+        {
+          mode: 'panel',
+          currentStage: currentStageRef.current,
+          currentDifficulty: recruiterMemoryRef.current.currentDifficulty || 'Medium',
+          currentConfidence: currentConfidenceForRouter,
+          recruiterMemory: recruiterMemoryRef.current,
+        }
+      );
+      const candidateContextSummary = buildRouterContextSummary(routerCtx);
+
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/panel-router`, {
         transcript: transcriptArray,
         jobTitle: interviewData.jobTitle,
-        currentStage: currentStageRef.current
-      }, { headers: { Authorization: `Bearer ${token}` }});
+        currentStage: currentStageRef.current,
+        candidateContext: candidateContextSummary,
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       if (res.data.success) {
         const { speaker, nextStage, topic, reason, confidenceScore, difficulty, followUpQueue, recruiterObservation, conversationAction, handoverTarget, interrupt, backchannel, pauseRecommendation, conversationReason } = res.data;

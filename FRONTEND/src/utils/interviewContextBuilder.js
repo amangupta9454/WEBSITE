@@ -1,22 +1,26 @@
 /**
- * Universal Interview Context Engine
- * ====================================
- * Single source of truth for all AI interviewer system prompts.
- * Supports Standard Interview, Panel Interview, and all future interview modes.
+ * Universal Interview Context Engine v2
+ * ========================================
+ * Single source of truth for the entire AI Interview Platform.
  *
- * Usage:
- *   import { buildInterviewContext } from '../utils/interviewContextBuilder';
- *   const { systemPrompt } = buildInterviewContext({ mode, interviewer, candidate, liveState });
+ * ARCHITECTURE (v2):
+ *   1. buildInterviewContextObject() → Structured InterviewContext (pure data, no strings)
+ *   2. buildSystemPrompt()           → Converts InterviewContext + Persona → system prompt string
+ *   3. buildInterviewContext()       → Convenience wrapper (backward compatible, used by hooks)
  *
- * Architecture: SOLID / DRY / Separation of Concerns.
- * No hook, component, or service should construct its own system prompt.
+ * Every interview module (Standard, Panel, Router, Evaluation, Reports, Hiring Committee)
+ * should consume the structured InterviewContext object.
+ * Only Vapi-specific callers need the final systemPrompt string.
+ *
+ * Adding a new interviewer: Add an entry to INTERVIEWER_PERSONAS. Zero other changes required.
+ * Adding a company mode:    Add an entry to COMPANY_INTERVIEW_MODES. Zero other changes required.
  */
 
 // ---------------------------------------------------------------------------
-// Interviewer Persona Registry
-// Add future interviewers here without changing any hook or component.
+// INTERVIEWER PERSONA REGISTRY
+// Single place to define any current or future AI interviewer.
 // ---------------------------------------------------------------------------
-const INTERVIEWER_PERSONAS = {
+export const INTERVIEWER_PERSONAS = {
   standard: {
     name: 'AI Interviewer',
     role: 'Principal AI Architect, Senior Staff Engineer, and Hiring Committee Advisor',
@@ -24,11 +28,11 @@ const INTERVIEWER_PERSONAS = {
     focus: 'Full-spectrum technical and behavioral interview.',
     voiceId: 'nova',
     conversationRules: `# CONVERSATION RULES
-1. ONE QUESTION LIMIT: Ask exactly ONE question at a time. Never combine multiple questions. Wait for the answer before continuing.
+1. ONE QUESTION LIMIT: Ask exactly ONE question at a time. Wait for the answer before continuing.
 2. MAX LENGTH: 2-3 short sentences. NEVER read long lectures.
 3. NATURAL REFERENCES: Use phrases like "You previously explained...", "Earlier you mentioned...".
-4. UNCERTAINTY: If the transcript is broken, say "Could you repeat that?". Never guess. Ignore filler words.
-5. RESUME RULE: You have the candidate's resume. Reference their actual projects and claimed skills directly. Never say "I don't have access to your resume."
+4. UNCERTAINTY: If transcript is broken, say "Could you repeat that?". Ignore filler words.
+5. RESUME RULE: You have the candidate's resume. Reference their actual projects and claimed skills. Never say "I don't have access to your resume."
 
 # REASONING ENGINE
 1. LIVE RECRUITER MEMORY: Track skills (Verified/Missing/Weak), Unverified Claims, Contradictions.
@@ -75,7 +79,6 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
 7. ORCHESTRATOR RULE: Execute the orchestration action exactly as instructed.`,
   },
 
-  // Future interviewers — add here, no frontend code changes needed
   HiringManager: {
     name: 'Alex',
     role: 'Hiring Manager',
@@ -99,189 +102,302 @@ Never hallucinate technologies. Do not invent candidate experience. Maximize sig
 2. Probe for edge cases, failure modes, and trade-offs.
 3. RESUME RULE: Reference the candidate's actual projects and challenge their technical claims. Never say "I don't have access to your resume."`,
   },
+
+  EngineeringManager: {
+    name: 'Morgan',
+    role: 'Engineering Manager',
+    persona: 'You are Morgan, an Engineering Manager. You evaluate engineering judgment, mentorship instincts, delivery track record, and the ability to influence technical decisions without authority.',
+    focus: 'Engineering leadership, delivery, technical influence, cross-team collaboration.',
+    voiceId: 'shimmer',
+    conversationRules: `# CONVERSATION RULES
+1. Ask exactly ONE question at a time about engineering leadership or delivery.
+2. Ask the candidate to describe situations where they influenced technical decisions.
+3. RESUME RULE: Reference the candidate's actual projects and ask about team dynamics and delivery outcomes. Never say "I don't have access to your resume."`,
+  },
 };
 
 // ---------------------------------------------------------------------------
-// STATIC CONTEXT BLOCK (built once per session)
-// Contains candidate info, resume, job description.
-// Expensive to rebuild — cache the result if interviewData doesn't change.
+// COMPANY INTERVIEW MODE REGISTRY
+// Each company may override rules while consuming the same context object.
 // ---------------------------------------------------------------------------
-function buildStaticContextBlock(candidate) {
-  const resume = candidate.resumeText || candidate.resume || '';
-  const parsedResume = candidate.parsedResume || null;
-  const jobDescription = candidate.jobDescription || '';
-
-  let block = '';
-
-  // Job / Role context
-  block += `\n# INTERVIEW CONTEXT\n`;
-  block += `Target Role: ${candidate.jobTitle || 'Software Engineer'}\n`;
-  block += `Candidate Experience: ${candidate.experienceYears || 'Not specified'}\n`;
-  if (candidate.durationMinutes) {
-    block += `Interview Duration: ${candidate.durationMinutes} minutes\n`;
-  }
-
-  // Job Description
-  if (jobDescription) {
-    block += `\n# JOB DESCRIPTION\n${jobDescription.substring(0, 1500)}\n`;
-  }
-
-  // Resume (raw text)
-  if (resume) {
-    block += `\n# CANDIDATE RESUME\n${resume.substring(0, 3000)}\n`;
-  }
-
-  // Parsed resume sections (if available from backend parsing)
-  if (parsedResume) {
-    if (parsedResume.skills && parsedResume.skills.length > 0) {
-      block += `\n# PARSED CANDIDATE SKILLS\n${parsedResume.skills.join(', ')}\n`;
-    }
-    if (parsedResume.projects && parsedResume.projects.length > 0) {
-      block += `\n# PARSED CANDIDATE PROJECTS\n${parsedResume.projects.map(p => `- ${p}`).join('\n')}\n`;
-    }
-    if (parsedResume.experience && parsedResume.experience.length > 0) {
-      block += `\n# PARSED WORK EXPERIENCE\n${parsedResume.experience.map(e => `- ${e}`).join('\n')}\n`;
-    }
-    if (parsedResume.education && parsedResume.education.length > 0) {
-      block += `\n# PARSED EDUCATION\n${parsedResume.education.map(e => `- ${e}`).join('\n')}\n`;
-    }
-    if (parsedResume.certifications && parsedResume.certifications.length > 0) {
-      block += `\n# CERTIFICATIONS\n${parsedResume.certifications.join(', ')}\n`;
-    }
-    if (parsedResume.achievements && parsedResume.achievements.length > 0) {
-      block += `\n# ACHIEVEMENTS\n${parsedResume.achievements.map(a => `- ${a}`).join('\n')}\n`;
-    }
-  }
-
-  return block.trim();
-}
+export const COMPANY_INTERVIEW_MODES = {
+  default: { name: 'Default', additionalRules: '' },
+  Google: { name: 'Google', additionalRules: 'Focus on algorithmic thinking, code quality, scalability. Use Googleyness signals (collaborative, humble, outcome-driven). Ask about large-scale distributed systems.' },
+  Amazon: { name: 'Amazon', additionalRules: 'Evaluate all answers against Amazon Leadership Principles. Ask behavioral questions (STAR format). Probe for ownership, bias for action, and customer obsession.' },
+  Microsoft: { name: 'Microsoft', additionalRules: 'Focus on growth mindset, collaboration, and cross-functional impact. Probe for clarity of thought and design decisions in Azure/Cloud scenarios.' },
+  Meta: { name: 'Meta', additionalRules: 'Focus on impact at scale, product sense, and move fast mindset. Ask about A/B testing, data-driven decisions, and social graph problems.' },
+  Netflix: { name: 'Netflix', additionalRules: 'Focus on context over control, freedom and responsibility. Probe for high performance culture fit, independent decision-making, and streaming/content delivery expertise.' },
+};
 
 // ---------------------------------------------------------------------------
-// DYNAMIC CONTEXT BLOCK (rebuilt each call)
-// Contains live recruiter memory, stage, difficulty, confidence, follow-ups.
+// LAYER 1: buildInterviewContextObject()
+// Returns a STRUCTURED object — the single source of truth for all modules.
+// Pure data. No strings. No prompt logic.
 // ---------------------------------------------------------------------------
-function buildDynamicContextBlock(liveState) {
+/**
+ * @param {Object} candidate - Static candidate data from interviewData
+ * @param {Object} liveState - Live interview state (memory, stage, etc.)
+ * @returns {InterviewContextObject} - Structured object consumed by all modules
+ */
+export function buildInterviewContextObject(candidate = {}, liveState = {}) {
   const mem = liveState.recruiterMemory || {};
   const compProfile = mem.competencyProfile || {};
 
-  const competencySnapshot = Object.keys(compProfile)
-    .filter(k => compProfile[k].score !== null)
-    .map(k => `${k}: ${compProfile[k].score}/100`)
-    .join(', ') || 'No data yet';
+  return {
+    // --- Candidate Information ---
+    candidate: {
+      resumeText: (candidate.resumeText || candidate.resume || '').substring(0, 3000),
+      parsedResume: candidate.parsedResume || null,
+      projects: candidate.parsedResume?.projects || [],
+      skills: candidate.parsedResume?.skills || (mem.verifiedSkills || []),
+      education: candidate.parsedResume?.education || [],
+      experience: candidate.parsedResume?.experience || [],
+      certifications: candidate.parsedResume?.certifications || [],
+      achievements: candidate.parsedResume?.achievements || [],
+    },
 
-  const missingTopics = (mem.missingTopics || []).join(', ') || 'None identified';
-  const coveredTopics = (mem.coveredTopics || []).join(', ') || 'None yet';
-  const pendingFollowUps = (mem.followUpQueue || []).slice(0, 2).join(', ') || 'None yet';
-  const orchestration = mem.orchestration || {};
+    // --- Job Information ---
+    job: {
+      title: candidate.jobTitle || 'Software Engineer',
+      description: (candidate.jobDescription || '').substring(0, 1500),
+      experienceLevel: candidate.experienceYears || 'Not specified',
+      durationMinutes: candidate.durationMinutes || null,
+      language: candidate.language || 'en-IN',
+      company: candidate.company || null,
+    },
 
-  // Standard memory (used by standard interview)
-  const standardMemory = `
-# RECRUITER MEMORY (Current State)
-Verified Skills: ${(mem.verifiedSkills || []).join(', ') || 'None yet'}
-Weak Skills: ${(mem.weakSkills || []).join(', ') || 'None yet'}
-Missing Skills: ${(mem.missingSkills || []).join(', ') || 'None yet'}
-Unverified Claims: ${(mem.unverifiedClaims || []).join(', ') || 'None yet'}
-Already Asked Questions: ${(mem.questionHistory || []).join(' | ') || 'None yet'}
-Contradictions: ${(mem.contradictions || []).join(', ') || 'None yet'}`.trim();
+    // --- Interview State ---
+    interview: {
+      mode: liveState.mode || 'standard',
+      stage: liveState.currentStage || 'Introduction',
+      difficulty: liveState.currentDifficulty || 'Medium',
+      confidence: liveState.currentConfidence || 50,
+      interviewerMood: liveState.interviewerMood || 'Professional',
+      activeSpeaker: liveState.activeSpeaker || null,
+      companyMode: liveState.companyMode || 'default',
+    },
 
-  // Panel memory (richer — used by Sarah and David)
-  const panelMemory = `
-# RECRUITER MEMORY (Live State)
-Verified Skills: ${(mem.verifiedSkills || []).join(', ') || 'None yet'}
-Discussed Topics: ${(mem.discussedTopics || []).join(', ') || 'None yet'}
-Already Asked Questions: ${(mem.questionHistory || []).join(' | ') || 'None yet'}
-Pending Follow-ups: ${pendingFollowUps}
+    // --- Recruiter Memory (Live State) ---
+    recruiterMemory: {
+      verifiedSkills: mem.verifiedSkills || [],
+      weakSkills: mem.weakSkills || [],
+      missingSkills: mem.missingSkills || [],
+      strongSkills: (mem.verifiedSkills || []).filter(s =>
+        mem.evidenceGraph?.some(e => e.skill === s && e.confidence >= 0.8)
+      ),
+      discussedTopics: mem.discussedTopics || [],
+      followUpQueue: (mem.followUpQueue || []).slice(0, 5),
+      evidenceGraph: mem.evidenceGraph || [],
+      observations: mem.observations || [],
+      contradictions: mem.contradictions || [],
+      questionHistory: mem.questionHistory || [],
+      unverifiedClaims: mem.unverifiedClaims || [],
+      coveredTopics: mem.coveredTopics || [],
+      missingTopics: mem.missingTopics || [],
+      competencyProfile: compProfile,
+      competencySnapshot: Object.keys(compProfile)
+        .filter(k => compProfile[k]?.score !== null && compProfile[k]?.score !== undefined)
+        .map(k => `${k}: ${compProfile[k].score}/100`)
+        .join(', ') || 'No data yet',
+    },
 
-# CANDIDATE COMPETENCY SNAPSHOT
-${competencySnapshot}
-
-# TOPIC COVERAGE
-Already Covered: ${coveredTopics}
-Still Missing: ${missingTopics}`.trim();
-
-  return { standardMemory, panelMemory, orchestration, pendingFollowUps };
+    // --- Orchestration ---
+    orchestration: mem.orchestration || {
+      action: 'ASK_QUESTION',
+      handoverTarget: null,
+      interrupt: false,
+      backchannel: null,
+      pauseRecommendation: 'Medium',
+      reason: '',
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
-// INTERVIEWER CONTEXT BLOCK (mode-specific directives)
+// LAYER 2: buildSystemPrompt()
+// Converts InterviewContextObject + Persona → final system prompt string.
+// This is the ONLY layer that creates strings/text.
 // ---------------------------------------------------------------------------
-function buildInterviewerContextBlock(interviewerName, liveState) {
+/**
+ * @param {InterviewContextObject} ctx - Output of buildInterviewContextObject()
+ * @param {string} interviewerName - Key into INTERVIEWER_PERSONAS
+ * @param {'standard'|'panel'} mode - Prompt mode
+ * @returns {string} systemPrompt
+ */
+export function buildSystemPrompt(ctx, interviewerName = 'standard', mode = 'standard') {
   const persona = INTERVIEWER_PERSONAS[interviewerName] || INTERVIEWER_PERSONAS.standard;
-  const difficulty = liveState.currentDifficulty || 'Medium';
-  const confidence = liveState.currentConfidence || 50;
-  const mood = liveState.interviewerMood || 'Professional';
-  const stage = liveState.currentStage || 'Introduction';
+  const company = COMPANY_INTERVIEW_MODES[ctx.interview.companyMode] || COMPANY_INTERVIEW_MODES.default;
 
-  let block = '';
+  // --- PERSONA BLOCK ---
+  const personaBlock = `# PERSONA
+You are ${persona.name} — ${persona.role}.
+${persona.persona}
+Focus Area: ${persona.focus}`;
 
-  if (interviewerName !== 'standard') {
-    // Panel-mode directives
-    block += `\n# INTELLIGENCE ENGINE DIRECTIVES\n`;
-    block += `Current Difficulty Level: ${difficulty}\n`;
-    block += `Candidate Confidence Score (0-100): ${confidence}\n`;
-    block += `Your Mandatory Mood: ${mood}\n`;
-    block += `Current Interview Stage: ${stage}\n`;
+  // --- CANDIDATE & JOB BLOCK ---
+  let candidateBlock = `\n# INTERVIEW CONTEXT
+Target Role: ${ctx.job.title}
+Candidate Experience: ${ctx.job.experienceLevel}${ctx.job.durationMinutes ? `\nInterview Duration: ${ctx.job.durationMinutes} minutes` : ''}`;
+
+  if (ctx.job.description) {
+    candidateBlock += `\n\n# JOB DESCRIPTION\n${ctx.job.description}`;
   }
 
-  return block.trim();
+  if (ctx.candidate.resumeText) {
+    candidateBlock += `\n\n# CANDIDATE RESUME\n${ctx.candidate.resumeText}`;
+  }
+
+  if (ctx.candidate.skills.length > 0) {
+    candidateBlock += `\n\n# CANDIDATE SKILLS\n${ctx.candidate.skills.join(', ')}`;
+  }
+
+  if (ctx.candidate.projects.length > 0) {
+    candidateBlock += `\n\n# CANDIDATE PROJECTS\n${ctx.candidate.projects.map(p => `- ${p}`).join('\n')}`;
+  }
+
+  if (ctx.candidate.experience.length > 0) {
+    candidateBlock += `\n\n# WORK EXPERIENCE\n${ctx.candidate.experience.map(e => `- ${e}`).join('\n')}`;
+  }
+
+  if (ctx.candidate.education.length > 0) {
+    candidateBlock += `\n\n# EDUCATION\n${ctx.candidate.education.map(e => `- ${e}`).join('\n')}`;
+  }
+
+  if (ctx.candidate.achievements.length > 0) {
+    candidateBlock += `\n\n# ACHIEVEMENTS\n${ctx.candidate.achievements.map(a => `- ${a}`).join('\n')}`;
+  }
+
+  // --- RECRUITER MEMORY BLOCK ---
+  const mem = ctx.recruiterMemory;
+  let memoryBlock = '';
+
+  if (mode === 'panel') {
+    memoryBlock = `\n# RECRUITER MEMORY (Live State)
+Verified Skills: ${mem.verifiedSkills.join(', ') || 'None yet'}
+Discussed Topics: ${mem.discussedTopics.join(', ') || 'None yet'}
+Already Asked Questions: ${mem.questionHistory.slice(-10).join(' | ') || 'None yet'}
+Pending Follow-ups: ${mem.followUpQueue.slice(0, 2).join(', ') || 'None yet'}
+
+# CANDIDATE COMPETENCY SNAPSHOT
+${mem.competencySnapshot}
+
+# TOPIC COVERAGE
+Already Covered: ${mem.coveredTopics.join(', ') || 'None yet'}
+Still Missing: ${mem.missingTopics.join(', ') || 'None identified'}`;
+  } else {
+    memoryBlock = `\n# RECRUITER MEMORY (Current State)
+Verified Skills: ${mem.verifiedSkills.join(', ') || 'None yet'}
+Weak Skills: ${mem.weakSkills.join(', ') || 'None yet'}
+Missing Skills: ${mem.missingSkills.join(', ') || 'None yet'}
+Unverified Claims: ${mem.unverifiedClaims.join(', ') || 'None yet'}
+Already Asked Questions: ${mem.questionHistory.slice(-10).join(' | ') || 'None yet'}
+Contradictions: ${mem.contradictions.join(', ') || 'None yet'}`;
+  }
+
+  // --- INTELLIGENCE ENGINE DIRECTIVES (Panel only) ---
+  let directivesBlock = '';
+  if (mode === 'panel') {
+    directivesBlock = `\n# INTELLIGENCE ENGINE DIRECTIVES
+Current Difficulty Level: ${ctx.interview.difficulty}
+Candidate Confidence Score (0-100): ${ctx.interview.confidence}
+Your Mandatory Mood: ${ctx.interview.interviewerMood}
+Current Interview Stage: ${ctx.interview.stage}`;
+  }
+
+  // --- ORCHESTRATOR BLOCK (Panel only) ---
+  let orchestratorBlock = '';
+  if (mode === 'panel') {
+    const orch = ctx.orchestration;
+    let orchRule = `Action: ${orch.action || 'ASK_QUESTION'}. `;
+    if (orch.interrupt) orchRule += `Start your sentence by politely interrupting ("Sorry to interrupt, but..."). `;
+    if (orch.backchannel) orchRule += `Start with: '${orch.backchannel}'. `;
+    if (orch.action === 'HANDOVER' && orch.handoverTarget) orchRule += `Explicitly hand over to ${orch.handoverTarget}. `;
+    if (orch.action === 'AGREE') orchRule += `Start by explicitly agreeing with the previous point. `;
+    if (orch.action === 'CLARIFY') orchRule += `Ask the candidate to clarify their last statement. `;
+    orchestratorBlock = `\n# CONVERSATION ORCHESTRATOR\n${orchRule}\nPacing Recommendation: ${orch.pauseRecommendation || 'Medium'}`;
+  }
+
+  // --- COMPANY MODE RULES ---
+  let companyBlock = '';
+  if (company.additionalRules) {
+    companyBlock = `\n# COMPANY INTERVIEW MODE: ${company.name}\n${company.additionalRules}`;
+  }
+
+  // --- ASSEMBLE ---
+  const systemPrompt = [
+    personaBlock,
+    candidateBlock,
+    memoryBlock,
+    directivesBlock,
+    orchestratorBlock,
+    companyBlock,
+    `\n${persona.conversationRules}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return systemPrompt;
 }
 
 // ---------------------------------------------------------------------------
-// ORCHESTRATOR BLOCK (Panel Interview only)
-// ---------------------------------------------------------------------------
-function buildOrchestratorBlock(orchestration) {
-  if (!orchestration) return '';
-  const { action, handoverTarget, interrupt, backchannel, pauseRecommendation } = orchestration;
-
-  let rule = `Action: ${action || 'ASK_QUESTION'}. `;
-  if (interrupt) rule += `Start your sentence by politely interrupting ("Sorry to interrupt, but..."). `;
-  if (backchannel) rule += `Start with: '${backchannel}'. `;
-  if (action === 'HANDOVER' && handoverTarget) rule += `Explicitly hand over to ${handoverTarget}. `;
-  if (action === 'AGREE') rule += `Start by explicitly agreeing with the previous point. `;
-  if (action === 'CLARIFY') rule += `Ask the candidate to clarify their last statement. `;
-
-  return `\n# CONVERSATION ORCHESTRATOR\n${rule}\nPacing Recommendation: ${pauseRecommendation || 'Medium'}`.trim();
-}
-
-// ---------------------------------------------------------------------------
-// MAIN EXPORT: buildInterviewContext
+// LAYER 3: buildInterviewContext()  ← BACKWARD COMPATIBLE CONVENIENCE WRAPPER
+// Existing callers (useVapi.js, usePanelVapi.js) need no changes beyond v1.
 // ---------------------------------------------------------------------------
 /**
  * @param {Object} config
- * @param {'standard'|'panel'} config.mode - Interview mode
- * @param {string} config.interviewerName - 'standard', 'Sarah', 'David', 'HiringManager', 'BarRaiser'
- * @param {Object} config.candidate - interviewData from session (static fields)
- * @param {Object} config.liveState - Live recruiter memory, stage, difficulty, confidence
- * @returns {{ systemPrompt: string, persona: Object }}
+ * @param {'standard'|'panel'} config.mode
+ * @param {string} config.interviewerName
+ * @param {Object} config.candidate
+ * @param {Object} config.liveState
+ * @returns {{ systemPrompt: string, persona: Object, ctx: InterviewContextObject }}
  */
 export function buildInterviewContext({ mode = 'standard', interviewerName = 'standard', candidate = {}, liveState = {} }) {
+  const ctx = buildInterviewContextObject(candidate, { ...liveState, mode });
+  const systemPrompt = buildSystemPrompt(ctx, interviewerName, mode);
   const persona = INTERVIEWER_PERSONAS[interviewerName] || INTERVIEWER_PERSONAS.standard;
 
-  const staticBlock = buildStaticContextBlock(candidate);
-  const { standardMemory, panelMemory, orchestration } = buildDynamicContextBlock(liveState);
-  const interviewerDirectives = buildInterviewerContextBlock(interviewerName, liveState);
-  const orchestratorBlock = mode === 'panel' ? buildOrchestratorBlock(orchestration) : '';
-
-  const memoryBlock = mode === 'panel' ? panelMemory : standardMemory;
-
-  const systemPrompt = `# PERSONA
-You are ${persona.name} — ${persona.role}.
-${persona.persona}
-Focus Area: ${persona.focus}
-
-${staticBlock}
-
-${memoryBlock}
-
-${interviewerDirectives}
-
-${orchestratorBlock}
-
-${persona.conversationRules}
-`.replace(/\n{3,}/g, '\n\n').trim();
-
-  return { systemPrompt, persona };
+  // Return ctx alongside systemPrompt so advanced callers (Router, Evaluation) can use structured data
+  return { systemPrompt, persona, ctx };
 }
 
-// Re-export personas registry for any consumer that needs it (e.g., UI rendering)
-export { INTERVIEWER_PERSONAS };
+// ---------------------------------------------------------------------------
+// UTILITY: buildRouterContextSummary()
+// Converts InterviewContextObject into a compact text block for Router enrichment.
+// Used by triggerRouter() to send structured candidate context to Groq.
+// ---------------------------------------------------------------------------
+/**
+ * @param {InterviewContextObject} ctx
+ * @returns {string} Compact text summary for inclusion in Router prompt
+ */
+export function buildRouterContextSummary(ctx) {
+  const mem = ctx.recruiterMemory;
+  let summary = '';
+
+  summary += `# CANDIDATE CONTEXT (Resume-Aware)\n`;
+  summary += `Target Role: ${ctx.job.title} | Experience: ${ctx.job.experienceLevel}\n`;
+
+  if (ctx.candidate.resumeText) {
+    // Send a condensed first 800 chars of resume to Router (to keep Groq fast)
+    summary += `Resume Summary: ${ctx.candidate.resumeText.substring(0, 800)}...\n`;
+  }
+
+  if (ctx.candidate.skills.length > 0) {
+    summary += `Claimed Skills: ${ctx.candidate.skills.join(', ')}\n`;
+  }
+
+  if (ctx.candidate.projects.length > 0) {
+    summary += `Projects: ${ctx.candidate.projects.slice(0, 3).join(', ')}\n`;
+  }
+
+  summary += `\n# LIVE INTERVIEW STATE\n`;
+  summary += `Current Stage: ${ctx.interview.stage}\n`;
+  summary += `Difficulty: ${ctx.interview.difficulty} | Confidence: ${ctx.interview.confidence}\n`;
+  summary += `Verified Skills: ${mem.verifiedSkills.join(', ') || 'None yet'}\n`;
+  summary += `Discussed Topics: ${mem.discussedTopics.join(', ') || 'None yet'}\n`;
+  summary += `Missing Topics: ${mem.missingTopics.join(', ') || 'None identified'}\n`;
+  summary += `Follow-ups Pending: ${mem.followUpQueue.slice(0, 2).join(', ') || 'None'}\n`;
+
+  return summary.trim();
+}

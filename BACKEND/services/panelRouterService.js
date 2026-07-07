@@ -10,13 +10,15 @@ const sanitizeText = (text, maxLength = 10000) => {
 /**
  * Intelligent Router for AI Panel Interviews.
  * Decides whether the conversation stage should advance and who should speak next.
+ * Now consumes structured InterviewContextObject summary for resume-aware routing.
  * 
  * @param {Array} transcript - Array of message objects {role, transcript}
  * @param {String} jobTitle - Job title
- * @param {String} currentStage - Current stage (e.g. Introduction, Resume, Technical, Behavioral, Closing)
+ * @param {String} currentStage - Current stage
+ * @param {String} candidateContext - Structured context summary from InterviewContextBuilder
  * @returns {Object} JSON decision payload
  */
-exports.routeConversation = async (transcript, jobTitle, currentStage) => {
+exports.routeConversation = async (transcript, jobTitle, currentStage, candidateContext = '') => {
   if (!transcript || !Array.isArray(transcript)) {
     throw new Error('Invalid transcript array');
   }
@@ -33,6 +35,8 @@ The panel has two interviewers:
 Current Job Title: ${jobTitle || 'Software Engineer'}
 Current Interview Stage: ${currentStage || 'Introduction'}
 
+${candidateContext ? `${candidateContext}
+` : ''}
 # AVAILABLE STAGES
 - "Introduction" (Owned by Sarah)
 - "Resume Deep Dive" (Owned by Sarah or David)

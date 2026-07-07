@@ -446,13 +446,13 @@ exports.retryEvaluation = async (req, res) => {
 const panelRouterService = require('../services/panelRouterService');
 
 exports.panelRouter = async (req, res) => {
-  const { transcript, resumeText, jobTitle, currentStage } = req.body;
+  const { transcript, resumeText, jobTitle, currentStage, candidateContext } = req.body;
   if (!transcript || !Array.isArray(transcript)) {
     return res.status(400).json({ success: false, message: 'Invalid transcript array' });
   }
 
   try {
-    const result = await panelRouterService.routeConversation(transcript, jobTitle, currentStage);
+    const result = await panelRouterService.routeConversation(transcript, jobTitle, currentStage, candidateContext || '');
     res.json({ success: true, ...result });
   } catch (error) {
     console.error('Error in panel router:', error);
