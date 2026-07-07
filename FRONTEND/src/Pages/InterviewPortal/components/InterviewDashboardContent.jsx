@@ -136,37 +136,37 @@ export function FeedbackModal({ feedback: session, onClose }) {
             <div className="space-y-8">
               
               {(() => {
-                const isPanelV2 = !!evaluation.executive_summary || !!evaluation.hiring_committee;
+                const isPanelV2 = !!enterprise?.hiring_committee;
                 const isPanelV1 = !!evaluation.hr_feedback || !!evaluation.technical_feedback;
                 
                 if (isPanelV2) {
                   return (
                     <div className="space-y-8">
-                      <ExecutiveSummaryCard data={evaluation.executive_summary} session={localSession} />
+                      <ExecutiveSummaryCard data={enterprise.executive_summary} session={localSession} />
                       
                       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <SarahReportCard data={evaluation.sarah_report} />
-                        <DavidReportCard data={evaluation.david_report} />
+                        <SarahReportCard data={enterprise.sarah_report} />
+                        <DavidReportCard data={enterprise.david_report} />
                       </div>
 
-                      <CommitteeDecisionCard data={evaluation.hiring_committee} />
+                      <CommitteeDecisionCard data={enterprise.hiring_committee} />
                       
                       <ResumeVerificationCard data={localSession?.recruiterMemory?.evidenceGraph || []} />
                       
-                      <InterviewTimelineCard data={evaluation.interview_timeline} />
+                      <InterviewTimelineCard data={enterprise.interview_timeline} />
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <StagePerformanceCard data={localSession?.stageHistory || []} />
-                        <PerformanceAnalyticsCard data={evaluation.performance_analytics} />
+                        <PerformanceAnalyticsCard data={enterprise.performance_analytics} />
                       </div>
                       
-                      <SkillIntelligenceCard data={evaluation.skill_intelligence} />
+                      <SkillIntelligenceCard data={enterprise.skill_intelligence} />
                       
-                      <DifficultyProgressionCard data={evaluation.difficulty_progression} />
+                      <DifficultyProgressionCard data={enterprise.difficulty_progression} />
                       
-                      <KnowledgeGapCard data={evaluation.knowledge_gap_analysis} />
+                      <KnowledgeGapCard data={enterprise.knowledge_gap_analysis} />
                       
-                      <ImprovementRoadmapCard data={evaluation.improvement_roadmap} />
+                      <ImprovementRoadmapCard data={enterprise.improvement_roadmap} />
                       
                       <InterviewReplayTimeline messages={localSession?.messages || []} />
                     </div>

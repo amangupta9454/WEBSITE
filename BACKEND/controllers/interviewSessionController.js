@@ -291,8 +291,14 @@ exports.processEvaluation = async (req, res) => {
                 const jsonStr = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
                 const parsed = JSON.parse(jsonStr);
                 
-                // Validate Schema
-                validateEvaluationSchema(parsed);
+                // Validate Schema based on mode
+                if (session.mode === 'Panel') {
+                  if (!parsed.executive_summary || !parsed.sarah_report || !parsed.david_report || !parsed.hiring_committee) {
+                    throw new Error('Missing required Panel schema keys (executive_summary, sarah_report, david_report, hiring_committee)');
+                  }
+                } else {
+                  validateEvaluationSchema(parsed);
+                }
                 aiEvaluation = parsed; // Success
                 auditLogger.log('EVALUATION_GENERATED', { sessionId: session._id, attempts: attempts + 1 });
               } else {

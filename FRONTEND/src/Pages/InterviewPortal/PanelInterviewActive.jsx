@@ -328,71 +328,58 @@ function PanelInterviewActive() {
               <span className="font-bold">{warningMessage}</span>
             </div>
           )}
-          <div className="flex flex-col md:flex-row gap-6 md:gap-12 w-full justify-center items-center">
-
-            {/* Panel Interviewers Area */}
-            <div className="flex gap-4 md:gap-8 w-full max-w-[600px] justify-center items-center relative">
-               {!isStarted && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-xl">
-                    <button
-                      onClick={handleStartInterview}
-                      className="w-20 h-20 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-[0_0_30px_rgba(79,70,229,0.4)] hover:scale-105 transition-all flex items-center justify-center mb-4"
-                      aria-label="Start Interview"
-                    >
-                      <PlayCircle size={40} />
-                    </button>
-                    <h3 className="font-black text-slate-800 text-lg">Start Panel Session</h3>
-                   </div>
-                )}
-                
-                {/* Transition Overlay */}
-                {isStarted && fsmState === VAPI_STATES.SPEAKER_SWITCHING && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-indigo-900/90 backdrop-blur-md rounded-[2.5rem] shadow-xl text-white animate-pulse">
-                    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <h3 className="font-black text-lg">Switching to {transitionContext.to || "next speaker"}...</h3>
-                    <p className="text-sm font-medium opacity-80">Passing the conversation floor</p>
-                  </div>
-                )}
-                
-                {isStarted && fsmState !== VAPI_STATES.SPEAKER_SWITCHING && thinkingStatus && thinkingStatus.includes('reviewing') && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-indigo-900/90 backdrop-blur-md rounded-[2.5rem] shadow-xl text-white animate-pulse">
-                    <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <h3 className="font-black text-lg">{thinkingStatus}</h3>
-                    <p className="text-sm font-medium opacity-80">Passing the floor...</p>
-                  </div>
-                )}
-
-                <div className="w-1/2">
-                   <InterviewerCard 
-                      name="Sarah" 
-                      role="HR / Behavioral" 
-                      state={getInterviewerState("Sarah")}
-                   />
+          <div className="relative w-full">
+            {!isStarted && (
+               <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/50 backdrop-blur-md rounded-[2.5rem] shadow-xl m-4">
+                 <button
+                   onClick={handleStartInterview}
+                   className="w-20 h-20 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-[0_0_30px_rgba(79,70,229,0.4)] hover:scale-105 transition-all flex items-center justify-center mb-4"
+                   aria-label="Start Interview"
+                 >
+                   <PlayCircle size={40} />
+                 </button>
+                 <h3 className="font-black text-slate-800 text-lg">Start Panel Session</h3>
                 </div>
-                <div className="w-1/2">
-                   <InterviewerCard 
-                      name="David" 
-                      role="Tech Lead" 
-                      state={getInterviewerState("David")}
-                   />
-                </div>
-            </div>
-
-            <div className="relative rounded-[2.5rem] overflow-hidden bg-slate-900 border-4 border-white shadow-2xl shadow-slate-200 w-full max-w-[320px] aspect-[3/4] flex-shrink-0 group">
-              <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
-                <span className="px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 shadow-sm text-[10px] font-bold tracking-widest text-emerald-400 uppercase">You</span>
+            )}
+            
+            <div className="flex flex-col md:flex-row gap-6 w-full justify-center items-center">
+              {/* Sarah */}
+              <div className="w-full max-w-[300px] aspect-[3/4]">
+                 <InterviewerCard 
+                    name="Sarah" 
+                    role="HR / Behavioral" 
+                    state={getInterviewerState("Sarah")}
+                 />
               </div>
-              <div className="relative w-full h-full bg-slate-900">
-                <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
+              {/* David */}
+              <div className="w-full max-w-[300px] aspect-[3/4]">
+                 <InterviewerCard 
+                    name="David" 
+                    role="Tech Lead" 
+                    state={getInterviewerState("David")}
+                 />
+              </div>
 
-                {cameraError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30 p-6 text-center">
-                    <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
-                    <div className="text-white font-medium text-sm">{cameraError}</div>
+              {/* Candidate */}
+              <div className="w-full max-w-[300px] aspect-[3/4]">
+                <div className="relative flex flex-col items-center justify-center p-4 rounded-[2.5rem] border-4 transition-all duration-700 w-full h-full border-slate-200 bg-slate-50 shadow-md">
+                  <div className="absolute top-4 left-4 z-20">
+                    <span className="px-3 py-1.5 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm text-[10px] font-bold tracking-widest uppercase flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div> You
+                    </span>
                   </div>
-                )}
+                  <div className="relative w-full h-full rounded-3xl overflow-hidden bg-slate-900 shadow-inner">
+                    <video ref={candidateVideoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-80 pointer-events-none"></div>
+                    {cameraError && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm z-30 p-4 text-center">
+                        <AlertTriangle className="w-8 h-8 text-red-500 mb-2" />
+                        <div className="text-white font-medium text-xs">{cameraError}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

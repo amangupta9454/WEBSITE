@@ -408,10 +408,9 @@ export function usePanelVapi(interviewData) {
           transitionContextRef.current = newTransition;
           setTransitionContext(newTransition);
           
-          activeSpeakerRef.current = speaker;
-          setActiveSpeaker(speaker);
-          setThinkingStatus(`${speaker} is reviewing...`);
-          setFsmState(VAPI_STATES.SPEAKER_SWITCHING);
+          // DO NOT manually override activeSpeaker here! 
+          // Wait for Vapi's native transfer-update or tool-calls event to enforce Single Source of Truth.
+          // DO NOT use SPEAKER_SWITCHING state to prevent artificial UI latency.
           
           if (vapiRef.current) {
             // TRANSITION MANAGER: Trigger Squad Handoff natively via WebRTC Transport Layer
@@ -450,7 +449,13 @@ export function usePanelVapi(interviewData) {
     };
     
     const onSpeechStart = () => { 
-      if (transitionContextRef.current.active) {
+      // If a handoff is pending, the new speaker has just begun their audio stream!
+      if (transitionContextRef.current.active && transitionContextRef.current.to) {
+        const newSpeaker = transitionContextRef.current.to;
+        Logger.info(`[State Sync] Audio started for new speaker: UI syncing to ${newSpeaker}`);
+        activeSpeakerRef.current = newSpeaker;
+        setActiveSpeaker(newSpeaker);
+        
         transitionContextRef.current = defaultTransition;
         setTransitionContext(defaultTransition);
       }
@@ -460,31 +465,6 @@ export function usePanelVapi(interviewData) {
     const onSpeechEnd = () => { setFsmState(VAPI_STATES.LISTENING); };
 
     const onMessage = (msg) => {
-      // Synchronize speaker state on native Vapi handoffs
-      if (msg.type === "transfer-update" && msg.destination?.assistantName) {
-        const newSpeaker = msg.destination.assistantName;
-        if (newSpeaker !== activeSpeakerRef.current) {
-          Logger.info(`[State Sync] transfer-update detected: UI syncing to ${newSpeaker}`);
-          activeSpeakerRef.current = newSpeaker;
-          setActiveSpeaker(newSpeaker);
-        }
-      } else if (msg.type === "tool-calls") {
-        msg.toolCallList?.forEach(tc => {
-          if (tc.type === "handoff" && tc.handoff?.destination?.assistantName) {
-             const newSpeaker = tc.handoff.destination.assistantName;
-             Logger.info(`[State Sync] tool-calls (handoff) detected: UI syncing to ${newSpeaker}`);
-             activeSpeakerRef.current = newSpeaker;
-             setActiveSpeaker(newSpeaker);
-          } else if (tc.function?.name && tc.function.name.toLowerCase().includes("handoff")) {
-             // Fallback for function-based handoffs if they exist
-             const newSpeaker = tc.function.name.includes("David") ? "David" : "Sarah";
-             Logger.info(`[State Sync] tool-calls (function) detected: UI syncing to ${newSpeaker}`);
-             activeSpeakerRef.current = newSpeaker;
-             setActiveSpeaker(newSpeaker);
-          }
-        });
-      }
-
       if (msg.type === "transcript" && msg.transcriptType === "final") {
         const lastMsg = conversationRef.current[conversationRef.current.length - 1];
         if (!lastMsg || lastMsg.transcript !== msg.transcript) {
@@ -536,7 +516,6 @@ export function usePanelVapi(interviewData) {
     if (!micGranted) return;
     
     const squadConfig = buildSquadConfig([]);
-    squadConfig.members[0].assistant.firstMessage = `Hi, I'm Sarah from HR. We also have David here, our Tech Lead. Ready to start your panel interview for ${interviewData.jobTitle}?`;
     
     try {
       vapiRef.current.start(undefined, undefined, squadConfig);

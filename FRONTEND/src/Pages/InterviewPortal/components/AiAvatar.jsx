@@ -1,52 +1,61 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
+import { Mic, User } from "lucide-react";
 
 /**
- * AiAvatar - Real Video Implementation
+ * AiAvatar - Voice Visualization Implementation
  *
- * Uses high-quality professional AI avatar video loops from a global CDN.
- * The video naturally plays/loops. When the AI speaks, we slightly zoom in to simulate
- * engagement and attentiveness.
+ * Replaces the legacy video loop with a lightweight, GPU-friendly animated 
+ * CSS visualization that reacts accurately to the AI's speaking state.
  */
 function AiAvatar({ gender, isSpeaking, isListening }) {
-  const videoRef = useRef(null);
-
-  // If user selected "male", interviewer should be "female" and vice-versa
-  const isFemaleInterviewer = gender === "male";
-  
-  // High-quality professional avatar videos (Synthesia public demo CDNs)
-  // These are robust, fast, and feature actual human-like AI presenters.
-  const videoSrc = isFemaleInterviewer
-    ? "https://webcdn.synthesia.io/homepage/bento-cards/expressive-avatarV2-desktop.mp4"
-    : "https://webcdn.synthesia.io/book-demo-cta/talking-avatar-en-pricing-with-freemium.mp4";
-
-  // Ensure video plays automatically
-  useEffect(() => {
-    if (videoRef.current) {
-      // Force reload when source changes
-      videoRef.current.load();
-      videoRef.current.play().catch(e => console.warn("Auto-play prevented:", e));
-    }
-  }, [videoSrc]);
-
   return (
-    <div className="relative w-full h-full overflow-hidden bg-slate-100 flex items-center justify-center">
-      <div className="absolute inset-0 w-full h-full">
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover object-top pointer-events-none"
-          autoPlay
-          muted
-          loop
-          playsInline
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
+    <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-100 overflow-hidden">
+      
+      {/* Background Pulse when speaking */}
+      {isSpeaking && (
+        <div className="absolute inset-0 bg-indigo-500/10 animate-pulse transition-opacity duration-500"></div>
+      )}
+       
+      {/* Central Orb / Avatar */}
+      <div className={`relative flex items-center justify-center w-32 h-32 rounded-full transition-all duration-500 z-10 ${
+        isSpeaking ? 'bg-indigo-600 shadow-[0_0_40px_rgba(79,70,229,0.5)] scale-110' : 'bg-slate-300 shadow-md scale-100'
+      }`}>
+         
+        {/* Ripples when speaking */}
+        {isSpeaking && (
+          <>
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-400 animate-ping opacity-75"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-300 animate-ping opacity-50" style={{ animationDelay: '0.3s' }}></div>
+          </>
+        )}
+
+        <User size={64} className={`transition-colors duration-500 ${isSpeaking ? 'text-white' : 'text-slate-500'}`} />
       </div>
 
-      {/* Speaking Glow Effect - Subtle ring for visual feedback */}
+      {/* Voice Waveform Indicator */}
       {isSpeaking && (
-        <div className="absolute inset-0 pointer-events-none ring-[6px] ring-inset ring-indigo-500/20 transition-all duration-300"></div>
+        <div className="absolute bottom-16 flex space-x-1.5 items-end h-8 z-10">
+          <div className="w-1.5 h-3 bg-indigo-500 rounded-full animate-[bounce_0.8s_infinite]"></div>
+          <div className="w-1.5 h-6 bg-indigo-500 rounded-full animate-[bounce_0.8s_infinite]" style={{ animationDelay: '0.2s' }}></div>
+          <div className="w-1.5 h-8 bg-indigo-500 rounded-full animate-[bounce_0.8s_infinite]" style={{ animationDelay: '0.4s' }}></div>
+          <div className="w-1.5 h-5 bg-indigo-500 rounded-full animate-[bounce_0.8s_infinite]" style={{ animationDelay: '0.6s' }}></div>
+          <div className="w-1.5 h-3 bg-indigo-500 rounded-full animate-[bounce_0.8s_infinite]" style={{ animationDelay: '0.8s' }}></div>
+        </div>
       )}
+
+      {/* Status Badge */}
+      <div className="absolute bottom-6 flex items-center gap-2 z-10">
+        {isSpeaking ? (
+          <span className="px-3 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-full text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm border border-indigo-200">
+            <Mic size={14} className="animate-pulse" /> AI Speaking
+          </span>
+        ) : (
+          <span className="px-3 py-1 bg-slate-200 text-slate-500 font-bold rounded-full text-xs uppercase tracking-widest border border-slate-300 shadow-sm">
+            AI Idle
+          </span>
+        )}
+      </div>
+
     </div>
   );
 }

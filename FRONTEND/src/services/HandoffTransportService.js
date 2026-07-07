@@ -43,14 +43,14 @@ export class SystemMessageHandoffTransport extends HandoffTransportService {
     const safeGreeting = greeting || '';
     const safeQuestion = openingQuestion || '';
     
-    // This injects a hidden system prompt directly into the active WebRTC stream.
-    this.vapi.send({
-      type: "add-message",
-      message: {
-        role: "system",
-        content: `ROUTER COMMAND: Transfer the call to ${target} immediately using the handoff tool. Reason: ${reason}. Say "${safeGreeting} ${safeQuestion}" right before the transfer.`
-      },
-      triggerResponseEnabled: true
-    });
+      // This injects a hidden system prompt directly into the active WebRTC stream.
+      this.vapi.send({
+        type: "add-message",
+        message: {
+          role: "system",
+          content: `ROUTER COMMAND: Execute the handoff tool to ${target} immediately. DO NOT say anything before the transfer. The new assistant will handle the transition.`
+        },
+        triggerResponseEnabled: true
+      });
   }
 }
