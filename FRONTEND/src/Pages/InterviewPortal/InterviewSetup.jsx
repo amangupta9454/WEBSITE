@@ -73,11 +73,6 @@ const InterviewSetup = () => {
 
     const userStr = localStorage.getItem('interviewUser');
     const user = userStr ? JSON.parse(userStr) : null;
-    
-    if (!user?.isPhoneVerified || !user?.mobile) {
-      alert("Please verify your phone number through master profile to start an interview.");
-      return;
-    }
 
     await startInterviewSession();
   };
