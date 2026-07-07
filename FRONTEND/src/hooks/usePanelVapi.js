@@ -460,6 +460,31 @@ export function usePanelVapi(interviewData) {
     const onSpeechEnd = () => { setFsmState(VAPI_STATES.LISTENING); };
 
     const onMessage = (msg) => {
+      // Synchronize speaker state on native Vapi handoffs
+      if (msg.type === "transfer-update" && msg.destination?.assistantName) {
+        const newSpeaker = msg.destination.assistantName;
+        if (newSpeaker !== activeSpeakerRef.current) {
+          Logger.info(`[State Sync] transfer-update detected: UI syncing to ${newSpeaker}`);
+          activeSpeakerRef.current = newSpeaker;
+          setActiveSpeaker(newSpeaker);
+        }
+      } else if (msg.type === "tool-calls") {
+        msg.toolCallList?.forEach(tc => {
+          if (tc.type === "handoff" && tc.handoff?.destination?.assistantName) {
+             const newSpeaker = tc.handoff.destination.assistantName;
+             Logger.info(`[State Sync] tool-calls (handoff) detected: UI syncing to ${newSpeaker}`);
+             activeSpeakerRef.current = newSpeaker;
+             setActiveSpeaker(newSpeaker);
+          } else if (tc.function?.name && tc.function.name.toLowerCase().includes("handoff")) {
+             // Fallback for function-based handoffs if they exist
+             const newSpeaker = tc.function.name.includes("David") ? "David" : "Sarah";
+             Logger.info(`[State Sync] tool-calls (function) detected: UI syncing to ${newSpeaker}`);
+             activeSpeakerRef.current = newSpeaker;
+             setActiveSpeaker(newSpeaker);
+          }
+        });
+      }
+
       if (msg.type === "transcript" && msg.transcriptType === "final") {
         const lastMsg = conversationRef.current[conversationRef.current.length - 1];
         if (!lastMsg || lastMsg.transcript !== msg.transcript) {

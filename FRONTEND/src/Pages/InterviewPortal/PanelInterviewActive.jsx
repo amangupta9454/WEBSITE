@@ -42,6 +42,23 @@ function PanelInterviewActive() {
   const isCallActive = fsmState === VAPI_STATES.LISTENING || fsmState === VAPI_STATES.THINKING || fsmState === VAPI_STATES.SPEAKING;
   const isAiSpeaking = fsmState === VAPI_STATES.SPEAKING;
 
+  // Derive explicit decoupled state for each interviewer
+  const getInterviewerState = (interviewerName) => {
+    if (!isStarted) return 'IDLE';
+    const isThisSpeakerActive = activeSpeaker === interviewerName;
+    
+    if (fsmState === VAPI_STATES.LISTENING) {
+       return isThisSpeakerActive ? 'LISTENING' : 'THINKING'; 
+    }
+    if (fsmState === VAPI_STATES.THINKING || fsmState === VAPI_STATES.SPEAKER_SWITCHING || (thinkingStatus && thinkingStatus.includes('reviewing'))) {
+       return 'THINKING';
+    }
+    if (fsmState === VAPI_STATES.SPEAKING) {
+       return isThisSpeakerActive ? 'SPEAKING' : 'OBSERVING';
+    }
+    return 'IDLE';
+  };
+
   const [showControls, setShowControls] = useState(true);
 
   // Timer logic
@@ -349,18 +366,14 @@ function PanelInterviewActive() {
                    <InterviewerCard 
                       name="Sarah" 
                       role="HR / Behavioral" 
-                      isActive={activeSpeaker === "Sarah" && isStarted} 
-                      isThinking={thinkingStatus && activeSpeaker === "Sarah"}
-                      isMuted={!isAiSpeaking && activeSpeaker === "Sarah"}
+                      state={getInterviewerState("Sarah")}
                    />
                 </div>
                 <div className="w-1/2">
                    <InterviewerCard 
                       name="David" 
                       role="Tech Lead" 
-                      isActive={activeSpeaker === "David" && isStarted} 
-                      isThinking={thinkingStatus && activeSpeaker === "David"}
-                      isMuted={!isAiSpeaking && activeSpeaker === "David"}
+                      state={getInterviewerState("David")}
                    />
                 </div>
             </div>

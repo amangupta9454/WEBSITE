@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
 
+// V2 Panel Components
+import ExecutiveSummaryCard from "./reports/ExecutiveSummaryCard";
+import SarahReportCard from "./reports/SarahReportCard";
+import DavidReportCard from "./reports/DavidReportCard";
+import CommitteeDecisionCard from "./reports/CommitteeDecisionCard";
+import ResumeVerificationCard from "./reports/ResumeVerificationCard";
+import InterviewTimelineCard from "./reports/InterviewTimelineCard";
+import StagePerformanceCard from "./reports/StagePerformanceCard";
+import SkillIntelligenceCard from "./reports/SkillIntelligenceCard";
+import DifficultyProgressionCard from "./reports/DifficultyProgressionCard";
+import KnowledgeGapCard from "./reports/KnowledgeGapCard";
+import ImprovementRoadmapCard from "./reports/ImprovementRoadmapCard";
+import InterviewReplayTimeline from "./reports/InterviewReplayTimeline";
+import PerformanceAnalyticsCard from "./reports/PerformanceAnalyticsCard";
 const CircularScore = ({ score, max = 10, label, colorClass, bgClass, textClass }) => {
   const percentage = (score / max) * 100;
   const radius = 34;
@@ -120,6 +134,168 @@ export function FeedbackModal({ feedback: session, onClose }) {
         <div className="p-6 md:p-8 bg-slate-50/50 flex-1">
           {evaluation ? (
             <div className="space-y-8">
+              
+              {(() => {
+                const isPanelV2 = !!evaluation.executive_summary || !!evaluation.hiring_committee;
+                const isPanelV1 = !!evaluation.hr_feedback || !!evaluation.technical_feedback;
+                
+                if (isPanelV2) {
+                  return (
+                    <div className="space-y-8">
+                      <ExecutiveSummaryCard data={evaluation.executive_summary} session={localSession} />
+                      
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <SarahReportCard data={evaluation.sarah_report} />
+                        <DavidReportCard data={evaluation.david_report} />
+                      </div>
+
+                      <CommitteeDecisionCard data={evaluation.hiring_committee} />
+                      
+                      <ResumeVerificationCard data={localSession?.recruiterMemory?.evidenceGraph || []} />
+                      
+                      <InterviewTimelineCard data={evaluation.interview_timeline} />
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <StagePerformanceCard data={localSession?.stageHistory || []} />
+                        <PerformanceAnalyticsCard data={evaluation.performance_analytics} />
+                      </div>
+                      
+                      <SkillIntelligenceCard data={evaluation.skill_intelligence} />
+                      
+                      <DifficultyProgressionCard data={evaluation.difficulty_progression} />
+                      
+                      <KnowledgeGapCard data={evaluation.knowledge_gap_analysis} />
+                      
+                      <ImprovementRoadmapCard data={evaluation.improvement_roadmap} />
+                      
+                      <InterviewReplayTimeline messages={localSession?.messages || []} />
+                    </div>
+                  );
+                }
+
+                if (isPanelV1) {
+                  return (
+                    <div className="space-y-8">
+                       {/* Sarah's Section */}
+                       <div className="bg-indigo-50/50 rounded-2xl border-2 border-indigo-100 p-6 shadow-sm">
+                          <h3 className="text-xl font-black text-indigo-900 mb-6 flex items-center gap-2">
+                            <User className="text-indigo-500" /> Sarah (HR / Behavioral) Feedback
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-lg">
+                            <CircularScore score={evaluation.hr_feedback?.communication_score} max={100} label="Communication" colorClass="text-indigo-600" bgClass="bg-white border-indigo-100" textClass="text-indigo-900" />
+                            <CircularScore score={evaluation.hr_feedback?.confidence_score} max={100} label="Confidence" colorClass="text-pink-500" bgClass="bg-white border-pink-100" textClass="text-pink-900" />
+                          </div>
+                          
+                          {evaluation.hr_feedback?.summary && (
+                            <div className="bg-white p-4 rounded-xl border border-indigo-100 mb-6 shadow-sm">
+                              <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Overall Assessment</p>
+                              <p className="text-indigo-900/80 text-sm font-medium leading-relaxed italic">"{evaluation.hr_feedback?.summary}"</p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-2">Leadership</p>
+                               <p className="text-sm font-medium text-slate-700 leading-relaxed">{evaluation.hr_feedback?.leadership_signals || "No strong signals detected."}</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-2">Teamwork</p>
+                               <p className="text-sm font-medium text-slate-700 leading-relaxed">{evaluation.hr_feedback?.teamwork_signals || "No strong signals detected."}</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                               <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-2">Culture Fit</p>
+                               <p className="text-sm font-medium text-slate-700 leading-relaxed">{evaluation.hr_feedback?.culture_fit || "Neutral culture fit."}</p>
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* David's Section */}
+                       <div className="bg-emerald-50/50 rounded-2xl border-2 border-emerald-100 p-6 shadow-sm">
+                          <h3 className="text-xl font-black text-emerald-900 mb-6 flex items-center gap-2">
+                            <User className="text-emerald-500" /> David (Tech Lead) Feedback
+                          </h3>
+                          <div className="grid grid-cols-1 gap-4 mb-6 max-w-xs">
+                            <CircularScore score={evaluation.technical_feedback?.overall_technical_score} max={100} label="Technical Depth" colorClass="text-emerald-600" bgClass="bg-white border-emerald-100" textClass="text-emerald-900" />
+                          </div>
+                          
+                          {evaluation.technical_feedback?.summary && (
+                            <div className="bg-white p-4 rounded-xl border border-emerald-100 mb-6 shadow-sm">
+                              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Overall Assessment</p>
+                              <p className="text-emerald-900/80 text-sm font-medium leading-relaxed italic">"{evaluation.technical_feedback?.summary}"</p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                             <div className="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                               <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-2">Problem Solving</p>
+                               <p className="text-sm font-medium text-slate-700 leading-relaxed">{evaluation.technical_feedback?.problem_solving || "N/A"}</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                               <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-2">Architecture & System Design</p>
+                               <p className="text-sm font-medium text-slate-700 leading-relaxed">{evaluation.technical_feedback?.architecture_knowledge || "N/A"}</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Technical Strengths
+                              </h3>
+                              <ul className="space-y-2">
+                                {evaluation.technical_feedback?.strengths?.map((s, i) => (
+                                  <li key={i} className="text-sm text-slate-600 bg-emerald-50/50 px-3 py-2 rounded-lg border border-emerald-100">{s}</li>
+                                ))}
+                                {(!evaluation.technical_feedback?.strengths || evaluation.technical_feedback?.strengths.length === 0) && (
+                                  <li className="text-sm text-slate-400 italic">No specific strengths highlighted.</li>
+                                )}
+                              </ul>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-amber-500"></div> Knowledge Gaps
+                              </h3>
+                              <ul className="space-y-2">
+                                {evaluation.technical_feedback?.weaknesses?.map((w, i) => (
+                                  <li key={i} className="text-sm text-slate-600 bg-amber-50/50 px-3 py-2 rounded-lg border border-amber-100">{w}</li>
+                                ))}
+                                {(!evaluation.technical_feedback?.weaknesses || evaluation.technical_feedback?.weaknesses.length === 0) && (
+                                  <li className="text-sm text-slate-400 italic">No specific gaps highlighted.</li>
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                       </div>
+                       
+                       {/* Hiring Committee Decision */}
+                       <div className="bg-slate-900 rounded-2xl border-2 border-slate-800 p-6 text-white shadow-xl shadow-slate-900/20">
+                          <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+                            <Briefcase className="text-indigo-400" /> Hiring Committee Decision
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Final Recommendation</p>
+                               <p className={`text-2xl font-black ${String(evaluation.final_recommendation).includes('Hire') && !String(evaluation.final_recommendation).includes('No') ? 'text-emerald-400' : 'text-red-400'}`}>
+                                 {evaluation.final_recommendation || "N/A"}
+                               </p>
+                             </div>
+                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Estimated Level</p>
+                               <p className="text-xl font-black text-indigo-400">{evaluation.estimated_experience_level || "Unknown"}</p>
+                             </div>
+                          </div>
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                             <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Recommendation Reason</p>
+                             <p className="text-sm font-medium text-slate-300 leading-relaxed">{evaluation.recommendation_reason || "No reasoning provided."}</p>
+                          </div>
+                       </div>
+                    </div>
+                  );
+                }
+                
+                // Fallback for Standard Interview UI
+                return (
+                  <div className="space-y-8">
+
               
               {isRetrying && (
                 <div className="bg-indigo-50/80 p-6 rounded-2xl border border-indigo-200 text-center flex flex-col items-center justify-center space-y-3">
@@ -343,6 +519,9 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 </div>
               )}
             </div>
+            );
+          })()}
+            </div>
           ) : isRetrying ? (
             <div className="bg-indigo-50/80 p-8 rounded-2xl border border-indigo-200 text-center flex flex-col items-center justify-center space-y-4 mb-8">
               <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
@@ -376,14 +555,34 @@ export function FeedbackModal({ feedback: session, onClose }) {
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Raw Transcript</h4>
                 <div className="max-h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                  {deduplicatedConversation.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md shadow-indigo-200' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'}`}>
-                        <p className="text-[10px] uppercase font-black opacity-70 mb-1">{msg.role === 'user' ? 'You' : 'AI Interviewer'}</p>
-                        <p className="leading-relaxed">{msg.transcript || msg.text || ''}</p>
+                  {deduplicatedConversation.map((msg, i) => {
+                    let text = msg.transcript || msg.text || '';
+                    let speakerHeader = msg.role === 'user' ? 'You' : 'AI Interviewer';
+                    let isPanelist = false;
+                    
+                    // Parse [Speaker] tags if they exist
+                    const speakerMatch = text.match(/^\[(.*?)\]\s*(.*)$/s);
+                    if (speakerMatch) {
+                      speakerHeader = speakerMatch[1];
+                      text = speakerMatch[2];
+                      isPanelist = true;
+                    }
+
+                    return (
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md shadow-indigo-200' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'}`}>
+                          <p className={`text-[10px] uppercase font-black mb-1 ${
+                            msg.role === 'user' ? 'opacity-70' : 
+                            speakerHeader === 'Sarah' ? 'text-indigo-600' : 
+                            speakerHeader === 'David' ? 'text-emerald-600' : 'opacity-70'
+                          }`}>
+                            {speakerHeader}
+                          </p>
+                          <p className="leading-relaxed">{text}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
