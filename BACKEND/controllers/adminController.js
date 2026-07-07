@@ -1791,7 +1791,7 @@ module.exports = {
             let correctUser = await User.findOne({ email: correctEmail });
             
             if (!correctUser) {
-              const bcrypt = require('bcrypt');
+              const bcrypt = require('bcryptjs');
               const hashedPassword = await bcrypt.hash("Welcome@123", 10);
               correctUser = new User({
                 name: app.name,

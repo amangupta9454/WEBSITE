@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 
 // Helper to sanitize text
 const sanitizeText = (text, maxLength = 10000) => {
