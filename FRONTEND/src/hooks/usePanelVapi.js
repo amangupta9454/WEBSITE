@@ -37,7 +37,7 @@ export function usePanelVapi(interviewData) {
   const currentStageRef = useRef("Introduction");
 
   // Speaker Transition Context
-  const defaultTransition = { active: false, from: null, to: null, reason: null, startedAt: null };
+  const defaultTransition = { active: false, from: null, to: null, reason: null, startedAt: null, topic: null, difficulty: null, confidence: null, greeting: null, openingQuestion: null, interviewerMood: null };
   const [transitionContext, setTransitionContext] = useState(defaultTransition);
   const transitionContextRef = useRef(defaultTransition);
 
@@ -138,7 +138,7 @@ export function usePanelVapi(interviewData) {
     }
   };
 
-  const buildAssistantConfig = (speakerName, conversationHistory) => {
+  const buildAssistantConfig = (speakerName, conversationHistory, transitionData = null) => {
     const isSarah = speakerName === "Sarah";
     const voiceId = isSarah ? "nova" : "onyx";
     
@@ -249,6 +249,10 @@ Pacing Recommendation: ${pauseRecommendation}
       silenceTimeoutSeconds: 60,
       responseDelaySeconds: 0.6,
       endCallFunctionEnabled: true,
+      // Inject context-aware firstMessage if this is a speaker transition
+      ...(transitionData && transitionData.greeting && transitionData.openingQuestion
+        ? { firstMessage: `${transitionData.greeting} ${transitionData.openingQuestion}` }
+        : {})
     };
   };
 
@@ -336,12 +340,19 @@ Pacing Recommendation: ${pauseRecommendation}
         if (speaker && speaker !== activeSpeakerRef.current) {
           Logger.info(`Router switching speaker from ${activeSpeakerRef.current} to ${speaker}`);
           
+          const routerTransition = res.data.transition || null;
           const newTransition = {
             active: true,
             from: activeSpeakerRef.current,
             to: speaker,
             reason: reason || "RouterDecision",
-            startedAt: Date.now()
+            startedAt: Date.now(),
+            topic: topic || null,
+            difficulty: difficulty || "Medium",
+            confidence: confidenceScore || 50,
+            greeting: routerTransition?.greeting || `Thanks ${activeSpeakerRef.current}. I'll take over from here.`,
+            openingQuestion: routerTransition?.openingQuestion || `Let's continue with ${topic || 'the next topic'}.`,
+            interviewerMood: routerTransition?.mood || "Neutral"
           };
           transitionContextRef.current = newTransition;
           setTransitionContext(newTransition);
@@ -389,11 +400,12 @@ Pacing Recommendation: ${pauseRecommendation}
     
     const onCallEnd = () => { 
       if (transitionContextRef.current.active) {
-        // Speaker transition active: ignore end, and start next speaker
-        Logger.info(`Transitioning to ${transitionContextRef.current.to}...`);
+        // Speaker transition active: ignore end, and start next speaker with context-aware firstMessage
+        const ctx = transitionContextRef.current;
+        Logger.info(`Transitioning to ${ctx.to}... Greeting: ${ctx.greeting}`);
         setTimeout(() => {
            if (vapiRef.current && transitionContextRef.current.active) {
-             const newConfig = buildAssistantConfig(transitionContextRef.current.to, conversationRef.current);
+             const newConfig = buildAssistantConfig(ctx.to, conversationRef.current, ctx);
              vapiRef.current.start(newConfig);
            }
         }, 500); // Give WebRTC a brief moment to teardown

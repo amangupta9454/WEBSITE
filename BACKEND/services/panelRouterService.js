@@ -63,6 +63,16 @@ You must act as a true human panel. Determine the next CONVERSATION ACTION.
 - Generate a BACKCHANNEL response if a recruiter should acknowledge mid-thought (e.g., "Makes sense.", "I see.")
 - Recommend a PAUSE (Short, Medium, Long) based on the candidate's pacing.
 
+# SPEAKER HANDOVER (Phase 2C)
+CRITICAL: If the speaker is changing (i.e. "speaker" differs from the current stage owner), you MUST generate a "transition" object.
+The transition must feel like a REAL human panel handoff — natural, contextual, referencing the candidate's actual last answer.
+Rules:
+- "greeting": A short warm acknowledgement from the NEW speaker (1 sentence). Reference the outgoing speaker by name. Example: "Thanks Sarah, I'll take over from here."
+- "openingQuestion": The new speaker's FIRST question (1-2 sentences). It MUST directly reference the candidate's last answer or the current topic. Do NOT ask a generic question. Example: "You mentioned building a distributed cache — what strategy did you use for cache invalidation?"
+- "mood": Tone of the new speaker. Values: "Technical", "Warm", "Challenging", "Inquisitive", "Supportive", "Probing".
+- "style": Interviewing style. Values: "Socratic", "Challenging", "Deep Dive", "Exploratory", "Behavioral", "Empathetic".
+If the speaker is NOT changing, set "transition": null.
+
 Review the transcript below and output ONLY a valid JSON object matching this exact schema:
 { 
   "currentStage": "The stage you evaluated",
@@ -85,13 +95,20 @@ Review the transcript below and output ONLY a valid JSON object matching this ex
   "interrupt": false,
   "backchannel": "I see.",
   "pauseRecommendation": "Short",
-  "conversationReason": "Continuing natural flow."
+  "conversationReason": "Continuing natural flow.",
+  "transition": {
+    "greeting": "Thanks Sarah. I'll take it from here.",
+    "openingQuestion": "You mentioned building a REST API — can you explain how you handled authentication?",
+    "mood": "Technical",
+    "style": "Deep Dive"
+  }
 }
 
 <TRANSCRIPT>
 ${safeTranscript}
 </TRANSCRIPT>
   `.trim();
+
 
   const groqKeys = [
     process.env.GROQ_API_KEY,
@@ -119,7 +136,8 @@ ${safeTranscript}
     interrupt: false,
     backchannel: null,
     pauseRecommendation: "Medium",
-    conversationReason: "Fallback flow"
+    conversationReason: "Fallback flow",
+    transition: null
   };
 
   if (groqKeys.length > 0) {
