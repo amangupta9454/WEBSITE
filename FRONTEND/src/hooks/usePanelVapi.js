@@ -34,6 +34,7 @@ export function usePanelVapi(interviewData) {
   // Panel specific state
   const [activeSpeaker, setActiveSpeaker] = useState("Sarah"); // Sarah or David
   const activeSpeakerRef = useRef("Sarah");
+  const pendingSpeakerRef = useRef(null);
 
   // Stage Management
   const [currentStage, setCurrentStage] = useState("Introduction");
@@ -449,13 +450,17 @@ export function usePanelVapi(interviewData) {
     };
     
     const onSpeechStart = () => { 
-      // If a handoff is pending, the new speaker has just begun their audio stream!
-      if (transitionContextRef.current.active && transitionContextRef.current.to) {
-        const newSpeaker = transitionContextRef.current.to;
-        Logger.info(`[State Sync] Audio started for new speaker: UI syncing to ${newSpeaker}`);
-        activeSpeakerRef.current = newSpeaker;
-        setActiveSpeaker(newSpeaker);
-        
+      // 2. Execute Speaker Sync when actual audio begins!
+      if (pendingSpeakerRef.current) {
+        if (pendingSpeakerRef.current !== activeSpeakerRef.current) {
+          Logger.info(`[State Sync] Audio started for new speaker: UI syncing to ${pendingSpeakerRef.current}`);
+          activeSpeakerRef.current = pendingSpeakerRef.current;
+          setActiveSpeaker(pendingSpeakerRef.current);
+        }
+        pendingSpeakerRef.current = null; // Clear it to prevent race conditions
+      }
+
+      if (transitionContextRef.current.active) {
         transitionContextRef.current = defaultTransition;
         setTransitionContext(defaultTransition);
       }
@@ -465,6 +470,22 @@ export function usePanelVapi(interviewData) {
     const onSpeechEnd = () => { setFsmState(VAPI_STATES.LISTENING); };
 
     const onMessage = (msg) => {
+      // 1. Detect Intent to Transfer (Do NOT switch UI yet)
+      if (msg.type === "transfer-update" && msg.destination?.assistantName) {
+        pendingSpeakerRef.current = msg.destination.assistantName;
+        Logger.info(`[State Sync] transfer-update intent detected: pending speaker is ${pendingSpeakerRef.current}`);
+      } else if (msg.type === "tool-calls") {
+        msg.toolCallList?.forEach(tc => {
+          if (tc.type === "handoff" && tc.handoff?.destination?.assistantName) {
+             pendingSpeakerRef.current = tc.handoff.destination.assistantName;
+             Logger.info(`[State Sync] tool-calls (handoff) intent detected: pending speaker is ${pendingSpeakerRef.current}`);
+          } else if (tc.function?.name && tc.function.name.toLowerCase().includes("handoff")) {
+             pendingSpeakerRef.current = tc.function.name.includes("David") ? "David" : "Sarah";
+             Logger.info(`[State Sync] tool-calls (function) intent detected: pending speaker is ${pendingSpeakerRef.current}`);
+          }
+        });
+      }
+
       if (msg.type === "transcript" && msg.transcriptType === "final") {
         const lastMsg = conversationRef.current[conversationRef.current.length - 1];
         if (!lastMsg || lastMsg.transcript !== msg.transcript) {
