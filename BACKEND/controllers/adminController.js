@@ -348,22 +348,29 @@ const uploadCertificates = async (req, res) => {
 
     // Insert to DB (ignore duplicates safely)
     try {
-      await Certificate.insertMany(certificates, { ordered: false });
-      res.json({
-        message: `${certificates.length} certificates uploaded successfully`,
-      });
-    } catch (insertError) {
-      if (insertError.code === 11000) {
-        // This means some (or all) were duplicates, but others were inserted because of ordered: false
-        const insertedCount = insertError.insertedDocs
-          ? insertError.insertedDocs.length
-          : 0;
-        res.json({
-          message: `Upload completed. Inserted ${insertedCount} new certificates (skipped duplicates).`,
-        });
-      } else {
-        throw insertError;
+      const studentIds = certificates.map((c) => c.studentId);
+
+      try {
+        await Certificate.insertMany(certificates, { ordered: false });
+      } catch (insertError) {
+        if (insertError.code !== 11000) {
+          throw insertError;
+        }
       }
+
+      // Automatically mark isCertificateSent = true for all these student IDs
+      await User.updateMany(
+        { "internships.studentId": { $in: studentIds } },
+        { $set: { "internships.$[elem].isCertificateSent": true } },
+        { arrayFilters: [{ "elem.studentId": { $in: studentIds } }] }
+      );
+
+      res.json({
+        message: `Upload completed. Certificates verified and automatically marked as sent.`,
+      });
+    } catch (error) {
+      console.error("[Admin] Error uploading certificates:", error);
+      res.status(500).json({ message: "Server error: " + error.message });
     }
   } catch (error) {
     console.error("[Admin] Error uploading certificates:", error);
