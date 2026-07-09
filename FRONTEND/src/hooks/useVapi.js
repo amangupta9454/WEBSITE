@@ -194,7 +194,8 @@ export function useVapi(interviewData) {
 
     const onCallEnd = () => {
       const allowed = InterviewTerminationController.requestTermination("VAPI_COMPLETED_STATE", { 
-        elapsedSeconds: conversationRef.current.length * 15 // rough estimate
+        elapsedSeconds: conversationRef.current.length * 15, // rough estimate
+        isRouterConcluded: true
       });
 
       if (allowed) {
@@ -290,6 +291,16 @@ export function useVapi(interviewData) {
 
     const onError = (err) => {
       clearAllTimeouts();
+      // Vapi fires a benign "Meeting has ended" / "ejected" error when the call is
+      // stopped normally (user clicks End, AI concludes, hard timeout, etc.).
+      // These are expected shutdown signals — not real errors — so we silently
+      // ignore them to prevent the red "unexpected error" banner from appearing.
+      const errMsg = (err?.message || err?.error?.msg || err?.errorMsg || JSON.stringify(err) || '').toLowerCase();
+      const isShutdownError = errMsg.includes('meeting has ended') || errMsg.includes('ejected') || errMsg.includes('call ended') || errMsg.includes('meeting ended');
+      if (isShutdownError) {
+        Logger.info("Vapi shutdown signal received (expected). Suppressing error UI.", { err });
+        return;
+      }
       Logger.error("Vapi Engine Error", err);
       setVapiError(INTERVIEW_ERRORS.UNKNOWN_ERROR);
       setFsmState(VAPI_STATES.FAILED);

@@ -189,7 +189,7 @@ function InterviewActive() {
   // Auto-complete logic based on state machine ending naturally
   useEffect(() => {
     if (fsmState === VAPI_STATES.COMPLETED && !isSaving && isStarted) {
-      const isRouterConcluded = recruiterMemory?.orchestration?.action === "END_INTERVIEW";
+      const isRouterConcluded = true; // Standard mode relies on Vapi native end
       const allowed = InterviewTerminationController.requestTermination("VAPI_COMPLETED_STATE", { 
         elapsedSeconds: timeRef.current,
         isRouterConcluded
