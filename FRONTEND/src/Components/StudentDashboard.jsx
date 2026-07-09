@@ -37,6 +37,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
+
 // Normal Intern Dashboard Component
 const NormalInternDashboard = ({ internship, onRefresh }) => {
   const navigate = useNavigate();
@@ -133,7 +135,7 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
       setUpdatingLinkProjectId(assignmentId);
       const token = localStorage.getItem("studentToken");
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/update-project-link`,
+        `${BACKEND_URL}/api/student/update-project-link`,
         {
           internshipType: 'Normal Intern',
           projectId: projectId,
@@ -505,7 +507,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
       setSubmittingRepo(projectId);
       const token = localStorage.getItem("studentToken");
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/submit-repo`,
+        `${BACKEND_URL}/api/student/submit-repo`,
         {
           internshipId: internship._id,
           projectId: projectId,
@@ -535,7 +537,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
       setFinalSubmitting(projectId);
       const token = localStorage.getItem("studentToken");
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/final-submit-repo`,
+        `${BACKEND_URL}/api/student/final-submit-repo`,
         {
           internshipId: internship._id,
           projectId: projectId,
@@ -565,7 +567,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
       setUpdatingLinkProjectId(projectId);
       const token = localStorage.getItem("studentToken");
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/update-project-link`,
+        `${BACKEND_URL}/api/student/update-project-link`,
         {
           internshipId: internship._id,
           internshipType: 'Summer Intern',
@@ -1067,7 +1069,7 @@ const StudentDashboard = () => {
       }
 
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/dashboard`,
+        `${BACKEND_URL}/api/student/dashboard`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -1116,10 +1118,10 @@ const StudentDashboard = () => {
       setIsInterviewLoading(true);
       const token = localStorage.getItem("studentToken");
       const [creditsRes, sessionsRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-credits`, {
+        axios.get(`${BACKEND_URL}/api/interview-session/my-credits`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-sessions`, {
+        axios.get(`${BACKEND_URL}/api/interview-session/my-sessions`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -1197,7 +1199,7 @@ const StudentDashboard = () => {
       setIsSavingProfile(true);
       const token = localStorage.getItem("studentToken");
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/profile`,
+        `${BACKEND_URL}/api/student/profile`,
         { name: profileFormData.name, profileImage: profileFormData.profileImage, github: profileFormData.github, linkedin: profileFormData.linkedin },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -1221,7 +1223,7 @@ const StudentDashboard = () => {
     try {
       const token = localStorage.getItem("studentToken");
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/student/dismiss-notification`,
+        `${BACKEND_URL}/api/student/dismiss-notification`,
         { notificationId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
