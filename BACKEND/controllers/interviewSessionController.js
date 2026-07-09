@@ -215,7 +215,7 @@ async function runEvaluationBackground(sessionId) {
           try {
             const key = groqKeys[Math.floor(Math.random() * groqKeys.length)];
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 180000); // Increased to 3 mins for longer interviews
+            const timeoutId = setTimeout(() => controller.abort(), 600000); // Increased to 10 mins for longer interviews
 
             const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
@@ -430,7 +430,7 @@ exports.processEvaluation = async (req, res) => {
             try {
               const key = groqKeys[Math.floor(Math.random() * groqKeys.length)];
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 mins timeout
+              const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 mins timeout for very long interviews
 
               const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
