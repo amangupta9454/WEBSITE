@@ -39,6 +39,48 @@ const MyInterviews = () => {
     fetchData();
   }, []);
 
+  // Poll sessions that are still being evaluated and auto-retry stuck ones
+  useEffect(() => {
+    const token = localStorage.getItem('interviewToken');
+    if (!token) return;
+
+    const POLL_STATUSES = ['EVALUATION_PENDING', 'EVALUATION_RUNNING'];
+
+    const pendingSessions = sessions.filter(s => POLL_STATUSES.includes(s.status));
+    if (pendingSessions.length === 0) return;
+
+    // Auto-retry any session stuck in EVALUATION_PENDING
+    pendingSessions
+      .filter(s => s.status === 'EVALUATION_PENDING')
+      .forEach(s => {
+        axios.post(
+          `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/retry-evaluation/${s._id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(err => console.error('Auto-retry evaluation error:', err));
+      });
+
+    // Poll every 5 seconds until all are done
+    const pollInterval = setInterval(async () => {
+      try {
+        const sessionsRes = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-sessions`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (sessionsRes.data.success) {
+          const updated = sessionsRes.data.sessions;
+          setSessions(updated);
+          const stillPending = updated.some(s => POLL_STATUSES.includes(s.status));
+          if (!stillPending) clearInterval(pollInterval);
+        }
+      } catch (pollErr) {
+        console.error('Evaluation poll error:', pollErr);
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [sessions.map(s => s._id + s.status).join(',')]);
+
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('interviewToken');
@@ -303,20 +345,27 @@ const MyInterviews = () => {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                  {recentSession.feedback ? (
+                  {(recentSession.status === 'EVALUATION_PENDING' || recentSession.status === 'EVALUATION_RUNNING') ? (
+                    <span className="text-sm font-bold text-indigo-500 flex items-center gap-2 bg-indigo-50 px-5 py-2.5 md:px-8 md:py-3.5 rounded-xl">
+                      <Loader2 size={16} className="animate-spin" />
+                      Generating Evaluation...
+                    </span>
+                  ) : recentSession.status === 'Completed' && recentSession.feedback ? (
                     <button
                       onClick={() => setSelectedFeedback(recentSession)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 md:px-8 md:py-3.5 rounded-xl text-sm md:text-base font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/30 hover:-translate-y-0.5"
                     >
                       <Star className="w-4 h-4 md:w-5 md:h-5" /> View Feedback
                     </button>
-                  ) : recentSession.status !== 'Completed' && localStorage.getItem(`repracticed_${recentSession._id}`) !== 'true' ? (
+                  ) : recentSession.status === 'Aborted' && localStorage.getItem(`repracticed_${recentSession._id}`) !== 'true' ? (
                     <button
                       onClick={() => setRePracticeSession(recentSession)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 md:px-8 md:py-3.5 rounded-xl text-sm md:text-base font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/30 hover:-translate-y-0.5"
                     >
                       <PlayCircle className="w-4 h-4 md:w-5 md:h-5" /> Re-practice
                     </button>
+                  ) : recentSession.status === 'Failed' ? (
+                    <span className="text-xs md:text-sm text-red-400 font-medium">Evaluation Failed</span>
                   ) : (
                     <span className="text-xs md:text-sm text-slate-400 font-medium">Session Closed</span>
                   )}
@@ -383,13 +432,23 @@ const MyInterviews = () => {
                     <Video className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
                   </div>
                   <span
-                    className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
+                    className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
                       session.status === 'Completed'
                         ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-amber-100 text-amber-700'
+                        : session.status === 'EVALUATION_RUNNING' || session.status === 'EVALUATION_PENDING'
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : session.status === 'Aborted'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-slate-100 text-slate-600'
                     }`}
                   >
-                    {session.status}
+                    {(session.status === 'EVALUATION_RUNNING' || session.status === 'EVALUATION_PENDING') && (
+                      <span className="inline-block w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    )}
+                    {session.status === 'Completed' ? 'Completed'
+                      : session.status === 'EVALUATION_RUNNING' ? 'Evaluating'
+                      : session.status === 'EVALUATION_PENDING' ? 'Pending'
+                      : session.status}
                   </span>
                 </div>
 
@@ -408,21 +467,28 @@ const MyInterviews = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    {session.status !== 'Completed' &&
-                    localStorage.getItem(`repracticed_${session._id}`) !== 'true' ? (
+                    {(session.status === 'EVALUATION_PENDING' || session.status === 'EVALUATION_RUNNING') ? (
+                      <div className="flex-1 bg-indigo-50 text-indigo-500 py-2.5 md:py-3 rounded-xl text-[11px] md:text-sm font-bold flex items-center justify-center gap-1.5">
+                        <Loader2 size={14} className="animate-spin" /> Generating...
+                      </div>
+                    ) : session.status === 'Aborted' && localStorage.getItem(`repracticed_${session._id}`) !== 'true' ? (
                       <button
                         onClick={() => setRePracticeSession(session)}
                         className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                       >
                         <PlayCircle className="w-3.5 h-3.5 md:w-4 md:h-4" /> Re-practice
                       </button>
-                    ) : session.feedback ? (
+                    ) : session.status === 'Completed' && session.feedback ? (
                       <button
                         onClick={() => setSelectedFeedback(session)}
                         className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                       >
                         <Star className="w-3.5 h-3.5 md:w-4 md:h-4" /> View Feedback
                       </button>
+                    ) : session.status === 'Failed' ? (
+                      <div className="flex-1 bg-red-50 text-red-400 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center">
+                        Eval Failed
+                      </div>
                     ) : (
                       <div className="flex-1 bg-slate-50 text-slate-400 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center border border-slate-100">
                         Session Closed
