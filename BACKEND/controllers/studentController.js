@@ -560,11 +560,16 @@ const updateProjectLink = async (req, res) => {
     }
 
     let targetInternship;
-    if (studentId) {
-      targetInternship = user.internships.find((app) => app.studentId === studentId);
-    } else if (req.body.internshipId) {
+    // 1. Prefer explicit internshipId sent from the frontend
+    if (req.body.internshipId) {
       targetInternship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
-    } else if (user.internships && user.internships.length > 0) {
+    }
+    // 2. Fall back to studentId stored in JWT
+    if (!targetInternship && studentId) {
+      targetInternship = user.internships.find((app) => app.studentId === studentId);
+    }
+    // 3. Last resort: first internship
+    if (!targetInternship && user.internships && user.internships.length > 0) {
       targetInternship = user.internships[0];
     }
 
@@ -607,8 +612,20 @@ const updateProjectLink = async (req, res) => {
 
     } else {
       const submission = await ProjectSubmission.findById(projectId);
-      if (!submission || submission.studentId !== targetInternship.studentId) {
+      if (!submission) {
         return res.status(404).json({ message: 'Submission not found' });
+      }
+
+      // Verify the submission belongs to this user by matching their email or studentId
+      const userEmail = user.email;
+      const userStudentIds = user.internships.map(i => i.studentId).filter(Boolean);
+      const ownedByUser =
+        submission.email === userEmail ||
+        (submission.studentId && userStudentIds.includes(submission.studentId)) ||
+        (targetInternship && submission.studentId === targetInternship.studentId);
+
+      if (!ownedByUser) {
+        return res.status(403).json({ message: 'Submission does not belong to this user' });
       }
 
       const assignmentIndex = submission.assignments.findIndex(a => a._id.toString() === assignmentId);

@@ -137,6 +137,7 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
       await axios.post(
         `${BACKEND_URL}/api/student/update-project-link`,
         {
+          internshipId: internship._id,
           internshipType: 'Normal Intern',
           projectId: projectId,
           assignmentId: assignmentId,
