@@ -42,6 +42,49 @@ function InterviewDashboard() {
     fetchData(token);
   }, [navigate]);
 
+  // Poll sessions that are still being evaluated and auto-retry stuck ones
+  useEffect(() => {
+    const token = localStorage.getItem('interviewToken');
+    if (!token) return;
+
+    const POLL_STATUSES = ['EVALUATION_PENDING', 'EVALUATION_RUNNING'];
+
+    const pendingSessions = sessions.filter(s => POLL_STATUSES.includes(s.status));
+    if (pendingSessions.length === 0) return;
+
+    // Auto-retry any session stuck in EVALUATION_PENDING (server may have restarted)
+    pendingSessions
+      .filter(s => s.status === 'EVALUATION_PENDING')
+      .forEach(s => {
+        axios.post(
+          `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/retry-evaluation/${s._id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(err => console.error('Auto-retry evaluation error:', err));
+      });
+
+    // Poll every 5 seconds until all are done
+    const pollInterval = setInterval(async () => {
+      try {
+        const sessionsRes = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/my-sessions`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (sessionsRes.data.success) {
+          const updated = sessionsRes.data.sessions;
+          setSessions(updated);
+          // Stop polling when all pending sessions are resolved
+          const stillPending = updated.some(s => POLL_STATUSES.includes(s.status));
+          if (!stillPending) clearInterval(pollInterval);
+        }
+      } catch (pollErr) {
+        console.error('Evaluation poll error:', pollErr);
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [sessions.map(s => s._id + s.status).join(',')]);
+
   const fetchData = async (token) => {
     try {
       setIsLoading(true);

@@ -784,10 +784,22 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
                   <div className="bg-blue-50 text-blue-700 p-1.5 sm:p-2 rounded-lg">
                     <Video size={20} />
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    session.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                    session.status === 'Completed'
+                      ? 'bg-green-100 text-green-700'
+                      : session.status === 'EVALUATION_RUNNING' || session.status === 'EVALUATION_PENDING'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : session.status === 'Aborted'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-100 text-slate-600'
                   }`}>
-                    {session.status}
+                    {(session.status === 'EVALUATION_RUNNING' || session.status === 'EVALUATION_PENDING') && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    )}
+                    {session.status === 'Completed' ? 'Completed'
+                      : session.status === 'EVALUATION_RUNNING' ? 'Evaluating...'
+                      : session.status === 'EVALUATION_PENDING' ? 'Pending Eval'
+                      : session.status}
                   </span>
                 </div>
                 <h4 className="font-bold text-base sm:text-lg text-slate-800 mb-0.5 sm:mb-1">{session.jobTitle}</h4>
@@ -798,14 +810,22 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
                     <Clock size={12} /> {new Date(session.createdAt).toLocaleDateString()}
                   </span>
                   
-                  {session.status !== 'Completed' && localStorage.getItem(`repracticed_${session._id}`) !== 'true' ? (
+                  {/* Action button — depends on session status */}
+                  {(session.status === 'EVALUATION_PENDING' || session.status === 'EVALUATION_RUNNING') ? (
+                    <span className="text-xs font-bold text-indigo-500 flex items-center gap-1.5">
+                      <Loader2 size={13} className="animate-spin" />
+                      Generating Evaluation...
+                    </span>
+                  ) : session.status === 'Aborted' && localStorage.getItem(`repracticed_${session._id}`) !== 'true' ? (
                     <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => setRePracticeSession(session)}>
                       <PlayCircle size={14} /> Re-practice
                     </button>
-                  ) : session.feedback ? (
+                  ) : session.status === 'Completed' && session.feedback ? (
                     <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session)}>
                       View Feedback
                     </button>
+                  ) : session.status === 'Failed' ? (
+                    <span className="text-xs font-bold text-red-400">Eval Failed</span>
                   ) : (
                     <span className="text-sm text-slate-400 font-medium">Session Closed</span>
                   )}
