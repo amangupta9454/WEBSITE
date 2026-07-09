@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
@@ -663,6 +663,26 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
     }
   };
 
+  const handleRetryEvaluation = async (sessionId) => {
+    try {
+      const token = localStorage.getItem('interviewToken');
+      if (!token) return;
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/retry-evaluation/${sessionId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success('Evaluation re-started in background!');
+        window.location.reload(); // refresh to show evaluating status
+      } else {
+        toast.error(res.data.message || 'Failed to retry evaluation');
+      }
+    } catch (err) {
+      toast.error('Error retrying evaluation');
+    }
+  };
+
 
 
   return (
@@ -821,9 +841,15 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
                       <PlayCircle size={14} /> Re-practice
                     </button>
                   ) : session.status === 'Completed' && session.feedback ? (
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session)}>
-                      View Feedback
-                    </button>
+                    (session.feedback.ai_evaluation?.overall_score === 0 || !session.feedback.ai_evaluation?.overall_score) && session.messages?.length > 2 ? (
+                      <button className="text-sm font-bold text-amber-600 hover:text-amber-800 flex items-center gap-1 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors" onClick={() => handleRetryEvaluation(session._id)}>
+                        <RefreshCw size={14} /> Retry Eval
+                      </button>
+                    ) : (
+                      <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800" onClick={() => setSelectedFeedback(session)}>
+                        View Feedback
+                      </button>
+                    )
                   ) : session.status === 'Failed' ? (
                     <span className="text-xs font-bold text-red-400">Eval Failed</span>
                   ) : (

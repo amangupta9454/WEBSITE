@@ -623,13 +623,15 @@ exports.retryEvaluation = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
 
-    // Only retry if not already running or completed
-    if (session.status === 'Completed') {
-      return res.status(200).json({ success: true, message: 'Already completed', session });
-    }
-
     if (session.status === 'EVALUATION_RUNNING') {
       return res.status(200).json({ success: true, message: 'Evaluation already in progress' });
+    }
+
+    if (session.status === 'Completed') {
+      const score = session.feedback?.ai_evaluation?.overall_score;
+      if (score && score > 0) {
+        return res.status(200).json({ success: true, message: 'Already successfully completed', session });
+      }
     }
 
     // Reset to PENDING and re-fire background runner

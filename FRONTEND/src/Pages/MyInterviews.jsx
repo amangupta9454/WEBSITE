@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   PlayCircle, Video, Clock, CheckCircle, Loader2, Sparkles,
-  Zap, Brain, Target, Star, X, Briefcase, AlertCircle, ArrowRight, Plus
+  Zap, Brain, Target, Star, X, Briefcase, AlertCircle, ArrowRight, Plus, RefreshCw
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import BuyTokensModal from './InterviewPortal/components/BuyTokensModal';
@@ -184,6 +184,26 @@ const MyInterviews = () => {
       new window.Razorpay(options).open();
     } catch (error) {
       toast.error('Something went wrong!');
+    }
+  };
+
+  const handleRetryEvaluation = async (sessionId) => {
+    try {
+      const token = localStorage.getItem('interviewToken');
+      if (!token) return;
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-session/retry-evaluation/${sessionId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success('Evaluation re-started in background!');
+        fetchData(); // refresh the list to show evaluating status
+      } else {
+        toast.error(res.data.message || 'Failed to retry evaluation');
+      }
+    } catch (err) {
+      toast.error('Error retrying evaluation');
     }
   };
 
@@ -479,12 +499,21 @@ const MyInterviews = () => {
                         <PlayCircle className="w-3.5 h-3.5 md:w-4 md:h-4" /> Re-practice
                       </button>
                     ) : session.status === 'Completed' && session.feedback ? (
-                      <button
-                        onClick={() => setSelectedFeedback(session)}
-                        className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-                      >
-                        <Star className="w-3.5 h-3.5 md:w-4 md:h-4" /> View Feedback
-                      </button>
+                      (session.feedback.ai_evaluation?.overall_score === 0 || !session.feedback.ai_evaluation?.overall_score) && session.messages?.length > 2 ? (
+                        <button
+                          onClick={() => handleRetryEvaluation(session._id)}
+                          className="flex-1 bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 md:w-4 md:h-4" /> Retry Eval
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setSelectedFeedback(session)}
+                          className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Star className="w-3.5 h-3.5 md:w-4 md:h-4" /> View Feedback
+                        </button>
+                      )
                     ) : session.status === 'Failed' ? (
                       <div className="flex-1 bg-red-50 text-red-400 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center">
                         Eval Failed
