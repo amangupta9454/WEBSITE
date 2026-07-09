@@ -336,6 +336,8 @@ const uploadCertificates = async (req, res) => {
           duration: row.Duration?.toString().trim(),
           studentId: row.Student_ID?.toString().trim(),
           batch: row.Batch?.toString().trim(),
+          email: (row.Email || row.Email_ID || row["Email ID"])?.toString().trim() || `${row.Student_ID?.toString().trim()}@legacy.codeanova.com`,
+          mobile: (row.Mobile || row.Phone || row["Phone Number"])?.toString().trim() || "0000000000",
         };
       })
       .filter((cert) => cert && cert.certificateNumber && cert.studentId); // Filter invalid
@@ -358,15 +360,77 @@ const uploadCertificates = async (req, res) => {
         }
       }
 
-      // Automatically mark isCertificateSent = true for all these student IDs
-      await User.updateMany(
-        { "internships.studentId": { $in: studentIds } },
-        { $set: { "internships.$[elem].isCertificateSent": true } },
-        { arrayFilters: [{ "elem.studentId": { $in: studentIds } }] }
-      );
+      // Update or create users based on certificate data
+      for (const cert of certificates) {
+        // Find if user already exists (by email or studentId in internships)
+        const existingUser = await User.findOne({
+          $or: [
+            { email: cert.email },
+            { "internships.studentId": cert.studentId }
+          ]
+        });
+
+        if (existingUser) {
+          // If user exists, check if they have this specific internship
+          const internshipIndex = existingUser.internships.findIndex(
+            (i) => i.studentId === cert.studentId || (i.domain === cert.domain && !i.studentId)
+          );
+
+          if (internshipIndex >= 0) {
+            // Update existing internship
+            existingUser.internships[internshipIndex].studentId = cert.studentId;
+            existingUser.internships[internshipIndex].startDate = cert.startDate;
+            existingUser.internships[internshipIndex].endDate = cert.endDate;
+            existingUser.internships[internshipIndex].domain = cert.domain;
+            existingUser.internships[internshipIndex].duration = cert.duration;
+            existingUser.internships[internshipIndex].isCertificateSent = true;
+            existingUser.internships[internshipIndex].certificateUrl = cert.certificateNumber; // Storing ID for reference
+          } else {
+            // User exists but internship doesn't, add it
+            existingUser.internships.push({
+              studentId: cert.studentId,
+              name: cert.studentName || existingUser.name,
+              email: cert.email || existingUser.email,
+              mobile: cert.mobile || existingUser.mobile,
+              domain: cert.domain,
+              startDate: cert.startDate,
+              endDate: cert.endDate,
+              duration: cert.duration,
+              internshipType: "Legacy Intern",
+              isCertificateSent: true,
+              certificateUrl: cert.certificateNumber
+            });
+          }
+          await existingUser.save();
+        } else {
+          // User doesn't exist, create legacy user
+          const newUser = new User({
+            name: cert.studentName || "Legacy User",
+            email: cert.email,
+            mobile: cert.mobile,
+            password: "", // Legacy users might need to reset password
+            isFirstLogin: true,
+            role: "intern",
+            internships: [{
+              studentId: cert.studentId,
+              name: cert.studentName || "Legacy User",
+              email: cert.email,
+              mobile: cert.mobile,
+              domain: cert.domain,
+              startDate: cert.startDate,
+              endDate: cert.endDate,
+              duration: cert.duration,
+              internshipType: "Legacy Intern",
+              isCertificateSent: true,
+              certificateUrl: cert.certificateNumber
+            }]
+          });
+          await newUser.save();
+        }
+      }
 
       res.json({
-        message: `Upload completed. Certificates verified and automatically marked as sent.`,
+        message: `Upload completed. Certificates verified and ${certificates.length} users/internships updated automatically.`,
       });
     } catch (error) {
       console.error("[Admin] Error uploading certificates:", error);
