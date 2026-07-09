@@ -136,9 +136,19 @@ function InterviewActive() {
           audio: false,
         });
         candidateStreamRef.current = stream;
-        if (candidateVideoRef.current) {
-          candidateVideoRef.current.srcObject = stream;
-          await candidateVideoRef.current.play();
+        const video = candidateVideoRef.current;
+        if (video) {
+          // Reset srcObject first to force a fresh render cycle on some browsers
+          video.srcObject = null;
+          video.srcObject = stream;
+          // Use loadedmetadata event instead of calling play() directly.
+          // Calling play() while autoPlay is also set causes an AbortError race
+          // condition that silently leaves the video black even though the camera is on.
+          video.onloadedmetadata = () => {
+            video.play().catch((e) => {
+              console.warn("Camera play() failed:", e.message);
+            });
+          };
         }
         setCameraActive(true);
         setCameraError("");
