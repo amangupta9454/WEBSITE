@@ -39,10 +39,14 @@ const InterviewSetup = () => {
   }, []);
 
   React.useEffect(() => {
-    if (configs.length > 0 && !configs.find(c => c.modeId === formData.mode)) {
-      setFormData(prev => ({ ...prev, mode: configs[0].modeId }));
+    if (configs.length > 0) {
+      const enabledConfigs = configs.filter(c => c.enabled);
+      // If current selected mode is not enabled, switch to first enabled mode
+      if (!enabledConfigs.find(c => c.modeId === formData.mode)) {
+        setFormData(prev => ({ ...prev, mode: enabledConfigs.length > 0 ? enabledConfigs[0].modeId : '' }));
+      }
     }
-  }, [configs, formData.mode]);
+  }, [configs]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -221,17 +225,26 @@ const InterviewSetup = () => {
           <div className="space-y-1.5">
             <label className="block text-xs sm:text-sm font-bold text-slate-700">Interview Mode</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {configs.map((config) => (
-                <button
-                  key={config.modeId}
-                  type="button"
-                  onClick={() => setFormData({...formData, mode: config.modeId})}
-                  className={`p-3 border rounded-xl text-left transition-all ${formData.mode === config.modeId ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
-                >
-                  <h4 className="font-bold text-slate-800">{config.name}</h4>
-                  <p className="text-xs text-slate-500 mt-1">{config.description}</p>
-                </button>
-              ))}
+              {configs.filter(c => c.enabled).length > 0 ? (
+                configs.filter(c => c.enabled).map((config) => (
+                  <button
+                    key={config.modeId}
+                    type="button"
+                    onClick={() => setFormData({...formData, mode: config.modeId})}
+                    className={`p-3 border rounded-xl text-left transition-all ${formData.mode === config.modeId ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-300'}`}
+                  >
+                    <h4 className="font-bold text-slate-800">{config.name}</h4>
+                    <p className="text-xs text-slate-500 mt-1">{config.description}</p>
+                  </button>
+                ))
+              ) : (
+                !configLoading && (
+                  <div className="col-span-full p-4 border border-slate-200 bg-slate-50 rounded-xl text-center">
+                    <p className="text-sm font-bold text-slate-600">No interview modes available</p>
+                    <p className="text-xs text-slate-500 mt-1">Please try again later or contact support.</p>
+                  </div>
+                )
+              )}
               {configLoading && (
                 <div className="p-3 border border-slate-200 rounded-xl text-slate-500 text-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading modes...
