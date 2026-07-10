@@ -132,7 +132,7 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
   if (this.isNew) {
     try {
       const Settings = mongoose.model('Settings');
@@ -146,7 +146,6 @@ userSchema.pre('save', async function (next) {
       console.error("Error setting default interview credits:", err);
     }
   }
-  next();
 });
 
 module.exports = mongoose.model("User", userSchema);
