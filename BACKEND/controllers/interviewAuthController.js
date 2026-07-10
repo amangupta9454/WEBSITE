@@ -59,8 +59,7 @@ exports.googleLogin = async (req, res) => {
         email: normalizedEmail,
         name: name || 'Unknown User',
         profileImage: picture || '',
-        mobile: 'Google Auth', // Required by User schema
-        interviewCredits: 30 // Default free credits
+        mobile: 'Google Auth' // Required by User schema
       });
       await user.save();
     }

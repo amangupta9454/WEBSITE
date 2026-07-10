@@ -132,5 +132,21 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+userSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    try {
+      const Settings = mongoose.model('Settings');
+      const freeTokensSetting = await Settings.findOne({ key: 'interviewFreeTokens' });
+      
+      // If we found the setting, and interviewCredits is currently at its schema default (30)
+      if (freeTokensSetting && freeTokensSetting.value !== undefined && this.interviewCredits === 30) {
+        this.interviewCredits = parseInt(freeTokensSetting.value);
+      }
+    } catch (err) {
+      console.error("Error setting default interview credits:", err);
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);
