@@ -1525,9 +1525,13 @@ const getRecentPayments = async (req, res) => {
           let pDate = internship.paymentDate;
           
           if (!pDate) {
-             // Fallback to appliedAt for payments made before paymentDate feature
-             pDate = internship.appliedAt;
-             if (!pDate) continue;
+             // Fallback to ProjectSubmission date for payments made before paymentDate feature
+             const submission = await ProjectSubmission.findOne({ studentId: internship.studentId }).sort({ submittedAt: -1 });
+             if (submission && submission.submittedAt) {
+                pDate = submission.submittedAt;
+             } else {
+                continue; // Skip if no valid date found
+             }
           }
 
           if (pDate >= sevenDaysAgo) {
