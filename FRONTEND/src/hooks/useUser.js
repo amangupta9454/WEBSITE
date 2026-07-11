@@ -2,7 +2,7 @@
 'use client'
 
 // 1. Import the 'supabase' instance directly
-import { supabase } from '@/services/supabaseClient' // Adjust path if needed
+import { supabase } from '../services/supabaseClient' // Adjust path if needed
 import { useEffect, useState } from 'react'
 
 export function useUser() {
