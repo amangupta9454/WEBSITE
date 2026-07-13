@@ -311,7 +311,6 @@ const ResumeBuilder = () => {
           top: '-9999px',
           left: '-9999px',
           width: '210mm',
-          pointerEvents: 'none',
           zIndex: -9999
         }}
       >
