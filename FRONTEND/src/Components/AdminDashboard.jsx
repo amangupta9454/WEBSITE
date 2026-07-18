@@ -2948,18 +2948,36 @@ const AdminDashboard = () => {
                                     </div>
                                   </td>
                                   <td className="py-3.5 px-4">
-                                    <button
-                                      onClick={() =>
-                                        setSelectedSubmissionsApp(app)
-                                      }
-                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
-                                    >
-                                      View ({app.submissions?.length || 0}/
-                                      {app.duration
-                                        ? parseInt(app.duration)
-                                        : 1}
-                                      )
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() =>
+                                          setSelectedSubmissionsApp(app)
+                                        }
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors border border-blue-200"
+                                      >
+                                        View ({app.submissions?.length || 0}/
+                                        {app.duration
+                                          ? parseInt(app.duration)
+                                          : 1}
+                                        )
+                                      </button>
+                                      {app.workflowVersion === 'v2' && (
+                                        <button
+                                          onClick={() =>
+                                            openAssignTasksModal(
+                                              app._id,
+                                              app.duration,
+                                              app.assignedNormalTasks || [],
+                                              app.workflowVersion,
+                                              app.v2Projects || []
+                                            )
+                                          }
+                                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-colors border border-indigo-200"
+                                        >
+                                          Assign Projects
+                                        </button>
+                                      )}
+                                    </div>
                                   </td>
                                 </>
                               )}
