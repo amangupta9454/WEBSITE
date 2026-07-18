@@ -111,6 +111,7 @@ const userSchema = new mongoose.Schema(
           }
         ],
         assignedNormalTasks: [{ type: String }],
+        workflowVersion: { type: String, default: "v1" },
         synergyPoints: { type: Number, default: 0 },
         pointsHistory: [
           {

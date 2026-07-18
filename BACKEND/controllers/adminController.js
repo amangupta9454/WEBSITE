@@ -61,6 +61,8 @@ const getInternships = async (req, res) => {
     const users = await User.find({ "internships.0": { $exists: true } }); // Users with at least one internship
     const allSubmissions = await ProjectSubmission.find({}); // Globally pull tracking histories
     const allCertificates = await Certificate.find({}); // Fetch all certificates to match studentId
+    const InternProject = require('../models/InternProject');
+    const allInternProjects = await InternProject.find({});
 
     const allApplications = [];
 
@@ -111,8 +113,13 @@ const getInternships = async (req, res) => {
           paymentAmount: app.paymentAmount || 0,
           refundAmount: app.refundAmount || 0,
           synergyPoints: app.synergyPoints || 0,
+          workflowVersion: app.workflowVersion || "v1",
           isCertificateVerified: isVerified,
           assignedRepos: app.assignedRepos || [],
+          assignedNormalTasks: app.assignedNormalTasks || [],
+          v2Projects: allInternProjects.filter(
+            (p) => String(p.studentId) === String(app.studentId)
+          ),
           submissions: allSubmissions.filter(
             (sub) => String(sub.studentId) === String(app.studentId),
           ),
@@ -193,6 +200,11 @@ const updateInternshipDetails = async (req, res) => {
     internship.totalMonths = totalMonths;
     if (certificateUrl) {
       internship.certificateUrl = certificateUrl;
+    }
+    
+    const V2_CUTOFF_DATE = new Date("2026-07-25T00:00:00Z");
+    if (start >= V2_CUTOFF_DATE) {
+      internship.workflowVersion = "v2";
     }
 
     await user.save();
@@ -467,6 +479,11 @@ const setStartDate = async (req, res) => {
     internship.startDate = start;
     internship.endDate = end;
     internship.totalMonths = totalMonths;
+    
+    const V2_CUTOFF_DATE = new Date("2026-07-25T00:00:00Z");
+    if (start >= V2_CUTOFF_DATE) {
+      internship.workflowVersion = "v2";
+    }
 
     await user.save();
 

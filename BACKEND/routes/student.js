@@ -13,4 +13,8 @@ router.post('/update-project-link', authMiddleware, updateProjectLink);
 router.post('/dismiss-notification', authMiddleware, dismissNotification);
 router.get('/leaderboard', getPublicLeaderboard);
 
+const { getV2Projects, submitV2Project } = require('../controllers/studentControllerV2');
+router.get('/v2-projects', authMiddleware, getV2Projects);
+router.post('/submit-v2-project', authMiddleware, submitV2Project);
+
 module.exports = router;

@@ -40,10 +40,13 @@ import {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
 
 // Normal Intern Dashboard Component
-const NormalInternDashboard = ({ internship, onRefresh }) => {
+const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
   const navigate = useNavigate();
   const [updatingLinkProjectId, setUpdatingLinkProjectId] = useState(null);
   const [updateLinkInputs, setUpdateLinkInputs] = useState({});
+  const [v2SubmissionModal, setV2SubmissionModal] = useState({ isOpen: false, project: null });
+  const [v2SubmitForm, setV2SubmitForm] = useState({ githubLink: '', liveLink: '', remarks: '' });
+  const [submittingV2, setSubmittingV2] = useState(false);
   const totalMonths = parseInt(internship.duration) || 1;
 
   const stages = [
@@ -154,6 +157,39 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
       toast.error("Failed to update project link.");
     } finally {
       setUpdatingLinkProjectId(null);
+    }
+  };
+
+  const handleV2Submit = async (e) => {
+    e.preventDefault();
+    if (!v2SubmitForm.githubLink || !v2SubmitForm.githubLink.startsWith("https://github.com/")) {
+      toast.error("Please enter a valid GitHub repository link.");
+      return;
+    }
+    
+    try {
+      setSubmittingV2(true);
+      const token = localStorage.getItem("studentToken");
+      await axios.post(
+        `${BACKEND_URL}/api/student/submit-v2-project`,
+        {
+          projectId: v2SubmissionModal.project._id,
+          githubLink: v2SubmitForm.githubLink,
+          liveLink: v2SubmitForm.liveLink,
+          remarks: v2SubmitForm.remarks
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      toast.success("Project submitted successfully!");
+      setV2SubmissionModal({ isOpen: false, project: null });
+      setV2SubmitForm({ githubLink: '', liveLink: '', remarks: '' });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error("Failed to submit project.");
+    } finally {
+      setSubmittingV2(false);
     }
   };
 
@@ -335,7 +371,72 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
             </div>
           </details>
         </div>
-        {isStarted ? (
+        {isStarted ? internship.workflowVersion === 'v2' ? (
+          <div className="space-y-8">
+            {Array.from({ length: totalMonths }).map((_, monthIdx) => {
+              const monthNum = monthIdx + 1;
+              const monthProjects = v2Projects.filter(p => p.studentId === internship.studentId && p.monthNumber === monthNum).sort((a,b) => a.projectNumber - b.projectNumber);
+              if (monthProjects.length === 0) return null;
+              
+              return (
+                <div key={monthIdx} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <Calendar className="text-blue-600 w-5 h-5" /> Month {monthNum} Projects
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    {monthProjects.map((proj, pIdx) => {
+                      const isLocked = proj.status === 'Locked';
+                      const isAvailable = proj.status === 'Available';
+                      const isSubmitted = proj.submission;
+                      
+                      return (
+                        <div key={pIdx} className={`p-4 border rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${isLocked ? "border-slate-200 bg-slate-50 opacity-75" : isSubmitted ? "border-emerald-200 bg-emerald-50" : "border-blue-200 bg-blue-50/30"}`}>
+                          <div>
+                            <h4 className={`font-bold text-lg leading-tight flex items-center gap-2 ${isLocked ? "text-slate-600" : isSubmitted ? "text-emerald-900" : "text-blue-900"}`}>
+                              {isLocked && <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px]">🔒</div>}
+                              {proj.projectName}
+                            </h4>
+                            <div className="flex items-center gap-3 mt-2">
+                              {proj.resources && (
+                                <a href={proj.resources} target="_blank" rel="noreferrer" className={`text-xs font-bold underline ${isLocked ? 'text-slate-400 pointer-events-none' : 'text-blue-600'}`}>View Resources</a>
+                              )}
+                              <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Deadline: {proj.deadline}</span>
+                            </div>
+                            {isLocked && (
+                              <p className="text-sm text-slate-500 mt-2 font-medium flex items-center gap-1.5">
+                                <Clock size={14} /> Unlocks on {new Date(proj.visibleFrom).toLocaleDateString("en-IN")}
+                              </p>
+                            )}
+                            {isSubmitted && proj.submission.aiStatus && (
+                              <p className="text-sm text-emerald-700 mt-2 font-medium">Status: {proj.submission.aiStatus}</p>
+                            )}
+                          </div>
+                          
+                          {isAvailable && (
+                            <button
+                              onClick={() => setV2SubmissionModal({ isOpen: true, project: proj })}
+                              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-sm flex items-center gap-2 justify-center shrink-0 text-sm"
+                            >
+                              Submit Project <ArrowRight size={16} />
+                            </button>
+                          )}
+                          
+                          {isSubmitted && (
+                            <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-bold flex items-center gap-2 justify-center shrink-0 text-sm">
+                              <CheckCircle size={16} /> Submitted
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
           <div className="space-y-4">
             {Array.from({
               length: Math.min(
@@ -485,6 +586,62 @@ const NormalInternDashboard = ({ internship, onRefresh }) => {
           </div>
         )}
       </div>
+
+      {v2SubmissionModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in border border-slate-200">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-800">Submit Project</h2>
+              <button 
+                onClick={() => setV2SubmissionModal({ isOpen: false, project: null })}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleV2Submit} className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-1">GitHub Repository Link *</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://github.com/..."
+                  value={v2SubmitForm.githubLink}
+                  onChange={(e) => setV2SubmitForm({...v2SubmitForm, githubLink: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-1">Live Demo Link (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={v2SubmitForm.liveLink}
+                  onChange={(e) => setV2SubmitForm({...v2SubmitForm, liveLink: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-1">Remarks (Optional)</label>
+                <textarea
+                  placeholder="Any additional details..."
+                  value={v2SubmitForm.remarks}
+                  onChange={(e) => setV2SubmitForm({...v2SubmitForm, remarks: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-24 resize-none"
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={submittingV2}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                {submittingV2 ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                Submit Project
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1075,8 +1232,22 @@ const StudentDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+      
+      let v2ProjectsData = [];
+      try {
+        const v2Res = await axios.get(`${BACKEND_URL}/api/student/v2-projects`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        v2ProjectsData = v2Res.data;
+      } catch (err) {
+        console.error("Failed to fetch v2 projects", err);
+      }
 
-      setData(response.data);
+      setData({
+        ...response.data,
+        v2Projects: v2ProjectsData
+      });
+      
       if (response.data.internships?.length > 0) {
         const now = new Date();
         const activeInternship = response.data.internships.find(internship => {
@@ -1394,7 +1565,11 @@ const StudentDashboard = () => {
                           onRefresh={fetchDashboard}
                         />
                       ) : (
-                        <NormalInternDashboard internship={internship} />
+                        <NormalInternDashboard
+                          internship={internship}
+                          onRefresh={fetchDashboard}
+                          v2Projects={data.v2Projects}
+                        />
                       )}
                     </div>
                   );

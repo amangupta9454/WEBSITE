@@ -50,6 +50,7 @@ const {
   getJobPortalSetting,
   toggleJobPortalSetting,
 } = require("../controllers/adminController");
+const { assignV2Projects } = require("../controllers/adminControllerV2");
 const auth = require("../middleware/auth");
 const { verifyAdmin } = require("../middleware/verifyAdmin");
 
@@ -85,6 +86,7 @@ router.delete("/summer-projects/:id", auth, verifyAdmin, deleteSummerProject);
 router.post("/update-assigned-repo", auth, verifyAdmin, updateAssignedRepo);
 router.post("/review-summer-project", auth, verifyAdmin, reviewSummerProject);
 router.post("/assign-normal-tasks", auth, verifyAdmin, assignNormalTasks);
+router.post("/assign-v2-projects", auth, verifyAdmin, assignV2Projects);
 router.post("/manual-accept-assignment", auth, verifyAdmin, manualAcceptAssignment);
 
 router.get("/normal-tasks", auth, verifyAdmin, getNormalTasks);

@@ -79,6 +79,8 @@ const AdminDashboard = () => {
     appId: null,
     duration: 1,
     tasks: [],
+    workflowVersion: "v1",
+    v2Projects: []
   });
   const [selectedApplications, setSelectedApplications] = useState([]);
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
@@ -273,39 +275,69 @@ const AdminDashboard = () => {
     }
   };
 
-  const openAssignTasksModal = (appId, durationStr, existingTasks = []) => {
+  const openAssignTasksModal = (appId, durationStr, existingTasks = [], workflowVersion = "v1", existingV2Projects = []) => {
     const totalMonths = parseInt(durationStr.split(" ")[0], 10) || 1;
     const initialTasks = Array.from({ length: totalMonths }).map(
       (_, i) => existingTasks[i] || "",
     );
+    
+    let v2Projects = [];
+    if (workflowVersion === "v2") {
+      v2Projects = Array.from({ length: totalMonths * 2 }).map((_, i) => {
+        const monthNumber = Math.floor(i / 2) + 1;
+        const projectNumber = (i % 2) + 1;
+        const existing = existingV2Projects.find(p => p.monthNumber === monthNumber && p.projectNumber === projectNumber);
+        return existing ? { ...existing } : { monthNumber, projectNumber, title: "", description: "", deadline: "", repository: "", resources: "" };
+      });
+    }
+
     setAssignTasksModal({
       isOpen: true,
       appId,
       duration: totalMonths,
       tasks: initialTasks,
+      workflowVersion,
+      v2Projects,
     });
   };
 
   const handleAssignTasksSubmit = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const { appId, tasks } = assignTasksModal;
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-normal-tasks`,
-        {
-          applicationId: appId,
-          tasks,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const { appId, tasks, workflowVersion, v2Projects } = assignTasksModal;
+      
+      if (workflowVersion === "v2") {
+        await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-v2-projects`,
+          {
+            applicationId: appId,
+            projects: v2Projects,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      } else {
+        await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/assign-normal-tasks`,
+          {
+            applicationId: appId,
+            tasks,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      }
+      
       toast.success("Tasks assigned successfully");
       setAssignTasksModal({
         isOpen: false,
         appId: null,
         duration: 1,
         tasks: [],
+        workflowVersion: "v1",
+        v2Projects: []
       });
       fetchApplications(token);
     } catch (err) {
@@ -1500,6 +1532,8 @@ const AdminDashboard = () => {
                     appId: null,
                     duration: 1,
                     tasks: [],
+                    workflowVersion: "v1",
+                    v2Projects: []
                   })
                 }
                 className="text-slate-400 hover:text-slate-600"
@@ -1510,11 +1544,13 @@ const AdminDashboard = () => {
 
             <div className="p-6 overflow-y-auto space-y-4">
               <p className="text-sm text-slate-500 mb-4">
-                Assign a specific task topic for each month of the internship.
+                {assignTasksModal.workflowVersion === "v2" 
+                  ? "Assign 2 projects per month for the V2 Workflow." 
+                  : "Assign a specific task topic for each month of the internship."}
                 These will unlock automatically for the student.
               </p>
 
-              {assignTasksModal.tasks.map((task, idx) => (
+              {assignTasksModal.workflowVersion === "v1" && assignTasksModal.tasks.map((task, idx) => (
                 <div key={idx}>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Month {idx + 1} Task
@@ -1535,6 +1571,59 @@ const AdminDashboard = () => {
                   />
                 </div>
               ))}
+
+              {assignTasksModal.workflowVersion === "v2" && assignTasksModal.v2Projects.map((proj, idx) => (
+                <div key={idx} className="border border-slate-200 p-4 rounded-lg bg-slate-50 space-y-3">
+                  <h4 className="font-semibold text-slate-700">Month {proj.monthNumber} - Project {proj.projectNumber}</h4>
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
+                    <input type="text" value={proj.title} onChange={(e) => {
+                      const newProjects = [...assignTasksModal.v2Projects];
+                      newProjects[idx].title = e.target.value;
+                      setAssignTasksModal({ ...assignTasksModal, v2Projects: newProjects });
+                    }} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Project Title" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                    <textarea value={proj.description} onChange={(e) => {
+                      const newProjects = [...assignTasksModal.v2Projects];
+                      newProjects[idx].description = e.target.value;
+                      setAssignTasksModal({ ...assignTasksModal, v2Projects: newProjects });
+                    }} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Project Description"></textarea>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Deadline</label>
+                      <input type="text" value={proj.deadline} onChange={(e) => {
+                        const newProjects = [...assignTasksModal.v2Projects];
+                        newProjects[idx].deadline = e.target.value;
+                        setAssignTasksModal({ ...assignTasksModal, v2Projects: newProjects });
+                      }} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="e.g. 15 Days" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Repository Setup</label>
+                      <input type="text" value={proj.repository} onChange={(e) => {
+                        const newProjects = [...assignTasksModal.v2Projects];
+                        newProjects[idx].repository = e.target.value;
+                        setAssignTasksModal({ ...assignTasksModal, v2Projects: newProjects });
+                      }} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Template Link (optional)" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Resources</label>
+                    <input type="text" value={proj.resources} onChange={(e) => {
+                      const newProjects = [...assignTasksModal.v2Projects];
+                      newProjects[idx].resources = e.target.value;
+                      setAssignTasksModal({ ...assignTasksModal, v2Projects: newProjects });
+                    }} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="PDF/Doc Link" />
+                  </div>
+                </div>
+              ))}
+
             </div>
 
             <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
@@ -1545,9 +1634,11 @@ const AdminDashboard = () => {
                     appId: null,
                     duration: 1,
                     tasks: [],
+                    workflowVersion: "v1",
+                    v2Projects: []
                   })
                 }
-                className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>

@@ -29,6 +29,7 @@ const jobRoutes = require("./routes/jobs");
 const otpRoutes = require("./routes/otp");
 const interviewConfigRoutes = require("./routes/interviewConfigRoutes");
 const InterviewConfigInitializer = require("./initializers/InterviewConfigInitializer");
+require("./scripts/v2NotificationsCron");
 
 // Global cached connection (very important for serverless!)
 let cachedDb = null;
