@@ -50,7 +50,7 @@ const {
   getJobPortalSetting,
   toggleJobPortalSetting,
 } = require("../controllers/adminController");
-const { assignV2Projects } = require("../controllers/adminControllerV2");
+const { assignV2Projects, saveV2GlobalTask, getV2GlobalTasks, deleteV2GlobalTask } = require("../controllers/adminControllerV2");
 const auth = require("../middleware/auth");
 const { verifyAdmin } = require("../middleware/verifyAdmin");
 
@@ -92,6 +92,10 @@ router.post("/manual-accept-assignment", auth, verifyAdmin, manualAcceptAssignme
 router.get("/normal-tasks", auth, verifyAdmin, getNormalTasks);
 router.post("/normal-tasks", auth, verifyAdmin, upload.single("pdf"), createNormalTask);
 router.delete("/normal-tasks/:id", auth, verifyAdmin, deleteNormalTask);
+
+router.get("/v2-global-tasks", auth, verifyAdmin, getV2GlobalTasks);
+router.post("/v2-global-tasks", auth, verifyAdmin, saveV2GlobalTask);
+router.delete("/v2-global-tasks/:id", auth, verifyAdmin, deleteV2GlobalTask);
 
 router.get("/settings/payment", getPaymentSetting);
 router.post("/settings/payment", auth, verifyAdmin, togglePaymentSetting);

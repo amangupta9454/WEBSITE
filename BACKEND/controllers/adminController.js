@@ -205,6 +205,51 @@ const updateInternshipDetails = async (req, res) => {
     const V2_CUTOFF_DATE = new Date("2026-07-25T00:00:00Z");
     if (start >= V2_CUTOFF_DATE) {
       internship.workflowVersion = "v2";
+      
+      // Auto-assign V2 projects if it's a Normal Intern
+      if (internship.internshipType === "Normal Intern" || !internship.internshipType) {
+        const V2GlobalTask = require("../models/V2GlobalTask");
+        const InternProject = require("../models/InternProject");
+        
+        const globalV2Tasks = await V2GlobalTask.find({ domain: internship.domain }).sort({ monthNumber: 1 });
+        
+        let projectsToCreate = [];
+        for (let m = 1; m <= totalMonths; m++) {
+          const monthTemplate = globalV2Tasks.find(t => t.monthNumber === m);
+          if (monthTemplate && monthTemplate.projects) {
+            monthTemplate.projects.forEach(proj => {
+              let visibleFrom = new Date(start);
+              visibleFrom.setMonth(visibleFrom.getMonth() + (m - 1));
+              
+              if (proj.projectNumber === 2) {
+                visibleFrom.setDate(visibleFrom.getDate() + 15);
+              }
+              
+              projectsToCreate.push({
+                internId: applicationId,
+                studentId: internship.studentId,
+                monthNumber: m,
+                projectNumber: proj.projectNumber,
+                title: proj.projectName,
+                projectName: proj.projectName,
+                deadline: proj.deadline,
+                repository: proj.repository || "",
+                resources: proj.resources || "",
+                visibleFrom: visibleFrom,
+                status: 'Available'
+              });
+            });
+          }
+        }
+        
+        if (projectsToCreate.length > 0) {
+          // Check if already assigned to avoid duplicates if start date is changed
+          const existingProjects = await InternProject.find({ internId: applicationId });
+          if (existingProjects.length === 0) {
+             await InternProject.insertMany(projectsToCreate);
+          }
+        }
+      }
     }
 
     await user.save();
@@ -483,6 +528,51 @@ const setStartDate = async (req, res) => {
     const V2_CUTOFF_DATE = new Date("2026-07-25T00:00:00Z");
     if (start >= V2_CUTOFF_DATE) {
       internship.workflowVersion = "v2";
+      
+      // Auto-assign V2 projects if it's a Normal Intern
+      if (internship.internshipType === "Normal Intern" || !internship.internshipType) {
+        const V2GlobalTask = require("../models/V2GlobalTask");
+        const InternProject = require("../models/InternProject");
+        
+        const globalV2Tasks = await V2GlobalTask.find({ domain: internship.domain }).sort({ monthNumber: 1 });
+        
+        let projectsToCreate = [];
+        for (let m = 1; m <= totalMonths; m++) {
+          const monthTemplate = globalV2Tasks.find(t => t.monthNumber === m);
+          if (monthTemplate && monthTemplate.projects) {
+            monthTemplate.projects.forEach(proj => {
+              let visibleFrom = new Date(start);
+              visibleFrom.setMonth(visibleFrom.getMonth() + (m - 1));
+              
+              if (proj.projectNumber === 2) {
+                visibleFrom.setDate(visibleFrom.getDate() + 15);
+              }
+              
+              projectsToCreate.push({
+                internId: applicationId,
+                studentId: internship.studentId,
+                monthNumber: m,
+                projectNumber: proj.projectNumber,
+                title: proj.projectName,
+                projectName: proj.projectName,
+                deadline: proj.deadline,
+                repository: proj.repository || "",
+                resources: proj.resources || "",
+                visibleFrom: visibleFrom,
+                status: 'Available'
+              });
+            });
+          }
+        }
+        
+        if (projectsToCreate.length > 0) {
+          // Check if already assigned to avoid duplicates if start date is changed
+          const existingProjects = await InternProject.find({ internId: applicationId });
+          if (existingProjects.length === 0) {
+             await InternProject.insertMany(projectsToCreate);
+          }
+        }
+      }
     }
 
     await user.save();
@@ -970,6 +1060,54 @@ const bulkUpdate = async (req, res) => {
         internship.endDate = end;
         internship.totalMonths = totalMonths;
         needsSave = true;
+        
+        const V2_CUTOFF_DATE = new Date("2026-07-25T00:00:00Z");
+        if (start >= V2_CUTOFF_DATE) {
+          internship.workflowVersion = "v2";
+          
+          if (internship.internshipType === "Normal Intern" || !internship.internshipType) {
+            const V2GlobalTask = require("../models/V2GlobalTask");
+            const InternProject = require("../models/InternProject");
+            
+            const globalV2Tasks = await V2GlobalTask.find({ domain: internship.domain }).sort({ monthNumber: 1 });
+            
+            let projectsToCreate = [];
+            for (let m = 1; m <= totalMonths; m++) {
+              const monthTemplate = globalV2Tasks.find(t => t.monthNumber === m);
+              if (monthTemplate && monthTemplate.projects) {
+                monthTemplate.projects.forEach(proj => {
+                  let visibleFrom = new Date(start);
+                  visibleFrom.setMonth(visibleFrom.getMonth() + (m - 1));
+                  
+                  if (proj.projectNumber === 2) {
+                    visibleFrom.setDate(visibleFrom.getDate() + 15);
+                  }
+                  
+                  projectsToCreate.push({
+                    internId: appId,
+                    studentId: internship.studentId,
+                    monthNumber: m,
+                    projectNumber: proj.projectNumber,
+                    title: proj.projectName,
+                    projectName: proj.projectName,
+                    deadline: proj.deadline,
+                    repository: proj.repository || "",
+                    resources: proj.resources || "",
+                    visibleFrom: visibleFrom,
+                    status: 'Available'
+                  });
+                });
+              }
+            }
+            
+            if (projectsToCreate.length > 0) {
+              const existingProjects = await InternProject.find({ internId: appId });
+              if (existingProjects.length === 0) {
+                 await InternProject.insertMany(projectsToCreate);
+              }
+            }
+          }
+        }
       }
 
       if (updates.offerLetterStatus !== undefined && updates.offerLetterStatus !== "") {

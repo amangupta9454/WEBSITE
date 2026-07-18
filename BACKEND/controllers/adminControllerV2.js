@@ -71,4 +71,55 @@ const assignV2Projects = async (req, res) => {
   }
 };
 
-module.exports = { assignV2Projects };
+const V2GlobalTask = require("../models/V2GlobalTask");
+
+const saveV2GlobalTask = async (req, res) => {
+  try {
+    const { domain, monthNumber, projects } = req.body;
+    
+    if (!domain || !monthNumber || !projects || !Array.isArray(projects)) {
+      return res.status(400).json({ message: "Domain, monthNumber, and projects array are required." });
+    }
+
+    let globalTask = await V2GlobalTask.findOne({ domain, monthNumber });
+    
+    if (globalTask) {
+      globalTask.projects = projects;
+    } else {
+      globalTask = new V2GlobalTask({
+        domain,
+        monthNumber,
+        projects
+      });
+    }
+
+    await globalTask.save();
+    res.json({ message: "V2 global task saved successfully", globalTask });
+  } catch (error) {
+    console.error("[Admin] Error saving v2 global task:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getV2GlobalTasks = async (req, res) => {
+  try {
+    const tasks = await V2GlobalTask.find().sort({ domain: 1, monthNumber: 1 });
+    res.json(tasks);
+  } catch (error) {
+    console.error("[Admin] Error fetching v2 global tasks:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteV2GlobalTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await V2GlobalTask.findByIdAndDelete(id);
+    res.json({ message: "Task deleted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error deleting V2 global task:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { assignV2Projects, saveV2GlobalTask, getV2GlobalTasks, deleteV2GlobalTask };
