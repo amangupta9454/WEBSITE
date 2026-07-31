@@ -173,7 +173,7 @@ app.get("/", (req, res) => {
 });
 
 // Sentry Error Handler (must be before any other error middleware)
-if (process.env.SENTRY_DSN) {
+if (Sentry && Sentry.Handlers && process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
@@ -187,8 +187,10 @@ try {
 
 
 // Export for Vercel serverless
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module || !process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
 
 // Test WhatsApp Endpoint (Remove in production)
 app.post("/api/test-wa", (req, res) => {

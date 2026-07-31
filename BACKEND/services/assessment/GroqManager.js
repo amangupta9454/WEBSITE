@@ -10,7 +10,12 @@
  * - All AI requests MUST pass through this manager
  */
 
-const Groq = require("groq-sdk");
+let Groq = null;
+try {
+  Groq = require("groq-sdk");
+} catch (err) {
+  console.warn("[GroqManager] groq-sdk module not available:", err.message);
+}
 
 const COOLDOWN_MS   = 60 * 1000;  // 1 minute cooldown on error
 const MONITOR_MS    = 30 * 1000;  // Health monitor interval
@@ -41,7 +46,7 @@ class GroqManager {
     this.keys = envKeys.map((key, idx) => ({
       index:          idx,
       key,
-      client:         new Groq({ apiKey: key }),
+      client:         Groq ? new Groq({ apiKey: key }) : null,
       status:         "healthy", // "healthy" | "cooldown"
       cooldownUntil:  null,
       totalRequests:  0,
