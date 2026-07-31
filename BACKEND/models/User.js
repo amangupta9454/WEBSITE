@@ -132,6 +132,9 @@ const userSchema = new mongoose.Schema(
     ],
     referredByCode: { type: String, default: null },
     referredAt: { type: Date },
+    isAmbassador: { type: Boolean, default: false },
+    ambassadorCode: { type: String, default: null },
+    ambassadorCollege: { type: String, default: "" },
   },
   { timestamps: true },
 );

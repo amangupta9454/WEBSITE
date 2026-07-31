@@ -40,6 +40,14 @@ const referralSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isAmbassador: {
+      type: Boolean,
+      default: false,
+    },
+    ambassadorEmail: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

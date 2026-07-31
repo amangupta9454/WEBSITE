@@ -1,26 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { LayoutDashboard, Briefcase } from "lucide-react";
+import { LayoutDashboard, Briefcase, GraduationCap } from "lucide-react";
+import axios from "axios";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
+import AmbassadorTab from "../Components/AmbassadorTab";
 import DashboardTopSection from "./InterviewPortal/components/DashboardTopSection";
 
 export default function UnifiedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isIntern, setIsIntern] = useState(false);
+  const [isAmbassador, setIsAmbassador] = useState(false);
 
   useEffect(() => {
-    // Check if user is an intern
-    const checkRole = () => {
+    // Check if user is an intern or ambassador
+    const checkRole = async () => {
       const role = localStorage.getItem("interviewUserRole");
       setIsIntern(role === "intern");
+
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("adminToken");
+      if (token) {
+        try {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+          const res = await axios.get(`${apiUrl}/api/student/ambassador-stats`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.data.success) {
+            setIsAmbassador(true);
+          }
+        } catch (e) {
+          setIsAmbassador(false);
+        }
+      }
     };
     checkRole();
-    
-    // Sometimes the role is set after the API call in InterviewDashboard,
-    // so we can poll or rely on it being set when the component loads.
-    // For a robust check, we can listen for local storage changes or check periodically.
-    const interval = setInterval(checkRole, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -61,12 +73,27 @@ export default function UnifiedDashboard() {
               Intern Dashboard
             </button>
           )}
+
+          {isAmbassador && (
+            <button
+              onClick={() => setActiveTab("ambassador")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
+                activeTab === "ambassador"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              Campus Ambassador
+            </button>
+          )}
         </div>
       </div>
 
       <div className="relative z-[60] w-full max-w-6xl mx-auto">
         {activeTab === "overview" && <InterviewDashboard />}
         {activeTab === "internship" && isIntern && <StudentDashboard />}
+        {activeTab === "ambassador" && isAmbassador && <AmbassadorTab />}
       </div>
     </div>
   );

@@ -206,3 +206,178 @@ exports.trackClick = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Admin: Assign or update a Campus Ambassador
+exports.assignAmbassador = async (req, res) => {
+  try {
+    const { email, customCode, college } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "User email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found with this email" });
+    }
+
+    const code = customCode
+      ? customCode.trim().toUpperCase()
+      : user.ambassadorCode || `AMB-${user.name?.split(" ")[0]?.toUpperCase() || "CAM"}${Math.floor(100 + Math.random() * 900)}`;
+
+    user.isAmbassador = true;
+    user.ambassadorCode = code;
+    user.ambassadorCollege = college || user.ambassadorCollege || "";
+    await user.save();
+
+    // Create or update referral document for ambassador
+    let referral = await Referral.findOne({ code });
+    if (!referral) {
+      referral = new Referral({
+        code,
+        createdBy: user.email,
+        targetEmail: user.email,
+        featureTarget: "General",
+        notes: `Campus Ambassador - ${user.name} (${college || "N/A"})`,
+        isAmbassador: true,
+        ambassadorEmail: user.email,
+      });
+    } else {
+      referral.isAmbassador = true;
+      referral.ambassadorEmail = user.email;
+      referral.notes = `Campus Ambassador - ${user.name} (${college || "N/A"})`;
+    }
+    await referral.save();
+
+    res.json({
+      success: true,
+      message: `${user.name} is now designated as Campus Ambassador with code ${code}`,
+      ambassador: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        isAmbassador: user.isAmbassador,
+        ambassadorCode: user.ambassadorCode,
+        ambassadorCollege: user.ambassadorCollege,
+      },
+    });
+  } catch (error) {
+    console.error("Error assigning ambassador:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Get all Campus Ambassadors and their referral stats
+exports.getAmbassadors = async (req, res) => {
+  try {
+    const ambassadors = await User.find({
+      $or: [{ isAmbassador: true }, { ambassadorCode: { $ne: null, $exists: true, $ne: "" } }]
+    }).sort({ createdAt: -1 }).lean();
+
+    const referralCodes = ambassadors.map((a) => a.ambassadorCode).filter(Boolean);
+    const referrals = await Referral.find({ code: { $in: referralCodes } }).lean();
+    const refMap = {};
+    referrals.forEach((r) => {
+      refMap[r.code] = r;
+    });
+
+    const conversions = await User.find({
+      referredByCode: { $in: referralCodes }
+    }).lean();
+
+    const ambList = ambassadors.map((amb) => {
+      const code = amb.ambassadorCode;
+      const refData = refMap[code] || {};
+      const referredUsers = conversions.filter((c) => c.referredByCode === code);
+
+      return {
+        _id: amb._id,
+        name: amb.name,
+        email: amb.email,
+        mobile: amb.mobile,
+        ambassadorCode: amb.ambassadorCode,
+        ambassadorCollege: amb.ambassadorCollege || "N/A",
+        clicks: refData.clicks || 0,
+        usesCount: referredUsers.length,
+        referredUsers: referredUsers.map((u) => {
+          const appliedFeatures = [];
+          if (u.internships && u.internships.length > 0) {
+            u.internships.forEach((i) => appliedFeatures.push(`Internship (${i.domain || "General"})`));
+          }
+          if (u.resumeData && Object.keys(u.resumeData).length > 0) appliedFeatures.push("AI Resume Created");
+          if (appliedFeatures.length === 0) appliedFeatures.push("Account Registered");
+
+          return {
+            _id: u._id,
+            name: u.name,
+            email: u.email,
+            mobile: u.mobile, // Phone number
+            appliedFeatures: appliedFeatures.join(", "),
+            registeredAt: u.referredAt || u.createdAt
+          };
+        })
+      };
+    });
+
+    res.json({
+      success: true,
+      ambassadors: ambList
+    });
+  } catch (error) {
+    console.error("Error getting ambassadors:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Student Dashboard: Get Ambassador stats for logged-in ambassador
+exports.getStudentAmbassadorStats = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const user = await User.findById(userId).lean();
+
+    if (!user || (!user.isAmbassador && !user.ambassadorCode)) {
+      return res.status(403).json({ success: false, message: "User is not a Campus Ambassador" });
+    }
+
+    const code = user.ambassadorCode;
+    const refData = await Referral.findOne({ code }).lean();
+
+    const referredUsers = await User.find({ referredByCode: code }).sort({ createdAt: -1 }).lean();
+
+    const conversions = referredUsers.map((u) => {
+      const appliedFeatures = [];
+      if (u.internships && u.internships.length > 0) {
+        u.internships.forEach((i) => appliedFeatures.push(`Internship (${i.domain || "General"})`));
+      }
+      if (u.resumeData && Object.keys(u.resumeData).length > 0) appliedFeatures.push("AI Resume Created");
+      if (u.interviewCredits !== undefined) appliedFeatures.push(`Interview Access (${u.interviewCredits} credits)`);
+      if (appliedFeatures.length === 0) appliedFeatures.push("Account Registered");
+
+      return {
+        _id: u._id,
+        name: u.name || "N/A",
+        email: u.email || "N/A",
+        mobile: u.mobile || "N/A", // Phone number
+        appliedFeatures: appliedFeatures.join(", "),
+        appliedItems: appliedFeatures,
+        registeredAt: u.referredAt || u.createdAt
+      };
+    });
+
+    res.json({
+      success: true,
+      ambassadorCode: code,
+      ambassadorCollege: user.ambassadorCollege || "",
+      clicks: refData?.clicks || 0,
+      totalSignups: conversions.length,
+      conversions
+    });
+  } catch (error) {
+    console.error("Error in getStudentAmbassadorStats:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

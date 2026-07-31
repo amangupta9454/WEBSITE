@@ -1491,6 +1491,25 @@ const StudentDashboard = () => {
           </button>
         </div>
 
+        {/* Campus Ambassador Banner (Visible only for Ambassadors) */}
+        {(data?.user?.isAmbassador || data?.user?.ambassadorCode) && (
+          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-purple-800/50 mb-4 sm:mb-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded">
+                  Official Campus Ambassador
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white mt-1">
+                  Ambassador Code: <span className="font-mono text-amber-300">{data.user.ambassadorCode}</span>
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Synergy Info Modal */}
         {isSynergyInfoOpen && createPortal(
           <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">

@@ -59,6 +59,8 @@ const {
   deleteReferralCode,
   getReferredUsers,
   trackClick,
+  assignAmbassador,
+  getAmbassadors,
 } = require("../controllers/referralController");
 const auth = require("../middleware/auth");
 const { verifyAdmin } = require("../middleware/verifyAdmin");
@@ -76,6 +78,10 @@ router.post("/referrals/toggle/:id", auth, verifyAdmin, toggleReferralStatus);
 router.delete("/referrals/:id", auth, verifyAdmin, deleteReferralCode);
 router.get("/referrals/conversions", auth, verifyAdmin, getReferredUsers);
 router.post("/referrals/track-click", trackClick);
+
+// Campus Ambassador Admin routes
+router.get("/ambassadors", auth, verifyAdmin, getAmbassadors);
+router.post("/ambassadors/assign", auth, verifyAdmin, assignAmbassador);
 router.get("/recent-payments", auth, verifyAdmin, getRecentPayments);
 router.post("/mark-downloaded", auth, verifyAdmin, markDownloaded);
 router.post("/update-internship", auth, verifyAdmin, updateInternshipDetails);

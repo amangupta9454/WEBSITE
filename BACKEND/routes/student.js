@@ -14,7 +14,9 @@ router.post('/dismiss-notification', authMiddleware, dismissNotification);
 router.get('/leaderboard', getPublicLeaderboard);
 
 const { getV2Projects, submitV2Project } = require('../controllers/studentControllerV2');
+const { getStudentAmbassadorStats } = require('../controllers/referralController');
 router.get('/v2-projects', authMiddleware, getV2Projects);
 router.post('/submit-v2-project', authMiddleware, submitV2Project);
+router.get('/ambassador-stats', authMiddleware, getStudentAmbassadorStats);
 
 module.exports = router;
