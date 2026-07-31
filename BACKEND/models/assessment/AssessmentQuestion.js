@@ -78,6 +78,54 @@ assessmentQuestionSchema.pre("save", function (next) {
   next();
 });
 
+// ── Static Helper: Automatically synchronize question inventory counts ────────
+assessmentQuestionSchema.statics.syncInventory = async function (subcategoryId, categoryId) {
+  try {
+    const Subcategory = mongoose.model("AssessmentSubcategory");
+    const Category    = mongoose.model("AssessmentCategory");
+
+    if (subcategoryId) {
+      const subCount = await this.countDocuments({ subcategoryId, status: "approved" });
+      await Subcategory.findByIdAndUpdate(subcategoryId, { currentQuestionCount: subCount }).catch(() => {});
+    }
+
+    if (categoryId) {
+      const totalCount = await this.countDocuments({ categoryId, status: "approved" });
+      const aiCount    = await this.countDocuments({ categoryId, status: "approved", source: "AI" });
+      const manualCount= await this.countDocuments({ categoryId, status: "approved", source: "manual" });
+      const csvCount   = await this.countDocuments({ categoryId, status: "approved", source: "csv" });
+      
+      await Category.findByIdAndUpdate(categoryId, {
+        currentQuestionCount: totalCount,
+        totalAiQuestions: aiCount,
+        totalManualQuestions: manualCount,
+        totalCsvQuestions: csvCount,
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.error("[AssessmentQuestion] Failed to sync inventory counts:", err);
+  }
+};
+
+// Mongoose hooks to keep inventory perfectly synchronized
+assessmentQuestionSchema.post("save", function (doc) {
+  if (doc) {
+    doc.constructor.syncInventory(doc.subcategoryId, doc.categoryId);
+  }
+});
+
+assessmentQuestionSchema.post("findOneAndDelete", function (doc) {
+  if (doc) {
+    mongoose.model("AssessmentQuestion").syncInventory(doc.subcategoryId, doc.categoryId);
+  }
+});
+
+assessmentQuestionSchema.post("findOneAndUpdate", function (doc) {
+  if (doc) {
+    mongoose.model("AssessmentQuestion").syncInventory(doc.subcategoryId, doc.categoryId);
+  }
+});
+
 assessmentQuestionSchema.index({ subcategoryId: 1, difficulty: 1, status: 1 });
 assessmentQuestionSchema.index({ hash: 1 }, { unique: true });
 

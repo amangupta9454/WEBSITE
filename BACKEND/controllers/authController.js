@@ -29,6 +29,10 @@ const loginStudent = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or Student ID" });
     }
 
+    // Seamlessly sync and merge any pre-assigned Campus Ambassador data upon student login
+    const { syncAndMergeAmbassadorData } = require('./referralController');
+    await syncAndMergeAmbassadorData(user, normalizedEmail);
+
     const token = jwt.sign(
       { id: user._id, email: user.email, studentId: internship.studentId },
       process.env.JWT_SECRET,

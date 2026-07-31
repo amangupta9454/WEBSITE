@@ -87,6 +87,10 @@ exports.googleLogin = async (req, res) => {
       await recordReferralActivity(user, referralCode, featureTarget);
     }
     
+    // Seamlessly sync and merge any pre-assigned Campus Ambassador data upon Google login/signup
+    const { syncAndMergeAmbassadorData } = require('./referralController');
+    await syncAndMergeAmbassadorData(user, normalizedEmail);
+
     // Determine role based on explicit role field, fallback to internships array
     const isIntern = user.role === 'intern' || (user.internships && user.internships.length > 0);
     const role = isIntern ? 'intern' : 'interview_user';

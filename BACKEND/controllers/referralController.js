@@ -216,21 +216,42 @@ exports.assignAmbassador = async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({
+    let user = await User.findOne({
       email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") }
     });
 
+    // If user account doesn't exist yet, create a pre-registered ambassador record so admin can assign anyone
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found with this email" });
+      const usernameFromEmail = normalizedEmail.split('@')[0];
+      const defaultName = req.body.name || (usernameFromEmail.charAt(0).toUpperCase() + usernameFromEmail.slice(1));
+      user = new User({
+        name: defaultName,
+        email: normalizedEmail,
+        mobile: "Pending Registration",
+        isAmbassador: true,
+        ambassadorCollege: college || "N/A",
+      });
     }
 
-    const code = customCode
+    let code = customCode
       ? customCode.trim().toUpperCase()
-      : user.ambassadorCode || `AMB-${user.name?.split(" ")[0]?.toUpperCase() || "CAM"}${Math.floor(100 + Math.random() * 900)}`;
+      : user.ambassadorCode;
+
+    if (!code) {
+      const basePrefix = (user.name?.split(" ")[0] || "CAM").replace(/[^a-zA-Z]/g, "").toUpperCase() || "CAM";
+      let isUnique = false;
+      let tempCode = "";
+      while (!isUnique) {
+        tempCode = `AMB-${basePrefix}${Math.floor(100 + Math.random() * 900)}`;
+        const exists = await Referral.findOne({ code: tempCode });
+        if (!exists) isUnique = true;
+      }
+      code = tempCode;
+    }
 
     user.isAmbassador = true;
     user.ambassadorCode = code;
-    user.ambassadorCollege = college || user.ambassadorCollege || "";
+    user.ambassadorCollege = college || user.ambassadorCollege || "N/A";
     await user.save();
 
     // Create or update referral document for ambassador
@@ -238,23 +259,60 @@ exports.assignAmbassador = async (req, res) => {
     if (!referral) {
       referral = new Referral({
         code,
-        createdBy: user.email,
+        createdBy: req.user?.email || "admin",
         targetEmail: user.email,
         featureTarget: "General",
-        notes: `Campus Ambassador - ${user.name} (${college || "N/A"})`,
+        notes: `Campus Ambassador - ${user.name} (${user.ambassadorCollege || "N/A"})`,
         isAmbassador: true,
         ambassadorEmail: user.email,
       });
     } else {
       referral.isAmbassador = true;
       referral.ambassadorEmail = user.email;
-      referral.notes = `Campus Ambassador - ${user.name} (${college || "N/A"})`;
+      referral.notes = `Campus Ambassador - ${user.name} (${user.ambassadorCollege || "N/A"})`;
     }
     await referral.save();
 
+    // Send notification email if nodemailer credentials are configured
+    if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD && typeof mailTransporter !== "undefined") {
+      const mailOptions = {
+        from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: "🎉 You have been designated as a Campus Ambassador at Code-A-Nova!",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #4f46e5; margin: 0;">Code-A-Nova Campus Ambassador Program</h2>
+              <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Represent. Inspire. Innovate.</p>
+            </div>
+            <p style="color: #334155; font-size: 16px;">Dear <strong>${user.name}</strong>,</p>
+            <p style="color: #334155; line-height: 1.6;">
+              You have been directly designated as a <strong>Campus Ambassador at Code-A-Nova</strong>! 🎉
+            </p>
+            <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; padding: 16px; margin: 20px 0; border-radius: 8px;">
+              <p style="margin: 0 0 8px 0; color: #1e293b; font-weight: bold;">Your Official Ambassador Details:</p>
+              <p style="margin: 4px 0; color: #475569;">College: <strong>${user.ambassadorCollege || "N/A"}</strong></p>
+              <p style="margin: 4px 0; color: #475569;">Ambassador Code: <strong style="color: #4f46e5; font-family: monospace; font-size: 16px;">${user.ambassadorCode}</strong></p>
+            </div>
+            <p style="color: #334155; line-height: 1.6;">
+              When you log in or sign up with this email address, your dedicated <strong>Campus Ambassador Tab</strong> and all stats will automatically merge into your Student Dashboard!
+            </p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="https://code-a-nova.online/student-login" style="background-color: #4f46e5; color: #ffffff; padding: 12px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;">Log In / Sign Up to Student Dashboard</a>
+            </div>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-top: 24px;">
+              Welcome aboard,<br />
+              <strong>Team Code-A-Nova</strong>
+            </p>
+          </div>
+        `,
+      };
+      mailTransporter.sendMail(mailOptions).catch((err) => console.error("Error sending ambassador notification email:", err));
+    }
+
     res.json({
       success: true,
-      message: `${user.name} is now designated as Campus Ambassador with code ${code}`,
+      message: `${user.name} is now designated as Campus Ambassador with code ${code}${user.mobile === "Pending Registration" ? " (Pre-registered account created & ready to merge upon user signup)" : ""}`,
       ambassador: {
         _id: user._id,
         name: user.name,
@@ -790,3 +848,70 @@ exports.rejectAmbassadorApplication = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Helper: Seamlessly link & merge any pre-assigned or approved Campus Ambassador data into a user account upon signup/login
+exports.syncAndMergeAmbassadorData = async (user, email) => {
+  try {
+    if (!user || !email) return user;
+    const cleanEmail = email.trim().toLowerCase();
+    let updated = false;
+
+    const AmbassadorAppModel = require("../models/AmbassadorApplication");
+    const ReferralModel = require("../models/Referral");
+
+    // Check if there is a Referral record designated for this email as ambassador
+    const referral = await ReferralModel.findOne({
+      ambassadorEmail: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
+      isAmbassador: true
+    });
+
+    // Check if there is an approved Ambassador Application for this email
+    const application = await AmbassadorAppModel.findOne({
+      email: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
+      status: "Approved"
+    });
+
+    if (referral || application) {
+      if (!user.isAmbassador) {
+        user.isAmbassador = true;
+        updated = true;
+      }
+      if (!user.ambassadorCode && referral?.code) {
+        user.ambassadorCode = referral.code;
+        updated = true;
+      } else if (!user.ambassadorCode && application) {
+        const basePrefix = (application.name?.split(" ")[0] || "CAM").replace(/[^a-zA-Z]/g, "").toUpperCase() || "CAM";
+        const code = `AMB-${basePrefix}${Math.floor(100 + Math.random() * 900)}`;
+        user.ambassadorCode = code;
+        updated = true;
+        let refDoc = await ReferralModel.findOne({ code });
+        if (!refDoc) {
+          refDoc = new ReferralModel({
+            code,
+            createdBy: cleanEmail,
+            targetEmail: cleanEmail,
+            featureTarget: "General",
+            notes: `Campus Ambassador - ${application.name} (${application.college})`,
+            isAmbassador: true,
+            ambassadorEmail: cleanEmail,
+          });
+          await refDoc.save();
+        }
+      }
+      if ((!user.ambassadorCollege || user.ambassadorCollege === "N/A") && (application?.college || referral?.notes?.match(/\(([^)]+)\)/)?.[1])) {
+        user.ambassadorCollege = application?.college || referral?.notes?.match(/\(([^)]+)\)/)?.[1] || "N/A";
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      await user.save();
+      console.log(`[Ambassador Merge] Seamlessly synced and merged Campus Ambassador data for user ${cleanEmail}`);
+    }
+    return user;
+  } catch (error) {
+    console.error("[Ambassador Merge] Error syncing ambassador data:", error);
+    return user;
+  }
+};
+

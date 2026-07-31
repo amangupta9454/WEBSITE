@@ -155,14 +155,15 @@ const registerInternship = async (req, res) => {
         portfolio: "", // Portfolio removed
         internships: [],
       });
-    } else {
       // Opt: sync the latest links if provided
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
 
-      // Fix for legacy users missing required fields
-      if (!user.name) user.name = name || "Student";
-      if (!user.mobile) user.mobile = normalizedMobile || "0000000000";
+      // Fix for legacy or pre-registered ambassador users missing required fields
+      if (!user.name || user.name === normalizedEmail.split('@')[0]) user.name = name || user.name || "Student";
+      if (!user.mobile || user.mobile === "Pending Registration" || user.mobile === "Google Auth") {
+        user.mobile = normalizedMobile || user.mobile || "0000000000";
+      }
 
       // Ensure that if the existing user has no password set (legacy or imported),
       // they get assigned the default Welcome@123 hashed password.
@@ -190,6 +191,10 @@ const registerInternship = async (req, res) => {
     user.role = 'intern';
     user.internships.push(applicationData);
     await user.save();
+
+    // Seamlessly merge any pre-assigned Campus Ambassador data upon signup
+    const { syncAndMergeAmbassadorData } = require('./referralController');
+    await syncAndMergeAmbassadorData(user, normalizedEmail);
 
     console.log("[Backend] Internship saved with Student ID:", studentId);
 

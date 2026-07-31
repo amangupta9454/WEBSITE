@@ -406,18 +406,18 @@ const ReferralAdmin = () => {
               <div>
                 <h3 className="text-lg font-bold text-white">Assign Campus Ambassador</h3>
                 <p className="text-xs text-purple-200/70">
-                  Designate any registered student as a Campus Ambassador. They will automatically get an Ambassador Tab in their Student Dashboard!
+                  Designate ANY student as a Campus Ambassador (even without an existing account!). When they log in or sign up later, their ambassador data and stats will automatically merge with their account!
                 </p>
               </div>
             </div>
 
             <form onSubmit={handleAssignAmbassador} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-purple-200 mb-1.5">Student Registered Email *</label>
+                <label className="block text-xs font-semibold text-purple-200 mb-1.5">Student Email (Registered or New) *</label>
                 <input
                   type="email"
                   required
-                  placeholder="student@example.com"
+                  placeholder="anyone@college.edu"
                   value={ambEmail}
                   onChange={(e) => setAmbEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-purple-700/50 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
