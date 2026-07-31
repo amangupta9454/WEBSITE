@@ -73,19 +73,10 @@ async function connectToDatabase() {
 
 // Sentry Initialization
 if (Sentry && process.env.SENTRY_DSN) {
-  const integrations = [];
-  try {
-    const { nodeProfilingIntegration } = require("@sentry/profiling-node");
-    integrations.push(nodeProfilingIntegration());
-  } catch (profErr) {
-    console.warn("Sentry profiling native binary not available, skipping profiling integration:", profErr.message);
-  }
   try {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
-      integrations,
-      tracesSampleRate: 1.0, 
-      profilesSampleRate: 1.0,
+      tracesSampleRate: 1.0,
     });
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
