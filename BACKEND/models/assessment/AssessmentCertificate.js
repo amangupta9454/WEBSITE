@@ -46,7 +46,6 @@ const assessmentCertificateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-assessmentCertificateSchema.index({ certificateId: 1 }, { unique: true });
 assessmentCertificateSchema.index({ userId: 1, isRevoked: 1 });
 
 module.exports = mongoose.model("AssessmentCertificate", assessmentCertificateSchema);

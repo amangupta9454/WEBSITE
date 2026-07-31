@@ -151,7 +151,8 @@ class GroqManager {
 
   // ── Health Monitor: restore keys after cooldown ───────────────────────────
   _startHealthMonitor() {
-    setInterval(() => {
+    if (!this.keys || this.keys.length === 0) return;
+    const timer = setInterval(() => {
       const now = Date.now();
       this.keys.forEach((key) => {
         if (key.status === "cooldown" && key.cooldownUntil && now > key.cooldownUntil) {
@@ -161,6 +162,9 @@ class GroqManager {
         }
       });
     }, MONITOR_MS);
+    if (timer && typeof timer.unref === "function") {
+      timer.unref(); // Prevents keeping serverless process alive
+    }
   }
 
   // ── Get health status of all keys (for Admin API) ─────────────────────────

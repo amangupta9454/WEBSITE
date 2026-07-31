@@ -76,7 +76,6 @@ assessmentSubcategorySchema.virtual("inventoryPercentage").get(function () {
   return Math.min(100, Math.round(((this.currentQuestionCount || 0) / this.targetQuestionCount) * 100));
 });
 
-assessmentSubcategorySchema.index({ slug: 1 }, { unique: true });
 assessmentSubcategorySchema.index({ categoryId: 1, isActive: 1, displayOrder: 1 });
 assessmentSubcategorySchema.index({ currentQuestionCount: -1 });
 

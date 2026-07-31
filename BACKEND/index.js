@@ -9,8 +9,12 @@ require("dotenv").config();
 const { validateEnv } = require('./utils/envValidator');
 validateEnv(); // Fail fast if missing required environment variables
 
-const Sentry = require("@sentry/node");
-const { nodeProfilingIntegration } = require("@sentry/profiling-node");
+let Sentry = null;
+try {
+  Sentry = require("@sentry/node");
+} catch (e) {
+  console.warn("Sentry module not available:", e.message);
+}
 
 const registerRoutes = require("./routes/register");
 const adminRoutes = require("./routes/admin");
@@ -65,17 +69,26 @@ async function connectToDatabase() {
 const app = express();
 
 // Sentry Initialization
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    integrations: [
-      nodeProfilingIntegration(),
-    ],
-    tracesSampleRate: 1.0, 
-    profilesSampleRate: 1.0,
-  });
-  app.use(Sentry.Handlers.requestHandler());
-  app.use(Sentry.Handlers.tracingHandler());
+if (Sentry && process.env.SENTRY_DSN) {
+  const integrations = [];
+  try {
+    const { nodeProfilingIntegration } = require("@sentry/profiling-node");
+    integrations.push(nodeProfilingIntegration());
+  } catch (profErr) {
+    console.warn("Sentry profiling native binary not available, skipping profiling integration:", profErr.message);
+  }
+  try {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      integrations,
+      tracesSampleRate: 1.0, 
+      profilesSampleRate: 1.0,
+    });
+    app.use(Sentry.Handlers.requestHandler());
+    app.use(Sentry.Handlers.tracingHandler());
+  } catch (initErr) {
+    console.warn("Sentry init failed:", initErr.message);
+  }
 }
 
 // Security Headers

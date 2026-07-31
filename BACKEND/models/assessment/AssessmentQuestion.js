@@ -127,6 +127,5 @@ assessmentQuestionSchema.post("findOneAndUpdate", function (doc) {
 });
 
 assessmentQuestionSchema.index({ subcategoryId: 1, difficulty: 1, status: 1 });
-assessmentQuestionSchema.index({ hash: 1 }, { unique: true });
 
 module.exports = mongoose.model("AssessmentQuestion", assessmentQuestionSchema);
