@@ -344,9 +344,14 @@ exports.getAmbassadors = async (req, res) => {
       };
     });
 
+    const Settings = require("../models/Settings");
+    const groupSetting = await Settings.findOne({ key: "ambassadorGroupUrl" });
+    const ambassadorGroupUrl = groupSetting?.value || "";
+
     res.json({
       success: true,
-      ambassadors: ambList
+      ambassadors: ambList,
+      ambassadorGroupUrl
     });
   } catch (error) {
     console.error("Error getting ambassadors:", error);

@@ -118,6 +118,9 @@ const ReferralAdmin = () => {
 
       if (ambRes.data.success) {
         setAmbassadors(ambRes.data.ambassadors || []);
+        if (ambRes.data.ambassadorGroupUrl) {
+          setGroupUrlInput(ambRes.data.ambassadorGroupUrl);
+        }
       }
     } catch (error) {
       console.error("Error loading referral data:", error);
