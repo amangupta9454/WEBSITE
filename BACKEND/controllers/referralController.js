@@ -383,6 +383,45 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       jobPortalEnabled: jobSetting ? Boolean(jobSetting.value) : true,
     };
 
+    const availableFeatures = [
+      {
+        id: "general",
+        title: "General Website Referral Link (Main)",
+        path: "/",
+        isFullWidth: true,
+        isDefault: true,
+        enabled: true,
+      },
+      {
+        id: "internship",
+        title: "Internship Application Program",
+        path: "/registration",
+        isFullWidth: false,
+        enabled: featureFlags.registrationEnabled,
+      },
+      {
+        id: "resume",
+        title: "AI Resume Builder",
+        path: "/my-resumes",
+        isFullWidth: false,
+        enabled: true,
+      },
+      {
+        id: "interview",
+        title: "AI Mock Interview Portal",
+        path: "/my-interviews",
+        isFullWidth: false,
+        enabled: featureFlags.interviewEnabled,
+      },
+      {
+        id: "jobs",
+        title: "Job Portal & Opportunities",
+        path: "/jobs",
+        isFullWidth: false,
+        enabled: featureFlags.jobPortalEnabled,
+      },
+    ];
+
     res.json({
       success: true,
       ambassadorCode: code,
@@ -391,6 +430,7 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       clicks: refData?.clicks || 0,
       totalSignups: conversions.length,
       featureFlags,
+      availableFeatures,
       conversions
     });
   } catch (error) {

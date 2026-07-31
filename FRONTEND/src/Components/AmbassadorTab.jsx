@@ -18,6 +18,7 @@ import {
   ExternalLink,
   AlertTriangle,
   Lock,
+  Star,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -54,16 +55,26 @@ const AmbassadorTab = () => {
 
   const getBaseUrl = () => window.location.origin;
 
-  // Filter feature-flag links based on admin settings
-  const rawLinks = [
-    { title: "General Website Link", key: "general", url: `${getBaseUrl()}/?ref=${stats?.ambassadorCode || ""}`, enabled: true },
-    { title: "Internship Application", key: "internship", url: `${getBaseUrl()}/registration?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.registrationEnabled !== false },
-    { title: "AI Resume Builder", key: "resume", url: `${getBaseUrl()}/my-resumes?ref=${stats?.ambassadorCode || ""}`, enabled: true },
-    { title: "AI Mock Interview", key: "interview", url: `${getBaseUrl()}/my-interviews?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.interviewEnabled !== false },
-    { title: "Job Portal", key: "jobs", url: `${getBaseUrl()}/jobs?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.jobPortalEnabled !== false },
+  // Fallback links if backend does not supply availableFeatures
+  const rawFallbackLinks = [
+    { title: "General Website Referral Link", key: "general", url: `${getBaseUrl()}/?ref=${stats?.ambassadorCode || ""}`, enabled: true, isFullWidth: true },
+    { title: "Internship Application", key: "internship", url: `${getBaseUrl()}/registration?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.registrationEnabled !== false, isFullWidth: false },
+    { title: "AI Resume Builder", key: "resume", url: `${getBaseUrl()}/my-resumes?ref=${stats?.ambassadorCode || ""}`, enabled: true, isFullWidth: false },
+    { title: "AI Mock Interview", key: "interview", url: `${getBaseUrl()}/my-interviews?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.interviewEnabled !== false, isFullWidth: false },
+    { title: "Job Portal", key: "jobs", url: `${getBaseUrl()}/jobs?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.jobPortalEnabled !== false, isFullWidth: false },
   ];
 
-  const availableLinks = rawLinks.filter((l) => l.enabled);
+  // Dynamically build link list from backend availableFeatures (future proof)
+  const availableLinks = stats?.availableFeatures
+    ? stats.availableFeatures
+        .filter((f) => f.enabled !== false)
+        .map((f) => ({
+          title: f.title,
+          key: f.id,
+          url: `${getBaseUrl()}${f.path || "/"}?ref=${stats?.ambassadorCode || ""}`,
+          isFullWidth: Boolean(f.isFullWidth || f.id === "general"),
+        }))
+    : rawFallbackLinks.filter((l) => l.enabled);
 
   const handleCopyLink = (url, key) => {
     if (stats?.isActive === false) {
@@ -211,6 +222,43 @@ const AmbassadorTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {availableLinks.map((link) => {
             const isCopied = copiedFeature === link.key;
+
+            if (link.isFullWidth) {
+              return (
+                <div
+                  key={link.key}
+                  className="col-span-1 md:col-span-2 bg-gradient-to-r from-slate-900 via-purple-950 to-indigo-950 text-white p-5 sm:p-6 rounded-2xl shadow-xl border border-purple-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                >
+                  <div className="space-y-2 min-w-0 w-full sm:w-auto flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-amber-400 text-slate-950 font-black text-[10px] uppercase px-2.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-slate-950" /> Primary Link
+                      </span>
+                      <h4 className="font-black text-sm sm:text-base text-white tracking-wide uppercase">
+                        {link.title}
+                      </h4>
+                    </div>
+                    <div className="font-mono font-bold text-xs sm:text-sm text-amber-300 bg-black/40 p-3 rounded-xl border border-purple-500/30 break-all shadow-inner">
+                      {link.url}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleCopyLink(link.url, link.key)}
+                    disabled={stats?.isActive === false}
+                    className={`shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all w-full sm:w-auto ${
+                      stats?.isActive === false
+                        ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25"
+                    }`}
+                  >
+                    {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {isCopied ? "Copied!" : "Copy General Link"}
+                  </button>
+                </div>
+              );
+            }
+
             return (
               <div key={link.key} className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between gap-3 min-w-0">
                 <div className="min-w-0">
