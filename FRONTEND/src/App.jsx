@@ -40,6 +40,7 @@ import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
 import PanelInterviewActive from "./Pages/InterviewPortal/PanelInterviewActive";
 import FeatureBanner from "./Components/FeatureBanner";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import { InterviewConfigProvider } from "./context/InterviewConfigContext";
 import CampusAmbassadorApply from "./Pages/CampusAmbassadorApply";
 
 import ReferralTracker from "./Components/ReferralTracker";
