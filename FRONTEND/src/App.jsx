@@ -92,7 +92,14 @@ function App() {
             }
           />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/campus-ambassador" element={<CampusAmbassadorApply />} />
+          <Route
+            path="/campus-ambassador"
+            element={
+              <MainLayout>
+                <CampusAmbassadorApply />
+              </MainLayout>
+            }
+          />
           <Route path="/privacy-policy" element={<Privacy />} />
           <Route path="/refund-policy" element={<Refund />} />
           <Route path="/terms" element={<Term />} />
