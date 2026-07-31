@@ -1664,6 +1664,8 @@ const AdminDashboard = () => {
     const [preview, setPreview] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [enabled, setEnabled] = useState(false);
+    const [targetUrl, setTargetUrl] = useState('');
+    const [buttonText, setButtonText] = useState('Click Here');
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     const adminToken = localStorage.getItem('adminToken');
@@ -1676,6 +1678,8 @@ const AdminDashboard = () => {
           if (res.data.success && res.data.banner) {
             setBanner(res.data.banner);
             setEnabled(res.data.banner.enabled);
+            setTargetUrl(res.data.banner.targetUrl || '');
+            setButtonText(res.data.banner.buttonText || 'Click Here');
           }
         })
         .catch(() => {})
@@ -1709,15 +1713,17 @@ const AdminDashboard = () => {
           imageUrl = cloudRes.data.secure_url;
         }
 
-        // Step 2: Send just the URL + enabled flag as JSON to backend
+        // Step 2: Send URL, enabled flag, targetUrl & buttonText as JSON to backend
         const res = await axios.post(`${BACKEND_URL}/api/admin/banner`, 
-          { imageUrl, enabled },
+          { imageUrl, enabled, targetUrl, buttonText },
           { headers: { Authorization: `Bearer ${adminToken}` } }
         );
 
         if (res.data.success) {
           setBanner(res.data.banner);
           setEnabled(res.data.banner.enabled);
+          setTargetUrl(res.data.banner.targetUrl || '');
+          setButtonText(res.data.banner.buttonText || 'Click Here');
           setSelectedFile(null);
           setPreview(null);
           toast.success('Banner updated successfully!');
@@ -1740,6 +1746,8 @@ const AdminDashboard = () => {
         setEnabled(false);
         setPreview(null);
         setSelectedFile(null);
+        setTargetUrl('');
+        setButtonText('Click Here');
         toast.success('Banner removed.');
       } catch {
         toast.error('Failed to remove banner.');
@@ -1755,8 +1763,8 @@ const AdminDashboard = () => {
             <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-lg">Promotional Banner</h3>
-            <p className="text-sm text-slate-500">Upload an image to show as a popup banner to all visitors.</p>
+            <h3 className="font-bold text-slate-900 text-lg">Promotional Banner Settings</h3>
+            <p className="text-sm text-slate-500">Upload a banner image/video and specify a target click link for visitors.</p>
           </div>
         </div>
 
@@ -1826,6 +1834,38 @@ const AdminDashboard = () => {
                   onChange={handleFileChange}
                   className="block w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer transition-all"
                 />
+              </div>
+
+              {/* Banner Destination Link Input */}
+              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Banner Redirect URL / External Link
+                  </label>
+                  <p className="text-xs text-slate-400 mb-2">
+                    Enter the URL where users will be redirected when clicking the banner or "Click Here" button (e.g., <code>https://google.com</code> or <code>/registration</code>).
+                  </p>
+                  <input
+                    type="url"
+                    placeholder="https://example.com/apply or /registration"
+                    value={targetUrl}
+                    onChange={(e) => setTargetUrl(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Action Button Label
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Click Here"
+                    value={buttonText}
+                    onChange={(e) => setButtonText(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
               </div>
 
               {/* Enable toggle */}

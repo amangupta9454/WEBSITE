@@ -429,18 +429,27 @@ router.get("/banner", async (req, res) => {
 // Admin: save banner settings (imageUrl already uploaded to Cloudinary by frontend)
 router.post("/banner", auth, verifyAdmin, async (req, res) => {
   try {
-    const { imageUrl, enabled } = req.body;
+    const { imageUrl, enabled, targetUrl, buttonText } = req.body;
     const isEnabled = enabled === true || enabled === "true";
 
     const newValue = {
       imageUrl: imageUrl || null,
       enabled: isEnabled,
+      targetUrl: targetUrl ? String(targetUrl).trim() : "",
+      buttonText: buttonText ? String(buttonText).trim() : "Click Here",
     };
 
     // Use $set with explicit fields for Mixed type — avoids Mongoose caching issues
     await Settings.findOneAndUpdate(
       { key: "promoBanner" },
-      { $set: { "value.imageUrl": newValue.imageUrl, "value.enabled": newValue.enabled } },
+      { 
+        $set: { 
+          "value.imageUrl": newValue.imageUrl, 
+          "value.enabled": newValue.enabled,
+          "value.targetUrl": newValue.targetUrl,
+          "value.buttonText": newValue.buttonText
+        } 
+      },
       { upsert: true, new: true }
     );
 
