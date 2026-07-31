@@ -1,11 +1,15 @@
 // api/index.js
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
-const auditLogger = require("./utils/auditLogger");
-require("dotenv").config();
+const app = express();
+app.use(cors({ origin: "*" }));
+
+try {
+  const mongoose = require("mongoose");
+  const helmet = require("helmet");
+  const rateLimit = require("express-rate-limit");
+  const auditLogger = require("./utils/auditLogger");
+  require("dotenv").config();
 const { validateEnv } = require('./utils/envValidator');
 validateEnv(); // Fail fast if missing required environment variables
 
@@ -65,8 +69,7 @@ async function connectToDatabase() {
   }
 }
 
-// Create Express app
-const app = express();
+// Create Express app (already instantiated at top-level for safe boot diagnostics)
 
 // Sentry Initialization
 if (Sentry && process.env.SENTRY_DSN) {
@@ -98,7 +101,7 @@ app.use(helmet({
 }));
 app.disable('x-powered-by');
 
-app.use(cors({ origin: "*" }));
+// CORS configured at top-level before try/catch block
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -186,18 +189,28 @@ try {
 }
 
 
+  // Test WhatsApp Endpoint (Remove in production)
+  app.post("/api/test-wa", (req, res) => {
+    const { phone, message } = req.body;
+    if (!phone || !message) return res.status(400).json({ error: "Missing phone or message" });
+    queueWhatsAppMessage(phone, message);
+    res.json({ success: true, message: "Message added to queue!" });
+  });
+} catch (bootError) {
+  console.error("CRITICAL FATAL BOOT ERROR DURING INDEX.JS REQUIRE:", bootError.stack || bootError);
+  app.all("*", (req, res) => {
+    res.status(500).json({
+      error: "STARTUP_INVOCATION_FAILED",
+      message: bootError.message,
+      stack: bootError.stack || String(bootError),
+    });
+  });
+}
+
 // Export for Vercel serverless
 if (require.main === module || !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
-
-// Test WhatsApp Endpoint (Remove in production)
-app.post("/api/test-wa", (req, res) => {
-  const { phone, message } = req.body;
-  if (!phone || !message) return res.status(400).json({ error: "Missing phone or message" });
-  queueWhatsAppMessage(phone, message);
-  res.json({ success: true, message: "Message added to queue!" });
-});
 
 module.exports = app;
