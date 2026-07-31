@@ -36,7 +36,6 @@
     "resend": "^6.6.0",
     "slugify": "^1.6.9",
     "streamifier": "^0.1.1",
-    "uuid": "^8.3.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -35,6 +35,7 @@ const resumeRoutes = require("./routes/resume");
 const adminResumeRoutes = require("./routes/adminResume");
 const jobRoutes = require("./routes/jobs");
 const otpRoutes = require("./routes/otp");
+const mailRoutes = require("./routes/mail");
 const interviewConfigRoutes = require("./routes/interviewConfigRoutes");
 const InterviewConfigInitializer = require("./initializers/InterviewConfigInitializer");
 // ── Assessment Module Routes (Phase 1+) ──────────────────────────────────────
@@ -144,6 +145,7 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/admin/resume", adminResumeRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/email", mailRoutes);
 app.use("/api/interview-config", interviewConfigRoutes);
 // ── Assessment Module ─────────────────────────────────────────────────────────
 app.use("/api/admin/assessment", adminAssessmentRoutes);
