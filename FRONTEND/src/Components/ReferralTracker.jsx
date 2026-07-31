@@ -16,6 +16,24 @@ const ReferralTracker = () => {
         localStorage.setItem("referredByCode", cleanRef);
         sessionStorage.setItem("referralCode", cleanRef);
 
+        // Infer feature target from path
+        const path = location.pathname.toLowerCase();
+        let featureTarget = "Account Registered";
+        if (path.includes("resume")) {
+          featureTarget = "AI Resume Created";
+        } else if (path.includes("interview")) {
+          featureTarget = "AI Mock Interview Joined";
+        } else if (path.includes("job")) {
+          featureTarget = "Job Portal Applied";
+        } else if (path.includes("registration")) {
+          featureTarget = "Internship Application";
+        }
+
+        sessionStorage.setItem("referredFeatureTarget", featureTarget);
+        if (!path.includes("login") && !path.includes("dashboard")) {
+          sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
+        }
+
         const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
         axios.post(`${apiUrl}/api/admin/referrals/track-click`, { code: cleanRef }).catch(() => {
           // Ignore click tracking error silently

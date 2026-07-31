@@ -38,6 +38,14 @@ const MyResumes = () => {
       if (resumesRes.data.success) setResumes(resumesRes.data.resumes);
       if (creditsRes.data.success) {
         setCredits(creditsRes.data.credits);
+
+        // Track feature activity for Ambassador stats
+        axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/student/track-activity`,
+          { featureName: "AI Resume Created" },
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(() => {});
+        
         if (creditsRes.data.resumeEnabled !== undefined) {
           setResumeEnabled(creditsRes.data.resumeEnabled);
         }

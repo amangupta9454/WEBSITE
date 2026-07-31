@@ -39,11 +39,14 @@ const InterviewLogin = () => {
       // Custom button returns access_token
       const { access_token } = credentialResponse;
       const refCode = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode') || '';
+      const featureTarget = sessionStorage.getItem('referredFeatureTarget') || 'Account Registered';
+      const redirectTarget = sessionStorage.getItem('redirectAfterLogin');
 
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-auth/google`, {
         accessToken: access_token,
         referralCode: refCode,
-        referredByCode: refCode
+        referredByCode: refCode,
+        featureTarget: featureTarget
       });
 
       if (res.data.success) {
@@ -57,7 +60,12 @@ const InterviewLogin = () => {
           localStorage.removeItem('interviewUserRole');
         }
         
-        navigate('/dashboard');
+        if (redirectTarget && !redirectTarget.includes('/login') && !redirectTarget.includes('/dashboard')) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectTarget);
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error('Login failed:', error);

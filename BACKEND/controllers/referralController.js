@@ -463,3 +463,20 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Student Dashboard: Track real-time feature usage activity
+exports.trackUserActivity = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?.userId;
+    const { featureName } = req.body;
+    if (userId && featureName) {
+      await User.findByIdAndUpdate(userId, {
+        referredFeature: featureName
+      });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error in trackUserActivity:", error);
+    res.json({ success: false, message: error.message });
+  }
+};

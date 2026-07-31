@@ -35,6 +35,13 @@ const InterviewSetup = () => {
           setIsUnlimited(res.data.isUnlimited || false);
         }
       }).catch(err => console.error(err));
+
+      // Track feature activity for Ambassador stats
+      axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/track-activity`,
+        { featureName: "AI Mock Interview Joined" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).catch(() => {});
     }
   }, []);
 
