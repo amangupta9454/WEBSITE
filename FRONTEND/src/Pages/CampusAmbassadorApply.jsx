@@ -91,7 +91,7 @@ const CampusAmbassadorApply = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10 px-4">
+    <div className="bg-gray-50 min-h-screen pt-24 pb-10 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* Poster Banner */}
