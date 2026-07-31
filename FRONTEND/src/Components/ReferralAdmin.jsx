@@ -621,6 +621,7 @@ const ReferralAdmin = () => {
                     <th className="py-3 px-4">Ambassador Info</th>
                     <th className="py-3 px-4">College</th>
                     <th className="py-3 px-4">Ambassador Code</th>
+                    <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Clicks</th>
                     <th className="py-3 px-4">Conversions / Signups</th>
                     <th className="py-3 px-4 text-right">Referred Users</th>
@@ -629,7 +630,7 @@ const ReferralAdmin = () => {
                 <tbody className="divide-y divide-slate-100">
                   {ambassadors.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 italic">
+                      <td colSpan={7} className="py-8 text-center text-slate-400 italic">
                         No Campus Ambassadors assigned yet. Use the form above to designate a student as an Ambassador!
                       </td>
                     </tr>
@@ -673,6 +674,29 @@ const ReferralAdmin = () => {
                               </div>
                             </td>
 
+                            <td className="py-3.5 px-4">
+                              {amb.referralId ? (
+                                <button
+                                  onClick={() => handleToggleStatus(amb.referralId)}
+                                  className={`flex items-center gap-1 font-semibold text-[11px] ${
+                                    amb.isActive !== false ? "text-emerald-600" : "text-amber-600"
+                                  }`}
+                                >
+                                  {amb.isActive !== false ? (
+                                    <>
+                                      <ToggleRight className="w-5 h-5 text-emerald-500" /> Active
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ToggleLeft className="w-5 h-5 text-amber-500" /> Inactive
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-slate-400 italic">—</span>
+                              )}
+                            </td>
+
                             <td className="py-3.5 px-4 font-bold text-amber-700 bg-amber-50/50">
                               {amb.clicks} Clicks
                             </td>
@@ -698,7 +722,7 @@ const ReferralAdmin = () => {
                           {/* Expanded Referred Users Sub-Table */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={6} className="bg-purple-50/30 p-4 border-y border-purple-100">
+                              <td colSpan={7} className="bg-purple-50/30 p-4 border-y border-purple-100">
                                 <div className="space-y-3">
                                   <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">
                                     <UserCheck className="w-4 h-4 text-purple-600" />

@@ -16,6 +16,8 @@ import {
   Loader2,
   Award,
   ExternalLink,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -52,15 +54,22 @@ const AmbassadorTab = () => {
 
   const getBaseUrl = () => window.location.origin;
 
-  const links = [
-    { title: "General Website Link", key: "general", url: `${getBaseUrl()}/?ref=${stats?.ambassadorCode || ""}` },
-    { title: "Internship Application", key: "internship", url: `${getBaseUrl()}/registration?ref=${stats?.ambassadorCode || ""}` },
-    { title: "AI Resume Builder", key: "resume", url: `${getBaseUrl()}/my-resumes?ref=${stats?.ambassadorCode || ""}` },
-    { title: "AI Mock Interview", key: "interview", url: `${getBaseUrl()}/my-interviews?ref=${stats?.ambassadorCode || ""}` },
-    { title: "Job Portal", key: "jobs", url: `${getBaseUrl()}/jobs?ref=${stats?.ambassadorCode || ""}` },
+  // Filter feature-flag links based on admin settings
+  const rawLinks = [
+    { title: "General Website Link", key: "general", url: `${getBaseUrl()}/?ref=${stats?.ambassadorCode || ""}`, enabled: true },
+    { title: "Internship Application", key: "internship", url: `${getBaseUrl()}/registration?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.registrationEnabled !== false },
+    { title: "AI Resume Builder", key: "resume", url: `${getBaseUrl()}/my-resumes?ref=${stats?.ambassadorCode || ""}`, enabled: true },
+    { title: "AI Mock Interview", key: "interview", url: `${getBaseUrl()}/my-interviews?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.interviewEnabled !== false },
+    { title: "Job Portal", key: "jobs", url: `${getBaseUrl()}/jobs?ref=${stats?.ambassadorCode || ""}`, enabled: stats?.featureFlags?.jobPortalEnabled !== false },
   ];
 
+  const availableLinks = rawLinks.filter((l) => l.enabled);
+
   const handleCopyLink = (url, key) => {
+    if (stats?.isActive === false) {
+      toast.warning("Admin marked your Ambassador account as Inactive. Referral links are currently paused.");
+      return;
+    }
     navigator.clipboard.writeText(url);
     setCopiedFeature(key);
     toast.success("Referral link copied to clipboard!");
@@ -98,94 +107,115 @@ const AmbassadorTab = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Profile & College Banner */}
-      <div className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-purple-900/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
-            <GraduationCap className="w-8 h-8" />
-          </div>
+    <div className="space-y-6 sm:space-y-8 animate-fade-in max-w-full overflow-hidden">
+      {/* Inactive Account Alert Banner */}
+      {stats.isActive === false && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 sm:p-5 rounded-2xl shadow-sm flex items-start gap-3.5 border border-amber-200 animate-in fade-in duration-300">
+          <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider bg-purple-500/30 text-purple-200 px-2.5 py-0.5 rounded-full border border-purple-400/30">
+            <h3 className="text-amber-900 font-bold text-sm sm:text-base">Admin Marked Your Account as Inactive</h3>
+            <p className="text-amber-800 text-xs sm:text-sm mt-1 leading-relaxed">
+              Your Campus Ambassador referral links & tracking are currently marked inactive by Admin. Referral tracking is paused. Please contact support for assistance.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Profile & College Banner (Mobile Responsive) */}
+      <div className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white p-5 sm:p-8 rounded-3xl shadow-xl border border-purple-900/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6 max-w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+            <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8" />
+          </div>
+          <div className="space-y-1 min-w-0 w-full">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-purple-500/30 text-purple-200 px-2.5 py-0.5 rounded-full border border-purple-400/30">
                 Official Campus Ambassador
               </span>
               {stats.ambassadorCollege && (
-                <span className="text-xs font-bold text-purple-200">
+                <span className="text-[10px] sm:text-xs font-bold text-purple-200 truncate">
                   • {stats.ambassadorCollege}
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-black text-white mt-1 flex items-center gap-2">
-              Your Ambassador Referral Code:{" "}
-              <span className="font-mono text-amber-400 bg-amber-400/10 px-3 py-1 rounded-xl border border-amber-400/20">
+            <div className="text-lg sm:text-2xl font-black text-white flex flex-wrap items-center gap-2 pt-1">
+              <span>Ambassador Code:</span>
+              <span className="font-mono text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-xl border border-amber-400/30 text-xs sm:text-base font-bold break-all inline-block">
                 {stats.ambassadorCode}
               </span>
-            </h2>
+            </div>
           </div>
         </div>
 
         <button
           onClick={fetchAmbassadorStats}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 shrink-0"
+          className="flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 shrink-0"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Dashboard
         </button>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Referral Link Clicks</span>
-            <div className="text-3xl font-black text-slate-900 mt-1">{stats.clicks}</div>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Link Clicks</span>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{stats.clicks}</div>
           </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-            <MousePointer className="w-6 h-6" />
+          <div className="p-2.5 sm:p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <MousePointer className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Successful Signups</span>
-            <div className="text-3xl font-black text-emerald-600 mt-1">{stats.totalSignups}</div>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Successful Signups</span>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{stats.totalSignups}</div>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-            <UserCheck className="w-6 h-6" />
+          <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <UserCheck className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Ambassador Status</span>
-            <div className="text-lg font-black text-purple-600 mt-1 flex items-center gap-1.5">
-              <Award className="w-5 h-5" /> Active Partner
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Ambassador Status</span>
+            <div className="mt-1">
+              {stats.isActive !== false ? (
+                <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <Award className="w-4 h-4" /> Active Partner
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <Lock className="w-4 h-4" /> Inactive (Paused)
+                </span>
+              )}
             </div>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
-            <GraduationCap className="w-6 h-6" />
+          <div className={`p-2.5 sm:p-3 rounded-2xl ${stats.isActive !== false ? "bg-purple-50 text-purple-600" : "bg-amber-50 text-amber-600"}`}>
+            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
       </div>
 
       {/* Shareable Referral Links Box */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-purple-600" />
-          <h3 className="text-base font-bold text-slate-900">Your Shareable Feature Referral Links</h3>
+          <h3 className="text-sm sm:text-base font-bold text-slate-900">Your Shareable Feature Referral Links</h3>
         </div>
         <p className="text-xs text-slate-500">
           Share these links with students in your college. When they register or apply using your link, they will be tracked under your ambassador profile.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {links.map((link) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          {availableLinks.map((link) => {
             const isCopied = copiedFeature === link.key;
             return (
-              <div key={link.key} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between gap-3">
-                <div>
+              <div key={link.key} className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between gap-3 min-w-0">
+                <div className="min-w-0">
                   <span className="font-bold text-xs text-slate-800">{link.title}</span>
-                  <div className="font-mono text-[11px] text-slate-500 truncate mt-1 bg-white p-2 rounded-lg border border-slate-200">
+                  <div className="font-mono text-[11px] text-slate-500 truncate mt-1 bg-white p-2 rounded-lg border border-slate-200 break-all">
                     {link.url}
                   </div>
                 </div>
@@ -193,7 +223,12 @@ const AmbassadorTab = () => {
                 <div className="flex justify-end">
                   <button
                     onClick={() => handleCopyLink(link.url, link.key)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-purple-500/20"
+                    disabled={stats?.isActive === false}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      stats?.isActive === false
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-500/20"
+                    }`}
                   >
                     {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     {isCopied ? "Copied!" : "Copy Link"}
@@ -206,10 +241,10 @@ const AmbassadorTab = () => {
       </div>
 
       {/* Referred Students Table */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-emerald-600" />
               Referred Students & Applied Features ({filteredConversions.length})
             </h3>
@@ -225,7 +260,7 @@ const AmbassadorTab = () => {
               placeholder="Search name, email, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
             />
           </div>
         </div>

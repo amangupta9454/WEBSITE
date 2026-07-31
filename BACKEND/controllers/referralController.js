@@ -301,6 +301,8 @@ exports.getAmbassadors = async (req, res) => {
         mobile: amb.mobile,
         ambassadorCode: amb.ambassadorCode,
         ambassadorCollege: amb.ambassadorCollege || "N/A",
+        referralId: refData._id || null,
+        isActive: refData ? refData.isActive !== false : true,
         clicks: refData.clicks || 0,
         usesCount: referredUsers.length,
         referredUsers: referredUsers.map((u) => {
@@ -368,12 +370,27 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       };
     });
 
+    const Settings = require("../models/Settings");
+    const [interviewSetting, regSetting, jobSetting] = await Promise.all([
+      Settings.findOne({ key: "interviewEnabled" }),
+      Settings.findOne({ key: "registrationEnabled" }),
+      Settings.findOne({ key: "jobPortalEnabled" }),
+    ]);
+
+    const featureFlags = {
+      interviewEnabled: interviewSetting ? Boolean(interviewSetting.value) : true,
+      registrationEnabled: regSetting ? Boolean(regSetting.value) : true,
+      jobPortalEnabled: jobSetting ? Boolean(jobSetting.value) : true,
+    };
+
     res.json({
       success: true,
       ambassadorCode: code,
       ambassadorCollege: user.ambassadorCollege || "",
+      isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
       totalSignups: conversions.length,
+      featureFlags,
       conversions
     });
   } catch (error) {
