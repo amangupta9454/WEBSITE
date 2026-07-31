@@ -1249,25 +1249,25 @@ const StudentDashboard = () => {
       });
       
       if (response.data.internships?.length > 0) {
-        const now = new Date();
-        const activeInternship = response.data.internships.find(internship => {
-          if (!internship.startDate) return false;
-          const start = new Date(internship.startDate);
-          const end = internship.endDate ? new Date(internship.endDate) : new Date(8640000000000000); // Max date
-          
-          // Consider it active if we are past the start date and before the end date.
-          // Also set end to end of day to be generous
-          end.setHours(23, 59, 59, 999);
-          
-          return start <= now && end >= now;
-        });
+        setSelectedInternshipId((prevSelectedId) => {
+          const stillExists = prevSelectedId && response.data.internships.some(i => i._id === prevSelectedId);
+          if (stillExists) return prevSelectedId;
 
-        if (activeInternship) {
-          setSelectedInternshipId(activeInternship._id);
-        } else {
-          // Fallback to the first one if no active internship is found
-          setSelectedInternshipId(response.data.internships[0]._id);
-        }
+          const now = new Date();
+          const activeInternship = response.data.internships.find(internship => {
+            if (!internship.startDate) return false;
+            const start = new Date(internship.startDate);
+            const end = internship.endDate ? new Date(internship.endDate) : new Date(8640000000000000); // Max date
+            
+            // Consider it active if we are past the start date and before the end date.
+            // Also set end to end of day to be generous
+            end.setHours(23, 59, 59, 999);
+            
+            return start <= now && end >= now;
+          });
+
+          return activeInternship ? activeInternship._id : response.data.internships[0]._id;
+        });
       }
       
       // Also fetch interview data

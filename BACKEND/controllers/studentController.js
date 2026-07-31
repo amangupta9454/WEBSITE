@@ -291,10 +291,18 @@ const markAlertRead = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find internship by studentId from JWT (security: ensure user can only access their specific internship)
-    const internship = user.internships.find(
-      (app) => app.studentId === studentId,
-    );
+    // Prefer explicit internshipId if passed, then fallback to studentId from JWT
+    let internship;
+    if (internshipId) {
+      internship = user.internships.find(
+        (app) => app._id.toString() === internshipId.toString(),
+      );
+    }
+    if (!internship && studentId) {
+      internship = user.internships.find(
+        (app) => app.studentId === studentId,
+      );
+    }
     if (!internship)
       return res.status(404).json({ message: "Internship not found" });
 
@@ -324,13 +332,22 @@ const submitProjectRepo = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find internship by studentId from JWT or fallback to first internship
+    // Prefer explicit internshipId sent from frontend first
     let internship;
-    if (studentId) {
+    if (req.body.internshipId) {
+      internship = user.internships.find(
+        (app) => app._id.toString() === req.body.internshipId.toString(),
+      );
+    }
+    if (!internship && req.body.studentId) {
+      internship = user.internships.find(
+        (app) => app.studentId === req.body.studentId,
+      );
+    }
+    if (!internship && studentId) {
       internship = user.internships.find((app) => app.studentId === studentId);
-    } else if (req.body.internshipId) {
-      internship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
-    } else if (user.internships && user.internships.length > 0) {
+    }
+    if (!internship && user.internships && user.internships.length > 0) {
       internship = user.internships[0];
     }
 
@@ -375,13 +392,22 @@ const finalSubmitProjectRepo = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find internship by studentId from JWT or fallback to first internship
+    // Prefer explicit internshipId sent from frontend first
     let internship;
-    if (studentId) {
+    if (req.body.internshipId) {
+      internship = user.internships.find(
+        (app) => app._id.toString() === req.body.internshipId.toString(),
+      );
+    }
+    if (!internship && req.body.studentId) {
+      internship = user.internships.find(
+        (app) => app.studentId === req.body.studentId,
+      );
+    }
+    if (!internship && studentId) {
       internship = user.internships.find((app) => app.studentId === studentId);
-    } else if (req.body.internshipId) {
-      internship = user.internships.find((app) => app._id.toString() === req.body.internshipId.toString());
-    } else if (user.internships && user.internships.length > 0) {
+    }
+    if (!internship && user.internships && user.internships.length > 0) {
       internship = user.internships[0];
     }
 
