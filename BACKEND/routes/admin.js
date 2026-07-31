@@ -518,7 +518,7 @@ router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
   }
 });
 
-router.post("/ambassador-group-url", adminAuth, async (req, res) => {
+router.post("/ambassador-group-url", auth, verifyAdmin, async (req, res) => {
   try {
     const { url } = req.body;
     const Settings = require("../models/Settings");
