@@ -49,6 +49,31 @@ const ReferralAdmin = () => {
   const [assigningAmb, setAssigningAmb] = useState(false);
   const [expandedAmbassador, setExpandedAmbassador] = useState(null);
 
+  // Form State for Ambassador Group URL
+  const [groupUrlInput, setGroupUrlInput] = useState("");
+  const [updatingGroupUrl, setUpdatingGroupUrl] = useState(false);
+
+  const handleUpdateGroupUrl = async (e) => {
+    e.preventDefault();
+    try {
+      setUpdatingGroupUrl(true);
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.post(
+        `${apiUrl}/api/admin/ambassador-group-url`,
+        { url: groupUrlInput },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Ambassador WhatsApp Group Link updated!");
+      }
+    } catch (error) {
+      toast.error("Failed to update group URL");
+    } finally {
+      setUpdatingGroupUrl(false);
+    }
+  };
+
   // Search State for Conversions
   const [conversionSearch, setConversionSearch] = useState("");
   const [loadingConversions, setLoadingConversions] = useState(false);
@@ -602,6 +627,38 @@ const ReferralAdmin = () => {
                   Assign Campus Ambassador
                 </button>
               </div>
+            </form>
+          </div>
+
+          {/* Official Ambassador Group URL Card */}
+          <div className="bg-gradient-to-r from-slate-900 to-purple-950 p-6 rounded-2xl border border-purple-800/40 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Official Campus Ambassador Group Link</h3>
+                <p className="text-xs text-purple-200/70">Ambassadors can click "Join WhatsApp Group Now" on their dashboard to join this official community group.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateGroupUrl} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="url"
+                placeholder="e.g. https://chat.whatsapp.com/ENwP1eS6F6L9K9yZ2y3z4a"
+                value={groupUrlInput}
+                onChange={(e) => setGroupUrlInput(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-slate-800/80 border border-purple-700/50 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                required
+              />
+              <button
+                type="submit"
+                disabled={updatingGroupUrl}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
+              >
+                {updatingGroupUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Save Group Link
+              </button>
             </form>
           </div>
 

@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   Lock,
   Star,
+  MessageSquare,
+  Users
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -163,7 +165,37 @@ const AmbassadorTab = () => {
           className="flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 shrink-0"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Dashboard
-        </button>
+      </div>
+
+      {/* Join Official Ambassador Group Card */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 sm:p-5 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/30">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm shrink-0">
+            <MessageSquare className="w-6 h-6 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-extrabold text-sm sm:text-base flex flex-wrap items-center gap-2">
+              <span>Join Official Campus Ambassador Group</span>
+              <span className="bg-emerald-400/30 text-emerald-100 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border border-emerald-300/30">
+                Official Community
+              </span>
+            </h3>
+            <p className="text-xs text-emerald-100/90 mt-0.5">
+              Connect with fellow Campus Ambassadors, get exclusive updates, guidance, & rewards announcements!
+            </p>
+          </div>
+        </div>
+
+        <a
+          href={stats.ambassadorGroupUrl || "https://chat.whatsapp.com/"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs rounded-xl shadow-md transition-all shrink-0 w-full sm:w-auto"
+        >
+          <Users className="w-4 h-4 text-emerald-700" />
+          Join WhatsApp Group Now
+          <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+        </a>
       </div>
 
       {/* Metrics Row */}

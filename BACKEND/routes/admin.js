@@ -518,4 +518,19 @@ router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
   }
 });
 
+router.post("/ambassador-group-url", adminAuth, async (req, res) => {
+  try {
+    const { url } = req.body;
+    const Settings = require("../models/Settings");
+    await Settings.findOneAndUpdate(
+      { key: "ambassadorGroupUrl" },
+      { value: url || "" },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, message: "Ambassador group URL updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

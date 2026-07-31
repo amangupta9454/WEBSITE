@@ -451,11 +451,14 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     }
 
     const Settings = require("../models/Settings");
-    const [interviewSetting, regSetting, jobSetting] = await Promise.all([
+    const [interviewSetting, regSetting, jobSetting, groupSetting] = await Promise.all([
       Settings.findOne({ key: "interviewEnabled" }),
       Settings.findOne({ key: "registrationEnabled" }),
       Settings.findOne({ key: "jobPortalEnabled" }),
+      Settings.findOne({ key: "ambassadorGroupUrl" }),
     ]);
+
+    const ambassadorGroupUrl = groupSetting?.value || "https://chat.whatsapp.com/";
 
     const featureFlags = {
       interviewEnabled: interviewSetting ? Boolean(interviewSetting.value) : true,
@@ -531,6 +534,7 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
       totalSignups: brandNewUserSignupsCount,
+      ambassadorGroupUrl,
       featureFlags,
       availableFeatures,
       conversions,
