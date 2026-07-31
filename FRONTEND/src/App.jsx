@@ -40,7 +40,7 @@ import InterviewActive from "./Pages/InterviewPortal/InterviewActive";
 import PanelInterviewActive from "./Pages/InterviewPortal/PanelInterviewActive";
 import FeatureBanner from "./Components/FeatureBanner";
 import ProtectedRoute from "./Components/ProtectedRoute";
-import { InterviewConfigProvider } from "./context/InterviewConfigContext";
+import CampusAmbassadorApply from "./Pages/CampusAmbassadorApply";
 
 import ReferralTracker from "./Components/ReferralTracker";
 
@@ -91,6 +91,7 @@ function App() {
             }
           />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/campus-ambassador" element={<CampusAmbassadorApply />} />
           <Route path="/privacy-policy" element={<Privacy />} />
           <Route path="/refund-policy" element={<Refund />} />
           <Route path="/terms" element={<Term />} />

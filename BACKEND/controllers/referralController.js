@@ -601,3 +601,192 @@ exports.trackUserActivity = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
+const AmbassadorApplication = require("../models/AmbassadorApplication");
+const nodemailer = require("nodemailer");
+
+const mailTransporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+});
+
+// Student: Submit Campus Ambassador Application
+exports.submitAmbassadorApplication = async (req, res) => {
+  try {
+    const { name, email, mobile, college, yearBranch, reason } = req.body;
+    if (!name || !email || !mobile || !college || !yearBranch) {
+      return res.status(400).json({ success: false, message: "Please fill in all required fields." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await AmbassadorApplication.findOne({
+      email: cleanEmail,
+      status: "Pending"
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "You already have a pending Campus Ambassador application under review!"
+      });
+    }
+
+    const application = new AmbassadorApplication({
+      name: name.trim(),
+      email: cleanEmail,
+      mobile: mobile.trim(),
+      college: college.trim(),
+      yearBranch: yearBranch.trim(),
+      reason: reason ? reason.trim() : "",
+      status: "Pending"
+    });
+
+    await application.save();
+
+    res.json({
+      success: true,
+      message: "Your Campus Ambassador application has been submitted successfully! Admin will review and notify you via email."
+    });
+  } catch (error) {
+    console.error("Error submitting ambassador application:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Get all Campus Ambassador Applications
+exports.getAmbassadorApplications = async (req, res) => {
+  try {
+    const applications = await AmbassadorApplication.find().sort({ createdAt: -1 }).lean();
+    res.json({ success: true, applications });
+  } catch (error) {
+    console.error("Error getting ambassador applications:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Approve Campus Ambassador Application
+exports.approveAmbassadorApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await AmbassadorApplication.findById(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    application.status = "Approved";
+    application.approvedAt = new Date();
+    await application.save();
+
+    // Check or find user by email
+    let user = await User.findOne({
+      email: { $regex: new RegExp(`^${application.email}$`, "i") }
+    });
+
+    const code = `AMB-${application.name.split(" ")[0].toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
+
+    if (user) {
+      user.isAmbassador = true;
+      user.ambassadorCode = user.ambassadorCode || code;
+      user.ambassadorCollege = application.college;
+      await user.save();
+    } else {
+      user = new User({
+        name: application.name,
+        email: application.email,
+        mobile: application.mobile,
+        isAmbassador: true,
+        ambassadorCode: code,
+        ambassadorCollege: application.college
+      });
+      await user.save();
+    }
+
+    // Create or update referral record
+    let referral = await Referral.findOne({ code: user.ambassadorCode });
+    if (!referral) {
+      referral = new Referral({
+        code: user.ambassadorCode,
+        createdBy: user.email,
+        targetEmail: user.email,
+        featureTarget: "General",
+        notes: `Campus Ambassador - ${user.name} (${application.college})`,
+        isAmbassador: true,
+        ambassadorEmail: user.email,
+      });
+      await referral.save();
+    }
+
+    // Send Welcome Email to Ambassador
+    if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+      const mailOptions = {
+        from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
+        to: application.email,
+        subject: "🎉 Congratulations! You are now a Campus Ambassador at Code-A-Nova",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #4f46e5; margin: 0;">Code-A-Nova Campus Ambassador Program</h2>
+              <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Represent. Inspire. Innovate.</p>
+            </div>
+            
+            <p style="color: #334155; font-size: 16px;">Dear <strong>${application.name}</strong>,</p>
+
+            <p style="color: #334155; line-height: 1.6;">
+              We are thrilled to inform you that your application for the <strong>Campus Ambassador Program at Code-A-Nova</strong> has been <strong>APPROVED</strong>! 🎉
+            </p>
+
+            <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; padding: 16px; margin: 20px 0; border-radius: 8px;">
+              <p style="margin: 0 0 8px 0; color: #1e293b; font-weight: bold;">Your Official Ambassador Details:</p>
+              <p style="margin: 4px 0; color: #475569;">College: <strong>${application.college}</strong></p>
+              <p style="margin: 4px 0; color: #475569;">Ambassador Code: <strong style="color: #4f46e5; font-family: monospace; font-size: 16px;">${user.ambassadorCode}</strong></p>
+            </div>
+
+            <p style="color: #334155; line-height: 1.6;">
+              Your dedicated <strong>Campus Ambassador Tab</strong> is now unlocked in your Student Dashboard! You can log in anytime to copy your unique referral links, track student signups, and access exclusive ambassador perks.
+            </p>
+
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="https://code-a-nova.online/student-login" style="background-color: #4f46e5; color: #ffffff; padding: 12px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;">Log In to Student Dashboard</a>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-top: 24px;">
+              Welcome aboard,<br />
+              <strong>Team Code-A-Nova</strong>
+            </p>
+          </div>
+        `,
+      };
+      mailTransporter.sendMail(mailOptions).catch((err) => console.error("Error sending ambassador approval email:", err));
+    }
+
+    res.json({
+      success: true,
+      message: `${application.name} has been approved as Campus Ambassador and welcome email sent!`
+    });
+  } catch (error) {
+    console.error("Error approving ambassador application:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Admin: Reject Campus Ambassador Application
+exports.rejectAmbassadorApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await AmbassadorApplication.findById(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    application.status = "Rejected";
+    await application.save();
+
+    res.json({ success: true, message: "Application status updated to Rejected" });
+  } catch (error) {
+    console.error("Error rejecting ambassador application:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

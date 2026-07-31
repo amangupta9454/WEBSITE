@@ -24,6 +24,7 @@ import {
   Eye,
   ChevronDown,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -35,6 +36,8 @@ const ReferralAdmin = () => {
   const [stats, setStats] = useState({ totalCodes: 0, totalClicks: 0, totalUses: 0 });
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
+
+  const [applications, setApplications] = useState([]);
 
   // Form State for Standard Referral
   const [customCode, setCustomCode] = useState("");
@@ -59,17 +62,21 @@ const ReferralAdmin = () => {
     try {
       setUpdatingGroupUrl(true);
       const token = localStorage.getItem("adminToken");
+      const headers = { Authorization: `Bearer ${token}` };
       const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+
       const res = await axios.post(
         `${apiUrl}/api/admin/ambassador-group-url`,
         { url: groupUrlInput },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
+
       if (res.data.success) {
-        toast.success("Ambassador WhatsApp Group Link updated!");
+        toast.success("Official Ambassador WhatsApp Group Link saved successfully!");
       }
     } catch (error) {
-      toast.error("Failed to update group URL");
+      console.error("Error saving group URL:", error);
+      toast.error(error.response?.data?.message || "Failed to save group link");
     } finally {
       setUpdatingGroupUrl(false);
     }
@@ -99,13 +106,14 @@ const ReferralAdmin = () => {
       const headers = { Authorization: `Bearer ${token}` };
       const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
-      const [refRes, convRes, ambRes] = await Promise.all([
+      const [refRes, convRes, ambRes, appRes] = await Promise.all([
         axios.get(`${apiUrl}/api/admin/referrals`, { headers }),
         axios.get(`${apiUrl}/api/admin/referrals/conversions`, {
           headers,
           params: { search: conversionSearch },
         }),
         axios.get(`${apiUrl}/api/admin/ambassadors`, { headers }),
+        axios.get(`${apiUrl}/api/admin/ambassador-applications`, { headers }),
       ]);
 
       if (refRes.data.success) {
@@ -122,6 +130,10 @@ const ReferralAdmin = () => {
         if (ambRes.data.ambassadorGroupUrl) {
           setGroupUrlInput(ambRes.data.ambassadorGroupUrl);
         }
+      }
+
+      if (appRes.data.success) {
+        setApplications(appRes.data.applications || []);
       }
     } catch (error) {
       console.error("Error loading referral data:", error);
@@ -285,6 +297,42 @@ const ReferralAdmin = () => {
     } catch (error) {
       console.error("Error deleting ambassador:", error);
       toast.error(error.response?.data?.message || "Failed to delete Campus Ambassador");
+    }
+  };
+
+  const handleApproveApplication = async (id, name) => {
+    if (!window.confirm(`Approve ${name} as a Campus Ambassador? They will be notified via email.`)) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.post(`${apiUrl}/api/admin/ambassador-applications/approve/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "Ambassador approved successfully!");
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error approving application:", error);
+      toast.error(error.response?.data?.message || "Failed to approve application");
+    }
+  };
+
+  const handleRejectApplication = async (id) => {
+    if (!window.confirm("Reject this Campus Ambassador application?")) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.post(`${apiUrl}/api/admin/ambassador-applications/reject/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success("Application rejected");
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error rejecting application:", error);
+      toast.error("Failed to reject application");
     }
   };
 
@@ -666,6 +714,116 @@ const ReferralAdmin = () => {
                   )}
                 </tbody>
               </table>
+          </div>
+        </div>
+
+        {/* ─── PENDING CAMPUS AMBASSADOR APPLICATIONS ─── */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-50 text-amber-500 rounded-xl border border-amber-200">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Campus Ambassador Applications</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Review and approve/reject student applications for the Campus Ambassador Program.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 text-xs font-bold">
+              <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg">
+                {applications.filter(a => a.status === "Pending").length} Pending
+              </span>
+              <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg">
+                {applications.filter(a => a.status === "Approved").length} Approved
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Applicant Info</th>
+                  <th className="py-3 px-4">College</th>
+                  <th className="py-3 px-4">Year / Branch</th>
+                  <th className="py-3 px-4">Mobile</th>
+                  <th className="py-3 px-4">Applied On</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {applications.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-slate-400 italic">
+                      No Campus Ambassador applications received yet. Share the application link to get started!
+                    </td>
+                  </tr>
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app._id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-800">{app.name}</div>
+                        <div className="text-slate-400 font-normal">{app.email}</div>
+                        {app.reason && (
+                          <div className="text-[10px] text-slate-500 mt-1 italic max-w-[200px] truncate" title={app.reason}>
+                            "{app.reason}"
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700">{app.college}</td>
+                      <td className="py-3.5 px-4 text-slate-700">{app.yearBranch}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-700">{app.mobile}</td>
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {new Date(app.appliedAt || app.createdAt).toLocaleDateString("en-IN", {
+                          day: "2-digit", month: "short", year: "numeric"
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {app.status === "Pending" && (
+                          <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
+                            Pending
+                          </span>
+                        )}
+                        {app.status === "Approved" && (
+                          <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
+                            ✓ Approved
+                          </span>
+                        )}
+                        {app.status === "Rejected" && (
+                          <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
+                            Rejected
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {app.status === "Pending" && (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleApproveApplication(app._id, app.name)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg transition-all"
+                            >
+                              <Check className="w-3 h-3" /> Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectApplication(app._id)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-[10px] rounded-lg transition-all"
+                            >
+                              <X className="w-3 h-3" /> Reject
+                            </button>
+                          </div>
+                        )}
+                        {app.status !== "Pending" && (
+                          <span className="text-slate-400 italic text-[10px]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
