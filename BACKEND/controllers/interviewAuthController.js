@@ -53,7 +53,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
     
-    const referralCode = (req.body.referralCode || req.body.ref || '').trim().toUpperCase();
+    const referralCode = (req.body.referralCode || req.body.referredByCode || req.body.ref || req.query.ref || '').trim().toUpperCase();
 
     if (!user) {
       // Create a new normal user (who is not an intern yet)

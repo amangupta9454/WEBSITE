@@ -38,8 +38,12 @@ const InterviewLogin = () => {
     try {
       // Custom button returns access_token
       const { access_token } = credentialResponse;
+      const refCode = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode') || '';
+
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-auth/google`, {
-        accessToken: access_token
+        accessToken: access_token,
+        referralCode: refCode,
+        referredByCode: refCode
       });
 
       if (res.data.success) {
