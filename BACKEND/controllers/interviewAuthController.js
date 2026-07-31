@@ -56,14 +56,15 @@ exports.googleLogin = async (req, res) => {
     const referralCode = (req.body.referralCode || req.body.referredByCode || req.body.ref || req.query.ref || '').trim().toUpperCase();
 
     if (!user) {
-      // Create a new normal user (who is not an intern yet)
+      // Create a brand-new user (Valid referral signup if referralCode exists)
       user = new User({
         email: normalizedEmail,
         name: name || 'Unknown User',
         profileImage: picture || '',
         mobile: 'Google Auth', // Required by User schema
         referredByCode: referralCode || null,
-        referredAt: referralCode ? new Date() : null
+        referredAt: referralCode ? new Date() : null,
+        isExistingUserReferred: false
       });
       await user.save();
 
@@ -75,16 +76,13 @@ exports.googleLogin = async (req, res) => {
           await refDoc.save();
         }
       }
-    } else if (referralCode && !user.referredByCode) {
-      user.referredByCode = referralCode;
-      user.referredAt = new Date();
-      await user.save();
-
-      const Referral = require('../models/Referral');
-      const refDoc = await Referral.findOne({ code: referralCode });
-      if (refDoc) {
-        refDoc.usesCount = (refDoc.usesCount || 0) + 1;
-        await refDoc.save();
+    } else if (referralCode) {
+      // User already existed in DB prior to this referral link click
+      if (!user.referredByCode) {
+        user.isExistingUserReferred = true;
+        user.attemptedReferredByCode = referralCode;
+        user.attemptedReferredAt = new Date();
+        await user.save();
       }
     }
     

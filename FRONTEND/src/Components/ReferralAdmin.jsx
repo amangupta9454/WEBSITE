@@ -767,6 +767,48 @@ const ReferralAdmin = () => {
                                       No users have registered using this Ambassador's referral code yet.
                                     </p>
                                   )}
+
+                                  {/* Existing Account Holders Attempted Rejoin Block */}
+                                  {amb.existingAttemptedUsers && amb.existingAttemptedUsers.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-purple-100 space-y-2">
+                                      <h5 className="font-bold text-amber-900 text-xs flex items-center gap-1.5">
+                                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                                        Existing Account Holders Attempted Rejoin via Link ({amb.existingAttemptedUsers.length})
+                                      </h5>
+                                      <p className="text-[11px] text-amber-700">
+                                        These users ALREADY had an account prior to clicking the link. Excluded from Ambassador signup metrics.
+                                      </p>
+                                      <div className="bg-amber-50/60 rounded-xl border border-amber-200 overflow-hidden">
+                                        <table className="w-full text-left text-[11px]">
+                                          <thead>
+                                            <tr className="bg-amber-100/50 border-b border-amber-200 text-amber-900 font-bold uppercase">
+                                              <th className="py-2 px-3">Name & Email</th>
+                                              <th className="py-2 px-3">Phone</th>
+                                              <th className="py-2 px-3">Attempt Date</th>
+                                              <th className="py-2 px-3">Status</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-amber-100">
+                                            {amb.existingAttemptedUsers.map((ex) => (
+                                              <tr key={ex._id}>
+                                                <td className="py-2 px-3 font-semibold text-slate-800">
+                                                  {ex.name}
+                                                  <div className="text-slate-500 font-normal">{ex.email}</div>
+                                                </td>
+                                                <td className="py-2 px-3 font-mono">{ex.mobile || "N/A"}</td>
+                                                <td className="py-2 px-3 text-slate-500">{ex.attemptedAt ? new Date(ex.attemptedAt).toLocaleDateString() : "N/A"}</td>
+                                                <td className="py-2 px-3">
+                                                  <span className="bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">
+                                                    Existing Account (Not Counted)
+                                                  </span>
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>

@@ -286,13 +286,22 @@ exports.getAmbassadors = async (req, res) => {
     });
 
     const conversions = await User.find({
-      referredByCode: { $in: referralCodes }
+      referredByCode: { $in: referralCodes },
+      isExistingUserReferred: { $ne: true }
+    }).lean();
+
+    const attemptedRejoins = await User.find({
+      $or: [
+        { attemptedReferredByCode: { $in: referralCodes } },
+        { referredByCode: { $in: referralCodes }, isExistingUserReferred: true }
+      ]
     }).lean();
 
     const ambList = ambassadors.map((amb) => {
       const code = amb.ambassadorCode;
       const refData = refMap[code] || {};
       const referredUsers = conversions.filter((c) => c.referredByCode === code);
+      const existingAttempted = attemptedRejoins.filter((c) => c.attemptedReferredByCode === code || c.referredByCode === code);
 
       return {
         _id: amb._id,
@@ -321,7 +330,14 @@ exports.getAmbassadors = async (req, res) => {
             appliedFeatures: appliedFeatures.join(", "),
             registeredAt: u.referredAt || u.createdAt
           };
-        })
+        }),
+        existingAttemptedUsers: existingAttempted.map((u) => ({
+          _id: u._id,
+          name: u.name || "N/A",
+          email: u.email || "N/A",
+          mobile: u.mobile || "N/A",
+          attemptedAt: u.attemptedReferredAt || u.updatedAt
+        }))
       };
     });
 
@@ -348,7 +364,11 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     const code = user.ambassadorCode;
     const refData = await Referral.findOne({ code }).lean();
 
-    const referredUsers = await User.find({ referredByCode: code }).sort({ createdAt: -1 }).lean();
+    // Only count true NEW user signups
+    const referredUsers = await User.find({ 
+      referredByCode: code,
+      isExistingUserReferred: { $ne: true }
+    }).sort({ createdAt: -1 }).lean();
 
     const conversions = referredUsers.map((u) => {
       const appliedFeatures = [];
