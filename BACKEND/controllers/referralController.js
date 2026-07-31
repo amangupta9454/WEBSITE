@@ -518,13 +518,19 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       attemptedAt: u.attemptedReferredAt || u.updatedAt
     }));
 
+    // Calculate brand-new user signups strictly (who created their ID via this ambassador link)
+    const brandNewUserSignupsCount = await User.countDocuments({
+      referredByCode: codeRegex,
+      isExistingUserReferred: { $ne: true }
+    });
+
     res.json({
       success: true,
       ambassadorCode: code,
       ambassadorCollege: user.ambassadorCollege || "",
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
-      totalSignups: Math.max(refData?.usesCount || 0, conversions.length),
+      totalSignups: brandNewUserSignupsCount,
       featureFlags,
       availableFeatures,
       conversions,
