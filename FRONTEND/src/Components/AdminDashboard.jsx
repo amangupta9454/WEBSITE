@@ -2083,7 +2083,7 @@ const AdminDashboard = () => {
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Share2 className="w-4 h-4" /> Referral
+                <GraduationCap className="w-4 h-4" /> Campus Ambassador
               </button>
             </div>
             <div className="flex items-center gap-3">
