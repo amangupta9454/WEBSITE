@@ -354,6 +354,42 @@ exports.getAmbassadors = async (req, res) => {
   }
 };
 
+const ReferralActivity = require('../models/ReferralActivity');
+
+const recordReferralActivity = async (userDoc, ambassadorCode, featureName) => {
+  try {
+    if (!userDoc || !ambassadorCode || !featureName) return;
+    const cleanCode = ambassadorCode.trim().toUpperCase();
+
+    const refDoc = await Referral.findOne({ code: new RegExp(`^${cleanCode}$`, 'i') });
+    if (!refDoc) return;
+
+    await ReferralActivity.findOneAndUpdate(
+      {
+        user: userDoc._id,
+        ambassadorCode: cleanCode,
+        featureName: featureName
+      },
+      {
+        $set: {
+          userName: userDoc.name || 'N/A',
+          userEmail: userDoc.email || 'N/A',
+          userMobile: userDoc.mobile || 'N/A',
+          performedAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    refDoc.usesCount = (refDoc.usesCount || 0) + 1;
+    await refDoc.save();
+  } catch (e) {
+    console.error("Error recording referral activity:", e);
+  }
+};
+
+exports.recordReferralActivity = recordReferralActivity;
+
 // Student Dashboard: Get Ambassador stats for logged-in ambassador
 exports.getStudentAmbassadorStats = async (req, res) => {
   try {
@@ -368,33 +404,51 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     const codeRegex = new RegExp(`^${code.trim()}$`, "i");
     const refData = await Referral.findOne({ code: codeRegex }).lean();
 
-    // Only count true NEW user signups (Case-insensitive matching)
+    // Query feature-level referral activities
+    const activities = await ReferralActivity.find({ ambassadorCode: codeRegex })
+      .sort({ createdAt: -1 })
+      .lean();
+
     const referredUsers = await User.find({ 
       referredByCode: codeRegex,
       isExistingUserReferred: { $ne: true }
     }).sort({ createdAt: -1 }).lean();
 
-    const conversions = referredUsers.map((u) => {
-      let appliedLabel = u.referredFeature;
-      if (!appliedLabel) {
-        if (u.internships && u.internships.length > 0) {
-          const lastIntern = u.internships[u.internships.length - 1];
-          appliedLabel = `Internship (${lastIntern.domain || "General"})`;
-        } else {
-          appliedLabel = "Account Registered";
-        }
-      }
+    let conversions = [];
 
-      return {
-        _id: u._id,
-        name: u.name || "N/A",
-        email: u.email || "N/A",
-        mobile: u.mobile || "N/A", // Phone number
-        appliedFeatures: appliedLabel,
-        appliedItems: [appliedLabel],
-        registeredAt: u.referredAt || u.createdAt
-      };
-    });
+    if (activities.length > 0) {
+      conversions = activities.map((act) => ({
+        _id: act._id,
+        name: act.userName || "N/A",
+        email: act.userEmail || "N/A",
+        mobile: act.userMobile || "N/A",
+        appliedFeatures: act.featureName,
+        appliedItems: [act.featureName],
+        registeredAt: act.performedAt || act.createdAt
+      }));
+    } else {
+      conversions = referredUsers.map((u) => {
+        let appliedLabel = u.referredFeature;
+        if (!appliedLabel) {
+          if (u.internships && u.internships.length > 0) {
+            const lastIntern = u.internships[u.internships.length - 1];
+            appliedLabel = `Internship (${lastIntern.domain || "General"})`;
+          } else {
+            appliedLabel = "Account Registered";
+          }
+        }
+
+        return {
+          _id: u._id,
+          name: u.name || "N/A",
+          email: u.email || "N/A",
+          mobile: u.mobile || "N/A",
+          appliedFeatures: appliedLabel,
+          appliedItems: [appliedLabel],
+          registeredAt: u.referredAt || u.createdAt
+        };
+      });
+    }
 
     const Settings = require("../models/Settings");
     const [interviewSetting, regSetting, jobSetting] = await Promise.all([
@@ -486,11 +540,18 @@ exports.getStudentAmbassadorStats = async (req, res) => {
 exports.trackUserActivity = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?.userId;
-    const { featureName } = req.body;
+    const { featureName, referralCode } = req.body;
     if (userId && featureName) {
-      await User.findByIdAndUpdate(userId, {
-        referredFeature: featureName
-      });
+      const user = await User.findById(userId);
+      if (user) {
+        user.referredFeature = featureName;
+        await user.save();
+
+        const activeCode = referralCode || user.referredByCode;
+        if (activeCode) {
+          await recordReferralActivity(user, activeCode, featureName);
+        }
+      }
     }
     res.json({ success: true });
   } catch (error) {

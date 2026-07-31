@@ -174,16 +174,16 @@ const registerInternship = async (req, res) => {
     }
 
     const referralCode = (req.body.referralCode || req.body.ref || '').trim().toUpperCase();
-    if (referralCode && !user.referredByCode) {
-      user.referredByCode = referralCode;
-      user.referredAt = new Date();
-      user.referredFeature = `Internship (${domain || "General"})`;
-      const Referral = require('../models/Referral');
-      const refDoc = await Referral.findOne({ code: referralCode });
-      if (refDoc) {
-        refDoc.usesCount = (refDoc.usesCount || 0) + 1;
-        await refDoc.save();
+    if (referralCode) {
+      if (!user.referredByCode) {
+        user.referredByCode = referralCode;
+        user.referredAt = new Date();
       }
+      const featureLabel = `Internship (${domain || "General"})`;
+      user.referredFeature = featureLabel;
+      
+      const { recordReferralActivity } = require('./referralController');
+      await recordReferralActivity(user, referralCode, featureLabel);
     }
 
     // Attach offer letter status defaults safely handled by schema

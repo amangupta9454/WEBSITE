@@ -71,12 +71,8 @@ exports.googleLogin = async (req, res) => {
       await user.save();
 
       if (referralCode) {
-        const Referral = require('../models/Referral');
-        const refDoc = await Referral.findOne({ code: referralCode });
-        if (refDoc) {
-          refDoc.usesCount = (refDoc.usesCount || 0) + 1;
-          await refDoc.save();
-        }
+        const { recordReferralActivity } = require('./referralController');
+        await recordReferralActivity(user, referralCode, featureTarget);
       }
     } else if (referralCode) {
       // User already existed in DB prior to this referral link click
@@ -86,6 +82,9 @@ exports.googleLogin = async (req, res) => {
         user.attemptedReferredAt = new Date();
         await user.save();
       }
+
+      const { recordReferralActivity } = require('./referralController');
+      await recordReferralActivity(user, referralCode, featureTarget);
     }
     
     // Determine role based on explicit role field, fallback to internships array

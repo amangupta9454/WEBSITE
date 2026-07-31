@@ -37,9 +37,10 @@ const InterviewSetup = () => {
       }).catch(err => console.error(err));
 
       // Track feature activity for Ambassador stats
+      const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
       axios.post(
         `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/track-activity`,
-        { featureName: "AI Mock Interview Joined" },
+        { featureName: "AI Mock Interview Joined", referralCode: activeRef },
         { headers: { Authorization: `Bearer ${token}` } }
       ).catch(() => {});
     }

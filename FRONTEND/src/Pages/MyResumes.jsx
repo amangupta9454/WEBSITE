@@ -40,9 +40,10 @@ const MyResumes = () => {
         setCredits(creditsRes.data.credits);
 
         // Track feature activity for Ambassador stats
+        const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
         axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/student/track-activity`,
-          { featureName: "AI Resume Created" },
+          { featureName: "AI Resume Created", referralCode: activeRef },
           { headers: { Authorization: `Bearer ${token}` } }
         ).catch(() => {});
         
