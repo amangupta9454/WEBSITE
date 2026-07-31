@@ -268,6 +268,25 @@ const ReferralAdmin = () => {
     toast.success("Referral link copied to clipboard!");
     setTimeout(() => setCopiedCode(null), 2000);
   };
+  const handleDeleteAmbassador = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete Campus Ambassador "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.delete(`${apiUrl}/api/admin/ambassador/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "Campus Ambassador deleted successfully");
+        setAmbassadors((prev) => prev.filter((a) => a._id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting ambassador:", error);
+      toast.error(error.response?.data?.message || "Failed to delete Campus Ambassador");
+    }
+  };
 
   const activeAmbassadorsCount = ambassadors.filter((a) => a.isActive !== false).length;
 
@@ -526,7 +545,7 @@ const ReferralAdmin = () => {
                               </span>
                             </td>
 
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right space-x-2">
                               <button
                                 onClick={() => setExpandedAmbassador(isExpanded ? null : amb._id)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-all"
@@ -534,6 +553,15 @@ const ReferralAdmin = () => {
                                 <Users className="w-3.5 h-3.5" />
                                 View Users ({amb.referredUsers?.length || 0})
                                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteAmbassador(amb._id, amb.name)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold border border-red-200 transition-all"
+                                title="Delete Campus Ambassador"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                Delete
                               </button>
                             </td>
                           </tr>

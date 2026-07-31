@@ -271,6 +271,32 @@ exports.assignAmbassador = async (req, res) => {
   }
 };
 
+// Admin: Delete/remove a Campus Ambassador
+exports.deleteAmbassador = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Ambassador user not found" });
+    }
+
+    const code = user.ambassadorCode;
+    user.isAmbassador = false;
+    user.ambassadorCode = null;
+    user.ambassadorCollege = null;
+    await user.save();
+
+    if (code) {
+      await Referral.deleteOne({ code });
+    }
+
+    res.json({ success: true, message: `${user.name || "Ambassador"} removed successfully` });
+  } catch (error) {
+    console.error("Error deleting ambassador:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Admin: Get all Campus Ambassadors and their referral stats
 exports.getAmbassadors = async (req, res) => {
   try {
