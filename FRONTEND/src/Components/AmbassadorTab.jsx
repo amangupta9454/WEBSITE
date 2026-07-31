@@ -165,7 +165,7 @@ const AmbassadorTab = () => {
           className="flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/10 shrink-0"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Dashboard
-      </div>
+        </button>
 
       {/* Join Official Ambassador Group Card */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 sm:p-5 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/30">
