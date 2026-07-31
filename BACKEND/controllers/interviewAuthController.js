@@ -53,15 +53,39 @@ exports.googleLogin = async (req, res) => {
       });
     }
     
+    const referralCode = (req.body.referralCode || req.body.ref || '').trim().toUpperCase();
+
     if (!user) {
       // Create a new normal user (who is not an intern yet)
       user = new User({
         email: normalizedEmail,
         name: name || 'Unknown User',
         profileImage: picture || '',
-        mobile: 'Google Auth' // Required by User schema
+        mobile: 'Google Auth', // Required by User schema
+        referredByCode: referralCode || null,
+        referredAt: referralCode ? new Date() : null
       });
       await user.save();
+
+      if (referralCode) {
+        const Referral = require('../models/Referral');
+        const refDoc = await Referral.findOne({ code: referralCode });
+        if (refDoc) {
+          refDoc.usesCount = (refDoc.usesCount || 0) + 1;
+          await refDoc.save();
+        }
+      }
+    } else if (referralCode && !user.referredByCode) {
+      user.referredByCode = referralCode;
+      user.referredAt = new Date();
+      await user.save();
+
+      const Referral = require('../models/Referral');
+      const refDoc = await Referral.findOne({ code: referralCode });
+      if (refDoc) {
+        refDoc.usesCount = (refDoc.usesCount || 0) + 1;
+        await refDoc.save();
+      }
     }
     
     // Determine role based on explicit role field, fallback to internships array

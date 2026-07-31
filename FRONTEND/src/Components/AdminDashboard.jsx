@@ -49,7 +49,9 @@ import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
 import AdminResumeView from "./AdminResumeView";
 import JobAdminPage from "./JobAdminPage";
-import { Bell, Settings, Zap, Database } from "lucide-react";
+import AllUsersAdmin from "./AllUsersAdmin";
+import ReferralAdmin from "./ReferralAdmin";
+import { Bell, Settings, Zap, Database, Share2 } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -2005,7 +2007,7 @@ const AdminDashboard = () => {
             <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
               <button
                 onClick={() => setActiveMainTab("features")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
                   activeMainTab === "features"
                     ? "bg-white text-indigo-700 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
@@ -2014,14 +2016,34 @@ const AdminDashboard = () => {
                 <Zap className="w-4 h-4" /> Features
               </button>
               <button
-                onClick={() => setActiveMainTab("interns")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                  activeMainTab === "interns"
+                onClick={() => setActiveMainTab("users")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "users"
                     ? "bg-white text-blue-700 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Users className="w-4 h-4" /> Interns
+                <Users className="w-4 h-4" /> All Users
+              </button>
+              <button
+                onClick={() => setActiveMainTab("interns")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "interns"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" /> Interns
+              </button>
+              <button
+                onClick={() => setActiveMainTab("referral")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "referral"
+                    ? "bg-white text-purple-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Share2 className="w-4 h-4" /> Referral
               </button>
             </div>
             <div className="flex items-center gap-3">
@@ -2038,6 +2060,20 @@ const AdminDashboard = () => {
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-6">
+        {/* ─── ALL USERS TAB ─── */}
+        {activeMainTab === "users" && (
+          <div className="w-full">
+            <AllUsersAdmin />
+          </div>
+        )}
+
+        {/* ─── REFERRAL TAB ─── */}
+        {activeMainTab === "referral" && (
+          <div className="w-full">
+            <ReferralAdmin />
+          </div>
+        )}
+
         {/* ─── FEATURES TAB ─── */}
         {activeMainTab === "features" && (
           <div className="w-full flex flex-col md:flex-row gap-6">

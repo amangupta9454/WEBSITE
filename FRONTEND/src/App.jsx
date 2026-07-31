@@ -42,6 +42,8 @@ import FeatureBanner from "./Components/FeatureBanner";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import { InterviewConfigProvider } from "./context/InterviewConfigContext";
 
+import ReferralTracker from "./Components/ReferralTracker";
+
 const UnifiedLayout = () => (
   <MainLayout>
     <Outlet />
@@ -51,6 +53,7 @@ const UnifiedLayout = () => (
 function App() {
   return (
     <Router>
+      <ReferralTracker />
       <Toaster position="top-right" containerStyle={{ top: 80 }} />
       <FeatureBanner />
       <InterviewConfigProvider>

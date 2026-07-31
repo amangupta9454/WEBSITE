@@ -51,6 +51,15 @@ const {
   toggleJobPortalSetting,
 } = require("../controllers/adminController");
 const { assignV2Projects, saveV2GlobalTask, getV2GlobalTasks, deleteV2GlobalTask } = require("../controllers/adminControllerV2");
+const { getAllUsers } = require("../controllers/adminUsersController");
+const {
+  createReferralCode,
+  getReferralCodes,
+  toggleReferralStatus,
+  deleteReferralCode,
+  getReferredUsers,
+  trackClick,
+} = require("../controllers/referralController");
 const auth = require("../middleware/auth");
 const { verifyAdmin } = require("../middleware/verifyAdmin");
 
@@ -58,6 +67,15 @@ const router = express.Router();
 
 router.post("/login", adminLogin);
 router.get("/internships", auth, verifyAdmin, getInternships);
+
+// All Users & Referral routes
+router.get("/users", auth, verifyAdmin, getAllUsers);
+router.get("/referrals", auth, verifyAdmin, getReferralCodes);
+router.post("/referrals/create", auth, verifyAdmin, createReferralCode);
+router.post("/referrals/toggle/:id", auth, verifyAdmin, toggleReferralStatus);
+router.delete("/referrals/:id", auth, verifyAdmin, deleteReferralCode);
+router.get("/referrals/conversions", auth, verifyAdmin, getReferredUsers);
+router.post("/referrals/track-click", trackClick);
 router.get("/recent-payments", auth, verifyAdmin, getRecentPayments);
 router.post("/mark-downloaded", auth, verifyAdmin, markDownloaded);
 router.post("/update-internship", auth, verifyAdmin, updateInternshipDetails);

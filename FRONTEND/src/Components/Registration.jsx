@@ -80,6 +80,8 @@ const Registration = () => {
         const data = new FormData();
         Object.keys(formData).forEach(key => data.append(key, formData[key]));
         data.append('resume', resume);
+        const refCode = localStorage.getItem('referralCode');
+        if (refCode) data.append('referralCode', refCode);
 
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/register`,
@@ -133,6 +135,8 @@ const Registration = () => {
             submitData.append('razorpay_payment_id', response.razorpay_payment_id);
             submitData.append('razorpay_order_id', response.razorpay_order_id);
             submitData.append('razorpay_signature', response.razorpay_signature);
+            const refCode = localStorage.getItem('referralCode');
+            if (refCode) submitData.append('referralCode', refCode);
 
             const verifyRes = await axios.post(
               `${import.meta.env.VITE_BACKEND_URL}/api/register/verify-payment`,

@@ -130,6 +130,8 @@ const userSchema = new mongoose.Schema(
         date: { type: Date, default: Date.now }
       }
     ],
+    referredByCode: { type: String, default: null },
+    referredAt: { type: Date },
   },
   { timestamps: true },
 );

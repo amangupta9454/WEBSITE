@@ -173,6 +173,18 @@ const registerInternship = async (req, res) => {
       }
     }
 
+    const referralCode = (req.body.referralCode || req.body.ref || '').trim().toUpperCase();
+    if (referralCode && !user.referredByCode) {
+      user.referredByCode = referralCode;
+      user.referredAt = new Date();
+      const Referral = require('../models/Referral');
+      const refDoc = await Referral.findOne({ code: referralCode });
+      if (refDoc) {
+        refDoc.usesCount = (refDoc.usesCount || 0) + 1;
+        await refDoc.save();
+      }
+    }
+
     // Attach offer letter status defaults safely handled by schema
     user.role = 'intern';
     user.internships.push(applicationData);
