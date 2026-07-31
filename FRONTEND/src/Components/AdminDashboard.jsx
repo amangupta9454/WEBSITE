@@ -52,6 +52,7 @@ import JobAdminPage from "./JobAdminPage";
 import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
 import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
+import EmailCenter from "../Admin/Email/EmailCenter";
 import { Bell, Settings, Zap, Database, Share2 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -2086,6 +2087,16 @@ const AdminDashboard = () => {
               >
                 <GraduationCap className="w-4 h-4" /> Campus Ambassador
               </button>
+              <button
+                onClick={() => setActiveMainTab("email")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                  activeMainTab === "email"
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Mail className="w-4 h-4" /> Email Center
+              </button>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -2112,6 +2123,13 @@ const AdminDashboard = () => {
         {activeMainTab === "referral" && (
           <div className="w-full">
             <ReferralAdmin />
+          </div>
+        )}
+
+        {/* ─── EMAIL CENTER TAB ─── */}
+        {activeMainTab === "email" && (
+          <div className="w-full">
+            <EmailCenter />
           </div>
         )}
 

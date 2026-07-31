@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { mailConfig, defaultSender } = require('../config/mailConfig');
+const emailLogger = require('./emailLogger');
 
 /**
  * Mail Service for Code-A-Nova
@@ -17,25 +18,30 @@ class MailService {
    */
   initTransporter() {
     try {
-      this.transporter = nodemailer.createTransport(mailConfig);
+      this.transporter = nodemailer.createTransport({
+        ...mailConfig,
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
+        tls: {
+          rejectUnauthorized: process.env.NODE_ENV === "production" ? true : false,
+        },
+      });
 
-      // Perform background connection test if SMTP credentials are provided
-      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-        this.transporter.verify((error) => {
-          if (error) {
-            console.warn('[MailService] ⚠️ SMTP connection verify failed during initialization:', error.message);
-          } else {
-            console.log('[MailService] ✔ Hostinger SMTP Gateway ready for transmission.');
-          }
-        });
-      }
-    } catch (error) {
-      console.error('[MailService] ❌ Fatal error while creating Nodemailer transport:', error);
+      this.transporter.verify((err) => {
+        if (err) {
+          console.error("SMTP Verify Failed:", err.message);
+        } else {
+          console.log("Hostinger SMTP Connected Successfully");
+        }
+      });
+    } catch (err) {
+      console.error(err);
     }
   }
 
   /**
-   * Sends a single email using Hostinger SMTP.
+   * Sends a single email using Hostinger SMTP and automatically logs historical record to MongoDB.
    * @param {Object} options - Email configuration object
    * @param {string} options.to - Recipient email address
    * @param {string} options.subject - Email subject line
@@ -45,31 +51,90 @@ class MailService {
    * @param {Array} [options.attachments] - Optional array of file attachments
    * @param {string|Array} [options.cc] - Optional CC recipient(s)
    * @param {string|Array} [options.bcc] - Optional BCC recipient(s)
+   * @param {string} [options.campaign] - Optional campaign classification
+   * @param {string} [options.source] - Optional source identifier
+   * @param {string} [options.recipientName] - Optional recipient name
+   * @param {string} [options.text] - Optional plain text fallback
    * @returns {Promise<{success: boolean, messageId?: string, accepted?: Array, error?: string, code?: string}>}
    */
-  async sendEmail({ to, subject, html, from = defaultSender, replyTo, attachments, cc, bcc }) {
+  async sendEmail({
+    to,
+    subject,
+    html,
+    from = `"Code-A-Nova" <${process.env.SMTP_USER}>`,
+    replyTo = process.env.SMTP_USER,
+    attachments,
+    cc,
+    bcc,
+    text,
+    campaign,
+    source,
+    recipientName,
+  }) {
     try {
       if (!this.transporter) {
         this.initTransporter();
       }
 
       if (!this.transporter) {
-        throw new Error('Nodemailer transporter could not be initialized.');
+        throw new Error("SMTP transporter not initialized.");
       }
 
       const mailOptions = {
-        from: from || defaultSender,
+        from,
         to,
         subject,
+        // Plain text fallback
+        text:
+          text ||
+          html
+            .replace(/<style[\s\S]*?<\/style>/gi, "")
+            .replace(/<script[\s\S]*?<\/script>/gi, "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim(),
         html,
-        ...(replyTo && { replyTo }),
+        replyTo,
         ...(cc && { cc }),
         ...(bcc && { bcc }),
         ...(attachments && { attachments }),
       };
 
       const info = await this.transporter.sendMail(mailOptions);
-      console.log(`[MailService] ✔ Email sent successfully to [${to}] | MessageID: ${info.messageId}`);
+
+      const finalCampaign = campaign || 'General';
+      const finalSource = source || 'Google Apps Script';
+
+      console.log("==========================================");
+      console.log("EMAIL SENT (Diagnostics)");
+      console.log("To:", to);
+      console.log("Subject:", subject);
+      console.log("Campaign:", finalCampaign);
+      console.log("Source:", finalSource);
+      console.log("Message ID:", info.messageId);
+      console.log("Accepted:", info.accepted);
+      console.log("Rejected:", info.rejected);
+      console.log("SMTP Response:", info.response || "250 OK");
+      console.log("==========================================");
+
+      // Fix 1 & 2: Automatic logging after successful SMTP transaction; failure MUST NOT block delivery
+      emailLogger.logEmail({
+        recipientName,
+        recipientEmail: to,
+        subject,
+        campaign: finalCampaign,
+        status: "SUCCESS",
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        smtpResponse: info.response || "250 2.0.0 OK",
+        html,
+        text: mailOptions.text,
+        attachments,
+        source: finalSource,
+      }).catch((err) => {
+        console.error("[MailService] ⚠️ MongoDB logging failed (non-blocking exception):", err.message);
+      });
 
       return {
         success: true,
@@ -78,11 +143,39 @@ class MailService {
         rejected: info.rejected,
       };
     } catch (error) {
-      console.error(`[MailService] ❌ SMTP delivery failed for recipient [${to}]:`, error.message);
+      const finalCampaign = campaign || "General";
+      const finalSource = source || "Google Apps Script";
+
+      console.error("==========================================");
+      console.error("EMAIL FAILED (Diagnostics)");
+      console.error("Recipient:", to);
+      console.error("Subject:", subject);
+      console.error("Campaign:", finalCampaign);
+      console.error("Source:", finalSource);
+      console.error("SMTP Response / Error:", error.message);
+      console.error("==========================================");
+
+      // Fix 1 & 2: Automatic logging on failed SMTP transaction; failure MUST NOT throw back to caller
+      emailLogger.logEmail({
+        recipientName,
+        recipientEmail: to,
+        subject,
+        campaign: finalCampaign,
+        status: "FAILED",
+        messageId: null,
+        smtpResponse: error.message || "SMTP transmission error",
+        html,
+        text: text || "",
+        attachments,
+        source: finalSource,
+      }).catch((err) => {
+        console.error("[MailService] ⚠️ MongoDB failure log attempt failed (non-blocking):", err.message);
+      });
+
       return {
         success: false,
-        error: error.message || 'Unknown SMTP transmission failure',
-        code: error.code || 'SMTP_TRANSMISSION_ERROR',
+        error: error.message,
+        code: error.code,
       };
     }
   }
@@ -128,6 +221,60 @@ class MailService {
       failed,
       results,
     };
+  }
+
+  /**
+   * Resends a historical stored email by ID.
+   * Enforces attachment safety checks and guarantees historical log immutability by creating a brand new record.
+   * @param {string} logId - The MongoDB document ID of the historical email log
+   */
+  async resendStoredEmail(logId) {
+    const EmailLog = require('../models/email/EmailLog');
+    const log = await EmailLog.findById(logId);
+
+    if (!log) {
+      const err = new Error("Original email log record not found.");
+      err.status = 404;
+      throw err;
+    }
+
+    // Fix 3 (HIGH): Attachment Resend Protection against placeholder / buffer strings
+    if (Array.isArray(log.attachments) && log.attachments.length > 0) {
+      for (const att of log.attachments) {
+        if (
+          att.content === "[Buffer Payload]" ||
+          att.content === "[Binary Attachment Payload]" ||
+          (!att.content && !att.url && !att.path)
+        ) {
+          const err = new Error("Original attachment is no longer available. Please upload a new attachment before resending.");
+          err.status = 400;
+          throw err;
+        }
+      }
+    }
+
+    // Prepare valid attachments for Nodemailer
+    const validAttachments = log.attachments
+      ? log.attachments.filter((a) => a.content || a.url || a.path).map((a) => ({
+          filename: a.filename || "attachment",
+          content: a.content || undefined,
+          path: (!a.content && (a.url || a.path)) ? (a.url || a.path) : undefined,
+        }))
+      : [];
+
+    console.log(`[MailService] 🔄 Resending historical email [${log.subject}] to [${log.recipientEmail}]...`);
+
+    // Fix 11 (MEDIUM): Resend calls sendEmail with source 'Admin Resend', which automatically creates a completely NEW log entry
+    return await this.sendEmail({
+      to: log.recipientEmail,
+      subject: log.subject,
+      html: log.html,
+      text: log.text,
+      attachments: validAttachments,
+      campaign: log.campaign,
+      source: "Admin Resend",
+      recipientName: log.recipientName,
+    });
   }
 }
 
