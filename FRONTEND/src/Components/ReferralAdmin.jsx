@@ -59,7 +59,7 @@ const ReferralAdmin = () => {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
       const [refRes, convRes] = await Promise.all([
         axios.get(`${apiUrl}/api/admin/referrals`, { headers }),
@@ -80,7 +80,7 @@ const ReferralAdmin = () => {
     } catch (error) {
       console.error("Error loading referral data:", error);
       toast.error(error.response?.data?.message || "Failed to load referral data");
-    } fontinally: {
+    } finally {
       setLoading(false);
     }
   };
@@ -89,7 +89,7 @@ const ReferralAdmin = () => {
     try {
       setLoadingConversions(true);
       const token = localStorage.getItem("adminToken");
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
       const res = await axios.get(`${apiUrl}/api/admin/referrals/conversions`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -122,7 +122,7 @@ const ReferralAdmin = () => {
     try {
       setCreating(true);
       const token = localStorage.getItem("adminToken");
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
       const res = await axios.post(
         `${apiUrl}/api/admin/referrals/create`,
@@ -148,7 +148,7 @@ const ReferralAdmin = () => {
   const handleToggleStatus = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
       const res = await axios.post(
         `${apiUrl}/api/admin/referrals/toggle/${id}`,
@@ -169,7 +169,7 @@ const ReferralAdmin = () => {
     if (!window.confirm("Are you sure you want to delete this referral code?")) return;
     try {
       const token = localStorage.getItem("adminToken");
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
 
       const res = await axios.delete(`${apiUrl}/api/admin/referrals/${id}`, {
         headers: { Authorization: `Bearer ${token}` },

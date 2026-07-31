@@ -32,8 +32,9 @@ const AllUsersAdmin = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admin/users`,
+        `${baseUrl}/api/admin/users`,
         {
           params: { type: filterType, search: searchQuery },
           headers: { Authorization: `Bearer ${token}` },

@@ -14,8 +14,7 @@ const ReferralTracker = () => {
         const cleanRef = ref.trim().toUpperCase();
         localStorage.setItem("referralCode", cleanRef);
 
-        // Ping backend to track click count
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
         axios.post(`${apiUrl}/api/admin/referrals/track-click`, { code: cleanRef }).catch(() => {
           // Ignore click tracking error silently
         });
