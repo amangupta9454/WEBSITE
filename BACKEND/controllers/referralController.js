@@ -315,19 +315,22 @@ exports.getAmbassadors = async (req, res) => {
         clicks: refData.clicks || 0,
         usesCount: referredUsers.length,
         referredUsers: referredUsers.map((u) => {
-          const appliedFeatures = [];
-          if (u.internships && u.internships.length > 0) {
-            u.internships.forEach((i) => appliedFeatures.push(`Internship (${i.domain || "General"})`));
+          let appliedLabel = u.referredFeature;
+          if (!appliedLabel) {
+            if (u.internships && u.internships.length > 0) {
+              const lastIntern = u.internships[u.internships.length - 1];
+              appliedLabel = `Internship (${lastIntern.domain || "General"})`;
+            } else {
+              appliedLabel = "Account Registered";
+            }
           }
-          if (u.resumeData && Object.keys(u.resumeData).length > 0) appliedFeatures.push("AI Resume Created");
-          if (appliedFeatures.length === 0) appliedFeatures.push("Account Registered");
 
           return {
             _id: u._id,
             name: u.name,
             email: u.email,
             mobile: u.mobile, // Phone number
-            appliedFeatures: appliedFeatures.join(", "),
+            appliedFeatures: appliedLabel,
             registeredAt: u.referredAt || u.createdAt
           };
         }),
@@ -371,21 +374,23 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     }).sort({ createdAt: -1 }).lean();
 
     const conversions = referredUsers.map((u) => {
-      const appliedFeatures = [];
-      if (u.internships && u.internships.length > 0) {
-        u.internships.forEach((i) => appliedFeatures.push(`Internship (${i.domain || "General"})`));
+      let appliedLabel = u.referredFeature;
+      if (!appliedLabel) {
+        if (u.internships && u.internships.length > 0) {
+          const lastIntern = u.internships[u.internships.length - 1];
+          appliedLabel = `Internship (${lastIntern.domain || "General"})`;
+        } else {
+          appliedLabel = "Account Registered";
+        }
       }
-      if (u.resumeData && Object.keys(u.resumeData).length > 0) appliedFeatures.push("AI Resume Created");
-      if (u.interviewCredits !== undefined) appliedFeatures.push(`Interview Access (${u.interviewCredits} credits)`);
-      if (appliedFeatures.length === 0) appliedFeatures.push("Account Registered");
 
       return {
         _id: u._id,
         name: u.name || "N/A",
         email: u.email || "N/A",
         mobile: u.mobile || "N/A", // Phone number
-        appliedFeatures: appliedFeatures.join(", "),
-        appliedItems: appliedFeatures,
+        appliedFeatures: appliedLabel,
+        appliedItems: [appliedLabel],
         registeredAt: u.referredAt || u.createdAt
       };
     });

@@ -54,6 +54,7 @@ exports.googleLogin = async (req, res) => {
     }
     
     const referralCode = (req.body.referralCode || req.body.referredByCode || req.body.ref || req.query.ref || '').trim().toUpperCase();
+    const featureTarget = req.body.featureTarget || req.body.feature || 'Account Registered';
 
     if (!user) {
       // Create a brand-new user (Valid referral signup if referralCode exists)
@@ -64,6 +65,7 @@ exports.googleLogin = async (req, res) => {
         mobile: 'Google Auth', // Required by User schema
         referredByCode: referralCode || null,
         referredAt: referralCode ? new Date() : null,
+        referredFeature: referralCode ? featureTarget : null,
         isExistingUserReferred: false
       });
       await user.save();

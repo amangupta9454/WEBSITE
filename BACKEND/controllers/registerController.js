@@ -177,6 +177,7 @@ const registerInternship = async (req, res) => {
     if (referralCode && !user.referredByCode) {
       user.referredByCode = referralCode;
       user.referredAt = new Date();
+      user.referredFeature = `Internship (${domain || "General"})`;
       const Referral = require('../models/Referral');
       const refDoc = await Referral.findOne({ code: referralCode });
       if (refDoc) {

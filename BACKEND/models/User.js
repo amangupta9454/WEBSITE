@@ -132,6 +132,7 @@ const userSchema = new mongoose.Schema(
     ],
     referredByCode: { type: String, default: null },
     referredAt: { type: Date },
+    referredFeature: { type: String, default: null },
     isExistingUserReferred: { type: Boolean, default: false },
     attemptedReferredByCode: { type: String, default: null },
     attemptedReferredAt: { type: Date },
