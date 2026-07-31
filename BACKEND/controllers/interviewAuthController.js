@@ -80,7 +80,7 @@ exports.googleLogin = async (req, res) => {
       }
     } else if (referralCode) {
       // User already existed in DB prior to this referral link click
-      if (!user.referredByCode) {
+      if (user.referredByCode !== referralCode) {
         user.isExistingUserReferred = true;
         user.attemptedReferredByCode = referralCode;
         user.attemptedReferredAt = new Date();

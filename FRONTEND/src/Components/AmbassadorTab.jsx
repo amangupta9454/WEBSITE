@@ -375,6 +375,69 @@ const AmbassadorTab = () => {
           </table>
         </div>
       </div>
+
+      {/* Existing Account Holders Clicked Your Link Section */}
+      {stats.existingAccountAttempts && stats.existingAccountAttempts.length > 0 && (
+        <div className="bg-amber-50/40 p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-amber-900">
+                Existing Users Joined Link (Account Already Created) ({stats.existingAccountAttempts.length})
+              </h3>
+              <p className="text-xs text-amber-700">
+                These students already had an account prior to clicking your link. Uncounted in new signup metrics, but recorded here for your visibility.
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto border border-amber-200 rounded-xl bg-white">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-amber-100/50 border-b border-amber-200 text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+                  <th className="py-3 px-4">Student Name & Email</th>
+                  <th className="py-3 px-4">Phone Number</th>
+                  <th className="py-3 px-4">Attempt Date</th>
+                  <th className="py-3 px-4">Account Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100">
+                {stats.existingAccountAttempts.map((u) => (
+                  <tr key={u._id} className="hover:bg-amber-50/50 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">{u.name}</div>
+                      <div className="text-slate-500 text-[11px] flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-slate-400" /> {u.email}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 font-mono font-medium text-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        {u.mobile || "N/A"}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      {u.attemptedAt ? new Date(u.attemptedAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-lg font-bold text-[11px]">
+                        Account Already Created (Not Counted)
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

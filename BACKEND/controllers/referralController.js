@@ -448,6 +448,22 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       },
     ];
 
+    // Also fetch existing users who attempted rejoin via this ambassador link
+    const attemptedRejoins = await User.find({
+      $or: [
+        { attemptedReferredByCode: codeRegex },
+        { referredByCode: codeRegex, isExistingUserReferred: true }
+      ]
+    }).sort({ updatedAt: -1 }).lean();
+
+    const existingAccountAttempts = attemptedRejoins.map((u) => ({
+      _id: u._id,
+      name: u.name || "N/A",
+      email: u.email || "N/A",
+      mobile: u.mobile || "N/A",
+      attemptedAt: u.attemptedReferredAt || u.updatedAt
+    }));
+
     res.json({
       success: true,
       ambassadorCode: code,
@@ -457,7 +473,8 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       totalSignups: Math.max(refData?.usesCount || 0, conversions.length),
       featureFlags,
       availableFeatures,
-      conversions
+      conversions,
+      existingAccountAttempts
     });
   } catch (error) {
     console.error("Error in getStudentAmbassadorStats:", error);
