@@ -269,6 +269,8 @@ const ReferralAdmin = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const activeAmbassadorsCount = ambassadors.filter((a) => a.isActive !== false).length;
+
   return (
     <div className="space-y-8">
       {/* Header & Metrics */}
