@@ -365,11 +365,12 @@ exports.getStudentAmbassadorStats = async (req, res) => {
     }
 
     const code = user.ambassadorCode;
-    const refData = await Referral.findOne({ code }).lean();
+    const codeRegex = new RegExp(`^${code.trim()}$`, "i");
+    const refData = await Referral.findOne({ code: codeRegex }).lean();
 
-    // Only count true NEW user signups
+    // Only count true NEW user signups (Case-insensitive matching)
     const referredUsers = await User.find({ 
-      referredByCode: code,
+      referredByCode: codeRegex,
       isExistingUserReferred: { $ne: true }
     }).sort({ createdAt: -1 }).lean();
 
@@ -453,7 +454,7 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       ambassadorCollege: user.ambassadorCollege || "",
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
-      totalSignups: conversions.length,
+      totalSignups: Math.max(refData?.usesCount || 0, conversions.length),
       featureFlags,
       availableFeatures,
       conversions

@@ -9,16 +9,28 @@ const ReferralTracker = () => {
     try {
       const searchParams = new URLSearchParams(location.search);
       const ref = searchParams.get("ref") || searchParams.get("referralCode") || searchParams.get("referredByCode");
+      const path = location.pathname.toLowerCase();
+
+      let activeRef = null;
 
       if (ref) {
-        const cleanRef = ref.trim().toUpperCase();
-        localStorage.setItem("referralCode", cleanRef);
-        localStorage.setItem("referredByCode", cleanRef);
-        sessionStorage.setItem("referralCode", cleanRef);
+        activeRef = ref.trim().toUpperCase();
+      } else {
+        // Retain session lock across 100 reloads/refreshes
+        const stored = sessionStorage.getItem("referralCode") || localStorage.getItem("referralCode") || localStorage.getItem("referredByCode");
+        if (stored) {
+          activeRef = stored.trim().toUpperCase();
+        }
+      }
+
+      if (activeRef) {
+        localStorage.setItem("referralCode", activeRef);
+        localStorage.setItem("referredByCode", activeRef);
+        sessionStorage.setItem("referralCode", activeRef);
+        sessionStorage.setItem("referredByCode", activeRef);
 
         // Infer feature target from path
-        const path = location.pathname.toLowerCase();
-        let featureTarget = "Account Registered";
+        let featureTarget = sessionStorage.getItem("referredFeatureTarget") || "Account Registered";
         if (path.includes("resume")) {
           featureTarget = "AI Resume Created";
         } else if (path.includes("interview")) {
@@ -30,14 +42,17 @@ const ReferralTracker = () => {
         }
 
         sessionStorage.setItem("referredFeatureTarget", featureTarget);
+
         if (!path.includes("login") && !path.includes("dashboard")) {
           sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
         }
 
-        const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
-        axios.post(`${apiUrl}/api/admin/referrals/track-click`, { code: cleanRef }).catch(() => {
-          // Ignore click tracking error silently
-        });
+        if (ref) {
+          const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+          axios.post(`${apiUrl}/api/admin/referrals/track-click`, { code: activeRef }).catch(() => {
+            // Ignore click tracking error silently
+          });
+        }
       }
     } catch (e) {
       console.error("Error tracking referral link:", e);
