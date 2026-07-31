@@ -51,6 +51,7 @@ import AdminResumeView from "./AdminResumeView";
 import JobAdminPage from "./JobAdminPage";
 import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
+import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
 import { Bell, Settings, Zap, Database, Share2 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -2260,6 +2261,12 @@ const AdminDashboard = () => {
               Recent Paid
             </button>
             <button
+              onClick={() => setActiveSidebarTab("assessment")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "assessment" ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Award className="w-4 h-4 text-indigo-600" /> Assessment
+            </button>
+            <button
               onClick={() => setActiveSidebarTab("settings")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "settings" ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
@@ -3276,6 +3283,12 @@ const AdminDashboard = () => {
           {activeSidebarTab === "impersonate" && (
             <div className="w-full">
               <ImpersonateIntern />
+            </div>
+          )}
+
+          {activeSidebarTab === "assessment" && (
+            <div className="flex-1 min-w-0 animate-fade-in">
+              <AssessmentDashboard />
             </div>
           )}
 

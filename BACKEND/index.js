@@ -29,6 +29,10 @@ const jobRoutes = require("./routes/jobs");
 const otpRoutes = require("./routes/otp");
 const interviewConfigRoutes = require("./routes/interviewConfigRoutes");
 const InterviewConfigInitializer = require("./initializers/InterviewConfigInitializer");
+// ── Assessment Module Routes (Phase 1+) ──────────────────────────────────────
+const adminAssessmentRoutes   = require("./routes/assessment/adminAssessment");
+const studentAssessmentRoutes = require("./routes/assessment/studentAssessment");
+const publicAssessmentRoutes  = require("./routes/assessment/publicAssessment");
 require("./scripts/v2NotificationsCron");
 
 // Global cached connection (very important for serverless!)
@@ -134,6 +138,10 @@ app.use("/api/admin/resume", adminResumeRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/otp", otpRoutes);
 app.use("/api/interview-config", interviewConfigRoutes);
+// ── Assessment Module ─────────────────────────────────────────────────────────
+app.use("/api/admin/assessment", adminAssessmentRoutes);
+app.use("/api/assessment",       studentAssessmentRoutes);
+app.use("/api/public/assessment",publicAssessmentRoutes);
 
 // Production Health Endpoint
 app.get("/healthz", async (req, res) => {

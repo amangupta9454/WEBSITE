@@ -15,7 +15,7 @@
   "dependencies": {
     "@google/genai": "^2.10.0",
     "@sentry/node": "^10.63.0",
-    "@sentry/profiling-node": "^10.63.0",
+    "@sentry/profiling-node": "^10.69.0",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
@@ -25,6 +25,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "google-auth-library": "^10.9.0",
+    "groq-sdk": "^1.4.1",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
@@ -35,6 +36,10 @@
     "razorpay": "^2.9.6",
     "resend": "^6.6.0",
     "streamifier": "^0.1.1",
+    "uuid": "^14.0.1",
     "xlsx": "^0.18.5"
+  },
+  "allowScripts": {
+    "@sentry/node-cpu-profiler@2.4.2": true
   }
 }
