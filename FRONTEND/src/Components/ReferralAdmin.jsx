@@ -742,88 +742,70 @@ const ReferralAdmin = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Applicant Info</th>
-                  <th className="py-3 px-4">College</th>
-                  <th className="py-3 px-4">Year / Branch</th>
-                  <th className="py-3 px-4">Mobile</th>
-                  <th className="py-3 px-4">Applied On</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {applications.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-10 text-center text-slate-400 italic">
-                      No Campus Ambassador applications received yet. Share the application link to get started!
-                    </td>
-                  </tr>
-                ) : (
-                  applications.map((app) => (
-                    <tr key={app._id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800">{app.name}</div>
-                        <div className="text-slate-400 font-normal">{app.email}</div>
-                        {app.reason && (
-                          <div className="text-[10px] text-slate-500 mt-1 italic max-w-[200px] truncate" title={app.reason}>
-                            "{app.reason}"
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700">{app.college}</td>
-                      <td className="py-3.5 px-4 text-slate-700">{app.yearBranch}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-700">{app.mobile}</td>
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {new Date(app.appliedAt || app.createdAt).toLocaleDateString("en-IN", {
-                          day: "2-digit", month: "short", year: "numeric"
-                        })}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {app.status === "Pending" && (
-                          <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
-                            Pending
-                          </span>
-                        )}
-                        {app.status === "Approved" && (
-                          <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
-                            ✓ Approved
-                          </span>
-                        )}
-                        {app.status === "Rejected" && (
-                          <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-lg font-bold text-[10px]">
-                            Rejected
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        {app.status === "Pending" && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleApproveApplication(app._id, app.name)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg transition-all"
-                            >
-                              <Check className="w-3 h-3" /> Approve
-                            </button>
-                            <button
-                              onClick={() => handleRejectApplication(app._id)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-[10px] rounded-lg transition-all"
-                            >
-                              <X className="w-3 h-3" /> Reject
-                            </button>
-                          </div>
-                        )}
-                        {app.status !== "Pending" && (
-                          <span className="text-slate-400 italic text-[10px]">—</span>
-                        )}
-                      </td>
+            {(() => {
+              const pendingApps = applications.filter(a => a.status === "Pending");
+              return (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">Applicant Info</th>
+                      <th className="py-3 px-4">College</th>
+                      <th className="py-3 px-4">Year / Branch</th>
+                      <th className="py-3 px-4">Mobile</th>
+                      <th className="py-3 px-4">Applied On</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pendingApps.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-10 text-center text-slate-400 italic">
+                          No pending applications. All applications have been reviewed!
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingApps.map((app) => (
+                        <tr key={app._id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="font-semibold text-slate-800">{app.name}</div>
+                            <div className="text-slate-400 font-normal">{app.email}</div>
+                            {app.reason && (
+                              <div className="text-[10px] text-slate-500 mt-1 italic max-w-[200px] truncate" title={app.reason}>
+                                "{app.reason}"
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700">{app.college}</td>
+                          <td className="py-3.5 px-4 text-slate-700">{app.yearBranch}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-700">{app.mobile}</td>
+                          <td className="py-3.5 px-4 text-slate-500">
+                            {new Date(app.appliedAt || app.createdAt).toLocaleDateString("en-IN", {
+                              day: "2-digit", month: "short", year: "numeric"
+                            })}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleApproveApplication(app._id, app.name)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg transition-all"
+                              >
+                                <Check className="w-3 h-3" /> Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectApplication(app._id)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-[10px] rounded-lg transition-all"
+                              >
+                                <X className="w-3 h-3" /> Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         </div>
       </div>
