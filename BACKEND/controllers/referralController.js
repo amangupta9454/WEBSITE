@@ -301,7 +301,8 @@ exports.deleteAmbassador = async (req, res) => {
 exports.getAmbassadors = async (req, res) => {
   try {
     const ambassadors = await User.find({
-      $or: [{ isAmbassador: true }, { ambassadorCode: { $ne: null, $exists: true, $ne: "" } }]
+      isAmbassador: true,
+      ambassadorCode: { $nin: [null, ""] }
     }).sort({ createdAt: -1 }).lean();
 
     const referralCodes = ambassadors.map((a) => a.ambassadorCode).filter(Boolean);
