@@ -104,6 +104,14 @@ const MyInterviews = () => {
         }
       }
       if (sessionsRes.data.success) setSessions(sessionsRes.data.sessions);
+
+      // Track feature activity for Ambassador stats
+      const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
+      axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/student/track-activity`,
+        { featureName: "AI Mock Interview Joined", referralCode: activeRef },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).catch(() => {});
     } catch (err) {
       if (err.response?.status === 401) {
         clearAllUserData();

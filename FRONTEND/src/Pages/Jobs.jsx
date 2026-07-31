@@ -20,6 +20,20 @@ const Jobs = () => {
   const [location, setLocation] = useState('');
   const [remote, setRemote] = useState(false);
 
+  useEffect(() => {
+    fetchJobs();
+
+    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
+    if (token) {
+      const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
+      axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/track-activity`,
+        { featureName: "Job Portal Applied", referralCode: activeRef },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).catch(() => {});
+    }
+  }, [page, role, location, remote]);
+
   const fetchJobs = async () => {
     try {
       setLoading(true);
