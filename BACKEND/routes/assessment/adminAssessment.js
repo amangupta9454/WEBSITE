@@ -14,6 +14,7 @@ const subcategoryController = require("../../controllers/assessment/subcategoryC
 const configController      = require("../../controllers/assessment/configController");
 const aiBlueprintController = require("../../controllers/assessment/aiBlueprintController");
 const aiRuntimeController   = require("../../controllers/assessment/aiRuntimeController");
+const intelligenceController = require("../../controllers/assessment/questionIntelligenceController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -156,6 +157,12 @@ router.get("/runtime-engine/health",                  verifyAdmin, aiRuntimeCont
 router.post("/runtime-engine/test",                   verifyAdmin, aiRuntimeController.testRuntimeEngine);
 router.post("/runtime-engine/cooldown-reset",          verifyAdmin, aiRuntimeController.resetPoolCooldowns);
 router.get("/runtime-engine/logs",                    verifyAdmin, aiRuntimeController.getRuntimeEngineLogs);
+
+// ── Phase 6 Question Intelligence Engine (AI Quality Gate) Routes ──────────────
+router.post("/intelligence/validate-batch",             verifyAdmin, intelligenceController.validateBatch);
+router.get("/intelligence/metrics",                     verifyAdmin, intelligenceController.getMetrics);
+router.post("/intelligence/review-action",              verifyAdmin, intelligenceController.simulateReviewAction);
+router.post("/intelligence/reset",                      verifyAdmin, intelligenceController.resetMemory);
 
 // ── Placeholders (Future Phases) ───────────────────────────────────────────
 router.get("/questions",    verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 7" }));

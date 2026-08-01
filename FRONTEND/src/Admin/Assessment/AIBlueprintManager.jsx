@@ -1600,7 +1600,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <Sliders className="w-5 h-5 text-amber-400" /> Reusable Variable Library (Refinement 4)
                 </h3>
-                <span className="text-xs font-bold text-slate-400">Canonical tokens available for syntax injection: {{"{{variable_name}}"}}</span>
+                <span className="text-xs font-bold text-slate-400">Canonical tokens available for syntax injection: {"{{variable_name}}"}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {(runtimeLibraries.variables && runtimeLibraries.variables.length > 0 ? runtimeLibraries.variables : [
@@ -1616,7 +1616,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                   <div key={idx} className="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 shadow-md flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{{"{{" + v.name + "}}"}}</span>
+                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{"{{" + v.name + "}}"}</span>
                         <span className="text-[10px] font-bold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded uppercase">{v.category}</span>
                       </div>
                       <h4 className="text-sm font-extrabold text-white mt-3">{v.displayName}</h4>
@@ -1693,7 +1693,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                       <div className="mt-4 flex flex-wrap gap-1.5 items-center">
                         <span className="text-[10px] font-bold text-slate-400">Tokens Linked:</span>
                         {sec.defaultVariablesUsed.map((t, i) => (
-                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{{"{{" + t + "}}"}}</span>
+                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{"{{" + t + "}}"}</span>
                         ))}
                       </div>
                     )}

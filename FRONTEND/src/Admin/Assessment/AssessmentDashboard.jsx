@@ -13,7 +13,8 @@ import {
   Settings,
   PlusCircle,
   Clock,
-  Server
+  Server,
+  ShieldCheck
 } from "lucide-react";
 
 import AssessmentOverview from "./AssessmentOverview";
@@ -24,6 +25,7 @@ import CategoryWizard from "./CategoryWizard";
 import ConfigManager from "./ConfigManager";
 import AIBlueprintManager from "./AIBlueprintManager";
 import AIRuntimeMonitor from "./AIRuntimeMonitor";
+import QuestionIntelligenceGate from "./QuestionIntelligenceGate";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -37,6 +39,7 @@ const AssessmentDashboard = () => {
     { id: "config", label: "Assessment Config", icon: Sliders, phase: "Phase 3.1 / Live" },
     { id: "ai_config", label: "AI Prompt Studio", icon: Cpu, phase: "Phase 4 / Live" },
     { id: "ai_runtime", label: "AI Runtime Engine", icon: Server, phase: "Phase 5 / Live" },
+    { id: "ai_quality_gate", label: "AI Quality Gate", icon: ShieldCheck, phase: "Phase 6 / Live" },
     { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7" },
     { id: "assessments", label: "Assessments", icon: FileCheck, phase: "Phase 9" },
     { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11" },
@@ -161,7 +164,11 @@ const AssessmentDashboard = () => {
             <AIRuntimeMonitor />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime"].includes(activeTab) && (
+          {activeTab === "ai_quality_gate" && (
+            <QuestionIntelligenceGate />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}
