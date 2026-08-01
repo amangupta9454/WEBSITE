@@ -11,6 +11,9 @@ const groqManager     = require("../../services/assessment/GroqManager");
 // Controllers
 const categoryController    = require("../../controllers/assessment/categoryController");
 const subcategoryController = require("../../controllers/assessment/subcategoryController");
+const configController      = require("../../controllers/assessment/configController");
+const aiBlueprintController = require("../../controllers/assessment/aiBlueprintController");
+const aiRuntimeController   = require("../../controllers/assessment/aiRuntimeController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -112,10 +115,52 @@ router.delete("/subcategories/:id",      verifyAdmin, subcategoryController.dele
 router.patch("/subcategories/:id/status",verifyAdmin, subcategoryController.toggleStatus);
 router.post("/subcategories/:id/copy",   verifyAdmin, subcategoryController.duplicateSubcategory);
 
+// ── Assessment Configuration Routes (Phase 3 & 3.1) ────────────────────────
+router.get("/configs",                      verifyAdmin, configController.listConfigs);
+router.get("/configs/global",               verifyAdmin, configController.getGlobalConfigEndpoint);
+router.put("/configs/global",               verifyAdmin, configController.updateGlobalConfigEndpoint);
+router.post("/configs/bulk-update",         verifyAdmin, configController.bulkUpdateConfigs);
+router.get("/configs/:subcategoryId",       verifyAdmin, configController.getConfigBySubcategory);
+router.put("/configs/:subcategoryId",       verifyAdmin, configController.updateConfig);
+router.post("/configs/:subcategoryId/reset",verifyAdmin, configController.resetConfig);
+router.post("/configs/:subcategoryId/clone",verifyAdmin, configController.cloneConfig);
+
+// ── AI Blueprint Management & Prompt Studio Routes (Phase 4) ───────────────
+router.get("/blueprints",                             verifyAdmin, aiBlueprintController.listBlueprints);
+router.post("/blueprints/validate",                   verifyAdmin, aiBlueprintController.validateBlueprint);
+router.post("/blueprints/import",                     verifyAdmin, aiBlueprintController.importBlueprint);
+router.post("/blueprints",                            verifyAdmin, aiBlueprintController.createBlueprint);
+router.get("/blueprints/:id",                         verifyAdmin, aiBlueprintController.getBlueprintById);
+router.put("/blueprints/:id",                         verifyAdmin, aiBlueprintController.updateBlueprint);
+router.delete("/blueprints/:id",                      verifyAdmin, aiBlueprintController.deleteBlueprint);
+router.post("/blueprints/:id/test",                   verifyAdmin, aiBlueprintController.testBlueprint);
+router.post("/blueprints/:id/clone",                  verifyAdmin, aiBlueprintController.cloneBlueprint);
+router.get("/blueprints/:id/export",                  verifyAdmin, aiBlueprintController.exportBlueprint);
+router.get("/blueprints/:id/compare",                 verifyAdmin, aiBlueprintController.compareVersions);
+router.post("/blueprints/:id/versions/:versionNumber/activate", verifyAdmin, aiBlueprintController.activateVersion);
+router.post("/blueprints/:id/rollback",               verifyAdmin, (req, res) => {
+  req.params.versionNumber = req.body.version || req.query.version || "1";
+  return aiBlueprintController.activateVersion(req, res);
+});
+
+// ── Phase 4.1 AI Runtime Decoupled Architecture & Reusable Libraries ─────────
+router.get("/runtime/libraries",                      verifyAdmin, aiRuntimeController.getRuntimeLibraries);
+router.post("/runtime/resolve",                       verifyAdmin, aiRuntimeController.resolveRuntimePreview);
+router.post("/runtime/variables",                     verifyAdmin, aiRuntimeController.saveLibraryVariable);
+router.post("/runtime/schemas",                       verifyAdmin, aiRuntimeController.saveLibrarySchema);
+router.post("/runtime/assignments",                   verifyAdmin, aiRuntimeController.saveBlueprintAssignment);
+router.post("/runtime/configs",                       verifyAdmin, aiRuntimeController.saveRuntimeConfig);
+
+// ── Phase 5 AI Runtime Engine & Groq Key Pool Router Routes ──────────────────
+router.get("/runtime-engine/health",                  verifyAdmin, aiRuntimeController.getRuntimeEngineHealth);
+router.post("/runtime-engine/test",                   verifyAdmin, aiRuntimeController.testRuntimeEngine);
+router.post("/runtime-engine/cooldown-reset",          verifyAdmin, aiRuntimeController.resetPoolCooldowns);
+router.get("/runtime-engine/logs",                    verifyAdmin, aiRuntimeController.getRuntimeEngineLogs);
+
 // ── Placeholders (Future Phases) ───────────────────────────────────────────
-router.get("/questions",    verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 4" }));
-router.get("/jobs",         verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 6" }));
-router.get("/certificates", verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 9" }));
-router.get("/analytics/overview", verifyAdmin, (req, res) => res.json({ success: true, data: {}, message: "Phase 11" }));
+router.get("/questions",    verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 7" }));
+router.get("/jobs",         verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 8" }));
+router.get("/certificates", verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 11" }));
+router.get("/analytics/overview", verifyAdmin, (req, res) => res.json({ success: true, data: {}, message: "Phase 13" }));
 
 module.exports = router;

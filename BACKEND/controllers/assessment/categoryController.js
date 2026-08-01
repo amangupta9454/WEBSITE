@@ -415,11 +415,13 @@ exports.createCategoryWizard = async (req, res) => {
 
       // Step 3: Create default Assessment Configuration for subcategory
       const configDoc = new AssessmentConfig({
+        scope: "subcategory",
+        categoryId: newCategory._id,
         subcategoryId: subcatDoc._id,
         totalQuestions: sub.totalQuestions || 20,
-        passingPercentage: sub.passingPercentage || 70,
-        timeLimitMinutes: sub.timeLimitMinutes || 30,
-        difficultyDistribution: sub.difficultyDistribution || { easy: 30, medium: 40, hard: 20, expert: 10 },
+        passingPercentage: sub.passingPercentage || 75,
+        timeLimitMinutes: sub.timeLimitMinutes || 20,
+        difficultyDistribution: sub.difficultyDistribution || { easy: 6, medium: 8, hard: 4, expert: 2 },
         aiFirst: newCategory.aiEnabled,
         aiTimeoutSeconds: 7,
         certificateEnabled: true,

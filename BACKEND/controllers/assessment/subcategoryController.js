@@ -145,11 +145,15 @@ exports.createSubcategory = async (req, res) => {
     // If requested or default, create linked config and blueprint
     if (createDefaults !== false) {
       const config = new AssessmentConfig({
+        scope: "subcategory",
+        categoryId,
         subcategoryId: newSubcat._id,
         totalQuestions: 20,
-        passingPercentage: 70,
-        timeLimitMinutes: 30,
+        passingPercentage: 75,
+        timeLimitMinutes: 20,
+        difficultyDistribution: { easy: 6, medium: 8, hard: 4, expert: 2 },
         aiFirst: parentCategory.aiEnabled,
+        aiTimeoutSeconds: 7,
         certificateEnabled: true,
         isActive: true
       });

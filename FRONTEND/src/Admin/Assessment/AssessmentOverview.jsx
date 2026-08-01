@@ -232,8 +232,14 @@ const AssessmentOverview = ({ onNavigate, onLaunchWizard }) => {
               Round-robin traffic balancer with automated cooldown recovery and real-time latency monitoring.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => onNavigate && onNavigate("ai_config")}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-purple-600/30 transition-all flex items-center gap-1.5"
+            >
+              <Cpu className="w-4 h-4 text-purple-200" /> Launch Prompt Studio
+            </button>
+            <div className="text-right border-l border-slate-700 pl-4 hidden sm:block">
               <span className="text-xs font-medium text-slate-400 block">Active Pool Health</span>
               <span className="text-lg font-black text-emerald-400">
                 {stats?.liveAiStatus?.healthyKeys ?? 0} / {stats?.liveAiStatus?.totalKeys ?? 0} Ready

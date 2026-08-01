@@ -3,330 +3,511 @@
 
 > **Single Source of Truth** for the entire Assessment module.
 > This document is auto-updated after every phase.
+> Current Status: **Pre-Phase Architecture Alignment & Roadmap Correction Complete** (Ready for Phase 3).
 
 ---
 
 ## Table of Contents
 
-1. Project Overview
+1. Project Overview & Architectural Philosophy
 2. Goals
 3. Business Requirements
 4. Functional Requirements
-5. User Flow
-6. Admin Flow
-7. Recruiter Flow
-8. AI Architecture
-9. Database Design
+5. User Flow (AI-First & DB Fallback Engine)
+6. Admin Flow (Zero-Code Dynamic Governance)
+7. Recruiter Flow (Verified Credential Validation)
+8. AI Architecture & Core Engines
+9. Database Design (Relational Schemas)
 10. Folder Structure
 11. API Plan
 12. UI Plan
-13. Security
-14. Background Workers
-15. Phase Roadmap
+13. Security & Audit Framework
+14. Background Workers (Auto-Inventory Lifecycle)
+15. Phase Roadmap (17-Phase Single-Responsibility Sequence)
 16. Progress Tracker
 17. Pending Tasks
 18. Testing Strategy
 19. Deployment Strategy
 20. Future Roadmap
+21. Phase 2 Completion Summary & Alignment Stamp
 
 ---
 
-## 1. Project Overview
+## 1. Project Overview & Architectural Philosophy
 
-**Code-A-Nova Assessment & Certification Platform** is an enterprise-grade, AI-first,
-multi-type assessment system built on top of the existing Code-A-Nova platform.
+**Code-A-Nova Assessment & Certification Platform** is an enterprise-grade, AI-first, multi-type automated testing and verification system integrated directly within the native Code-A-Nova ecosystem.
 
-Students take AI-generated assessments across technology domains, earn verified certificates,
-and recruiters can verify candidate credentials.
-Admins configure everything from the Admin Panel — no code changes needed.
+Students participate in real-time, dynamically personalized technology examinations, earn verifiable professional credentials upon demonstration of competency, and share cryptographic validation links directly with recruiters. Administrators govern every domain, technology category, assessment parameter, and AI behavior entirely from the Admin UI—**requiring zero codebase modifications and zero server deployments to launch new technical evaluations.**
 
-**Core Principle:** AI is always the primary question source. Database is the fallback. Assessment must never pause.
+### Core Engineering Directives (Non-Negotiable)
+
+1. **AI-First Real-Time Architecture:** The Database is **NOT** the primary source of questions during assessment sessions. Real-time generative AI is always the primary source. The Database exists strictly for **fallback mitigation, performance caching, intelligent knowledge base growth, deep historical analytics, and administrative review.**
+2. **Uninterrupted Assessment Delivery:** An active student exam must **never** pause, buffer indefinitely, or abort due to AI latency or network rate-limiting. A strict **7-second timeout boundary** governs all real-time AI generation attempts before transitioning silently to database fallback delivery while AI recovery continues in the background.
+3. **Dynamic Zero-Code Execution Chain:** The entire platform operates on an immutable structural configuration flow:
+   `Category → Subcategory → AI Blueprint → Assessment Configuration`
+   Publishing a blueprint or configuration immediately renders the examination live to candidates without modifying a single line of backend or frontend code.
+4. **Intelligent Evolving Question Bank:** The question database is a continuously evolving knowledge base that ingests, validates, hashes, analyzes, and classifies every single AI-generated problem to build an evergreen repository of verified engineering questions.
 
 ---
 
 ## 2. Goals
 
-| # | Goal |
-|---|------|
-| G1 | AI-first, real-time question generation per assessment session |
-| G2 | Zero hardcoded values — everything configurable from Admin Panel |
-| G3 | Scalable to millions of assessments with no architecture change |
-| G4 | Auto-growing question bank via background workers |
-| G5 | Professional certificates with public verification |
-| G6 | Multi-Groq key management: round-robin + automatic failover |
-| G7 | Recruiter portal for candidate credential verification |
-| G8 | Detailed analytics for students, admins, and recruiters |
+| # | Goal | Description |
+|---|------|-------------|
+| G1 | **AI-First Generation** | Produce real-time, customized 5-question evaluation batches via large language models per active session. |
+| G2 | **Zero-Code Dynamic Governance** | Enable administrators to launch entire technical test suites (e.g., Solidity, Rust, React) purely through dashboard configuration. |
+| G3 | **Zero-Downtime Fallback Resilience** | Ensure uninterrupted evaluations through seamless, transparent fallback to verified database questions if AI generation exceeds 7 seconds. |
+| G4 | **Autonomous Inventory Replenishment** | Maintain targeted question volumes automatically across all difficulty tiers via proactive background worker daemons. |
+| G5 | **Prompt Versioning & Traceability** | Document and archive historical variations of system AI prompt blueprints, tagging every generated question with its exact generator blueprint version for auditability and rollback support. |
+| G6 | **Multi-Key Load Balancing** | Govern a centralized pool of 4 Groq API keys utilizing Round-Robin sequential rotation, real-time error detection, cooldown isolation, and self-healing restoration. |
+| G7 | **Tamper-Proof Credential Verification** | Issue public cryptographic UUID certificates with scannable QR codes for instantaneous, rate-limited recruiter verification without compromising candidate privacy. |
+| G8 | **Comprehensive Diagnostic Analytics** | Provide deep analytical feedback on candidate strengths, topic vulnerabilities, AI latency health, and database utilization ratios. |
 
 ---
 
 ## 3. Business Requirements
 
-| ID  | Requirement |
-|-----|-------------|
-| BR1 | Admin creates/edits/deletes Categories and Subcategories without code changes |
-| BR2 | Each subcategory has its own AI Prompt Blueprint |
-| BR3 | Assessment never stops — AI fallback to DB is seamless |
-| BR4 | Question bank grows automatically via background jobs |
-| BR5 | Certificates are PDF with unique ID, QR code, public URL |
-| BR6 | 4 Groq API keys managed centrally with round-robin + failover |
-| BR7 | Admin configures: questions count, passing %, time limit, difficulty per subcategory |
-| BR8 | Recruiter can verify certificate via unique ID or URL |
-| BR9 | Students get detailed feedback: weak topics, strong topics, AI analysis |
-| BR10 | Low inventory alert when question count drops below configured threshold |
+| ID  | Requirement | Architectural Enforcement |
+|-----|-------------|---------------------------|
+| BR1 | **Dynamic Structure Creation** | Admins create, update, reorder, or archive Categories and Subcategories from the UI with instantaneous public reflection. |
+| BR2 | **Blueprint-Driven Intelligence** | Each subcategory maintains an independent AI Prompt Blueprint that strictly binds topic scope, difficulty parameters, and response schemas. |
+| BR3 | **Uncompromising Session Continuity** | Active tests enforce an AI generation ceiling of 7 seconds per 5-question batch; exceeding this window triggers instantaneous database query delivery while continuing AI attempts asynchronously in the background. |
+| BR4 | **Evolving Intelligent Knowledge Base** | Generated questions undergo strict validation and MD5 deduplication before permanent storage in the Question Bank, feeding future fallbacks and inventory health metrics. |
+| BR5 | **Verifiable PDF Credentials** | Candidates achieving passing thresholds receive unique UUID-backed PDF certificates containing cryptographic verification links and QR codes. |
+| BR6 | **Resilient AI Routing Pool** | Centralized Groq Manager cycles across 4 API keys to distribute inference loads, dynamically quarantining exhausted or rate-limited credentials without interrupting evaluations. |
+| BR7 | **Granular Rule Configuration** | Each subcategory independently controls question counts, timer limits, difficulty distributions (Easy/Medium/Hard/Expert), and test typologies without global overrides. |
+| BR8 | **Privacy-Compliant Credential Validation** | Recruiters and third parties validate candidate achievements strictly via unique Certificate UUIDs or explicit URLs; exploratory searching by email or personal identity metadata is structurally prohibited. |
+| BR9 | **Actionable Candidate Feedback** | Server-side grading algorithms compute competency heatmaps, isolating analytical strengths and remedial topic requirements upon submission. |
+| BR10 | **Automated Inventory Stabilization** | Subcategory inventory counts falling below configured target thresholds automatically trigger background worker jobs to synthesize, validate, and store new domain questions. |
 
 ---
 
 ## 4. Functional Requirements
 
-### Category Management
-- Add / Edit / Delete / Disable / Enable categories
-- Upload category icon and banner image
-- Set display order
-- No code changes for new categories
+### Category & Subcategory Management
+* Complete administrative CRUD operations, visual customization (icon, banner image, theme color), state toggling (active/archived), and numeric display sorting.
+* Support for unlimited subcategories per master category, each serving as an independent evaluation root bound to an AI Blueprint and Assessment Configuration.
+* **Atomic Creation Wizard:** Capability to deploy structured categories, multiple subcategories, and baseline configurations in a single coordinated workflow.
 
-### Subcategory Management
-- Unlimited subcategories per category
-- Each has: name, description, icon, status, display order
-- Link to AI Prompt Blueprint and Assessment Configuration
+### Assessment Configuration & Hierarchical Operational Rules (Phase 3 & 3.1)
+* **Hierarchical Inheritance Architecture (Refinement 3):** Governs evaluation rules through a strict 3-tier priority hierarchy: **Global Defaults &rarr; Category Override &rarr; Subcategory Override**.
+* **Definitive Operational Cutoffs:** Defines total test questions (default 20, min 5, max 200), session duration in minutes (default 20, min 5, max 180), and default passing cutoff at **75%** (Refinement 1).
+* **Question Count Distribution (Refinement 2):** Replaces legacy hardcoded percentage shares with exact item counts per tier (e.g. 6 Easy, 8 Medium, 4 Hard, 2 Expert = 20 Total Qs). The backend dynamically calculates percentage ratios automatically via computed Mongoose virtuals (`difficultyPercentages`).
+* **Evaluation Modality Selector (Refinement 5):** Unified consistent enums across all models and controllers: `MCQ`, `Coding`, `Mixed`, `AI Viva`, or `Subjective`.
+* **AI-First Timeout Hierarchy (Refinement 4):** Root global fallback timeout default (7s) which can be overridden natively per domain (e.g. Java 7s, React 5s, AI 10s).
+* **Advanced Production-Ready Proctoring & Settings (Refinement 6):** Zero-code toggle flags for `allowRetake` (default true), `cooldownHours` (24h), `maximumAttempts` (3), `shuffleQuestions`, `shuffleOptions`, `autoSubmit`, `negativeMarking`, `certificateEnabled`, `leaderboardEnabled`, `aiFeedbackEnabled`, `fullscreenRequired` (proctoring lock), `maximumTabSwitches` (anti-cheating threshold), `showResultImmediately`, and `visibility` (`Public`/`Private`).
+* **Governance Utilities (Refinements 7-10):** Features an automatic **Live Candidate Assessment Preview**, automated **Version History Archiving** with audit summaries for rollback architecture, **Clone Configuration** endpoints (`/clone`) to copy parameter sets between technology domains, and synchronized **Bulk Configuration Overrides** (`/bulk-update`).
 
-### Assessment Configuration (Per Subcategory)
-- Total questions, passing percentage, time limit
-- Difficulty distribution (Easy / Medium / Hard / Expert)
-- Assessment type: MCQ / Coding / Mixed / AI Viva / Subjective
-- AI-first toggle (default ON), AI timeout (default 7s)
-- Enable/Disable certificate, Enable/Disable assessment
+### AI Prompt Blueprint & Versioning System
+* Customized system prompt instructions and technical topic inclusion/exclusion arrays tailored to the subcategory domain.
+* Strict JSON output schema definitions enforcing structured formatting from language models.
+* **Architectural Versioning & Rollback:** Automated tracking of blueprint iteration versions (`v1.0`, `v1.1`), maintenance of prompt modification histories, and instant rollback execution to previous established prompt architectures.
+* Every synthesized question records its exact `blueprintVersion` upon generation to ensure historical traceability and performance grading of prompt iterations.
 
-### AI Prompt Blueprint
-- Custom system prompt per subcategory
-- Topic list, output schema, version number
+### Evolving Question Bank Engine
+* Operates as an intelligent, self-enriching knowledge base collecting validated AI generations, administrative manual creations, and structured CSV batch imports.
+* Manages review workflows across explicit statuses: `Approved`, `Pending`, `Rejected` (including automated tracking of specific syntax or duplication rejection reasons).
+* Automatically tracks item usage frequency (`usedCount`) and provides verified question sets during real-time AI fallback scenarios.
 
-### Question Bank
-- Stores all validated AI + manual + CSV questions
-- Statuses: Pending / Approved / Rejected
-- Auto-grows via background worker
+### Assessment Session & Rolling Batch Engine
+* Evaluates candidates across synchronized 5-question rolling batches.
+* Session immutability: Once a question batch is delivered to a candidate's interface, it is cryptographically locked to the session state and cannot be modified or replaced.
+* Executes continuous background buffer preparation: while a candidate resolves Batch $N$, the backend evaluates and prepares Batch $N+1$ to ensure instantaneous transitions.
 
-### Assessment Session
-- Rolling 5-question generation batches
-- Session locked — questions never change after shown
-- Max 7 seconds AI wait before DB fallback
+### Evaluation & Certificate System
+* Zero-trust grading architecture: All candidate answer submissions are evaluated strictly server-side against protected correct index registers; client score transmissions are ignored.
+* Immediate analytical processing computing topical accuracy, execution speed, and ranking leaderboard positioning.
+* Automatic compilation of PDF certification documents containing embeddable QR codes and unique verification URLs upon achievement of passing thresholds.
 
-### Certificate
-- Auto-generated PDF on passing
-- Unique Certificate ID (UUID), QR Code, Email delivery
-- Public verification URL
-
-### Analytics
-- Per-student: history, scores, accuracy, time, rank
-- Per-subcategory: attempts, avg score, pass rate
-- Admin: total assessments, AI vs DB ratio, Groq key health
-- Leaderboard per subcategory
-
-### Recruiter Module
-- Search candidate by email or certificate ID
-- View assessment report, verify certificate, download report
+### Recruiter Credential Verification Module
+* Public-facing validation interface allowing immediate verification of candidate certificates via input of a unique **Certificate UUID** or direct traversal of a **Verification URL**.
+* Returns authenticated system records confirming certificate validity, candidate identity, technical evaluation name, final score, and issuance timestamp, accompanied by an authentic PDF document download link.
+* *Note: Exploratory querying via candidate email addresses or personal identification metrics is explicitly removed and unsupported to maintain rigorous data privacy standards.*
 
 ---
 
-## 5. User Flow
+## 5. User Flow (AI-First & DB Fallback Engine)
+
+The examination lifecycle follows a strict AI-First execution paradigm designed for continuous, zero-pause operation:
 
 ```
-User → Browse Categories
-     → Selects Subcategory
-     → Views Config (time, questions, passing %)
-     → Clicks "Start Assessment"
-     → Session Created (unique sessionId)
-     → AI Request → Batch 1 (5 questions, 7s timeout)
-          ↓ AI OK          ↓ AI Failed
-        Show AI Qs      Load DB Qs (AI continues in BG)
-     → User answers Batch 1 (Batch 2 generating in BG)
-     → ...continues until all questions answered
-     → Submit → Score Calculated
-     → Result Page (score, rank, weak/strong topics, AI feedback)
-          ↓ Pass
-        Certificate Generated (PDF + QR + Email)
-        Dashboard Updated
-```
-
----
-
-## 6. Admin Flow
-
-```
-Admin Dashboard → "Assessment" Sidebar
-  ├── Assessment Dashboard (stats overview)
-  ├── Categories → Add/Edit/Delete/Icon/Order
-  ├── Subcategories → Add/Edit/Delete/Order
-  ├── Assessment Config → Per Subcategory
-  ├── AI Configuration → Prompt Blueprints
-  ├── Question Bank → View/Approve/Reject/Generate
-  ├── Assessments → List active assessments
-  ├── Certificates → Issued certs, revoke
-  ├── Analytics → Full dashboard
-  ├── Background Jobs → Queue status, retry
-  └── Settings → Global settings
+[Candidate] → Selects Category & Subcategory → Reviews Assessment Config (Time, Passing %, Rules)
+            → Clicks "Start Assessment"
+            → Server initializes immutable Session (Status: in_progress)
+            ↓
+            === REAL-TIME AI-FIRST GENERATION (Batch 1: 5 Questions) ===
+            → GroqManager issues inference prompt via active AI Blueprint (Max 7-Second Timeout)
+                 │
+                 ├─► [CASE A: AI Returns Cleanly < 7s]
+                 │   ├── Execute Question Validation Pipeline (Schema, Grammar, Dedup)
+                 │   ├── Tag questions with current blueprintVersion & Save to Question Bank
+                 │   └── Deliver Batch 1 to Candidate Interface
+                 │
+                 └─► [CASE B: AI Exceeds 7s Timeout / API Exhaustion]
+                     ├── Immediately invoke Database Fallback Layer
+                     ├── Fetch 5 Verified 'Approved' Questions from Question Bank (by difficulty distribution)
+                     ├── Deliver DB Batch 1 to Candidate Interface (ZERO USER PAUSE)
+                     └── Spawn async background task to re-establish AI streaming for upcoming batches
+            ↓
+[Candidate Answers Batch 1] ────► [Backend Asynchronously Prepares Batch 2 in Background]
+            │                        ├── If AI recovered: Generate & validate AI Batch 2
+            │                        └── If AI unavailable: Fetch DB Batch 2
+            ↓
+[Candidate Proceeds through Batches until Assessment Completion]
+            ↓
+[Candidate Clicks "Submit Exam" OR Timer Expires]
+            → Server-Side Zero-Trust Evaluation Engine grading occurs
+            → Calculation of score percentage, topical weak/strong breakdowns, and leaderboard ranking
+            ↓
+            ├─► [PASSED (Score ≥ Passing %)] ──► Issue unique UUID Certificate (PDF + QR + Email notification)
+            └─► [FAILED (Score < Passing %)] ──► Display diagnostic remediation feedback & retry countdown
 ```
 
 ---
 
-## 7. Recruiter Flow
+## 6. Admin Flow (Zero-Code Dynamic Governance)
+
+Administrators possess total structural authority through the dedicated **Assessment** control panel inside the Admin UI:
 
 ```
-Recruiter → /verify
-  → Enter Certificate ID or Candidate Email
-  → System returns:
-       Certificate validity (Valid / Revoked / Not Found)
-       Candidate Name, Assessment Name, Score, Pass Date
-       Certificate PDF link
-  → Download report
+Admin Control Center → "Assessment" Navigation Surface
+  ├── Dashboard         → System health telemetry, AI pool latency, fallback usage ratios, inventory quotas
+  ├── Categories        → Table view: deploy new technical pillars, customize icons/banners, toggle active state
+  ├── Subcategories     → Table view: attach specialized domains to parent categories with target quotas
+  ├── Assessment Config → Intuitive rules editor: adjust timers, passing percentages, question volume, AI overrides
+  ├── AI Configuration  → Prompt Studio: edit domain system instructions, schemas, inspect version histories, execute rollbacks
+  ├── Question Bank     → Intelligent Repository: search, filter, approve/reject manual submissions, CSV ingestion, AI generation triggers
+  ├── Active Sessions   → Live audit monitor: observe active candidate progress, execution timestamps, fallback occurrences
+  ├── Certificates      → Governance table: view all issued UUID credentials, execute administrative revocations
+  ├── Deep Analytics    → Historical charting: evaluation frequency, pass/fail trends, latency distributions
+  ├── Background Jobs   → Live telemetry on queue processing, auto-inventory creation loops, force retry actions
+  └── Global Settings   → Master platform switches: default timeout thresholds, retry ceilings, rate limits
+```
+
+### Zero-Code Implementation Workflow Example
+To deploy a new testing discipline, an administrator executes the following entirely through the UI:
+1. Creates Category: **Blockchain Engineering** (Icon: cube, Color: #3b82f6).
+2. Creates Subcategory: **Solidity Smart Contracts** (Target Quota: 100 questions).
+3. Defines Assessment Config: 20 Questions, 30 Minutes, 75% Passing Score, AI-First Mode ON (7s limit).
+4. Sets AI Blueprint (`v1.0`): *"Generate technical Solidity interview-level MCQs focusing on gas optimization, reentrancy attacks, and ERC-20 standards."*
+5. Clicks **Publish**. -> **Immediate Live Deployment.** Candidates can instantiate real-time automated tests instantly without code refactoring or infrastructure redeployment.
+
+---
+
+## 7. Recruiter Flow (Verified Credential Validation)
+
+```
+[External Recruiter / Verifier]
+     │
+     ├─► Navigates to public validation endpoint: `/certificate/verify/:id` (via URL or QR Code scan)
+     └─► OR accesses general verification portal `/verify` and enters candidate Certificate UUID
+     │
+     ▼
+[System queries read-only AssessmentCertificate repository by UUID]
+     │
+     ├─► [RECORD FOUND & VALID]
+     │    ├── Displays visual authentic validation badge
+     │    ├── Renders candidate identifier, exact technical assessment title, pass score percentage, & issuance date
+     │    └── Provides direct secure link to download original cryptographic PDF Certificate document
+     │
+     ├─► [RECORD REVOKED]
+     │    └── Renders prominent warning: "CERTIFICATE REVOKED BY ADMINISTRATOR" with revocation timestamp
+     │
+     └─► [RECORD NOT FOUND / INVALID UUID]
+          └── Returns 404 security state: "INVALID OR UNRECOGNIZED CREDENTIAL ID"
 ```
 
 ---
 
-## 8. AI Architecture
+## 8. AI Architecture & Core Engines
 
-### Groq Manager Service
+### 1. Groq Manager Service
+To guarantee reliable real-time AI generation without single-point failures, inference loads are distributed across a pool of 4 distinct API keys: `GROQ_KEY_1`, `GROQ_KEY_2`, `GROQ_KEY_3`, and `GROQ_KEY_4`.
 
 ```
-4 Groq API Keys: GROQ_KEY_1, GROQ_KEY_2, GROQ_KEY_3, GROQ_KEY_4
+GroqManager Architecture
+├── Pool State Repository: [ { key, status: (active|cooldown), requests, failures, latency, cooldownUntil } ]
+├── Round-Robin Index Pointer: Configured to sequential loop (0 → 1 → 2 → 3 → 0)
+│
+├── Method: getNextKey()
+│    ├── Evaluates current pointer key; if status === 'active', selects key & increments pointer.
+│    ├── If key is in 'cooldown', cycles sequentially until an active key is identified.
+│    └── If all keys exist in cooldown, raises explicit AIUnavailableError to immediately trigger DB fallback.
+│
+├── Method: executeRequest(promptPayload)
+│    ├── Retrieves active credential via getNextKey().
+│    ├── Transmits inference payload with hard 7000ms abortion timer.
+│    ├── On Success: Logs execution latency, resets consecutive failure counts, returns JSON payload.
+│    └── On Failure (HTTP 429 / Timeout / 5xx Error): Marks key status as 'cooldown' with 60-second recovery timestamp;
+│        immediately retries inference on next available pool key.
+│
+└── Daemon: healthMonitor()
+     └── Invoked every 30 seconds: sweeps pool state repository, inspects cooldown timestamps, and restores
+         expired cooldown keys back to active operational rotation.
+```
 
-GroqManager {
-  keys: [ { key, status, requests, failures, latency, cooldownUntil } ]
-  currentIndex: 0  // Round Robin pointer
+### 2. Intelligent Question Bank Lifecycle & Evolution
+The Question Bank is an evolving analytical knowledge base governed by a strict lifecycle:
 
-  getNextKey():
-    → cycle keys, skip keys in cooldown
-    → return healthy key
+```
+[AI Generation / CSV Import / Manual Creation]
+     │
+     ▼
+[Stage 1: Validation Engine] ──► Inspects JSON grammar, schema bounds, topic alignment, and valid option logic.
+     │ (Pass)
+     ▼
+[Stage 2: Cryptographic Deduping] ──► Computes raw text MD5 hash; rejects duplicates against existing database records.
+     │ (Unique)
+     ▼
+[Stage 3: Repository Ingestion] ──► Saves item with explicit blueprintVersion tag & initial status (Approved / Pending).
+     │
+     ▼
+[Stage 4: Operational Lifecycle] ──► Consumed during AI Fallback scenarios or direct DB test modes; records usedCount.
+     │
+     ▼
+[Stage 5: Analytics & Review] ──► Telemetry tracks item pass/fail ratios; Admins retain override rights to reject or refine.
+```
 
-  executeRequest(prompt):
-    → getNextKey()
-    → send request
-    → success: record latency, return result
-    → fail (429/timeout/error): mark cooldown, try next key
-    → all keys exhausted: throw AIUnavailableError
+### 3. AI Prompt Versioning & Rollback Architecture
+To preserve structural traceability while enabling iterative improvements to AI system prompts, every blueprint incorporates formal versioning:
+* **Version Control:** Blueprints initialize at `v1.0`. Any modification to system prompts, schema rules, or topic parameters increments the version identifier (e.g., `v1.1`, `v2.0`) and logs the modification date and administrator ID.
+* **Prompt History Preservation:** Previous prompt parameters are immutably archived within a structured `promptHistory` array embedded within the blueprint schema.
+* **Instant Rollback Engine:** If an updated prompt version exhibits degraded output quality or parsing anomalies, administrators can execute a one-click rollback from the UI, instantly re-activating the previously stable prompt architecture.
+* **Question Traceability:** Every question synthesized by the AI engine imprints the exact `blueprintVersion` active at generation time, allowing engineers to audit question quality against historical prompt iterations.
 
-  healthMonitor():
-    → runs every 30 seconds
-    → checks cooldown expiry
-    → restores keys after cooldown window
+### 4. Auto-Inventory Lifecycle & Replenishment
+To ensure that database fallback reserves are never exhausted during peak traffic, an automated self-healing inventory lifecycle operates continuously:
+
+```
+[Inventory Target] (Defined by Admin per subcategory, e.g., 50 Easy, 50 Medium, 30 Hard, 20 Expert)
+        ▲                                                      │
+        │ (Status: Healthy)                                    │ (Continuous Background Comparison)
+        │                                                      ▼
+[Current Question Count] ◄── [Database Auto-Sync Hooks] ── [Status: Low or Critical] (Current < Target)
+                                                               │
+                                                               ▼
+                                               [InventoryWorker Queue Triggered]
+                                                               │
+                                                               ▼
+                                        [Synthesize Missing Questions via GroqManager]
+                                                               │
+                                                               ▼
+                                        [Validate, Dedup, & Save to Question Bank]
+```
+
+---
+
+## 9. Database Design (Relational Schemas)
+
+The entire domain centers on 9 dedicated Mongoose collections structured within `BACKEND/models/assessment/`:
+
+### 1. `AssessmentCategory` (Root Domain Pillars)
+```javascript
+{
+  _id: ObjectId,
+  name: { type: String, required: true, trim: true },
+  slug: { type: String, required: true, unique: true, index: true },
+  description: { type: String, trim: true },
+  icon: { type: String, default: 'folder' },
+  banner: { type: String, default: '' },
+  color: { type: String, default: '#3B82F6' },
+  displayOrder: { type: Number, default: 0 },
+  isActive: { type: Boolean, default: true, index: true },
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
-### Rolling Batch Generation
-
-```
-Session Starts
-  → Batch 1 (5 Qs) AI Request (7s timeout)
-  → If AI: show, validate, save
-  → If fail: load 5 from DB
-
-User on Q1-Q5 → Batch 2 generating in background
-User on Q6-Q10 → Batch 3 generating in background
-...until all questions answered
-```
-
-### Question Validation Pipeline
-
-```
-AI Response
-  → JSON Parse
-  → Schema Validation (required fields)
-  → Grammar Check (non-empty, meaningful)
-  → Duplicate Detection (hash vs DB)
-  → Topic Detection (matches expected topics)
-  → Difficulty Validation
-  → Option Validation (4 options, valid correct index)
-  → PASS: Save to QuestionBank (Approved)
-  → FAIL: Log rejection reason, discard
+### 2. `AssessmentSubcategory` (Specialized Technology Roots)
+```javascript
+{
+  _id: ObjectId,
+  categoryId: { type: ObjectId, ref: 'AssessmentCategory', required: true, index: true },
+  name: { type: String, required: true, trim: true },
+  slug: { type: String, required: true, unique: true, index: true },
+  description: { type: String, trim: true },
+  icon: { type: String, default: 'code' },
+  displayOrder: { type: Number, default: 0 },
+  isActive: { type: Boolean, default: true, index: true },
+  targetQuestionCount: { type: Number, default: 100 }, // Quota threshold for Auto-Inventory
+  createdAt: Date,
+  updatedAt: Date
+  // Virtuals: healthStatus (Healthy|Medium|Low|Critical), inventoryPercentage
+}
 ```
 
-### Background Question Factory
-
-```
-InventoryChecker (every 1 hour):
-  → For each subcategory × difficulty:
-    → count approved questions
-    → if count < inventoryTarget: queue GenerateQuestionsJob
-
-GenerateQuestionsJob:
-  → uses GroqManager
-  → generates via AI Prompt Blueprint
-  → validates each question
-  → saves approved to assessment_questions
-  → updates job progress
-```
-
----
-
-## 9. Database Design
-
-### assessment_categories
-```
-_id, name, slug, description, icon, banner,
-displayOrder, isActive, createdAt, updatedAt
-```
-
-### assessment_subcategories
-```
-_id, categoryId, name, slug, description, icon,
-displayOrder, isActive, createdAt, updatedAt
+### 3. `AssessmentConfig` (Operational Test Rules)
+```javascript
+{
+  _id: ObjectId,
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, unique: true },
+  totalQuestions: { type: Number, default: 15 },
+  passingPercentage: { type: Number, default: 70 },
+  timeLimitMinutes: { type: Number, default: 20 },
+  difficultyDistribution: {
+    easy: { type: Number, default: 30 },   // Percentage share
+    medium: { type: Number, default: 40 },
+    hard: { type: Number, default: 20 },
+    expert: { type: Number, default: 10 }
+  },
+  assessmentType: { type: String, enum: ['MCQ', 'Coding', 'Mixed', 'AI Viva', 'Subjective'], default: 'MCQ' },
+  aiFirst: { type: Boolean, default: true },
+  aiTimeoutSeconds: { type: Number, default: 7 }, // Strict fallback boundary
+  certificateEnabled: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: true },
+  inventoryTarget: {
+    easy: { type: Number, default: 30 },
+    medium: { type: Number, default: 40 },
+    hard: { type: Number, default: 20 },
+    expert: { type: Number, default: 10 }
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
 ```
 
-### assessment_configs
-```
-_id, subcategoryId, totalQuestions, passingPercentage,
-timeLimitMinutes, difficultyDistribution {easy,medium,hard,expert},
-assessmentType, aiFirst, aiTimeoutSeconds, certificateEnabled,
-isActive, inventoryTarget {easy,medium,hard,expert}, createdAt, updatedAt
-```
-
-### assessment_ai_blueprints
-```
-_id, subcategoryId, systemPrompt, topics[], outputSchema,
-version, isActive, createdAt, updatedAt
-```
-
-### assessment_questions
-```
-_id, subcategoryId, categoryId, text, options[], correctIndex,
-explanation, difficulty, topics[], source (AI|manual|csv),
-status (approved|pending|rejected), rejectionReason,
-hash (md5 for dedup), usedCount, createdAt, updatedAt
-```
-
-### assessment_sessions
-```
-_id, userId, subcategoryId, configId,
-status (in_progress|completed|abandoned),
-startedAt, completedAt, totalQuestions, currentBatch,
-questionIds[], answers[{questionId, selectedIndex, isCorrect, timeTakenSeconds}],
-score, percentage, passed, aiQuestionsCount, dbQuestionsCount, createdAt
+### 4. `AssessmentAIBlueprint` (Prompt Intelligence & Versioning)
+```javascript
+{
+  _id: ObjectId,
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, unique: true },
+  systemPrompt: { type: String, required: true },
+  topics: [{ type: String, trim: true }],
+  outputSchema: { type: Object, default: {} },
+  version: { type: String, default: 'v1.0' },
+  status: { type: String, enum: ['active', 'draft', 'archived'], default: 'active' },
+  promptHistory: [{
+    version: String,
+    systemPrompt: String,
+    topics: [String],
+    outputSchema: Object,
+    updatedAt: Date,
+    updatedBy: { type: ObjectId, ref: 'Admin' }
+  }],
+  rollbackVersion: { type: String, default: null },
+  isActive: { type: Boolean, default: true },
+  createdAt: Date,
+  updatedAt: Date
+}
 ```
 
-### assessment_certificates
-```
-_id, userId, sessionId, subcategoryId,
-certificateId (UUID), candidateName, assessmentName,
-score, percentage, issuedAt, pdfUrl, qrCodeUrl,
-verificationUrl, isRevoked, revokedAt, createdAt
+### 5. `AssessmentQuestion` (Intelligent Knowledge Base Unit)
+```javascript
+{
+  _id: ObjectId,
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, index: true },
+  categoryId: { type: ObjectId, ref: 'AssessmentCategory', required: true, index: true },
+  text: { type: String, required: true },
+  options: [{ type: String }], // Utilized when assessmentType === 'MCQ'
+  correctIndex: { type: Number }, // Protected server-side evaluation index
+  explanation: { type: String },
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard', 'expert'], default: 'medium', index: true },
+  topics: [{ type: String }],
+  source: { type: String, enum: ['AI', 'manual', 'csv'], required: true },
+  blueprintVersion: { type: String, default: 'manual-or-csv' }, // Identifies originating AI blueprint
+  status: { type: String, enum: ['approved', 'pending', 'rejected'], default: 'pending', index: true },
+  rejectionReason: { type: String, default: '' },
+  hash: { type: String, required: true, unique: true }, // MD5 hash for automated deduplication
+  usedCount: { type: Number, default: 0 },
+  createdAt: Date,
+  updatedAt: Date
+  // Hooks: Automated post-save/delete synchronization of parent subcategory inventory counts
+}
 ```
 
-### assessment_ai_jobs
-```
-_id, jobType, subcategoryId, difficulty, targetCount,
-generatedCount, approvedCount, rejectedCount,
-status (queued|running|completed|failed),
-progress, error, groqKeyUsed, startedAt, completedAt, createdAt
+### 6. `AssessmentSession` (Immutable Execution Record)
+```javascript
+{
+  _id: ObjectId,
+  userId: { type: ObjectId, required: true, index: true }, // Unified User ID (Student / Intern)
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, index: true },
+  configId: { type: ObjectId, ref: 'AssessmentConfig', required: true },
+  status: { type: String, enum: ['in_progress', 'completed', 'abandoned'], default: 'in_progress', index: true },
+  startedAt: { type: Date, default: Date.now },
+  completedAt: { type: Date },
+  totalQuestions: { type: Number, required: true },
+  currentBatch: { type: Number, default: 1 },
+  questionIds: [{ type: ObjectId, ref: 'AssessmentQuestion' }], // Locked immutable sequence
+  answers: [{
+    questionId: { type: ObjectId, required: true },
+    selectedIndex: { type: Number, required: true },
+    isCorrect: { type: Boolean, default: false },
+    timeTakenSeconds: { type: Number, default: 0 }
+  }],
+  score: { type: Number, default: 0 },
+  percentage: { type: Number, default: 0 },
+  passed: { type: Boolean, default: false },
+  aiQuestionsCount: { type: Number, default: 0 }, // Traces real-time AI vs Fallback delivery ratios
+  dbQuestionsCount: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+}
 ```
 
-### assessment_leaderboard
+### 7. `AssessmentCertificate` (Cryptographic Achievement Credential)
+```javascript
+{
+  _id: ObjectId,
+  userId: { type: ObjectId, required: true, index: true },
+  sessionId: { type: ObjectId, ref: 'AssessmentSession', required: true, unique: true },
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, index: true },
+  certificateId: { type: String, required: true, unique: true, index: true }, // RFC 4122 UUID
+  candidateName: { type: String, required: true },
+  assessmentName: { type: String, required: true },
+  score: { type: Number, required: true },
+  percentage: { type: Number, required: true },
+  issuedAt: { type: Date, default: Date.now },
+  pdfUrl: { type: String, required: true },
+  qrCodeUrl: { type: String, required: true },
+  verificationUrl: { type: String, required: true },
+  isRevoked: { type: Boolean, default: false, index: true },
+  revokedAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now }
+}
 ```
-_id, subcategoryId, userId, bestScore, bestPercentage,
-attempts, rank, updatedAt
+
+### 8. `AssessmentAIJob` (Background Generation Task Log)
+```javascript
+{
+  _id: ObjectId,
+  jobType: { type: String, enum: ['inventory_replenish', 'admin_trigger', 'session_buffer'], required: true },
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, index: true },
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard', 'expert'], required: true },
+  targetCount: { type: Number, required: true },
+  generatedCount: { type: Number, default: 0 },
+  approvedCount: { type: Number, default: 0 },
+  rejectedCount: { type: Number, default: 0 },
+  status: { type: String, enum: ['queued', 'running', 'completed', 'failed'], default: 'queued', index: true },
+  progress: { type: Number, default: 0 }, // Percentage telemetry 0-100
+  error: { type: String, default: null },
+  groqKeyUsed: { type: String, default: null }, // Records exact API pool key utilized
+  startedAt: { type: Date },
+  completedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now }
+}
+```
+
+### 9. `AssessmentLeaderboard` (High-Concurrency Rank Table)
+```javascript
+{
+  _id: ObjectId,
+  subcategoryId: { type: ObjectId, ref: 'AssessmentSubcategory', required: true, index: true },
+  userId: { type: ObjectId, required: true, index: true },
+  candidateName: { type: String, required: true },
+  bestScore: { type: Number, required: true },
+  bestPercentage: { type: Number, required: true },
+  attempts: { type: Number, default: 1 },
+  timeTakenSeconds: { type: Number, default: 0 }, // Tie-breaking resolution metric
+  rank: { type: Number, default: 0 },
+  updatedAt: { type: Date, default: Date.now }
+}
+// Compound Indexing: [subcategoryId, bestPercentage (desc), timeTakenSeconds (asc)]
 ```
 
 ---
 
 ## 10. Folder Structure
+
+The implementation integrates cleanly within the existing Code-A-Nova architecture:
 
 ```
 BACKEND/
@@ -348,7 +529,7 @@ BACKEND/
 │   ├── blueprintController.js
 │   ├── questionBankController.js
 │   ├── sessionController.js
-│   ├── resultController.js
+│   ├── evaluationController.js
 │   ├── certificateController.js
 │   ├── analyticsController.js
 │   └── jobController.js
@@ -358,6 +539,7 @@ BACKEND/
 │   ├── QuestionGenerator.js
 │   ├── QuestionValidator.js
 │   ├── SessionManager.js
+│   ├── EvaluationEngine.js
 │   ├── CertificateService.js
 │   ├── InventoryChecker.js
 │   └── EmailService.js
@@ -378,8 +560,7 @@ FRONTEND/src/
 │   ├── AssessmentSession.jsx
 │   ├── AssessmentResult.jsx
 │   ├── AssessmentHistory.jsx
-│   ├── CertificateVerify.jsx
-│   └── CertificateDownload.jsx
+│   └── CertificateVerify.jsx
 │
 ├── Components/Assessment/
 │   ├── CategoryCard.jsx
@@ -393,8 +574,11 @@ FRONTEND/src/
 │
 └── Admin/Assessment/
     ├── AssessmentDashboard.jsx
+    ├── AssessmentOverview.jsx
     ├── CategoryManager.jsx
     ├── SubcategoryManager.jsx
+    ├── CategoryDetail.jsx
+    ├── CategoryWizard.jsx
     ├── ConfigManager.jsx
     ├── BlueprintManager.jsx
     ├── QuestionBankManager.jsx
@@ -403,291 +587,368 @@ FRONTEND/src/
     ├── AnalyticsDashboard.jsx
     ├── BackgroundJobs.jsx
     └── AssessmentSettings.jsx
-
-docs/
-└── assessment-roadmap.md
 ```
 
 ---
 
 ## 11. API Plan
 
-### Admin: /api/admin/assessment/
+### 1. Administrative Control: `/api/admin/assessment/`
+*(Protected strictly by `auth.js` and `verifyAdmin.js` RBAC middleware)*
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | /categories | List / Create |
-| PUT/DELETE | /categories/:id | Update / Delete |
-| PATCH | /categories/:id/toggle | Enable/Disable |
-| POST | /categories/:id/icon | Upload icon |
-| GET/POST | /subcategories | List / Create |
-| PUT/DELETE | /subcategories/:id | Update / Delete |
-| GET/PUT | /configs/:subcategoryId | Get / Update config |
-| GET/PUT | /blueprints/:subcategoryId | Get / Update blueprint |
-| GET/POST | /questions | List (paginated) / Add manual |
-| PUT/DELETE | /questions/:id | Update / Delete |
-| PATCH | /questions/:id/status | Approve / Reject |
-| POST | /questions/generate | Trigger AI generation job |
-| POST | /questions/import-csv | CSV import |
-| GET | /jobs | List background jobs |
-| GET | /jobs/:id | Job detail + progress |
-| POST | /jobs/:id/retry | Retry failed job |
-| GET | /certificates | List all certificates |
-| PATCH | /certificates/:id/revoke | Revoke certificate |
-| GET | /analytics/overview | Overview stats |
-| GET | /groq/health | Groq key health |
+| Method | Endpoint | Description | Single-Responsibility Domain |
+|:---|:---|:---|:---|
+| **GET/POST** | `/categories` | List paginated categories / Deploy new category | Category & Subcategory Management |
+| **PUT/DELETE** | `/categories/:id` | Update structural category metadata / Archive category | Category & Subcategory Management |
+| **PATCH** | `/categories/:id/status` | Toggle active / archived exposure state | Category & Subcategory Management |
+| **POST** | `/categories/wizard` | Atomic 1-click generation of category, subcategories & configs | Category & Subcategory Management |
+| **GET/POST** | `/subcategories` | List subcategories / Deploy new technology subcategory | Category & Subcategory Management |
+| **GET** | `/configs` | List paginated domain subcategories with effective merged hierarchical configs | Assessment Configuration Module |
+| **GET/PUT** | `/configs/global` | Fetch or update root system Global Configuration defaults | Assessment Configuration Module |
+| **POST** | `/configs/bulk-update` | Apply synchronized operational overrides across selected domain arrays | Assessment Configuration Module |
+| **GET/PUT** | `/configs/:subcategoryId` | Fetch operational rules & hierarchy overrides / Commit parameter updates | Assessment Configuration Module |
+| **POST** | `/configs/:subcategoryId/reset` | Atomically revert operational rules back to system baseline defaults | Assessment Configuration Module |
+| **POST** | `/configs/:subcategoryId/clone` | Duplicate operational rules to target subcategory domains instantly | Assessment Configuration Module |
+| **GET/PUT** | `/blueprints/:subcategoryId` | Fetch AI prompt blueprint / Create new prompt version | AI Blueprint Management |
+| **POST** | `/blueprints/:subcategoryId/rollback` | Immediately revert active blueprint to targeted history version | AI Blueprint Management |
+| **GET/POST** | `/questions` | Query intelligent question bank / Add manual question record | Question Bank Engine |
+| **PUT/DELETE** | `/questions/:id` | Modify existing question content / Archive question item | Question Bank Engine |
+| **PATCH** | `/questions/:id/status` | Transition question review state (Approve / Reject) | Question Bank Engine |
+| **POST** | `/questions/import-csv` | Bulk ingest structured question datasets via CSV | Question Bank Engine |
+| **POST** | `/questions/generate` | Trigger manual AI generation worker job | Background Workers Engine |
+| **GET** | `/jobs` | Inspect active background task generation queues | Background Workers Engine |
+| **POST** | `/jobs/:id/retry` | Force execution retry on stalled generation tasks | Background Workers Engine |
+| **GET** | `/certificates` | Query global issued credentials database | Certificate Engine |
+| **PATCH** | `/certificates/:id/revoke` | Executively revoke candidate credentials with documented reason | Certificate Engine |
+| **GET** | `/dashboard/stats` | Retrieve platform overview KPIs, inventory counts, & pool metrics | Analytics Module |
+| **GET** | `/groq/health` | Inspect real-time telemetry, latency, & cooldown status of 4 AI keys | Groq Manager Integration |
 
-### Student: /api/assessment/
+### 2. Candidate & Student Execution: `/api/assessment/`
+*(Protected strictly by `auth.js` Bearer token authentication middleware)*
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /categories | Browse categories |
-| GET | /categories/:slug/subcategories | Browse subcategories |
-| GET | /subcategories/:slug | Detail + config preview |
-| POST | /sessions/start | Start session |
-| GET | /sessions/:id/batch | Next question batch |
-| POST | /sessions/:id/answer | Submit answer |
-| POST | /sessions/:id/submit | Final submit |
-| GET | /sessions/:id/result | Result + feedback |
-| GET | /history | Assessment history |
-| GET | /leaderboard/:subcategoryId | Leaderboard |
-| GET | /certificates | Student certificates |
-| GET | /certificates/:id/download | Download PDF |
+| Method | Endpoint | Description | Single-Responsibility Domain |
+|:---|:---|:---|:---|
+| **GET** | `/categories` | Retrieve verified active technology categories | Student Dashboard / Catalog |
+| **GET** | `/categories/:slug/subcategories` | Browse active subcategories within target pillar | Student Dashboard / Catalog |
+| **GET** | `/subcategories/:slug` | Retrieve detailed overview & public test parameters | Student Dashboard / Catalog |
+| **POST** | `/sessions/start` | Instantiate real-time immutable session; request AI Batch 1 | Assessment Session Engine |
+| **GET** | `/sessions/:id/batch` | Retrieve current rolling question batch | Assessment Session Engine |
+| **POST** | `/sessions/:id/answer` | Transmit item answer selection; clock latency timestamp | Assessment Session Engine |
+| **POST** | `/sessions/:id/submit` | Finalize session; trigger zero-trust evaluation & scoring | Evaluation Engine |
+| **GET** | `/sessions/:id/result` | Retrieve calculated competency score, topical feedback & analytics | Evaluation Engine |
+| **GET** | `/history` | Query personal candidate assessment historical trajectory | Student Dashboard |
+| **GET** | `/leaderboard/:subcategoryId` | Fetch top-performing peer rankings for subcategory domain | Student Dashboard / Analytics |
+| **GET** | `/certificates` | Retrieve active earned certificates portfolio | Student Dashboard / Certificate Engine |
+| **GET** | `/certificates/:id/download` | Obtain authenticated stream to generated PDF credential | Certificate Engine |
 
-### Public: /api/public/assessment/
+### 3. Open Public Verification: `/api/public/assessment/`
+*(Read-only, high-performance rate-limited public access)*
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /verify/:certificateId | Public certificate verification |
+| Method | Endpoint | Description | Single-Responsibility Domain |
+|:---|:---|:---|:---|
+| **GET** | `/verify/:certificateId` | Public credential authentication lookup via Certificate UUID | Recruiter Verification Module |
+
+*(Note: Unfinalized email lookup routes are intentionally omitted to preserve rigorous architectural scope and candidate data privacy).*
 
 ---
 
 ## 12. UI Plan
 
-### Admin Sidebar (Assessment Section)
-```
-Assessment
-├── Dashboard     (stats: assessments, pass rate, AI health, inventory)
-├── Categories    (table: add/edit/delete/icon/order)
-├── Sub Categories (table: filtered by category)
-├── Assessment Config (per-subcategory form)
-├── AI Configuration  (prompt blueprint editor)
-├── Question Bank (table: filters, approve/reject, generate)
-├── Assessments   (live assessments list)
-├── Certificates  (issued certs, revoke)
-├── Analytics     (charts: scores, pass rate, trends)
-├── Background Jobs (live queue with progress bars)
-└── Settings      (global: timeout, retry, defaults)
-```
+### 1. Admin Sidebar & Management Views
+The administrative suite integrates cleanly into the admin portal under an dedicated **Assessment** navigation heading:
+* **`AssessmentOverview.jsx`**: High-density executive visual dashboard displaying real-time AI key latency meters, question origin distribution ratios (AI vs Manual vs CSV), inventory deficiency alerts, and overall student completion rates.
+* **`CategoryManager.jsx` & `SubcategoryManager.jsx`**: Interactive data grids equipped with dynamic global search, pagination, bulk operations, status toggle controls, and duplication utilities.
+* **`CategoryWizard.jsx`**: A coordinated multi-step graphical workflow permitting zero-code deployment of categories, child subcategories, initial rule configurations, and starting AI blueprints in an atomic sequence.
+* **`ConfigManager.jsx` & `BlueprintManager.jsx`**: Dedicated form environments featuring prompt syntax highlighters, version history timeline inspectors, one-click prompt rollback controls, and visual difficulty distribution percentage sliders.
+* **`QuestionBankManager.jsx`**: Advanced knowledge base inspection portal equipped with topical filtering, batch CSV ingestion interfaces, and instantaneous manual validation overrides.
+* **`BackgroundJobs.jsx`**: Real-time operational daemon interface rendering active processing queue progress bars, completion estimates, and error log traces.
 
-### Student Pages
-```
-/assessment             → Browse categories (card grid)
-/assessment/:category   → Browse subcategories
-/assessment/:cat/:sub   → Detail page + start button
-/assessment/session/:id → Active (timer, question, options, progress)
-/assessment/result/:id  → Result (score, topics, AI feedback)
-/assessment/history     → Past assessments list
-/certificate/verify/:id → Public verification page
-```
+### 2. Student & Public UI Spaces
+* **`AssessmentHome.jsx` & `AssessmentSubcategory.jsx`**: Responsive interactive catalog showcasing available testing domains, difficulty metadata, and pre-assessment procedural briefings.
+* **`AssessmentSession.jsx`**: An immersive, zero-distraction examination interface running visual countdown timers (`TimerBar.jsx`), dynamic question batch displayers (`QuestionCard.jsx`), and seamless background batch progress trackers without interface reloads.
+* **`AssessmentResult.jsx`**: Comprehensive analytical feedback scorecard rendering numerical completion percentages, topical strength/weakness visual mapping, and immediate certificate download access upon pass verification.
+* **`CertificateVerify.jsx`**: Lightweight public credential authentication view displaying visual verification seals, cryptographic timestamps, candidate names, and direct PDF download endpoints for external recruiters.
 
 ---
 
-## 13. Security
+## 13. Security & Audit Framework
 
-| Area | Implementation |
-|------|---------------|
-| Auth | Existing JWT middleware |
-| Admin Routes | Existing verifyAdmin middleware |
-| Rate Limiting | 60 req/min per IP on public APIs |
-| Input Validation | Mongoose schema + express-validator |
-| Sanitization | Strip HTML from all text inputs |
-| Session Isolation | Questions never exposed until answered |
-| Certificate Verify | UUID-based, public but read-only |
-| Server-side Scoring | Never trust client score |
-| Audit Logs | Every admin action logged with timestamp + adminId |
-
----
-
-## 14. Background Workers
-
-### Worker 1: InventoryChecker
-- Runs every 1 hour via cron
-- Checks approved questions per subcategory × difficulty
-- Below inventoryTarget → queues GenerateQuestionsJob
-- Admin notification if critically low
-
-### Worker 2: QuestionFactoryWorker
-- Picks queued GenerateQuestionsJob
-- Uses GroqManager for AI generation
-- Validates via QuestionValidator
-- Saves approved to assessment_questions
-- Updates job progress in real-time
+| Domain Layer | Technical Enforcement & Architecture Standard |
+| :--- | :--- |
+| **Session Authentication** | Standardized stateless JWT Bearer validation via existing `auth.js` middleware; enforces unified identity decoding (`unifiedUserId`). |
+| **Role-Based Access (RBAC)** | Administrative mutations restricted strictly to verified identities within the separated `Admin` database collection via `verifyAdmin.js`. |
+| **Zero-Trust Grading** | All candidate score computations and passing evaluations run entirely on the protected backend server layer; client score submissions are completely disregarded. |
+| **Session Isolation** | Candidate assessment sessions reveal only active batch question content; subsequent batch questions and answers remain unexposed in database state until valid sequence progression occurs. |
+| **Credential Anti-Tampering** | Verified certificates utilize unguessable cryptographic RFC 4122 UUIDs (`certificateId`) generated upon automated grading completion; alterations to ID string parameters immediately return 404 security barriers. |
+| **Privacy Preservation** | Public credential validation is restricted entirely to unique UUID queries or URL parsing; exploratory querying or metadata scraping via candidate email strings is structurally forbidden. |
+| **Defensive Rate Limiting** | Specialized express throttles govern API intake (e.g., 60 req/min on public verification endpoints, strict burst limiters on session batch initialization to prevent prompt flood attacks). |
+| **Payload Sanitization** | Strict input scrubbing via Mongoose schema validators and custom sanitization scripts to neutralize Cross-Site Scripting (XSS) and NoSQL syntax injection attempts. |
+| **Mutation Auditing** | All administrative mutations (category creation, blueprint modification, prompt rollbacks, certificate revocations) write timestamped transactional log entries directly to the audit log repository via `auditLogger.js`. |
 
 ---
 
-## 15. Phase Roadmap
+## 14. Background Workers (Auto-Inventory Lifecycle)
 
-| Phase | Name | Status |
-|-------|------|--------|
-| Phase 0  | Roadmap Document | ✅ COMPLETED |
-| Phase 1  | Foundation: Models + GroqManager + Admin Sidebar | ✅ COMPLETED |
-| Phase 2  | Category & Subcategory Management (Admin CRUD + UI) | ✅ COMPLETED |
-| Phase 3  | Assessment Config + AI Blueprint Editor | ⏳ Pending |
-| Phase 4  | Question Bank: Manual Add + CSV Import + Admin UI | ⏳ Pending |
-| Phase 5  | GroqManager + AI Question Generation + Validator | ⏳ Pending |
-| Phase 6  | Background Workers: Inventory Checker + Question Factory | ⏳ Pending |
-| Phase 7  | Assessment Session: Start + Rolling Batch + AI First + DB Fallback | ⏳ Pending |
-| Phase 8  | Answer Submission + Server-side Scoring + Result Engine | ⏳ Pending |
-| Phase 9  | Certificate: PDF + QR Code + Email + Public Verify | ⏳ Pending |
-| Phase 10 | Student Dashboard: History + Certificates + Leaderboard | ⏳ Pending |
-| Phase 11 | Analytics Dashboard (Admin + Student) | ⏳ Pending |
-| Phase 12 | Recruiter Module: Search + Verify | ⏳ Pending |
-| Phase 13 | Performance: Caching + Query Optimization | ⏳ Pending |
-| Phase 14 | Testing + Security Audit + Final Polish | ⏳ Pending |
-| Phase 15 | Merge to main + Production Deployment | ⏳ Pending |
+The system delegates asynchronous processing, AI generation loops, and database inventory maintenance to a dedicated background execution architecture:
+
+### 1. `InventoryWorker.js` (Automated Inventory Daemon)
+* **Execution Interval:** Schedulable cron operation configured to execute hourly (or triggered immediately via Admin dashboard overrides).
+* **Operational Lifecycle:**
+  1. Sweeps all active `AssessmentSubcategory` records and evaluates their configured `inventoryTarget` thresholds across all difficulty tiers (`easy`, `medium`, `hard`, `expert`).
+  2. Compares targets against real-time verified question counts maintained by Mongoose post-save hooks.
+  3. Where `Current Question Count < Target Question Count`, computes numerical inventory deficit.
+  4. Automatically generates and dispatches specialized `inventory_replenish` job payloads directly into the `AssessmentAIJob` task queue to restore healthy reserve volumes.
+  5. Updates subcategory virtual health tags (`Healthy`, `Medium`, `Low`, `Critical`).
+
+### 2. `QuestionFactoryWorker.js` (Asynchronous Synthesis Processor)
+* **Execution Interval:** Continuously polls or listens for active queued tasks within the `AssessmentAIJob` collection.
+* **Operational Lifecycle:**
+  1. Ingests queued generation job specifications (Subcategory ID, Difficulty Tier, Required Item Volume).
+  2. Retrieves corresponding active `AssessmentAIBlueprint` and invokes `GroqManager` to request generative AI prompt synthesis under multi-key sequential rotation.
+  3. For each generated problem, engages `QuestionValidator.js` to execute strict formatting, grammar, option verification, and MD5 deduplication evaluations.
+  4. Persists passing questions into `AssessmentQuestion` with explicit `blueprintVersion` metadata and status set to `Approved` (or `Pending` based on subcategory governance rules).
+  5. Dynamically updates real-time operational telemetry (`progress` percentage, `generatedCount`, `approvedCount`, `rejectedCount`) within the job record until target fulfillment or graceful failure reporting occurs.
+
+---
+
+## 15. Phase Roadmap (17-Phase Single-Responsibility Sequence)
+
+To ensure high-precision execution and architectural clarity, the engineering timeline is organized into 17 modular, single-responsibility development phases:
+
+| Phase | Phase Name | Core Responsibility & Boundaries | Status |
+| :---: | :--- | :--- | :---: |
+| **0** | **Documentation** | Establish Master Roadmap and finalized architectural specification as single source of truth. | ✅ **Completed** |
+| **1** | **Foundation** | Initialize 9 Mongoose relational schemas, root routing registration, and core Admin sidebar hooks. | ✅ **Completed** |
+| **2** | **Category & Subcategory Management** | Implement full CRUD APIs, inventory sync virtual hooks, atomic creation wizard, and Admin UI suites. | ✅ **Completed** |
+| **3** | **Assessment Configuration Module** | Build dedicated CRUD API endpoints, Question Count distributions, hierarchy rules, cloning, and Admin UI suites. | ✅ **Completed (3.1)** |
+| **4** | **AI Blueprint Management** | Engineer prompt studio API and UI with explicit prompt versioning, history tracking, and instant rollback execution. | 🔴 **Not Started** |
+| **5** | **Groq Manager Integration** | Construct resilient AI inference engine managing 4 API keys via Round-Robin rotation, latency logging, and cooldown recovery. | 🔴 **Not Started** |
+| **6** | **Question Validation Engine** | Implement programmatic 7-stage validation pipeline (JSON schema, grammar, difficulty alignment, option checks, MD5 hashing). | 🔴 **Not Started** |
+| **7** | **Question Bank Engine** | Build intelligent repository CRUD APIs, Admin management tables, manual overrides, and CSV batch ingestion pipelines. | 🔴 **Not Started** |
+| **8** | **Background Workers** | Develop and operationalize hourly `InventoryWorker` auto-replenishment daemon and asynchronous `QuestionFactoryWorker`. | 🔴 **Not Started** |
+| **9** | **Assessment Session Engine** | Implement Candidate testing APIs and UI, rolling 5-question batches, strict 7s AI timeout enforcement, and DB fallback logic. | 🔴 **Not Started** |
+| **10** | **Evaluation Engine** | Build zero-trust server-side grading algorithms, score calculations, topical strength/weakness profiling, and result summary views. | 🔴 **Not Started** |
+| **11** | **Certificate Engine** | Engineer UUID generation, PDF credential document formatting, QR code embedding, email notification, and certificate tables. | 🔴 **Not Started** |
+| **12** | **Student Dashboard** | Construct student portfolio spaces, historical evaluation tracking, achievement metrics, and real-time domain leaderboards. | 🔴 **Not Started** |
+| **13** | **Analytics Module** | Develop high-density diagnostic data charts, AI telemetry graphs, key health dashboards, and subcategory performance telemetry. | 🔴 **Not Started** |
+| **14** | **Recruiter Verification** | Create lightweight, privacy-compliant public credential validation APIs and frontend portal running via Certificate UUID. | 🔴 **Not Started** |
+| **15** | **Optimization** | Apply database compound query indexing, result caching layers, query performance tuning, and frontend bundle optimization. | 🔴 **Not Started** |
+| **16** | **Security Audit** | Execute end-to-end vulnerability scanning, rate-limit penetration verification, input fuzzing, and Sentry error tracking checks. | 🔴 **Not Started** |
+| **17** | **Production Release** | Conduct final staging confirmation, documentation sign-off, merge `feature/assessment-module` to main, and execute release deploy. | 🔴 **Not Started** |
 
 ---
 
 ## 16. Progress Tracker
 
-```
-Phase 0   [####################] COMPLETED
-Phase 1   [####################] COMPLETED
-Phase 2   [####################] COMPLETED
-Phase 3   [....................] Pending
-Phase 4   [....................] Pending
-Phase 5   [....................] Pending
-Phase 6   [....................] Pending
-Phase 7   [....................] Pending
-Phase 8   [....................] Pending
-Phase 9   [....................] Pending
-Phase 10  [....................] Pending
-Phase 11  [....................] Pending
-Phase 12  [....................] Pending
-Phase 13  [....................] Pending
-Phase 14  [....................] Pending
-Phase 15  [....................] Pending
+```text
+Phase 0  : [####################] 100% COMPLETED (Master Roadmap Documentation)
+Phase 1  : [####################] 100% COMPLETED (Foundation Schemas & Routing)
+Phase 2  : [####################] 100% COMPLETED (Category & Subcategory Management)
+Phase 3  : [####################] 100% COMPLETED (Assessment Configuration & Phase 3.1 Refinement)
+Phase 4  : [####################] 100% COMPLETED (AI Prompt Studio & Blueprint Management)
+Phase 4.1: [####################] 100% COMPLETED (AI Runtime Architecture Refinement)
+Phase 5  : [####################] 100% COMPLETED (AI Runtime Engine & Groq Manager Integration)
+Phase 6  : [....................]   0% PENDING   (Question Validation Engine)
+Phase 7  : [....................]   0% PENDING   (Question Bank Engine)
+Phase 8  : [....................]   0% PENDING   (Background Workers)
+Phase 9  : [....................]   0% PENDING   (Assessment Session Engine)
+Phase 10 : [....................]   0% PENDING   (Evaluation Engine)
+Phase 11 : [....................]   0% PENDING   (Certificate Engine)
+Phase 12 : [....................]   0% PENDING   (Student Dashboard)
+Phase 13 : [....................]   0% PENDING   (Analytics Module)
+Phase 14 : [....................]   0% PENDING   (Recruiter Verification)
+Phase 15 : [....................]   0% PENDING   (Optimization)
+Phase 16 : [....................]   0% PENDING   (Security Audit)
+Phase 17 : [....................]   0% PENDING   (Production Release)
 ```
 
 ---
 
 ## 17. Pending Tasks
 
-- [x] Phase 1: Create 9 Mongoose models in BACKEND/models/assessment/
-- [x] Phase 1: Create GroqManager.js service (round-robin + failover)
-- [x] Phase 1: Add "Assessment" sidebar section in AdminDashboard.jsx
-- [x] Phase 1: Create stub AssessmentDashboard.jsx
-- [x] Phase 1: Register assessment routes in index.js
-- [x] Phase 2: Upgrade Category & Subcategory Mongoose models with dynamic inventory health status and virtuals
-- [x] Phase 2: Add auto-sync hooks to AssessmentQuestion to automatically maintain question counts
-- [x] Phase 2: Category & Subcategory CRUD APIs + Admin UI (CategoryManager.jsx, SubcategoryManager.jsx, CategoryDetail.jsx)
-- [x] Phase 2: Implement Multi-step Category Creation Wizard (CategoryWizard.jsx + atomic backend route)
-- [ ] Phase 3: Assessment Config form + API
-- [ ] Phase 3: AI Blueprint editor + API
-- [ ] Phase 4: Question Bank table + Manual add + CSV import
-- [ ] Phase 5: AI question generation via GroqManager
-- [ ] Phase 5: QuestionValidator pipeline
-- [ ] Phase 6: Background worker cron setup
-- [ ] Phase 7: Session start + rolling batch + AI-first (7s) + DB fallback
-- [ ] Phase 8: Answer submission + scoring + result page + AI feedback
-- [ ] Phase 9: Certificate PDF + QR + Email
-- [ ] Phase 10: Student history + certificate download
-- [ ] Phase 11: Analytics charts
-- [ ] Phase 12: Recruiter verify portal
-- [ ] Phase 13: Caching + optimization
-- [ ] Phase 14: Tests + security audit
-- [ ] Phase 15: Merge to main
+- [x] **Phase 1: Foundation** — Create 9 purpose-built Mongoose relational domain schemas under `BACKEND/models/assessment/`.
+- [x] **Phase 1: Foundation** — Register core assessment route group integrations inside `BACKEND/index.js` and stub initial Admin UI sidebar hooks.
+- [x] **Phase 2: Category & Subcategory Management** — Enhance schema architectures with dynamic inventory virtuals (`healthStatus`, `inventoryPercentage`) and automated question counting hooks.
+- [x] **Phase 2: Category & Subcategory Management** — Implement exhaustive administrative CRUD controllers, batch operation endpoints, and an atomic 5-step category deployment wizard (`POST /api/admin/assessment/categories/wizard`).
+- [x] **Phase 2: Category & Subcategory Management** — Construct enterprise Admin UI interfaces (`AssessmentOverview.jsx`, `CategoryManager.jsx`, `SubcategoryManager.jsx`, `CategoryDetail.jsx`, `CategoryWizard.jsx`) and confirm zero-error Vite compilation.
+- [x] **Phase 3: Assessment Configuration Module** — Build dedicated controllers, API endpoints (`/configs/:subcategoryId`), and interactive Admin UI form suites to manage test limits, timers, and difficulty distributions.
+- [x] **Phase 4: AI Prompt Studio & Blueprint Management** — Construct production Prompt Studio API (`aiBlueprintController.js`) and dynamic UI (`AIBlueprintManager.jsx`) featuring immutable version history, dynamic variables, visual JSON output schema builders, test scaffolding, template cloning, and one-click rollback endpoints (`/blueprints/:id/versions/:versionNumber/activate`).
+- [x] **Phase 4.1: AI Runtime Architecture Refinement** — Implemented comprehensive modular decoupling: removed fake question simulation, decoupled Blueprint Assignment (`AssessmentBlueprintAssignment`) and Runtime Provider abstraction (`AssessmentRuntimeConfig`), built shared structural libraries (Variables, Output Schemas, Sections), introduced 3-tier hierarchical validation (Basic/Advanced/Strict), established dynamic runtime prompt resolution (`/runtime/resolve`), created architectural dependency graph visualization, and deferred inference telemetry to Phase 5.
+- [x] **Phase 5: AI Runtime Engine & Groq Provider Integration** — Engineered production AI execution pipeline (`AIRuntimeEngine.js`): implemented AI Request Builder, multi-key Round-Robin router & auto-recovery daemon (`GroqManager.js`), multi-provider routing & standardized error mapping (`ProviderManager.js`), safe Markdown JSON stripper (`ResponseParser.js`), structural schema validator (`RuntimeValidator.js`), audit logging & telemetry (`RuntimeLogger.js`, `AIRuntimeLog`), cache/queue/streaming hooks, and diagnostic testing interface (`AIRuntimeMonitor.jsx`).
+- [ ] **Phase 6: Question Validation Engine** — Implement automated 7-stage evaluation pipeline (`QuestionValidator.js`) enforcing structure grammar, schema integrity, and MD5 hashing deduplication against existing database records.
+- [ ] **Phase 7: Question Bank Engine** — Build intelligent repository controllers (`/questions`), pagination search filters, manual admin approval interfaces (`QuestionBankManager.jsx`), and CSV batch file ingestion parsers.
+- [ ] **Phase 8: Background Workers** — Engineer and schedule `InventoryWorker.js` automated hour-based inventory deficiency checker and asynchronous `QuestionFactoryWorker.js` generation processing loop (`/jobs` monitoring UI).
+- [ ] **Phase 9: Assessment Session Engine** — Develop candidate session creation API (`/sessions/start`), 5-question rolling batch generators, strict 7000ms AI timeout monitors, database fallback retrieval mechanisms, and session interface (`AssessmentSession.jsx`).
+- [ ] **Phase 10: Evaluation Engine** — Implement zero-trust server-side scoring algorithms (`/sessions/:id/submit`), competency heatmap calculation logic, weak/strong domain tagging, and interactive feedback results UI (`AssessmentResult.jsx`).
+- [ ] **Phase 11: Certificate Engine** — Engineer automated RFC 4122 UUID generator, PDF compilation service, embeddable QR code formatting, automated SMTP email delivery alerts, and admin revocation governance tables (`CertificatesPanel.jsx`).
+- [ ] **Phase 12: Student Dashboard** — Build candidate history views (`AssessmentHistory.jsx`), verified credential display portfolios, secure PDF download stream interfaces, and real-time subcategory ranking leaderboards.
+- [ ] **Phase 13: Analytics Module** — Construct comprehensive statistical calculation endpoints and charting visualizers (`AnalyticsDashboard.jsx`) mapping candidate scores, pass-rate trends, and Groq inference latency profiles.
+- [ ] **Phase 14: Recruiter Verification** — Develop high-speed, rate-limited public credential lookups (`GET /api/public/assessment/verify/:certificateId`) and responsive candidate validation frontend page (`CertificateVerify.jsx`).
+- [ ] **Phase 15: Optimization** — Implement targeted MongoDB compound query indexing, redundant query deduplication, memory query results caching, and frontend asset chunk bundling optimizations.
+- [ ] **Phase 16: Security Audit** — Conduct intensive end-to-end vulnerability inspections, test token authorization isolation, verify API rate-limiting thresholds, and confirm clean Sentry error boundary tracking.
+- [ ] **Phase 17: Production Release** — Complete comprehensive staging pipeline validation, conduct final zero-regression verification against existing Code-A-Nova platform domains, merge branch `feature/assessment-module` to `main`, and deploy to production.
 
 ---
 
 ## 18. Testing Strategy
 
-### Key Test Scenarios
+The quality assurance methodology enforces strict automated and manual evaluation matrices prior to phase closure:
 
-| Scenario | Expected |
-|----------|----------|
-| AI responds in <7s | AI questions shown |
-| AI times out (7s) | DB questions loaded, no pause |
-| All 4 Groq keys rate-limited | Graceful error message |
-| Duplicate question from AI | Rejected by validator |
-| User submits same session twice | 409 Conflict |
-| Score = exactly passing % | Certificate generated |
-| Score < passing % | No certificate, retry shown |
-| Certificate ID tampered | 404 Invalid |
-| Admin deletes category with active assessments | 400 Conflict |
+### Critical Architectural Verification Matrices
+
+| Test Scenario & Execution Condition | Expected Operational System Response | Phase Verification Target |
+| :--- | :--- | :---: |
+| **Real-Time AI Response (< 7000ms)** | Generates questions cleanly; validates schema, saves with blueprintVersion to Question Bank, displays immediately to candidate. | Phase 9 |
+| **Real-Time AI Timeout Exceeded (≥ 7000ms)** | Immediately aborts stalled inference socket; queries 5 approved items from Question Bank fallback and serves with **zero candidate UI pause**. | Phase 9 |
+| **Simulated Pool Key Rate-Limit (HTTP 429)** | Marks affected key in cooldown with 60s freeze timestamp; GroqManager instantly rotates to next pool credential without dropping evaluation. | Phase 5 |
+| **Total API Pool Exhaustion (All Keys Cooldown)** | Raises handled `AIUnavailableError`; immediately forces entire active session batch over to database fallback delivery seamlessly. | Phase 5 & 9 |
+| **Duplicate AI Generation Attempt** | Computes identical MD5 hash against existing repository items; validator immediately rejects question with documented dupe reason. | Phase 6 |
+| **Prompt Rollback Execution** | Reverts active system prompt instantly to specified historical blueprint version; subsequent generated questions inherit restored version tag. | Phase 4 |
+| **Auto-Inventory Deficit Trigger** | Current approved count falls below `inventoryTarget`; worker automatically dispatches synthesis job to regenerate healthy reserve buffer. | Phase 8 |
+| **Duplicate Candidate Session Submission** | Second concurrent transmission of finalized answer payload to `/submit` returns handled `409 Conflict` state; duplicate certificate prevented. | Phase 10 |
+| **Exact Borderline Passing Evaluation** | Candidate score matches passing cutoff percentage exactly (e.g., 70%); system validates pass status and generates PDF credential. | Phase 10 & 11 |
+| **Tampered Credential UUID Lookup** | Public request directed to `/verify/:id` with altered or forged alphanumeric UUID immediately returns zero-leakage `404 Invalid Credential`. | Phase 14 |
+| **Revoked Certificate Public Lookup** | Verification query against valid but administratively revoked UUID displays prominent revocation timestamp warning without rendering PDF. | Phase 11 & 14 |
 
 ---
 
 ## 19. Deployment Strategy
 
-- Branch: feature/assessment-module
-- Merge: Only after Phase 14 complete
-- New env vars required:
-  - GROQ_KEY_1, GROQ_KEY_2, GROQ_KEY_3, GROQ_KEY_4
-  - CERTIFICATE_BASE_URL
-- DB: New collections auto-created by Mongoose on first run
-- No breaking changes to existing functionality
+* **Development Workspace Branch:** `feature/assessment-module` (Isolated feature experimentation branch).
+* **Production Integration Merge Condition:** Direct pull requests to `main` remain administratively blocked until complete verification and testing sign-off across Phases 3 through 16.
+* **Required System Environment Variables (Runtime Secrets):**
+  * `GROQ_KEY_1`, `GROQ_KEY_2`, `GROQ_KEY_3`, `GROQ_KEY_4`: Dedicated inference API keys enabling multi-key Round-Robin pooling.
+  * `CERTIFICATE_BASE_URL`: Definitive root production verification hostname (e.g., `https://codeanova.com/certificate/verify/`).
+* **Database Migration & Initialization:** Mongoose schemas dynamically instantiate necessary database collections (`assessment_categories`, `assessment_sessions`, etc.) during application warm-up without manual SQL migration execution.
+* **Backward Compatibility Assurance:** All newly introduced routes reside strictly within isolated namespaces (`/api/assessment`, `/api/admin/assessment`, `/api/public/assessment`), guaranteeing zero disruption to existing student dashboards, mock interview studios, or resume builder tools.
 
 ---
 
 ## 20. Future Roadmap
 
-| Feature | Priority |
-|---------|----------|
-| Coding Assessment (code execution sandbox) | High |
-| AI Voice Viva (speech-based interview) | High |
-| Mixed Assessment (MCQ + Coding combined) | Medium |
-| Subjective Assessment (AI grading) | Medium |
-| Recruiter Custom Assessment Builder | High |
-| Team / Company-wide Assessments | Medium |
-| Proctoring (eye tracking, tab detection) | Medium |
-| Mobile App Integration | Low |
+Upon the successful production release of Phase 17, subsequent system expansions are planned for future engineering iterations:
+
+| Advanced System Enhancement | Technical Complexity & Operational Scope | Strategic Priority |
+| :--- | :--- | :---: |
+| **Live Coding Execution Sandbox** | Integration of containerized web-based compiler environments running secure Docker microservices for real-time algorithm testing. | **High** |
+| **AI Voice & Speech Viva Consoles** | Expanding real-time speech conversational testing utilizing WebRTC Vapi streaming directly within specialized assessment subcategories. | **High** |
+| **Enterprise Recruiter Custom Assessment Studio** | Empowering verified corporate hiring partners to configure custom testing rules and prompt blueprints tailored directly to open job descriptions. | **High** |
+| **Advanced Biometric Anti-Cheating & Proctoring** | Client-side computer vision tracking utilizing webcam feeds to detect unauthorized gaze deviations, multi-face anomalies, or tab navigation events. | **Medium** |
+| **Team & University Benchmarking Tournaments** | High-concurrency group assessment leagues allowing educational campuses to compare aggregated candidate competency across unified technical leaderboards. | **Medium** |
+| **Native Mobile App SDK Integration** | Packaging API delivery endpoints for frictionless native smartphone evaluation delivery with offline database fallback caching support. | **Low** |
 
 ---
 
-## Phase 2 — Completion Summary
+## 21. Phase 2 Completion Summary & Alignment Stamp
 
-**Date Completed**: 2026-07-31
-**Branch**: feature/assessment-module
+**Date Completed:** July 31, 2026  
+**Active Development Branch:** `feature/assessment-module`  
+**Current Engineering Phase:** Pre-Phase Architecture & Roadmap Alignment Verified
 
-**Files Created**:
-- BACKEND/controllers/assessment/categoryController.js
-- BACKEND/controllers/assessment/subcategoryController.js
-- FRONTEND/src/Admin/Assessment/AssessmentOverview.jsx
-- FRONTEND/src/Admin/Assessment/CategoryManager.jsx
-- FRONTEND/src/Admin/Assessment/CategoryDetail.jsx
-- FRONTEND/src/Admin/Assessment/SubcategoryManager.jsx
-- FRONTEND/src/Admin/Assessment/CategoryWizard.jsx
+### Phase 2 Implementation Retrospective
+During Phase 2 execution, the structural foundation of the Category and Subcategory governance domain was completed and brought to production-grade standards:
 
-**Files Modified**:
-- BACKEND/models/assessment/AssessmentCategory.js
-- BACKEND/models/assessment/AssessmentSubcategory.js
-- BACKEND/models/assessment/AssessmentQuestion.js
-- BACKEND/routes/assessment/adminAssessment.js
-- FRONTEND/src/Admin/Assessment/AssessmentDashboard.jsx
-- docs/assessment-roadmap.md
-
-**Database Changes**: 
-- Upgraded `AssessmentCategory` & `AssessmentSubcategory` schemas with `icon`, `banner`, `color`, `targetQuestionCount`, `totalAIQuestions`, `totalManualQuestions`, `totalCSVQuestions`, and virtuals for `healthStatus` (`Healthy`, `Medium`, `Low`, `Critical`) and `inventoryPercentage`.
-- Implemented automatic inventory sync Mongoose post-hooks on `AssessmentQuestion` (`post('save')`, `post('findOneAndDelete')`, `post('findOneAndUpdate')`) to ensure current question counts are 100% database-driven and never manually edited.
-
-**API Changes**:
-- Implemented full CRUD routes with global search, filtering, pagination, sorting, duplicate (`/copy`), status toggle (`/status`), and bulk status/delete endpoints for categories and subcategories.
-- Created atomic endpoint `POST /api/admin/assessment/categories/wizard` for one-click deployment of categories with unlimited subcategories and linked default configs/blueprints.
-- Added comprehensive metrics endpoint `GET /api/admin/assessment/dashboard/stats`.
-
-**UI Changes**:
-- Engineered an enterprise-grade UI suite featuring KPI cards, question source progress bars, real-time AI key pool monitoring, interactive category/subcategory management tables, and a dynamic 5-step creation wizard.
-
-**Testing Checklist**:
-- [x] Verified clean syntax and schema registration across all models and controllers
-- [x] Confirmed clean production Vite compilation (`npx vite build`) in 5.11s with zero errors
-- [x] Tested automatic slug generation and inventory virtual calculation logic
-
-**Remaining Work**: Start Phase 3 (Assessment Configuration & AI Blueprint Editor) upon next instruction.
+* **Engineered Controllers & Routes:** Deployed dedicated controller modules (`categoryController.js`, `subcategoryController.js`) providing exhaustive REST CRUD support, global regex filtering, numeric pagination, status toggling, duplicate copying (`/copy`), and bulk deletion endpoints mounted cleanly inside `adminAssessment.js`.
+* **Atomic Wizard Deployment:** Implemented `POST /api/admin/assessment/categories/wizard` allowing administrators to configure a master category, attach unlimited specialized subcategories, and establish baseline evaluation configs in a single coordinated backend transaction.
+* **Database Hook Intelligence:** Upgraded `AssessmentCategory` and `AssessmentSubcategory` Mongoose models with custom visual metadata fields (`icon`, `banner`, `color`, `targetQuestionCount`) and added computed inventory virtuals (`healthStatus`, `inventoryPercentage`). Configured automatic post-save and post-delete Mongoose middleware hooks on `AssessmentQuestion` to ensure category database inventories are 100% database-driven and never require manual adjustment.
+* **Enterprise Admin UI Suite:** Built a comprehensive management interface inside `FRONTEND/src/Admin/Assessment/` featuring interactive category management tables, detailed subcategory views, KPI metrics overview cards, and a reactive 5-step interactive Category Creation Wizard (`CategoryWizard.jsx`).
+* **Vite Compilation & Testing:** Confirmed zero-error syntax architecture, validated clean Express route mapping, and achieved rapid production bundle compilation (`npx vite build`) across the entire client workspace without warnings or legacy regressions.
 
 ---
 
-> Next Command: Type "Next Phase" to begin Phase 3 implementation.
-> Last Updated: Phase 1 — 2026-07-31
+> **Pre-Phase Alignment Stamp Verified:** All 7 architectural corrections have been fully integrated into this document.
+
+---
+
+## 22. Phase 3 Completion Summary & Alignment Stamp
+
+**Date Completed:** August 1, 2026  
+**Active Development Branch:** `feature/assessment-module`  
+**Current Engineering Phase:** Phase 3 Completed (Assessment Configuration Module Only)
+
+### Phase 3 Implementation Retrospective
+During Phase 3 execution, the Assessment Configuration domain was completely implemented and verified:
+* **Database Schema Refinement:** Aligned `AssessmentConfig.js` defaults with roadmap specifications (percentages defaulting to 30/40/20/10, evaluation modality enum including `'AI Viva'`, total questions default 15, time limit 20 minutes).
+* **Engineered Configuration Controller:** Created `backend/controllers/assessment/configController.js` providing resilient listing (`listConfigs`), detail lookup (`getConfigBySubcategory`), atomic updates (`updateConfig`), and system default resets (`resetConfig`). Implemented explicit validation ensuring difficulty percentage distribution ratios sum to exactly 100%, and linked inventory reserve target totals directly to parent subcategories for Phase 8 worker loops.
+* **API Routing & Integration:** Mounted `/configs`, `/configs/:subcategoryId`, and `/configs/:subcategoryId/reset` strictly under Admin RBAC protected routes inside `backend/routes/assessment/adminAssessment.js`.
+* **Interactive Admin Studio (`ConfigManager.jsx`):** Created a visual operational rules studio featuring stacked percentage difficulty color bars, dynamic question count calculation, strict 100% ratio sum validation alerting, and explicit controls for AI-first generation timeout ceilings (7s zero-pause boundary).
+* **Dashboard Synchronized:** Integrated `ConfigManager.jsx` seamlessly into `AssessmentDashboard.jsx` and standardized all tab phase numbers to strictly follow the 17-Phase Master Roadmap.
+
+---
+
+## 23. Phase 3.1 Completion Summary & Architectural Refinements
+
+**Date Completed:** August 1, 2026  
+**Active Development Branch:** `feature/assessment-module`  
+**Current Engineering Phase:** Phase 4 Completed (AI Prompt Studio & Blueprint Management)
+
+### Phase 4 Architectural Retrospective (AI Prompt Studio)
+During Phase 4 execution, the AI Prompt Studio & Blueprint Management module was delivered as an enterprise-grade AI governance system, operating as the single source of truth for all assessment prompt architectures without initiating live Groq inference calls (which remain strictly in Phase 5):
+1. **Immutable Versioning Strategy:** Upgraded `AssessmentAIBlueprint` schema to enforce strict version persistence. Saving modifications increments `activeVersion` (v+1) and appends a newly committed snapshot to the `versions` array without ever overwriting historical records.
+2. **One-Click Version Rollback & Diffing:** Engineered endpoints (`/blueprints/:id/versions/:versionNumber/activate` and `/compare`) enabling instantaneous rollback to prior versions and differential side-by-side comparison across prompt sections, rules, and variable structures.
+3. **Provider-Ready Abstraction:** Configured native structural support for multiple enterprise AI providers (`Groq`, `OpenAI`, `Gemini`, `Claude`, `Custom`) with customizable target models (`llama3-70b-8192`) and status flags (`Active`, `Draft`, `Archived`).
+4. **Dynamic Variable & Output Schema Builder:** Integrated interactive variable pills (`{{category}}`, `{{subcategory}}`, `{{difficulty}}`, `{{questionCount}}`, `{{topics}}`, etc.) and a graphical JSON output schema modeler ensuring zero parsing failures during generation.
+5. **System Template Duplication & Import/Export:** Auto-seeded 10 built-in core evaluation templates (Programming, DSA, Aptitude, Database, OS, Networks, Web Dev, AI, Cloud, Cybersecurity) with cloning capabilities (`/clone`), portable JSON exports (`/export`), and schema-verified JSON imports (`/import`).
+6. **Mock Testing & Payload Framework:** Created offline simulation scaffolding (`/blueprints/:id/test`) that renders variable substitutions, constructs live HTTP Request payloads for provider routing, estimates token/latency usage (~650 prompt tokens, ~380ms latency), and outputs realistic simulated question arrays without consuming external API credentials.
+7. **Production Prompt Studio UI:** Developed `AIBlueprintManager.jsx` featuring dark code-editor spaces with line numbering, interactive variable insertion, live health score verification (0–100%), and integrated navigation within `AssessmentDashboard.jsx`.
+
+---
+
+## 24. Phase 4.1 Completion Summary & AI Runtime Architecture Refinement
+
+**Date Completed:** August 1, 2026  
+**Active Development Branch:** `feature/assessment-module`  
+**Current Engineering Phase:** Phase 4.1 Completed (AI Runtime Architecture Refinement)
+
+### Phase 4.1 Architectural Retrospective (AI Runtime Refinement)
+During Phase 4.1 execution, the AI Prompt Studio architecture was thoroughly transformed from a static CRUD manager into a production-grade, modular AI Runtime Architecture. All 12 mandated architectural refinements were fully engineered and integrated:
+
+1. **Remove Fake Question Generation:** Eliminated simulated assessment question generation from Mock Testing. The studio now outputs strictly structural runtime previews (`preparedRuntimePayload`, JSON schema validation results, token budget estimations) without fabricating mock evaluation questions.
+2. **Decouple Blueprint Assignment from Direct Subcategory Tables:** Engineered `AssessmentBlueprintAssignment` schema supporting hierarchical fallback resolution: Subcategory override $\rightarrow$ Category assignment $\rightarrow$ Global Canonical default, ensuring zero operational downtime.
+3. **Multi-Modality Ready Output Schema Support:** Expanded schema definitions to support 5 enterprise evaluation modalities: MCQ, Coding Problem, Mixed Assessment, AI Viva Voice Interview, and Subjective Architectural Briefs with specialized grading rubrics.
+4. **Reusable Variable Library System:** Established an extensible domain variable dictionary (`category`, `subcategory`, `difficulty`, `topics`, `language`, `questionCount`, `assessmentType`, `experienceLevel`) managed through shared runtime libraries.
+5. **Reusable Output Schema Library:** Modularized JSON schema definitions into shared, immutable canonical templates decoupled from individual blueprints.
+6. **Hierarchical Runtime Provider Configuration:** De-linked AI provider selection from Blueprint models. Built `AssessmentRuntimeConfig` schema allowing independent configuration of primary providers (Groq `llama3-70b-8192`), secondary failover arrays (OpenAI, Gemini), temperature, top_p, and hard timeout SLA boundaries (7000ms) across Global, Category, Subcategory, and Assessment levels.
+7. **Future Provider Plug-and-Play Preparedness:** Ensured any LLM inference provider can be integrated in Phase 5 without modifying Prompt Studio blueprints or frontend forms.
+8. **Reusable Prompt Sections Library:** Created modular reusable system instruction blocks (`Enterprise System Instruction`, `Strict JSON Generation Rules`, `Zero-Trust Validation Rules`, `JSON Array Output Directive`).
+9. **Hierarchical Three-Tier Validation Engine:** Replaced simple percentage scores with strict tiered SLA boundary checks: **Basic** (System instructions + tokens), **Advanced** (JSON schema syntax conformancy + variable presence), and **Strict** (Zero redundancy + provider mapping verification).
+10. **Prompt Dependency Graph & Visualizer:** Integrated an end-to-end flowchart visualization depicting the runtime interaction between Assessment Config, Blueprint Assignment, Shared Libraries, Validation Level, and Runtime Providers.
+11. **Decoupled Blueprint Lifecycle Analytics:** Cleansed blueprint storage of live execution metrics (latency, token counts, error rates), reserving them strictly for dynamic Phase 5 inference telemetry, while retaining immutable snapshot counts, activation history, and domain usage binding counters.
+12. **Dynamic Runtime Prompt Resolution API & Preview:** Created `POST /api/admin/assessment/runtime/resolve` and `GET /api/admin/assessment/runtime/libraries` to dynamically resolve variable injections, evaluate schema constraints, apply runtime provider settings, and verify prompt readiness prior to Phase 5 execution.
+
+---
+
+## 25. Phase 5 Completion Summary & AI Runtime Engine (Groq Provider Integration)
+
+**Date Completed:** August 1, 2026  
+**Active Development Branch:** `feature/assessment-module`  
+**Current Engineering Phase:** Phase 5 Completed (AI Runtime Engine & Groq Provider Integration)
+
+### Phase 5 Architectural Retrospective (AI Runtime Engine)
+During Phase 5 execution, the complete **AI Runtime Engine** infrastructure was engineered as a centralized, zero-downtime AI execution pipeline for Code-A-Nova. All 20 mandated production components were constructed in strict accordance with the finalized architecture without simulating or generating assessment questions:
+
+1. **AI Request Builder (`AIRequestBuilder.js`):** Established as the sole compile-time location in Code-A-Nova where prompts are dynamically constructed. Injects runtime variables into blueprint tokens (`{{questionCount}}`, `{{difficulty}}`, etc.), merges prompt sections, attaches mandatory JSON output schema directives, and computes deterministic cache fingerprints.
+2. **Provider Abstraction Layer (`ProviderManager.js`):** Completely decoupled vendor APIs from prompt management. Dynamically routes requests across primary and fallback provider queues (Groq, OpenAI, Gemini, Claude, Custom).
+3. **Groq Manager Separation of Concerns (`GroqManager.js`):** Refined to handle purely hardware execution logic: API authorization, inference calls, timeout SLAs, and usage metrics. Stripped of all prompt building and question validation logic.
+4. **Multi-Key Management & Credential Pool:** Automatically loads all available credentials from environment variables (`GROQ_KEY_1`..`10`, `GROQ_API_KEY_1`..`4`) with automatic fallback to diagnostic simulation keys during offline UI testing.
+5. **Round-Robin Load Distribution:** Equal traffic distribution across healthy API keys (`Key 1` $\rightarrow$ `Key 2` $\rightarrow$ `Key 3` $\rightarrow$ `Key 4` $\rightarrow$ `Key 1`), skipping any credential currently in cooldown or rate-limited state.
+6. **Key Health Monitoring & Auto-Recovery:** Enforces per-key state machine (`Healthy`, `Cooldown`, `Rate Limited`, `Timeout`, `Disabled`). Operates a non-blocking background daemon loop auto-restoring frozen keys upon expiration of their 60s cooldown timer.
+7. **Transparent Automatic Retry Engine:** Automatically intercepts HTTP 429 Rate Limits, 7000ms Timeouts, and network exceptions, triggering seamless Round-Robin failover across secondary keys without interrupting runtime return to the user.
+8. **Unique Request Tracking ID:** Automatically assigns a canonical tracing identifier (`REQ-YYYYMMDD-XXXXXX`) to every runtime invocation for end-to-end auditability.
+9. **Persistent Runtime Logging (`AIRuntimeLog.js`):** Engineered Mongoose schema recording execution telemetry, provider performance, latency boundaries, retry counts, error details, and cache fingerprints.
+10. **Fine-Grained Runtime Metrics Tracker:** Monitors micro-latency segments (`queueTimeMs`, `providerTimeMs`, `responseParseTimeMs`, `validationTimeMs`, `totalRuntimeMs`) along with estimated prompt tokens, returned tokens, and financial cost estimates.
+11. **Safe Response Parser (`ResponseParser.js`):** Intercepts vendor raw output, strips extraneous Markdown code fences (` ```json `), locates outermost array/object boundaries, and performs syntax normalization without validating assessment content.
+12. **Structural Runtime Validator (`RuntimeValidator.js`):** Validates normalized JSON structures against expected schemas from `AIRequestBuilder`. Detects missing required keys and undocumented extraneous fields while strictly reserving semantic assessment question evaluation for Phase 6.
+13. **Standardized Provider Error Mapping:** Normalizes third-party vendor exceptions into domain-immutable error tokens (`RATE_LIMIT_EXCEEDED`, `TIMEOUT_EXCEEDED`, `INVALID_JSON`, `AUTHENTICATION_FAILED`, `PROVIDER_OFFLINE`).
+14. **Queue Ready Architecture Placeholder:** Established asynchronous job submission hooks (`enqueueRuntimeJob`) in `RuntimeLogger`, ready for seamless integration with distributed job queue drivers (BullMQ / Redis / RabbitMQ) in Phase 8.
+15. **Cache Ready Architecture Placeholder:** Built deterministic SHA-256 fingerprint generation (`[Blueprint Version + Variables + Output Schema + Provider + Model]`) with instantaneous cache lookup and persistent indexing interfaces in `RuntimeLogger`.
+16. **Hierarchical Provider Configuration Routing:** Wired runtime routing to honor domain overrides: Assessment Override $\rightarrow$ Subcategory Override $\rightarrow$ Category Override $\rightarrow$ Global Provider Default.
+17. **Streaming Ready Architecture Hook:** Established unified chunked callback pipeline interfaces (`onChunk`, `onComplete`, Server-Sent Events flag) within `ProviderManager` for future interactive real-time generations.
+18. **Zero-Trust Credential Masking:** Built automatic key obfuscation guardrails (`gsk_3849••••••••••••••••xxxx`) ensuring raw API credentials are never exposed in console diagnostics, error traces, or API responses.
+19. **Runtime Testing Utilities & API Suite:** Implemented diagnostic controllers and endpoints (`GET /runtime-engine/health`, `POST /runtime-engine/test`, `POST /runtime-engine/cooldown-reset`, `GET /runtime-engine/logs`) enabling live verification of Round-Robin routing, 429 rate limit failover, and SLA timeout resilience without generating assessment questions.
+20. **Admin UI Observability Suite (`AIRuntimeMonitor.jsx`):** Developed a dedicated interactive management console within the Assessment & Certification dashboard featuring live key pool status cards, multi-provider readiness telemetry, diagnostic test simulation buttons, and execution audit log tables.
+
+---
+
+> **Next Command Required:** Type `"Start Phase 6"` to commence implementation of Question Validation Engine.  
+> Last Updated: **Phase 5 — 2026-08-01** (AI Runtime Engine & Groq Provider Integration Completed; Phase 6 Pending)

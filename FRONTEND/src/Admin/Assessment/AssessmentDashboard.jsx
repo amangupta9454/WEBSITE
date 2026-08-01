@@ -12,7 +12,8 @@ import {
   RefreshCw,
   Settings,
   PlusCircle,
-  Clock
+  Clock,
+  Server
 } from "lucide-react";
 
 import AssessmentOverview from "./AssessmentOverview";
@@ -20,6 +21,9 @@ import CategoryManager from "./CategoryManager";
 import CategoryDetail from "./CategoryDetail";
 import SubcategoryManager from "./SubcategoryManager";
 import CategoryWizard from "./CategoryWizard";
+import ConfigManager from "./ConfigManager";
+import AIBlueprintManager from "./AIBlueprintManager";
+import AIRuntimeMonitor from "./AIRuntimeMonitor";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -30,13 +34,14 @@ const AssessmentDashboard = () => {
     { id: "categories", label: "Categories", icon: FolderTree, phase: "Phase 2 / Live" },
     { id: "subcategories", label: "Sub Categories", icon: Layers, phase: "Phase 2 / Live" },
     { id: "wizard", label: "Category Wizard", icon: PlusCircle, phase: "Phase 2 / Live" },
-    { id: "config", label: "Assessment Config", icon: Sliders, phase: "Phase 3" },
-    { id: "ai_config", label: "AI Configuration", icon: Cpu, phase: "Phase 3" },
-    { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 4 & 5" },
-    { id: "assessments", label: "Assessments", icon: FileCheck, phase: "Phase 7 & 8" },
-    { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 9" },
-    { id: "analytics", label: "Analytics", icon: BarChart3, phase: "Phase 11" },
-    { id: "jobs", label: "Background Jobs", icon: RefreshCw, phase: "Phase 6" },
+    { id: "config", label: "Assessment Config", icon: Sliders, phase: "Phase 3.1 / Live" },
+    { id: "ai_config", label: "AI Prompt Studio", icon: Cpu, phase: "Phase 4 / Live" },
+    { id: "ai_runtime", label: "AI Runtime Engine", icon: Server, phase: "Phase 5 / Live" },
+    { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7" },
+    { id: "assessments", label: "Assessments", icon: FileCheck, phase: "Phase 9" },
+    { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11" },
+    { id: "analytics", label: "Analytics", icon: BarChart3, phase: "Phase 13" },
+    { id: "jobs", label: "Background Jobs", icon: RefreshCw, phase: "Phase 8" },
     { id: "settings", label: "Settings", icon: Settings, phase: "Phase 14" }
   ];
 
@@ -60,14 +65,14 @@ const AssessmentDashboard = () => {
               AI Powered Module
             </span>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Phase 2 Management System Live
+              Phase 3.1 Management System Live
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mt-1">
             Assessment & Certification
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Database-Driven Inventory Management, Multi-step Wizards & AI Key Telemetry
+            Database-Driven Inventory Management, Multi-step Wizards, Operational Rules & AI Telemetry
           </p>
         </div>
       </div>
@@ -144,7 +149,19 @@ const AssessmentDashboard = () => {
             />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard"].includes(activeTab) && (
+          {activeTab === "config" && (
+            <ConfigManager />
+          )}
+
+          {activeTab === "ai_config" && (
+            <AIBlueprintManager />
+          )}
+
+          {activeTab === "ai_runtime" && (
+            <AIRuntimeMonitor />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}
