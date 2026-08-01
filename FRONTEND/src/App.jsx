@@ -42,6 +42,8 @@ import FeatureBanner from "./Components/FeatureBanner";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import { InterviewConfigProvider } from "./context/InterviewConfigContext";
 import CampusAmbassadorApply from "./Pages/CampusAmbassadorApply";
+import StudentExperiencePlatform from "./Pages/AssessmentPortal/StudentExperiencePlatform";
+import PublicVerificationPage from "./Admin/Assessment/PublicVerificationPage";
 
 import ReferralTracker from "./Components/ReferralTracker";
 
@@ -114,6 +116,11 @@ function App() {
           
           {/* ResumeBuilder needs full screen without navbar */}
           <Route path="/resume-builder/:id" element={<ResumeBuilder />} />
+
+          {/* Phase 12 Student Experience Platform & Phase 11 Public Verification */}
+          <Route path="/student-assessment" element={<StudentExperiencePlatform />} />
+          <Route path="/student-portal" element={<StudentExperiencePlatform />} />
+          <Route path="/verify/:certificateId" element={<PublicVerificationPage />} />
 
           {/* Old Legacy Functional Pages and Interview Portal */}
           <Route element={<UnifiedLayout />}>

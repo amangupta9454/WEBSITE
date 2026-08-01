@@ -9,6 +9,7 @@ const authMiddleware = require("../../middleware/auth");
 const sessionController = require("../../controllers/assessment/sessionController");
 const evaluationController = require("../../controllers/assessment/evaluationController");
 const certificateController = require("../../controllers/assessment/certificateController");
+const studentPlatformController = require("../../controllers/assessment/studentPlatformController");
 
 // Optional middleware wrapper for development flexibility if token isn't passed in preview test harness
 const allowOptionalAuth = (req, res, next) => {
@@ -45,8 +46,19 @@ router.get("/certificates/:id",                            allowOptionalAuth, ce
 router.get("/certificates/:id/download",                   allowOptionalAuth, certificateController.downloadPDF);
 router.get("/verify/:certificateId",                                      certificateController.verifyCertificate);
 
-// Future Phase Stubs
+// ── Phase 12 Student Experience Platform APIs (Component 11 & 12) ──────────────
+router.get("/student/dashboard",    allowOptionalAuth, studentPlatformController.getDashboard);
+router.get("/student/catalog",      allowOptionalAuth, studentPlatformController.getAssessmentCenter);
+router.get("/student/active",       allowOptionalAuth, studentPlatformController.getActiveSessions);
+router.get("/student/results",      allowOptionalAuth, studentPlatformController.getResults);
+router.get("/student/credentials",  allowOptionalAuth, studentPlatformController.getCredentials);
+router.get("/student/timeline",     allowOptionalAuth, studentPlatformController.getTimeline);
+router.get("/student/profile",      allowOptionalAuth, studentPlatformController.getProfileAndProgress);
+router.get("/student/search",       allowOptionalAuth, studentPlatformController.searchPlatform);
+router.put("/student/settings",     allowOptionalAuth, studentPlatformController.updateSettings);
+
+// Legacy stubs compatibility
 router.get("/categories",   (req, res) => res.json({ success: true, data: [], message: "Phase 2 / Categories active via public endpoints" }));
-router.get("/history",      allowOptionalAuth, (req, res) => res.json({ success: true, data: [], message: "Phase 12 / Candidate Dashboard History Pending" }));
+router.get("/history",      allowOptionalAuth, studentPlatformController.getResults);
 
 module.exports = router;
