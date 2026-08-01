@@ -748,13 +748,18 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
         )}
 
-        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+        <div 
+          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-cyan-200 shadow-sm shadow-cyan-100 hover:-translate-y-1 hover:shadow-md hover:shadow-cyan-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+          onClick={() => navigate('/student-assessment')}
+        >
+          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-cyan-600">
+            <CheckCircle className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-cyan-100 text-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Coding Challenges</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Assessments</h3>
+          <p className="text-[9px] sm:text-sm text-cyan-600 font-semibold relative z-10 leading-tight">Launch & Evaluate</p>
         </div>
 
         <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
@@ -765,12 +770,18 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
         </div>
 
-        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+        <div 
+          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-amber-200 shadow-sm shadow-amber-100 hover:-translate-y-1 hover:shadow-md hover:shadow-amber-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+          onClick={() => navigate('/student-assessment')}
+        >
+          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-amber-600">
+            <Tag className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
             <Tag className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Certifications</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Certifications</h3>
+          <p className="text-[9px] sm:text-sm text-amber-600 font-semibold relative z-10 leading-tight">View Verified Badges</p>
         </div>
 
       </div>
