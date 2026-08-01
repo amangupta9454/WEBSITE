@@ -26,6 +26,9 @@ import ConfigManager from "./ConfigManager";
 import AIBlueprintManager from "./AIBlueprintManager";
 import AIRuntimeMonitor from "./AIRuntimeMonitor";
 import QuestionIntelligenceGate from "./QuestionIntelligenceGate";
+import QuestionBankManager from "./QuestionBankManager";
+import OrchestrationCenter from "./OrchestrationCenter";
+import AssessmentSessionManager from "./AssessmentSessionManager";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -40,11 +43,11 @@ const AssessmentDashboard = () => {
     { id: "ai_config", label: "AI Prompt Studio", icon: Cpu, phase: "Phase 4 / Live" },
     { id: "ai_runtime", label: "AI Runtime Engine", icon: Server, phase: "Phase 5 / Live" },
     { id: "ai_quality_gate", label: "AI Quality Gate", icon: ShieldCheck, phase: "Phase 6 / Live" },
-    { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7" },
-    { id: "assessments", label: "Assessments", icon: FileCheck, phase: "Phase 9" },
+    { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7 / Live" },
+    { id: "assessments", label: "Assessments (Session Engine)", icon: FileCheck, phase: "Phase 9 / Live" },
     { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11" },
     { id: "analytics", label: "Analytics", icon: BarChart3, phase: "Phase 13" },
-    { id: "jobs", label: "Background Jobs", icon: RefreshCw, phase: "Phase 8" },
+    { id: "jobs", label: "Orchestration Center", icon: RefreshCw, phase: "Phase 8 / Live" },
     { id: "settings", label: "Settings", icon: Settings, phase: "Phase 14" }
   ];
 
@@ -168,7 +171,19 @@ const AssessmentDashboard = () => {
             <QuestionIntelligenceGate />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate"].includes(activeTab) && (
+          {activeTab === "questions" && (
+            <QuestionBankManager />
+          )}
+
+          {activeTab === "jobs" && (
+            <OrchestrationCenter />
+          )}
+
+          {activeTab === "assessments" && (
+            <AssessmentSessionManager />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}

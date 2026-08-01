@@ -12,7 +12,7 @@ const JobPortalCTA = () => {
     // If backend doesn't have this setting yet, it defaults to true
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/job-settings`);
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/settings/job-portal`);
         if (res.data.success && res.data.enabled !== undefined) {
           setIsEnabled(res.data.enabled);
         }

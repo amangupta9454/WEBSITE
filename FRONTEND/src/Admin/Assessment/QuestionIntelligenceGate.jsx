@@ -11,6 +11,8 @@ import {
  * (1 to 200 questions), Bloom's taxonomy stratification, SHA-256 duplicate inspection, and
  * human review readiness simulations—strictly in temporary memory without Question Bank saving.
  */
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
 const QuestionIntelligenceGate = ({ showNotification }) => {
   const [activeTab, setActiveTab] = useState("batch_validator"); // batch_validator | telemetry | review_sandbox | settings
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ const QuestionIntelligenceGate = ({ showNotification }) => {
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch("/api/admin/assessment/intelligence/metrics", {
+      const res = await fetch(`${API_BASE}/api/admin/assessment/intelligence/metrics`, {
         headers: getAuthHeader()
       });
       const data = await res.json();
@@ -92,7 +94,7 @@ const QuestionIntelligenceGate = ({ showNotification }) => {
         payload.simulateBatchSize = simulateSize;
       }
 
-      const res = await fetch("/api/admin/assessment/intelligence/validate-batch", {
+      const res = await fetch(`${API_BASE}/api/admin/assessment/intelligence/validate-batch`, {
         method: "POST",
         headers: getAuthHeader(),
         body: JSON.stringify(payload)
@@ -117,7 +119,7 @@ const QuestionIntelligenceGate = ({ showNotification }) => {
 
   const handleReviewSimulation = async (questionId, actionState) => {
     try {
-      const res = await fetch("/api/admin/assessment/intelligence/review-action", {
+      const res = await fetch(`${API_BASE}/api/admin/assessment/intelligence/review-action`, {
         method: "POST",
         headers: getAuthHeader(),
         body: JSON.stringify({
@@ -147,7 +149,7 @@ const QuestionIntelligenceGate = ({ showNotification }) => {
 
   const handleResetMemory = async () => {
     try {
-      const res = await fetch("/api/admin/assessment/intelligence/reset", {
+      const res = await fetch(`${API_BASE}/api/admin/assessment/intelligence/reset`, {
         method: "POST",
         headers: getAuthHeader()
       });

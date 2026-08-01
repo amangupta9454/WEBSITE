@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
 const CategoryWizard = ({ onComplete, onCancel }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -102,7 +104,7 @@ const CategoryWizard = ({ onComplete, onCancel }) => {
         }))
       };
 
-      const res = await axios.post("/api/admin/assessment/categories/wizard", payload, {
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/categories/wizard`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

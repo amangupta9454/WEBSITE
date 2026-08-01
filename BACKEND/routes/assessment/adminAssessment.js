@@ -15,6 +15,9 @@ const configController      = require("../../controllers/assessment/configContro
 const aiBlueprintController = require("../../controllers/assessment/aiBlueprintController");
 const aiRuntimeController   = require("../../controllers/assessment/aiRuntimeController");
 const intelligenceController = require("../../controllers/assessment/questionIntelligenceController");
+const questionBankController = require("../../controllers/assessment/questionBankController");
+const orchestrationController = require("../../controllers/assessment/orchestrationController");
+const sessionController       = require("../../controllers/assessment/sessionController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -164,9 +167,58 @@ router.get("/intelligence/metrics",                     verifyAdmin, intelligenc
 router.post("/intelligence/review-action",              verifyAdmin, intelligenceController.simulateReviewAction);
 router.post("/intelligence/reset",                      verifyAdmin, intelligenceController.resetMemory);
 
+// ── Phase 7 Question Knowledge Base Engine Routes ──────────────────────────────
+router.get("/knowledge-base/stats",                     verifyAdmin, questionBankController.getRepositoryStatistics);
+router.get("/knowledge-base/questions",                 verifyAdmin, questionBankController.searchQuestions);
+router.get("/knowledge-base/questions/:id",             verifyAdmin, questionBankController.getQuestionDetail);
+router.post("/knowledge-base/questions",                verifyAdmin, questionBankController.createQuestion);
+router.put("/knowledge-base/questions/:id",             verifyAdmin, questionBankController.updateQuestion);
+router.patch("/knowledge-base/questions/:id/status",    verifyAdmin, questionBankController.moderateStatus);
+router.post("/knowledge-base/bulk-status",              verifyAdmin, questionBankController.bulkModerateStatus);
+router.post("/knowledge-base/import",                   verifyAdmin, questionBankController.importQuestions);
+router.post("/knowledge-base/semantic-test",            verifyAdmin, questionBankController.testSemanticDiscovery);
+router.get("/knowledge-base/audits",                    verifyAdmin, questionBankController.getAudits);
+// Legacy compatibility mapping:
+router.get("/questions",                                verifyAdmin, questionBankController.searchQuestions);
+// ── Phase 8 Autonomous Knowledge Orchestration Engine Routes ────────────────────
+router.get("/orchestration/jobs",                       verifyAdmin, orchestrationController.getJobsList);
+router.post("/orchestration/jobs",                      verifyAdmin, orchestrationController.createNewJob);
+router.get("/orchestration/jobs/:jobId",                verifyAdmin, orchestrationController.getJobDetail);
+router.post("/orchestration/jobs/:jobId/retry",         verifyAdmin, orchestrationController.retryJob);
+router.post("/orchestration/jobs/:jobId/cancel",        verifyAdmin, orchestrationController.cancelJob);
+
+router.get("/orchestration/workers",                    verifyAdmin, orchestrationController.getWorkerStatus);
+router.post("/orchestration/workers/:workerId/state",   verifyAdmin, orchestrationController.manageWorkerState);
+
+router.get("/orchestration/inventory",                  verifyAdmin, orchestrationController.getInventoryHealth);
+router.post("/orchestration/inventory/trigger-recovery", verifyAdmin, orchestrationController.triggerInventoryRecovery);
+
+router.get("/orchestration/dlq",                        verifyAdmin, orchestrationController.getDLQList);
+router.post("/orchestration/dlq/:jobId/restore",        verifyAdmin, orchestrationController.restoreDLQItem);
+router.delete("/orchestration/dlq/:jobId",              verifyAdmin, orchestrationController.archiveDLQItem);
+
+router.get("/orchestration/optimization-reports",       verifyAdmin, orchestrationController.getOptimizerReports);
+router.post("/orchestration/optimization-scan",         verifyAdmin, orchestrationController.triggerOptimizationScan);
+
+router.get("/orchestration/events",                     verifyAdmin, orchestrationController.getOrchestrationEvents);
+router.get("/orchestration/scheduler",                  verifyAdmin, orchestrationController.getSchedulerState);
+router.post("/orchestration/scheduler/state",           verifyAdmin, orchestrationController.toggleSchedulerState);
+// Legacy mapping:
+router.get("/jobs",                                     verifyAdmin, orchestrationController.getJobsList);
+
+// ── Phase 9 Assessment Session Engine & Monitoring Routes ──────────────────────
+router.get("/sessions",                                 verifyAdmin, sessionController.adminListSessions);
+router.get("/sessions/:sessionId",                      verifyAdmin, sessionController.adminGetSessionAudit);
+// Also bind test harness start/resume for admins directly testing in admin panel:
+router.post("/sessions/start",                          verifyAdmin, sessionController.createSession);
+router.post("/sessions/:sessionId/resume",              verifyAdmin, sessionController.resumeSession);
+router.get("/sessions/:sessionId/batch/:batchNumber",   verifyAdmin, sessionController.getNextBatch);
+router.post("/sessions/:sessionId/autosave",            verifyAdmin, sessionController.autosave);
+router.post("/sessions/:sessionId/submit",              verifyAdmin, sessionController.submitSession);
+router.post("/sessions/:sessionId/anti-cheat",          verifyAdmin, sessionController.recordAntiCheatEvent);
+router.post("/sessions/:sessionId/heartbeat",           verifyAdmin, sessionController.heartbeat);
+
 // ── Placeholders (Future Phases) ───────────────────────────────────────────
-router.get("/questions",    verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 7" }));
-router.get("/jobs",         verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 8" }));
 router.get("/certificates", verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 11" }));
 router.get("/analytics/overview", verifyAdmin, (req, res) => res.json({ success: true, data: {}, message: "Phase 13" }));
 

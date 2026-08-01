@@ -115,7 +115,7 @@ const AIBlueprintManager = () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
-      
+
       const res = await axios.get(`/api/admin/assessment/blueprints`, {
         params: {
           page: targetPage,
@@ -284,7 +284,7 @@ const AIBlueprintManager = () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
-      
+
       let res;
       if (selectedBlueprint?._id === "new" || !selectedBlueprint?._id) {
         res = await axios.post(`/api/admin/assessment/blueprints`, studioForm, { headers });
@@ -466,9 +466,8 @@ const AIBlueprintManager = () => {
     <div className="min-h-screen bg-slate-900 text-slate-100 rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-800 shadow-2xl animate-fade-in font-sans">
       {/* Toast Alert */}
       {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md transition-all animate-bounce ${
-          toast.type === "error" ? "bg-red-950/90 border-red-500 text-red-200" : "bg-emerald-950/90 border-emerald-500 text-emerald-200"
-        }`}>
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md transition-all animate-bounce ${toast.type === "error" ? "bg-red-950/90 border-red-500 text-red-200" : "bg-emerald-950/90 border-emerald-500 text-emerald-200"
+          }`}>
           {toast.type === "error" ? <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" /> : <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
           <span className="text-sm font-bold tracking-wide">{toast.message}</span>
           <button onClick={() => setToast({ show: false, message: "", type: "success" })} className="p-1 hover:bg-white/10 rounded-lg">
@@ -500,25 +499,22 @@ const AIBlueprintManager = () => {
         <div className="flex flex-wrap items-center gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700 shadow-inner self-start lg:self-auto">
           <button
             onClick={() => setCurrentView("GRID")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              currentView === "GRID" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${currentView === "GRID" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
           >
             <Layers className="w-4 h-4" /> Blueprints Repository
           </button>
           <button
             onClick={() => setCurrentView("TEMPLATES")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              currentView === "TEMPLATES" ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${currentView === "TEMPLATES" ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
           >
             <BookOpen className="w-4 h-4 text-purple-400" /> System Templates ({templates.length || 10})
           </button>
           <button
             onClick={() => setCurrentView("LIBRARIES")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              currentView === "LIBRARIES" ? "bg-amber-600 text-white shadow-lg shadow-amber-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${currentView === "LIBRARIES" ? "bg-amber-600 text-white shadow-lg shadow-amber-600/30" : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
           >
             <Database className="w-4 h-4 text-amber-400" /> Runtime Architecture & Shared Libraries
           </button>
@@ -725,9 +721,8 @@ const AIBlueprintManager = () => {
                         </td>
 
                         <td className="py-4 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
-                            bp.status === "Active" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                          }`}>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${bp.status === "Active" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                            }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${bp.status === "Active" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
                             {bp.status || "Active"}
                           </span>
@@ -974,9 +969,8 @@ const AIBlueprintManager = () => {
 
               <div>
                 <label className="text-[11px] font-extrabold uppercase text-slate-400 block mb-1">Real-Time Health Index</label>
-                <div className={`w-full px-3.5 py-2 rounded-xl border flex items-center justify-between text-xs font-extrabold ${
-                  healthStatus.isValid ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-300" : "bg-red-950/80 border-red-500/50 text-red-300"
-                }`}>
+                <div className={`w-full px-3.5 py-2 rounded-xl border flex items-center justify-between text-xs font-extrabold ${healthStatus.isValid ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-300" : "bg-red-950/80 border-red-500/50 text-red-300"
+                  }`}>
                   <span>{healthStatus.isValid ? "✅ PASS — Validated" : "❌ FAIL — Check Errors"}</span>
                   <span className="text-white px-2 py-0.5 bg-slate-900 rounded font-mono">{healthStatus.score}%</span>
                 </div>
@@ -988,33 +982,29 @@ const AIBlueprintManager = () => {
           <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
             <button
               onClick={() => setActiveStudioTab("PROMPT")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${
-                activeStudioTab === "PROMPT" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${activeStudioTab === "PROMPT" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
             >
               <Code className="w-4 h-4" /> 1. Prompt Editor & Variables
             </button>
             <button
               onClick={() => setActiveStudioTab("SCHEMA")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${
-                activeStudioTab === "SCHEMA" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${activeStudioTab === "SCHEMA" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
             >
               <Layers className="w-4 h-4" /> 2. Output Schema Builder ({studioForm.outputSchema?.schemaDefinitions?.length || 0})
             </button>
             <button
               onClick={() => setActiveStudioTab("TEST")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${
-                activeStudioTab === "TEST" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xl shadow-purple-600/30 animate-pulse" : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${activeStudioTab === "TEST" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xl shadow-purple-600/30 animate-pulse" : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
             >
               <Play className="w-4 h-4" /> 3. Mock Testing & Payload Preview
             </button>
             <button
               onClick={() => setActiveStudioTab("ANALYTICS")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${
-                activeStudioTab === "ANALYTICS" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${activeStudioTab === "ANALYTICS" ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/30" : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
             >
               <BarChart3 className="w-4 h-4" /> 4. Validation & Analytics Architecture
             </button>
@@ -1041,9 +1031,8 @@ const AIBlueprintManager = () => {
                         <button
                           key={sec.key}
                           onClick={() => setActiveSection(sec.key)}
-                          className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1 ${
-                            isCurr ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md" : "bg-slate-900/50 border-slate-700/60 text-slate-300 hover:border-slate-600"
-                          }`}
+                          className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1 ${isCurr ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md" : "bg-slate-900/50 border-slate-700/60 text-slate-300 hover:border-slate-600"
+                            }`}
                         >
                           <div className="flex items-center justify-between w-full">
                             <span className="text-xs font-extrabold flex items-center gap-1.5">
@@ -1087,9 +1076,8 @@ const AIBlueprintManager = () => {
 
               {/* Right Column: Code Editor Workspace (8 Cols) */}
               <div className="xl:col-span-8">
-                <div className={`bg-slate-950 rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col transition-all ${
-                  isFullScreen ? "fixed inset-4 z-50 shadow-[0_0_80px_rgba(0,0,0,0.8)]" : "h-[620px]"
-                }`}>
+                <div className={`bg-slate-950 rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col transition-all ${isFullScreen ? "fixed inset-4 z-50 shadow-[0_0_80px_rgba(0,0,0,0.8)]" : "h-[620px]"
+                  }`}>
                   <div className="bg-slate-800/90 px-6 py-4 border-b border-slate-700 flex items-center justify-between">
                     <div>
                       <span className="text-xs font-black uppercase tracking-wider text-indigo-400">Editing Section:</span>
@@ -1244,7 +1232,7 @@ const AIBlueprintManager = () => {
                     <span className="text-[10px] px-2 py-0.5 bg-slate-900 rounded font-mono text-slate-400">Strict Conformancy</span>
                   </div>
                   <pre className="p-6 text-xs font-mono text-amber-300 leading-relaxed overflow-x-auto flex-1 bg-slate-950">
-{`[
+                    {`[
 [
   {
 ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.type === 'array of 4 strings' ? '["Option A", "Option B", "Option C", "Option D"]' : d.type === 'number (0-3)' ? '0' : d.description || d.type}"`).join(",\n")}
@@ -1436,7 +1424,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                         </pre>
                       </div>
                       <div className="bg-slate-900/80 px-6 py-3 border-t border-slate-800 text-[11px] text-slate-400">
-                        Includes compiled instruction with all {{tokens}} substituted from variable library.
+                        Includes compiled instruction with all {{ tokens }} substituted from variable library.
                       </div>
                     </div>
 
@@ -1616,7 +1604,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                   <div key={idx} className="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 shadow-md flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{"{{" + v.name + "}}"}</span>
+                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{"{{" + v.name + "}}" }</span>
                         <span className="text-[10px] font-bold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded uppercase">{v.category}</span>
                       </div>
                       <h4 className="text-sm font-extrabold text-white mt-3">{v.displayName}</h4>
@@ -1693,7 +1681,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                       <div className="mt-4 flex flex-wrap gap-1.5 items-center">
                         <span className="text-[10px] font-bold text-slate-400">Tokens Linked:</span>
                         {sec.defaultVariablesUsed.map((t, i) => (
-                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{"{{" + t + "}}"}</span>
+                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{"{{" + t + "}}" }</span>
                         ))}
                       </div>
                     )}
@@ -1836,9 +1824,8 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
               {(selectedBlueprint.versions || []).slice().reverse().map((ver) => {
                 const isActive = ver.versionNumber === selectedBlueprint.activeVersion;
                 return (
-                  <div key={ver.versionNumber} className={`p-5 rounded-2xl border transition-all ${
-                    isActive ? "bg-indigo-950/40 border-indigo-500/70 shadow-lg" : "bg-slate-800/80 border-slate-700 hover:border-slate-600"
-                  }`}>
+                  <div key={ver.versionNumber} className={`p-5 rounded-2xl border transition-all ${isActive ? "bg-indigo-950/40 border-indigo-500/70 shadow-lg" : "bg-slate-800/80 border-slate-700 hover:border-slate-600"
+                    }`}>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-extrabold text-white flex items-center gap-2">
                         Version {ver.versionNumber}

@@ -24,6 +24,8 @@ import {
  * health status supervision, error mapping verification, and real-time execution logs.
  * strictly adheres to the architectural mandate: ZERO assessment question generation during diagnostics.
  */
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
 const AIRuntimeMonitor = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,8 +45,8 @@ const AIRuntimeMonitor = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
       const [healthRes, logsRes] = await Promise.all([
-        axios.get("/api/admin/assessment/runtime-engine/health", { headers }),
-        axios.get("/api/admin/assessment/runtime-engine/logs?limit=40", { headers })
+        axios.get(`${API_BASE}/api/admin/assessment/runtime-engine/health`, { headers }),
+        axios.get(`${API_BASE}/api/admin/assessment/runtime-engine/logs?limit=40`, { headers })
       ]);
 
       if (healthRes.data?.success) {
@@ -72,7 +74,7 @@ const AIRuntimeMonitor = () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axios.post(
-        "/api/admin/assessment/runtime-engine/test",
+        `${API_BASE}/api/admin/assessment/runtime-engine/test`,
         { testType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -100,7 +102,7 @@ const AIRuntimeMonitor = () => {
     setRefreshing(true);
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await axios.post("/api/admin/assessment/runtime-engine/cooldown-reset", {}, {
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/runtime-engine/cooldown-reset`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {

@@ -137,6 +137,7 @@ router.get("/settings/leaderboard", getLeaderboardSetting);
 router.post("/settings/leaderboard", auth, verifyAdmin, toggleLeaderboardSetting);
 router.get("/settings/job-portal", getJobPortalSetting);
 router.post("/settings/job-portal", auth, verifyAdmin, toggleJobPortalSetting);
+router.get("/job-settings", getJobPortalSetting);
 
 // Submissions
 router.get("/all-submissions", auth, verifyAdmin, getAllSubmissions);

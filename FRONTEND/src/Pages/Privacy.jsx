@@ -76,7 +76,7 @@ const Privacy = () => {
       title: "8. Contact Us",
       content: (
         <p>
-          If you have questions about this Privacy Policy or how we handle your data, please contact our Data Protection Officer at <strong>support@codeanova.com</strong> or submit a ticket through our Support page.
+          If you have questions about this Privacy Policy or how we handle your data, please contact our Data Protection Officer at <strong>hr@code-a-nova.online</strong> or submit a ticket through our Support page.
         </p>
       )
     }
@@ -86,9 +86,9 @@ const Privacy = () => {
     <MainLayout>
       <div className="pt-32 pb-24 bg-[#FAFAFA] dark:bg-gray-900 min-h-screen relative overflow-hidden transition-colors duration-300">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-[100px] pointer-events-none" />
-        
+
         <div className="max-w-4xl mx-auto px-6 relative z-10">
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeUp}
@@ -101,7 +101,7 @@ const Privacy = () => {
             <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">Effective Date: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
