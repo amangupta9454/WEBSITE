@@ -126,7 +126,7 @@ export default function UnifiedDashboard() {
 
       <div className="relative z-[60] w-full max-w-6xl mx-auto">
         {activeTab === "overview" && <InterviewDashboard />}
-        {activeTab === "assessment" && assessmentEnabled && <StudentExperiencePlatform />}
+        {activeTab === "assessment" && assessmentEnabled && <StudentExperiencePlatform isEmbedded={true} />}
         {activeTab === "internship" && isIntern && <StudentDashboard />}
         {activeTab === "ambassador" && isAmbassador && <AmbassadorTab />}
       </div>

@@ -3302,7 +3302,7 @@ const AdminDashboard = () => {
           )}
 
           {activeSidebarTab === "assessment" && (
-            <div className="flex-1 min-w-0 animate-fade-in">
+            <div className="w-full animate-fade-in">
               <AssessmentDashboard />
             </div>
           )}

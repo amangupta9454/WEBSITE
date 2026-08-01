@@ -90,49 +90,40 @@ const AssessmentDashboard = () => {
         </div>
       </div>
 
-      {/* Main Container with Sidebar + Content */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        {/* Navigation Sub-menu */}
-        <div className="xl:col-span-1">
-          <div className="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm flex xl:flex-col flex-wrap gap-1">
-            <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden xl:block">
-              Navigation
-            </div>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id || (activeTab === "category_detail" && item.id === "categories");
-              const isLive = item.phase.includes("Live");
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavigate(item.id)}
-                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-indigo-600 text-white font-bold shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold hidden xl:inline-block ${
-                    isActive ? "bg-indigo-500 text-white" : isLive ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50" : "bg-slate-100 text-slate-400"
-                  }`}>
-                    {isLive ? "Active" : item.phase.split(" ")[0]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {/* Horizontal Navigation Sub-menu */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm flex items-center gap-1.5 overflow-x-auto mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id || (activeTab === "category_detail" && item.id === "categories");
+          const isLive = item.phase.includes("Live");
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleNavigate(item.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20 font-black"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+              <span>{item.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-black ml-1 ${
+                isActive ? "bg-indigo-500 text-white" : isLive ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50" : "bg-slate-100 text-slate-400"
+              }`}>
+                {isLive ? "Active" : item.phase.split(" ")[0]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Tab Content Area */}
-        <div className="xl:col-span-4 min-w-0">
-          {activeTab === "dashboard" && (
-            <AssessmentOverview
-              onNavigate={handleNavigate}
-              onLaunchWizard={() => handleNavigate("wizard")}
+      {/* Tab Content Area */}
+      <div className="w-full min-w-0">
+        {activeTab === "dashboard" && (
+          <AssessmentOverview
+            onNavigate={handleNavigate}
+            onLaunchWizard={() => handleNavigate("wizard")}
             />
           )}
 
@@ -227,7 +218,6 @@ const AssessmentDashboard = () => {
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

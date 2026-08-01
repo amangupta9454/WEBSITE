@@ -114,16 +114,16 @@ function App() {
           <Route path="/interview-active/:sessionId" element={<InterviewActive />} />
           <Route path="/panel-interview-active/:sessionId" element={<PanelInterviewActive />} />
           
-          {/* ResumeBuilder needs full screen without navbar */}
+          {/* Standalone full-screen pages without standard website navbar */}
           <Route path="/resume-builder/:id" element={<ResumeBuilder />} />
+          <Route path="/verify/:certificateId" element={<PublicVerificationPage />} />
 
           {/* Old Legacy Functional Pages, Interview Portal, and Assessment Module */}
           <Route element={<UnifiedLayout />}>
-            {/* Phase 12 Student Assessment & Verification Platform (Integrated natively) */}
+            {/* Phase 12 Student Assessment Platform (Integrated natively) */}
             <Route path="/student-assessment" element={<StudentExperiencePlatform />} />
             <Route path="/student-portal" element={<StudentExperiencePlatform />} />
             <Route path="/student/dashboard/assessment" element={<StudentExperiencePlatform />} />
-            <Route path="/verify/:certificateId" element={<PublicVerificationPage />} />
 
             {/* Interview Portal Routes */}
             <Route path="/student-login" element={<InterviewLogin />} />

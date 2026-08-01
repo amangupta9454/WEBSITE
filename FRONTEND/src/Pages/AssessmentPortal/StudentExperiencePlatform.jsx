@@ -33,7 +33,7 @@ import StudentSettingsView from "./StudentSettingsView";
  * Inherits existing Code-A-Nova light theme, navigation layout, spacing, and styling.
  * Completely zero mock or hardcoded demo data; displays professional empty states.
  */
-const StudentExperiencePlatform = () => {
+const StudentExperiencePlatform = ({ isEmbedded = false }) => {
   const [activeTab, setActiveTab] = useState("hub"); // hub | catalog | results | certificates | resume | timeline | profile | search | settings
   const [loading, setLoading] = useState(true);
   const [globalSettings, setGlobalSettings] = useState({
@@ -141,12 +141,14 @@ const StudentExperiencePlatform = () => {
 
   if (!globalSettings.assessmentModuleEnabled) {
     return (
-      <div className="w-full max-w-6xl mx-auto my-12 p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
-        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-black text-slate-800">Assessment Module Unavailable</h2>
-        <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-          The assessment feature set is currently disabled by system administration for scheduled maintenance or governance policies.
-        </p>
+      <div className={`w-full max-w-6xl mx-auto ${isEmbedded ? "my-6" : "pt-24 sm:pt-28 pb-16 px-4"}`}>
+        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-slate-800">Assessment Module Unavailable</h2>
+          <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
+            The assessment feature set is currently disabled by system administration for scheduled maintenance or governance policies.
+          </p>
+        </div>
       </div>
     );
   }
@@ -165,7 +167,7 @@ const StudentExperiencePlatform = () => {
   ].filter(item => item.enabled !== false);
 
   return (
-    <div className="w-full max-w-6xl mx-auto my-4 space-y-6 text-slate-800 animate-fade-in">
+    <div className={`w-full max-w-6xl mx-auto ${isEmbedded ? "mt-4" : "pt-24 sm:pt-28 pb-16 px-4"} space-y-6 text-slate-800 animate-fade-in`}>
       {/* Native Navigation Strip matching Code-A-Nova Dashboard architecture */}
       <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex items-center overflow-x-auto gap-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {navItems.map((item) => {
