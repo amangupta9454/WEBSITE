@@ -17,7 +17,6 @@ const AssessmentResultSchema = new Schema({
     type: String,
     required: true,
     unique: true,
-    index: true,
   },
   evaluationPackageId: {
     type: String,
@@ -196,5 +195,10 @@ AssessmentResultSchema.pre("findOneAndUpdate", function (next) {
   }
   next();
 });
+
+// Component 9 (Phase 11.5): Performance & Analytical Query Optimization Indexes
+AssessmentResultSchema.index({ candidateId: 1, createdAt: -1 });
+AssessmentResultSchema.index({ subcategoryId: 1, "score.passed": 1 });
+AssessmentResultSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("AssessmentResult", AssessmentResultSchema);

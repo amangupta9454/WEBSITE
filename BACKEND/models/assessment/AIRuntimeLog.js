@@ -104,6 +104,5 @@ const aiRuntimeLogSchema = new mongoose.Schema(
 // Indexes for analytical query efficiency and operational debugging
 aiRuntimeLogSchema.index({ createdAt: -1 });
 aiRuntimeLogSchema.index({ provider: 1, status: 1 });
-aiRuntimeLogSchema.index({ requestFingerprint: 1 });
 
 module.exports = mongoose.model("AIRuntimeLog", aiRuntimeLogSchema);

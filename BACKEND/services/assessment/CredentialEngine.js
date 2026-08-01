@@ -1,4 +1,4 @@
-const AssessmentCertificate = require("../models/assessment/AssessmentCertificate");
+const AssessmentCertificate = require("../../models/assessment/AssessmentCertificate");
 const eligibilityEngine = require("./credential/EligibilityEngine");
 const snapshotBuilder = require("./credential/CredentialSnapshotBuilder");
 const idGenerator = require("./credential/CertificateIdGenerator");
