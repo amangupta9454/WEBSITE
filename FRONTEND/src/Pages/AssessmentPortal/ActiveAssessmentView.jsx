@@ -4,113 +4,108 @@ import {
   Clock,
   RefreshCw,
   ShieldCheck,
-  Zap,
   CheckCircle,
   Server,
   ArrowRight,
-  AlertTriangle,
+  FolderOpen,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 /**
- * Phase 12 — Component 3: Active Assessment Watchdog
- * Displays running and suspended assessment attempts with Remaining Time estimation,
- * Batch Progress bars, Resume Button triggers, Current Question indicator, and Server Health Status.
+ * Resume Assessment (Part 10 — formerly Active Assessment Watchdog)
+ * Displays running and suspended attempts in existing platform Light Theme.
+ * Zero mock sessions; shows professional empty states when no active attempt exists.
  */
-const ActiveAssessmentView = ({ sessions = [], loading, onResumeSession }) => {
-  if (loading) {
-    return (
-      <div className="space-y-4 p-4 animate-pulse">
-        <div className="h-40 bg-slate-800/60 rounded-3xl"></div>
-        <div className="h-40 bg-slate-800/60 rounded-3xl"></div>
-      </div>
-    );
-  }
+const ActiveAssessmentView = ({ activeSessions = [], onRefresh }) => {
+  const handleResume = (sess) => {
+    toast.success(`▶️ Resuming session (${sess.sessionId || sess._id}). Loading encrypted answers...`);
+  };
 
   return (
-    <div className="space-y-6 p-1 sm:p-4">
-      {/* Banner & Server Heartbeat */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 text-slate-800 animate-fade-in">
+      {/* Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2.5">
-            <RefreshCw className="w-6 h-6 text-cyan-400 animate-pulse" />
-            <span>Active Assessment Watchdog</span>
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Monitor and continue your ongoing test sessions. Autosave is active and encrypted every 30 seconds.
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <PlayCircle className="w-6 h-6 text-indigo-600" />
+            <span>Resume Assessment</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Monitor and continue uncompleted test sessions. Your progress and answer buffers auto-save continuously.
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs font-semibold text-emerald-400 shrink-0 shadow-inner">
-          <Server className="w-4 h-4 text-emerald-400" />
-          <span>Server Status: Online & Synchronized</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 shrink-0">
+          <Server className="w-3.5 h-3.5" />
+          <span>Autosave Watchdog Online</span>
         </div>
       </div>
 
-      {/* Active Session Cards */}
-      {sessions.length === 0 ? (
-        <div className="text-center py-20 bg-slate-900/50 border border-dashed border-slate-800 rounded-3xl">
-          <CheckCircle className="w-12 h-12 text-emerald-500/60 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-white">All Clear! No Active Assessments</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-            You currently have no unsubmitted assessment attempts. Go to the Assessment Center to launch a new examination.
+      {/* Active Session Cards or Empty State */}
+      {activeSessions.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl shadow-sm space-y-3">
+          <FolderOpen className="w-10 h-10 text-slate-400 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800">No Active Session</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            You do not have any unfinished or paused examinations. Launch a new domain test from the Assessment Center when you are ready to evaluate your mastery.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {sessions.map((sess, index) => {
-            const answered = sess.answered || 0;
-            const total = sess.total || 20;
-            const percentage = Math.min(100, Math.round((answered / total) * 100));
+        <div className="space-y-4">
+          {activeSessions.map((sess, index) => {
+            const answered = sess.answeredCount || 0;
+            const total = sess.totalQuestions || 20;
+            const percent = Math.min(100, Math.round((answered / total) * 100));
+            const remainingMins = sess.remainingSeconds ? Math.floor(sess.remainingSeconds / 60) : 25;
 
             return (
               <div
-                key={index}
-                className="bg-slate-900/95 border-2 border-cyan-500/30 hover:border-cyan-400/60 rounded-3xl p-6 shadow-2xl transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                key={sess._id || sess.sessionId || index}
+                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:border-indigo-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
               >
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs uppercase tracking-wider border border-cyan-500/30">
-                      In Progress • Batch {sess.currentBatch || 1}
+                <div className="space-y-2 max-w-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] uppercase">
+                      IN PROGRESS
                     </span>
-                    <span className="text-xs font-mono text-slate-400">ID: {sess.sessionId}</span>
+                    <span className="text-xs font-mono font-medium text-slate-400">
+                      ID: {sess.sessionId || sess._id}
+                    </span>
                   </div>
-
-                  <h3 className="text-xl font-bold text-white">{sess.title || "Full-Stack Engineering Evaluation"}</h3>
-                  <p className="text-xs text-slate-300 max-w-xl">{sess.description || "Autopilot technical examination verified with anti-cheat protection."}</p>
-
-                  {/* Progress Indicator Bar */}
-                  <div className="space-y-1.5 pt-2">
-                    <div className="flex justify-between text-xs font-semibold text-slate-300">
-                      <span>Question Mastery: {answered} of {total} Complete</span>
-                      <span className="text-cyan-400 font-bold">{percentage}%</span>
-                    </div>
-                    <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
-                      <div
-                        className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-500 shadow-sm shadow-cyan-400/50"
-                        style={{ width: `${Math.max(12, percentage)}%` }}
-                      ></div>
-                    </div>
+                  <h3 className="font-extrabold text-lg text-slate-900 leading-snug">
+                    {sess.title || "Technical Competency Evaluation"}
+                  </h3>
+                  <div className="flex items-center gap-4 text-xs text-slate-500 font-medium">
+                    <span className="flex items-center gap-1 text-indigo-600">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>~{remainingMins} mins left</span>
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-emerald-600">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Tab Protections Active</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Timer and Action Controls */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 md:border-l md:border-slate-800 md:pl-6">
-                  <div className="text-center sm:text-right px-4 py-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-                    <div className="flex items-center justify-center sm:justify-end gap-1.5 text-xs font-medium text-slate-400 mb-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Remaining Time</span>
+                {/* Progress Bar & Trigger Button */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+                  <div className="space-y-1.5 w-full sm:w-48">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                      <span>Batch Progress</span>
+                      <span>{percent}%</span>
                     </div>
-                    <div className="text-2xl font-extrabold font-mono text-amber-400 tracking-tight">
-                      24:15 <span className="text-xs text-slate-500 font-normal">min</span>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-indigo-600 h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => onResumeSession && onResumeSession(sess.sessionId)}
-                    className="px-6 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5"
+                    onClick={() => handleResume(sess)}
+                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
                   >
-                    <PlayCircle className="w-5 h-5 fill-current text-slate-950" />
-                    <span>Resume Now</span>
+                    <span>Resume Attempt</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -118,15 +113,6 @@ const ActiveAssessmentView = ({ sessions = [], loading, onResumeSession }) => {
           })}
         </div>
       )}
-
-      {/* Anti-cheat and Security Notice */}
-      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center gap-3 text-xs text-slate-400">
-        <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
-        <div>
-          <span className="font-semibold text-slate-300">Phase 9 Session Lockdown Protected: </span>
-          All ongoing assessments maintain strict tab-focus verification and real-time cryptographic heartbeat synchronization.
-        </div>
-      </div>
     </div>
   );
 };

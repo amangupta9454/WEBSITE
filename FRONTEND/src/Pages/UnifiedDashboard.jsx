@@ -1,17 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { LayoutDashboard, Briefcase, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Briefcase, GraduationCap, Layers } from "lucide-react";
 import axios from "axios";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
 import AmbassadorTab from "../Components/AmbassadorTab";
 import DashboardTopSection from "./InterviewPortal/components/DashboardTopSection";
+import StudentExperiencePlatform from "./AssessmentPortal/StudentExperiencePlatform";
 
 export default function UnifiedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isIntern, setIsIntern] = useState(false);
   const [isAmbassador, setIsAmbassador] = useState(false);
+  const [assessmentEnabled, setAssessmentEnabled] = useState(true);
 
   useEffect(() => {
+    // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get("tab");
+    if (initialTab && ["overview", "internship", "ambassador", "assessment"].includes(initialTab)) {
+      setActiveTab(initialTab);
+    }
+
+    // Check General Settings master switch
+    const settings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
+    if (settings) {
+      try {
+        const parsed = JSON.parse(settings);
+        setAssessmentEnabled(parsed.assessmentModuleEnabled !== false);
+      } catch (e) {
+        setAssessmentEnabled(true);
+      }
+    }
+
     // Check if user is an intern or ambassador
     const checkRole = async () => {
       const role = localStorage.getItem("interviewUserRole");
@@ -59,7 +79,21 @@ export default function UnifiedDashboard() {
             <LayoutDashboard className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
             My Dashboard
           </button>
-          
+
+          {assessmentEnabled && (
+            <button
+              onClick={() => setActiveTab("assessment")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
+                activeTab === "assessment"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Layers className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              Assessment
+            </button>
+          )}
+
           {isIntern && (
             <button
               onClick={() => setActiveTab("internship")}
@@ -92,6 +126,7 @@ export default function UnifiedDashboard() {
 
       <div className="relative z-[60] w-full max-w-6xl mx-auto">
         {activeTab === "overview" && <InterviewDashboard />}
+        {activeTab === "assessment" && assessmentEnabled && <StudentExperiencePlatform />}
         {activeTab === "internship" && isIntern && <StudentDashboard />}
         {activeTab === "ambassador" && isAmbassador && <AmbassadorTab />}
       </div>

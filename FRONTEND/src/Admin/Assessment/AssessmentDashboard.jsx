@@ -33,29 +33,29 @@ import EvaluationConsole from "./EvaluationConsole";
 import StudentResultView from "./StudentResultView";
 import CredentialConsole from "./CredentialConsole";
 import PublicVerificationPage from "./PublicVerificationPage";
+import GeneralSettings from "./GeneralSettings";
+import PublishControl from "./PublishControl";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, phase: "Phase 2 / Live" },
+    { id: "dashboard", label: "Overview", icon: LayoutDashboard, phase: "Phase 1-2 / Live" },
     { id: "categories", label: "Categories", icon: FolderTree, phase: "Phase 2 / Live" },
-    { id: "subcategories", label: "Sub Categories", icon: Layers, phase: "Phase 2 / Live" },
-    { id: "wizard", label: "Category Wizard", icon: PlusCircle, phase: "Phase 2 / Live" },
-    { id: "config", label: "Assessment Config", icon: Sliders, phase: "Phase 3.1 / Live" },
-    { id: "ai_config", label: "AI Prompt Studio", icon: Cpu, phase: "Phase 4 / Live" },
-    { id: "ai_runtime", label: "AI Runtime Engine", icon: Server, phase: "Phase 5 / Live" },
-    { id: "ai_quality_gate", label: "AI Quality Gate", icon: ShieldCheck, phase: "Phase 6 / Live" },
-    { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7 / Live" },
-    { id: "assessments", label: "Assessments (Session Engine)", icon: FileCheck, phase: "Phase 9 / Live" },
-    { id: "evaluation", label: "Evaluation & Scoring", icon: Cpu, phase: "Phase 10 / Live" },
-    { id: "student_result", label: "Student Result View", icon: FileCheck, phase: "Phase 10 / Live" },
-    { id: "certificates", label: "Credential Console", icon: Award, phase: "Phase 11 / Live" },
-    { id: "public_verify", label: "Public Verify Gateway", icon: ShieldCheck, phase: "Phase 11 / Live" },
-    { id: "analytics", label: "Analytics", icon: BarChart3, phase: "Phase 13" },
-    { id: "jobs", label: "Orchestration Center", icon: RefreshCw, phase: "Phase 8 / Live" },
-    { id: "settings", label: "Settings", icon: Settings, phase: "Phase 14" }
+    { id: "subcategories", label: "Subcategories", icon: Layers, phase: "Phase 2 / Live" },
+    { id: "config", label: "Configuration", icon: Sliders, phase: "Phase 3 / Live" },
+    { id: "ai_config", label: "Blueprints (Prompt Studio)", icon: Cpu, phase: "Phase 4 / Live" },
+    { id: "ai_runtime", label: "Runtime Engine", icon: Server, phase: "Phase 5 / Live" },
+    { id: "ai_quality_gate", label: "Question Intelligence", icon: ShieldCheck, phase: "Phase 6 / Live" },
+    { id: "questions", label: "Knowledge Base", icon: Database, phase: "Phase 7 / Live" },
+    { id: "jobs", label: "Orchestration", icon: RefreshCw, phase: "Phase 8 / Live" },
+    { id: "assessments", label: "Sessions Engine", icon: FileCheck, phase: "Phase 9 / Live" },
+    { id: "evaluation", label: "Evaluation", icon: Cpu, phase: "Phase 10 / Live" },
+    { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11 / Live" },
+    { id: "student_result", label: "Student Experience", icon: FileCheck, phase: "Phase 12 / Live" },
+    { id: "general_settings", label: "General Settings", icon: Settings, phase: "Part 9 / Live" },
+    { id: "publish_control", label: "Publish Control", icon: Layers, phase: "LMS Control / Live" }
   ];
 
   const handleSelectCategory = (id) => {
@@ -202,11 +202,15 @@ const AssessmentDashboard = () => {
             <CredentialConsole />
           )}
 
-          {activeTab === "public_verify" && (
-            <PublicVerificationPage />
+          {activeTab === "general_settings" && (
+            <GeneralSettings />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments", "evaluation", "student_result", "certificates", "public_verify"].includes(activeTab) && (
+          {activeTab === "publish_control" && (
+            <PublishControl />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments", "evaluation", "student_result", "certificates", "general_settings", "publish_control"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}

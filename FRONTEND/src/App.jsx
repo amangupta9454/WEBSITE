@@ -117,13 +117,14 @@ function App() {
           {/* ResumeBuilder needs full screen without navbar */}
           <Route path="/resume-builder/:id" element={<ResumeBuilder />} />
 
-          {/* Phase 12 Student Experience Platform & Phase 11 Public Verification */}
-          <Route path="/student-assessment" element={<StudentExperiencePlatform />} />
-          <Route path="/student-portal" element={<StudentExperiencePlatform />} />
-          <Route path="/verify/:certificateId" element={<PublicVerificationPage />} />
-
-          {/* Old Legacy Functional Pages and Interview Portal */}
+          {/* Old Legacy Functional Pages, Interview Portal, and Assessment Module */}
           <Route element={<UnifiedLayout />}>
+            {/* Phase 12 Student Assessment & Verification Platform (Integrated natively) */}
+            <Route path="/student-assessment" element={<StudentExperiencePlatform />} />
+            <Route path="/student-portal" element={<StudentExperiencePlatform />} />
+            <Route path="/student/dashboard/assessment" element={<StudentExperiencePlatform />} />
+            <Route path="/verify/:certificateId" element={<PublicVerificationPage />} />
+
             {/* Interview Portal Routes */}
             <Route path="/student-login" element={<InterviewLogin />} />
             <Route path="/dashboard" element={<UnifiedDashboard />} />

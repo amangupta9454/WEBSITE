@@ -2,125 +2,79 @@ import React from "react";
 import {
   Clock,
   PlayCircle,
-  CheckCircle2,
   FileText,
   Award,
-  ExternalLink,
-  ShieldCheck,
-  Zap,
+  FolderOpen,
 } from "lucide-react";
 
 /**
- * Phase 12 — Component 6: Activity Timeline
- * Presents chronological audit history (newest first) of assessment starts, completions,
- * authoritative result publications, digital certificate issuances, and public verifications.
+ * Activity Timeline (Component 6)
+ * Chronological audit history of candidate assessment milestones in existing Light Theme.
+ * Completely zero demo fallback items; shows professional empty state when history is empty.
  */
-const ActivityTimelineView = ({ timeline = [], loading }) => {
-  if (loading) {
-    return (
-      <div className="space-y-4 p-4 animate-pulse">
-        <div className="h-24 bg-slate-800/60 rounded-3xl"></div>
-        <div className="h-96 bg-slate-800/60 rounded-3xl"></div>
-      </div>
-    );
-  }
-
-  // Demo fallback activity feed if database array is empty for visual wow factor
-  const items = timeline.length > 0 ? timeline : [
-    { id: "evt-1", category: "CREDENTIAL", action: "Digital Competency Certificate Issued", title: "Advanced Full-Stack Engineering", timestamp: new Date(Date.now() - 3600000 * 2), status: "V1 Active", details: "CAN-2026-ASMT-891402" },
-    { id: "evt-2", category: "RESULT", action: "Authoritative Evaluation Result Published", title: "Advanced Full-Stack Engineering", timestamp: new Date(Date.now() - 3600000 * 4), status: "Passed (92%)", details: "SHA-256 Verified" },
-    { id: "evt-3", category: "ASSESSMENT", action: "Assessment Attempt Submitted", title: "Advanced Full-Stack Engineering", timestamp: new Date(Date.now() - 3600000 * 5), status: "Locked", details: "All 25 questions answered" },
-    { id: "evt-4", category: "ASSESSMENT", action: "Assessment Attempt Started", title: "Advanced Full-Stack Engineering", timestamp: new Date(Date.now() - 3600000 * 6), status: "Initiated", details: "Session SESS-1004" },
-    { id: "evt-5", category: "CREDENTIAL", action: "Verification Performed", title: "AI Prompt Architecture Credential", timestamp: new Date(Date.now() - 86400000 * 2), status: "Validated", details: "Employer verification check passed" },
-  ];
-
+const ActivityTimelineView = ({ timeline = [] }) => {
   const getIcon = (category) => {
     switch (category) {
       case "CREDENTIAL":
-        return <Award className="w-5 h-5 text-amber-400" />;
+      case "CERTIFICATE_ISSUED":
+        return <Award className="w-4 h-4 text-amber-600" />;
       case "RESULT":
-        return <FileText className="w-5 h-5 text-emerald-400" />;
+      case "ASSESSMENT_COMPLETED":
+        return <FileText className="w-4 h-4 text-emerald-600" />;
       default:
-        return <PlayCircle className="w-5 h-5 text-cyan-400" />;
+        return <PlayCircle className="w-4 h-4 text-indigo-600" />;
     }
   };
 
   return (
-    <div className="space-y-8 p-1 sm:p-4 max-w-4xl mx-auto">
+    <div className="space-y-6 text-slate-800 animate-fade-in max-w-3xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2.5">
-            <Clock className="w-7 h-7 text-purple-400" />
-            <span>Chronological Activity Timeline</span>
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Complete audit history of all your assessment milestones, automated evaluations, and verified badge issuances (Newest first).
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <Clock className="w-6 h-6 text-indigo-600" />
+          <span>Activity Timeline</span>
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          Chronological log of your assessment submissions, authoritative results, and certificate issuances (Newest first).
+        </p>
+      </div>
+
+      {/* Timeline Stream or Empty State */}
+      {timeline.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl shadow-sm space-y-3">
+          <FolderOpen className="w-10 h-10 text-slate-400 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800">No Activity Yet</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            Your evaluation submissions and milestone events will automatically record into this immutable audit trail.
           </p>
         </div>
-        <span className="px-3 py-1 rounded-xl bg-purple-500/15 text-purple-300 text-xs font-mono font-semibold border border-purple-500/30">
-          {items.length} Records
-        </span>
-      </div>
-
-      {/* Timeline Stream */}
-      <div className="relative pl-6 sm:pl-8 border-l-2 border-slate-800 space-y-8 my-4">
-        {items.map((item, index) => {
-          const isCert = item.category === "CREDENTIAL";
-          const isRes = item.category === "RESULT";
-          return (
-            <div key={item.id || index} className="relative group">
-              {/* Timeline dot / icon bubble */}
-              <div
-                className={`absolute -left-[35px] sm:-left-[43px] top-0.5 w-10 h-10 rounded-2xl bg-slate-900 border-2 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 ${
-                  isCert
-                    ? "border-amber-500/60 shadow-amber-500/20"
-                    : isRes
-                    ? "border-emerald-500/60 shadow-emerald-500/20"
-                    : "border-cyan-500/60 shadow-cyan-500/20"
-                }`}
-              >
-                {getIcon(item.category)}
+      ) : (
+        <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:top-2 before:bottom-2 before:left-2 sm:before:left-3.5 before:w-0.5 before:bg-slate-200">
+          {timeline.map((item, idx) => (
+            <div key={item._id || item.id || idx} className="relative bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-indigo-300 transition-all space-y-2">
+              {/* Timeline dot */}
+              <div className="absolute -left-[29px] sm:-left-[35px] top-5 w-7 h-7 rounded-full bg-slate-50 border-2 border-slate-200 flex items-center justify-center shadow-xs">
+                {getIcon(item.category || item.type)}
               </div>
 
-              <div className="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 shadow-lg transition-all">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        isCert
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : isRes
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                      }`}
-                    >
-                      {item.category || "EVENT"}
-                    </span>
-                    <h3 className="text-base font-extrabold text-white">{item.action}</h3>
-                  </div>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                  {item.action || item.type || "Assessment Event"}
+                </span>
+                <span className="text-[11px] font-mono font-medium text-slate-400">
+                  {item.timestamp || item.createdAt ? new Date(item.timestamp || item.createdAt).toLocaleString() : "Recent"}
+                </span>
+              </div>
 
-                  <span className="text-xs text-slate-400 font-mono">
-                    {item.timestamp ? new Date(item.timestamp).toLocaleString() : "Just now"}
-                  </span>
-                </div>
-
-                <div className="mt-2.5 text-sm font-semibold text-slate-300 flex items-center justify-between">
-                  <span>Domain: <span className="text-cyan-300 font-bold">{item.title}</span></span>
-                  <span className="text-xs font-mono text-slate-400">{item.status}</span>
-                </div>
-
-                {item.details && (
-                  <p className="mt-2 pt-2 border-t border-slate-800/60 text-xs text-slate-400 font-mono flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Audit metadata: {item.details}</span>
-                  </p>
-                )}
+              <h3 className="text-base font-extrabold text-slate-900">{item.title || "Domain Examination Action"}</h3>
+              <div className="text-xs text-slate-500 font-medium flex items-center justify-between pt-1 border-t border-slate-100">
+                <span>Status: <strong className="text-slate-800">{item.status || "Completed & Logged"}</strong></span>
+                {item.details && <span className="font-mono text-indigo-600 text-[11px]">{item.details}</span>}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
