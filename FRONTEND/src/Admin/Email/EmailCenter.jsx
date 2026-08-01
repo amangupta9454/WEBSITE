@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, ListFilter, PieChart, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { BarChart3, ListFilter, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
 import EmailDashboard from "./EmailDashboard";
 import EmailLogsTable from "./EmailLogsTable";
-import CampaignHistory from "./CampaignHistory";
 
 export default function EmailCenter() {
-  const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard" | "logs" | "campaigns"
+  const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard" | "logs"
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -76,11 +75,6 @@ export default function EmailCenter() {
     setActiveTab("logs");
   };
 
-  const navigateToCampaignLogs = (campaignName) => {
-    // Switch to logs tab and pass initial criteria
-    setActiveTab("logs");
-  };
-
   return (
     <div className="w-full space-y-6">
       
@@ -107,12 +101,6 @@ export default function EmailCenter() {
           >
             <ListFilter className="w-4 h-4 text-emerald-600" /> Historical Audit Logs
           </button>
-          <button
-            onClick={() => setActiveTab("campaigns")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all ${activeTab === "campaigns" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-          >
-            <PieChart className="w-4 h-4 text-purple-600" /> Campaign History
-          </button>
         </div>
 
         <div className="px-4 py-2 flex items-center gap-2 text-xs font-bold text-slate-500">
@@ -135,14 +123,6 @@ export default function EmailCenter() {
           initialStatusFilter={statusFilter}
           onResendEmail={handleResendEmail}
           resendingId={resendingId}
-        />
-      )}
-
-      {activeTab === "campaigns" && (
-        <CampaignHistory
-          analytics={analytics}
-          loading={loading}
-          onSelectCampaign={navigateToCampaignLogs}
         />
       )}
     </div>
