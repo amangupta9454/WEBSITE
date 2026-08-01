@@ -1,18 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Mail, CheckCircle2, XCircle, Clock, FileText, Download, Copy, Check, Send, Code, Monitor } from "lucide-react";
 
 export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendingId }) {
   const [activeTab, setActiveTab] = useState("preview"); // "preview" | "raw" | "text"
   const [copied, setCopied] = useState(false);
+  const [fullLog, setFullLog] = useState(null);
+  const [loadingContent, setLoadingContent] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !log?._id) {
+      setFullLog(null);
+      return;
+    }
+    // If the passed log already has complete html (not stripped by list projection), use directly
+    if (log.html !== undefined && log.html !== null) {
+      setFullLog(log);
+      return;
+    }
+
+    const fetchFullLog = async () => {
+      setLoadingContent(true);
+      try {
+        const token = localStorage.getItem("adminToken");
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/email/logs/${log._id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+        if (data.success && data.log) {
+          setFullLog(data.log);
+        } else {
+          setFullLog(log);
+        }
+      } catch (err) {
+        console.error("Error fetching full email log content:", err);
+        setFullLog(log);
+      } finally {
+        setLoadingContent(false);
+      }
+    };
+
+    fetchFullLog();
+  }, [isOpen, log?._id]);
 
   if (!isOpen || !log) return null;
 
-  const isSuccess = log.status === "SUCCESS";
-  const isFailed = log.status === "FAILED";
-  const isResending = resendingId === log._id;
+  const displayLog = fullLog || log;
+  const isSuccess = displayLog.status === "SUCCESS";
+  const isFailed = displayLog.status === "FAILED";
+  const isResending = resendingId === displayLog._id;
 
   const handleCopyRaw = () => {
-    navigator.clipboard.writeText(log.html || "");
+    navigator.clipboard.writeText(displayLog.html || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -56,62 +97,64 @@ export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendi
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-black text-slate-900 line-clamp-1">{log.subject || "No Subject"}</h3>
+                <h3 className="text-lg font-black text-slate-900 line-clamp-1">{displayLog.subject || "No Subject"}</h3>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wide bg-indigo-100 text-indigo-800 border border-indigo-200/50 flex-shrink-0">
-                  {log.campaign || "General"}
+                  {displayLog.campaign || "General"}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Sent on {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString()} • Source: {log.source || "Backend API"}
+              <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                Sent on <span className="font-bold text-slate-700">{new Date(displayLog.createdAt).toLocaleString()}</span> • Source: <span className="font-bold text-slate-700">{displayLog.source || "Backend API"}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => onResend(log._id)}
+              onClick={() => onResend(displayLog._id)}
               disabled={isResending}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-md shadow-indigo-100 transition-all disabled:opacity-50"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${isResending ? "bg-indigo-300 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-md hover:shadow-indigo-100"}`}
             >
-              <Send className={`w-4 h-4 ${isResending ? "animate-spin" : ""}`} />
+              <Send className={`w-3.5 h-3.5 ${isResending ? "animate-spin" : ""}`} />
               {isResending ? "Resending..." : "Resend Email"}
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              title="Close viewer"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Modal Content - Scrollable area */}
-        <div className="overflow-y-auto flex-1 p-6 space-y-6">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/30">
           
-          {/* Email Transmission Metadata Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 text-sm">
+          {/* Metadata Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="space-y-1">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recipient</span>
-              <p className="font-bold text-slate-800 flex items-center gap-2">
-                <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <span>{log.recipientName ? `${log.recipientName} (${log.recipientEmail})` : log.recipientEmail}</span>
-              </p>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-bold text-slate-800">{displayLog.recipientName || displayLog.recipientEmail}</span>
+                {displayLog.recipientName && <span className="text-xs text-slate-400 font-medium">({displayLog.recipientEmail})</span>}
+              </div>
             </div>
 
             <div className="space-y-1">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status & SMTP Response</span>
               <div className="flex items-center gap-2 font-bold">
                 <span className={`px-2 py-0.5 rounded text-xs font-black ${isSuccess ? "bg-emerald-100 text-emerald-800" : isFailed ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"}`}>
-                  {log.status}
+                  {displayLog.status}
                 </span>
-                <span className="text-slate-600 text-xs font-mono truncate max-w-xs">{log.smtpResponse || "N/A"}</span>
+                <span className="text-slate-600 text-xs font-mono truncate max-w-xs">{displayLog.smtpResponse || "N/A"}</span>
               </div>
             </div>
 
             <div className="space-y-1">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Message ID</span>
               <p className="font-mono text-xs font-medium text-slate-700 truncate bg-white py-1 px-2.5 rounded border border-slate-200">
-                {log.messageId || "None generated (Transmission halted)"}
+                {displayLog.messageId || "None generated (Transmission halted)"}
               </p>
             </div>
 
@@ -119,23 +162,23 @@ export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendi
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Accepted / Rejected Nodes</span>
               <div className="flex items-center gap-2 text-xs font-medium">
                 <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
-                  Acc: {log.accepted?.length || (isSuccess ? 1 : 0)}
+                  Acc: {displayLog.accepted?.length || (isSuccess ? 1 : 0)}
                 </span>
                 <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-bold">
-                  Rej: {log.rejected?.length || (isFailed ? 1 : 0)}
+                  Rej: {displayLog.rejected?.length || (isFailed ? 1 : 0)}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Attachments Section */}
-          {log.attachments && log.attachments.length > 0 && (
+          {displayLog.attachments && displayLog.attachments.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
               <h4 className="text-xs font-black uppercase text-slate-500 mb-3 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-600" /> Attached Artifacts ({log.attachments.length})
+                <FileText className="w-4 h-4 text-indigo-600" /> Attached Artifacts ({displayLog.attachments.length})
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {log.attachments.map((att, idx) => (
+                {displayLog.attachments.map((att, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-indigo-200 bg-slate-50/50 transition-all group">
                     <div className="flex items-center gap-3 truncate">
                       <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs uppercase">
@@ -175,7 +218,7 @@ export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendi
                 >
                   <Code className="w-4 h-4" /> Raw HTML Tab
                 </button>
-                {log.text && (
+                {displayLog.text && (
                   <button
                     onClick={() => setActiveTab("text")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === "text" ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
@@ -196,34 +239,43 @@ export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendi
               )}
             </div>
 
-            {/* Tab 1: Live HTML Iframe Previewer (Unsanitized for 100% style fidelity) */}
-            {activeTab === "preview" && (
-              <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-inner relative">
-                <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Rendering complete unmodified HTML payload in isolated sandbox</span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">✔ CSS & Styles Preserved</span>
-                </div>
-                <iframe
-                  srcDoc={log.html || "<p style='padding: 20px; color: #888;'>No HTML template stored for this email transmission.</p>"}
-                  sandbox="allow-same-origin allow-popups"
-                  className="w-full h-[520px] bg-white border-none transition-opacity duration-300"
-                  title="Email Preview"
-                />
+            {loadingContent ? (
+              <div className="w-full h-[350px] rounded-2xl border border-slate-200 bg-white flex flex-col items-center justify-center gap-3 shadow-inner">
+                <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-xs font-bold text-slate-500 tracking-wide uppercase">Fetching complete HTML payload from database...</p>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Tab 1: Live HTML Iframe Previewer */}
+                {activeTab === "preview" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-inner relative">
+                    <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-500">
+                      <span>Rendering complete unmodified HTML payload in isolated sandbox</span>
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">✔ CSS & Styles Preserved</span>
+                    </div>
+                    <iframe
+                      srcDoc={displayLog.html || "<p style='padding: 20px; color: #888;'>No HTML template stored for this email transmission.</p>"}
+                      sandbox="allow-same-origin allow-popups"
+                      className="w-full h-[520px] bg-white border-none transition-opacity duration-300"
+                      title="Email Preview"
+                    />
+                  </div>
+                )}
 
-            {/* Tab 2: Raw HTML Developer Tab */}
-            {activeTab === "raw" && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 text-indigo-200 p-4 font-mono text-xs overflow-auto max-h-[520px] shadow-inner selection:bg-indigo-700 selection:text-white">
-                <pre className="whitespace-pre-wrap word-break">{log.html || "// Empty HTML payload"}</pre>
-              </div>
-            )}
+                {/* Tab 2: Raw HTML Developer Tab */}
+                {activeTab === "raw" && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900 text-indigo-200 p-4 font-mono text-xs overflow-auto max-h-[520px] shadow-inner selection:bg-indigo-700 selection:text-white">
+                    <pre className="whitespace-pre-wrap word-break">{displayLog.html || "// Empty HTML payload"}</pre>
+                  </div>
+                )}
 
-            {/* Tab 3: Plain Text */}
-            {activeTab === "text" && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 p-5 font-mono text-sm overflow-auto max-h-[520px] shadow-inner whitespace-pre-wrap">
-                {log.text || "No plain text fallback generated."}
-              </div>
+                {/* Tab 3: Plain Text */}
+                {activeTab === "text" && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 p-5 font-mono text-sm overflow-auto max-h-[520px] shadow-inner whitespace-pre-wrap">
+                    {displayLog.text || "No plain text fallback generated."}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -231,7 +283,7 @@ export default function ViewEmailModal({ log, isOpen, onClose, onResend, resendi
 
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
-          <span>Enterprise Single Source of Truth • MongoDB Log ID: {log._id}</span>
+          <span>Enterprise Single Source of Truth • MongoDB Log ID: {displayLog._id}</span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm transition-all"
