@@ -5,8 +5,11 @@ const User = require('../models/User');
 exports.getResumeAnalytics = async (req, res) => {
   try {
     const totalResumes = await Resume.countDocuments();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIST = new Date(now.getTime() + istOffsetMs);
+    const startOfTodayIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate()));
+    const today = new Date(startOfTodayIST.getTime() - istOffsetMs);
     const todayResumes = await Resume.countDocuments({ createdAt: { $gte: today } });
 
     // Aggregate downloads

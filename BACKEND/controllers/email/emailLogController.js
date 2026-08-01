@@ -102,9 +102,20 @@ exports.getLogById = async (req, res) => {
 exports.getAnalytics = async (req, res) => {
   try {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Accurately compute Indian Standard Time (IST, UTC+5:30) day boundaries
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const nowIST = new Date(now.getTime() + istOffsetMs);
+
+    // Midnight today in IST converted back to UTC epoch timestamp for MongoDB query
+    const startOfTodayIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), nowIST.getUTCDate()));
+    const startOfToday = new Date(startOfTodayIST.getTime() - istOffsetMs);
+
+    // Start of the week (last 7 days from today midnight in IST)
+    const startOfWeek = new Date(startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000);
+
+    // Start of current IST month converted back to UTC epoch
+    const startOfMonthIST = new Date(Date.UTC(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), 1));
+    const startOfMonth = new Date(startOfMonthIST.getTime() - istOffsetMs);
 
     // Run parallel counts and aggregation pipelines for high-speed computation
     const [
@@ -144,7 +155,7 @@ exports.getAnalytics = async (req, res) => {
         },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } },
             count: { $sum: 1 },
             success: { $sum: { $cond: [{ $eq: ['$status', 'SUCCESS'] }, 1, 0] } },
           },
@@ -158,7 +169,7 @@ exports.getAnalytics = async (req, res) => {
         },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt', timezone: 'Asia/Kolkata' } },
             count: { $sum: 1 },
           },
         },
@@ -168,11 +179,11 @@ exports.getAnalytics = async (req, res) => {
 
     const successRate = totalEmails > 0 ? ((successEmails / totalEmails) * 100).toFixed(1) : '100.0';
 
-    // Format daily chart series cleanly
+    // Format daily chart series cleanly using IST keys
     const dailyEmails = {};
     for (let i = 13; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const key = d.toISOString().split('T')[0];
+      const dIST = new Date(nowIST.getTime() - i * 24 * 60 * 60 * 1000);
+      const key = dIST.toISOString().split('T')[0];
       dailyEmails[key] = 0;
     }
     dailyStatsRaw.forEach((item) => {

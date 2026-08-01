@@ -53,7 +53,7 @@ import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
 import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
 import EmailCenter from "../Admin/Email/EmailCenter";
-import { Bell, Settings, Zap, Database, Share2 } from "lucide-react";
+import { Bell, Settings, Zap, Database, Share2, Check } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -97,6 +97,7 @@ const AdminDashboard = () => {
   });
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
+  const [selectedStartDates, setSelectedStartDates] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -766,6 +767,7 @@ const AdminDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success("Timeline activated!");
+      setSelectedStartDates((prev) => ({ ...prev, [appId]: "" }));
       fetchApplications(token);
     } catch (err) {
       toast.error("Failed to set start date");
@@ -1211,17 +1213,35 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                 ) : (
-                  <input
-                    type="date"
-                    value=""
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleStartDateAssignment(app._id, e.target.value);
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="date"
+                      value={selectedStartDates[app._id] || ""}
+                      onChange={(e) =>
+                        setSelectedStartDates((prev) => ({
+                          ...prev,
+                          [app._id]: e.target.value,
+                        }))
                       }
-                    }}
-                    title="Select start date"
-                    className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                  />
+                      title="Select start date"
+                      className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                    />
+                    {selectedStartDates[app._id] && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleStartDateAssignment(
+                            app._id,
+                            selectedStartDates[app._id],
+                          )
+                        }
+                        title="Confirm start date"
+                        className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors shrink-0 flex items-center justify-center"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -2743,21 +2763,34 @@ const AdminDashboard = () => {
                                         </p>
                                       </div>
                                     ) : (
-                                      <div className="min-w-[130px]">
+                                      <div className="min-w-[150px] flex items-center gap-1">
                                         <input
                                           type="date"
-                                          value=""
-                                          onChange={(e) => {
-                                            if (e.target.value) {
-                                              handleStartDateAssignment(
-                                                app._id,
-                                                e.target.value,
-                                              );
-                                            }
-                                          }}
+                                          value={selectedStartDates[app._id] || ""}
+                                          onChange={(e) =>
+                                            setSelectedStartDates((prev) => ({
+                                              ...prev,
+                                              [app._id]: e.target.value,
+                                            }))
+                                          }
                                           title="Select start date"
                                           className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                                         />
+                                        {selectedStartDates[app._id] && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleStartDateAssignment(
+                                                app._id,
+                                                selectedStartDates[app._id],
+                                              )
+                                            }
+                                            title="Confirm start date"
+                                            className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors shrink-0 flex items-center justify-center"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
                                       </div>
                                     )}
                                   </td>
@@ -2885,21 +2918,34 @@ const AdminDashboard = () => {
                                         ).toLocaleDateString("en-IN")}
                                       </span>
                                     ) : (
-                                      <div className="min-w-[130px]">
+                                      <div className="min-w-[150px] flex items-center gap-1">
                                         <input
                                           type="date"
-                                          value=""
-                                          onChange={(e) => {
-                                            if (e.target.value) {
-                                              handleStartDateAssignment(
-                                                app._id,
-                                                e.target.value,
-                                              );
-                                            }
-                                          }}
+                                          value={selectedStartDates[app._id] || ""}
+                                          onChange={(e) =>
+                                            setSelectedStartDates((prev) => ({
+                                              ...prev,
+                                              [app._id]: e.target.value,
+                                            }))
+                                          }
                                           title="Select start date"
                                           className="w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                                         />
+                                        {selectedStartDates[app._id] && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleStartDateAssignment(
+                                                app._id,
+                                                selectedStartDates[app._id],
+                                              )
+                                            }
+                                            title="Confirm start date"
+                                            className="p-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm transition-colors shrink-0 flex items-center justify-center"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
                                       </div>
                                     )}
                                   </td>

@@ -18,6 +18,8 @@ const intelligenceController = require("../../controllers/assessment/questionInt
 const questionBankController = require("../../controllers/assessment/questionBankController");
 const orchestrationController = require("../../controllers/assessment/orchestrationController");
 const sessionController       = require("../../controllers/assessment/sessionController");
+const evaluationController    = require("../../controllers/assessment/evaluationController");
+const certificateController   = require("../../controllers/assessment/certificateController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -218,8 +220,28 @@ router.post("/sessions/:sessionId/submit",              verifyAdmin, sessionCont
 router.post("/sessions/:sessionId/anti-cheat",          verifyAdmin, sessionController.recordAntiCheatEvent);
 router.post("/sessions/:sessionId/heartbeat",           verifyAdmin, sessionController.heartbeat);
 
+// ── Phase 10 Result Evaluation & Scoring Engine Routes ─────────────────────────
+router.post("/evaluate/:sessionId",                     verifyAdmin, evaluationController.evaluateSession);
+router.get("/evaluations/queue",                        verifyAdmin, evaluationController.adminGetEvaluationQueue);
+router.post("/evaluations/bulk",                        verifyAdmin, evaluationController.adminTriggerBulkEvaluation);
+router.get("/results/:identifier",                      verifyAdmin, evaluationController.getResult);
+router.get("/results/:identifier/topics",               verifyAdmin, evaluationController.getTopicAnalysis);
+router.get("/results/:identifier/difficulty",            verifyAdmin, evaluationController.getDifficultyAnalysis);
+router.get("/results/:identifier/bloom",                verifyAdmin, evaluationController.getBloomAnalysis);
+router.get("/results/:identifier/anti-cheat",           verifyAdmin, evaluationController.getAntiCheatSummary);
+router.get("/results/:identifier/metadata",             verifyAdmin, evaluationController.getEvaluationMetadata);
+
+// ── Phase 11 Credential & Certificate Engine Routes ────────────────────────────
+router.get("/certificates",                           verifyAdmin, certificateController.listCertificates);
+router.get("/certificates/stats/overview",            verifyAdmin, certificateController.getStatistics);
+router.post("/certificates/generate/:sessionIdOrResultId", verifyAdmin, certificateController.generateCertificate);
+router.post("/certificates/bulk-generate",            verifyAdmin, certificateController.bulkGenerate);
+router.get("/certificates/:id",                       verifyAdmin, certificateController.getCertificate);
+router.post("/certificates/:id/revoke",               verifyAdmin, certificateController.revokeCertificate);
+router.post("/certificates/:id/restore",              verifyAdmin, certificateController.restoreCertificate);
+router.post("/certificates/:id/reissue",              verifyAdmin, certificateController.reissueCertificate);
+
 // ── Placeholders (Future Phases) ───────────────────────────────────────────
-router.get("/certificates", verifyAdmin, (req, res) => res.json({ success: true, data: [], message: "Phase 11" }));
 router.get("/analytics/overview", verifyAdmin, (req, res) => res.json({ success: true, data: {}, message: "Phase 13" }));
 
 module.exports = router;

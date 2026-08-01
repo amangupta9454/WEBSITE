@@ -29,6 +29,10 @@ import QuestionIntelligenceGate from "./QuestionIntelligenceGate";
 import QuestionBankManager from "./QuestionBankManager";
 import OrchestrationCenter from "./OrchestrationCenter";
 import AssessmentSessionManager from "./AssessmentSessionManager";
+import EvaluationConsole from "./EvaluationConsole";
+import StudentResultView from "./StudentResultView";
+import CredentialConsole from "./CredentialConsole";
+import PublicVerificationPage from "./PublicVerificationPage";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -45,7 +49,10 @@ const AssessmentDashboard = () => {
     { id: "ai_quality_gate", label: "AI Quality Gate", icon: ShieldCheck, phase: "Phase 6 / Live" },
     { id: "questions", label: "Question Bank", icon: Database, phase: "Phase 7 / Live" },
     { id: "assessments", label: "Assessments (Session Engine)", icon: FileCheck, phase: "Phase 9 / Live" },
-    { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11" },
+    { id: "evaluation", label: "Evaluation & Scoring", icon: Cpu, phase: "Phase 10 / Live" },
+    { id: "student_result", label: "Student Result View", icon: FileCheck, phase: "Phase 10 / Live" },
+    { id: "certificates", label: "Credential Console", icon: Award, phase: "Phase 11 / Live" },
+    { id: "public_verify", label: "Public Verify Gateway", icon: ShieldCheck, phase: "Phase 11 / Live" },
     { id: "analytics", label: "Analytics", icon: BarChart3, phase: "Phase 13" },
     { id: "jobs", label: "Orchestration Center", icon: RefreshCw, phase: "Phase 8 / Live" },
     { id: "settings", label: "Settings", icon: Settings, phase: "Phase 14" }
@@ -183,7 +190,23 @@ const AssessmentDashboard = () => {
             <AssessmentSessionManager />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments"].includes(activeTab) && (
+          {activeTab === "evaluation" && (
+            <EvaluationConsole />
+          )}
+
+          {activeTab === "student_result" && (
+            <StudentResultView onBack={() => setActiveTab("evaluation")} />
+          )}
+
+          {activeTab === "certificates" && (
+            <CredentialConsole />
+          )}
+
+          {activeTab === "public_verify" && (
+            <PublicVerificationPage />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments", "evaluation", "student_result", "certificates", "public_verify"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}
