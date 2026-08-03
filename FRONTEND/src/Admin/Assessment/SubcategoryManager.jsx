@@ -39,7 +39,7 @@ const SubcategoryManager = () => {
 
   const fetchDependencies = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/categories?limit=100", {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -54,7 +54,7 @@ const SubcategoryManager = () => {
   const fetchSubcategories = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/subcategories", {
         headers: { Authorization: `Bearer ${token}` },
         params: {
@@ -121,7 +121,7 @@ const SubcategoryManager = () => {
       return toast.warn("Category and Name are required!");
     }
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       if (editingId) {
         await axios.put(`/api/admin/assessment/subcategories/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
@@ -142,7 +142,7 @@ const SubcategoryManager = () => {
 
   const handleToggleStatus = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.patch(`/api/admin/assessment/subcategories/${id}/status`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -155,7 +155,7 @@ const SubcategoryManager = () => {
 
   const handleDuplicate = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(`/api/admin/assessment/subcategories/${id}/copy`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -169,7 +169,7 @@ const SubcategoryManager = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this subcategory and its configurations?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.delete(`/api/admin/assessment/subcategories/${id}?force=true`, {
         headers: { Authorization: `Bearer ${token}` }
       });

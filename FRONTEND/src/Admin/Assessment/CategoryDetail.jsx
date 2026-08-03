@@ -26,7 +26,7 @@ const CategoryDetail = ({ categoryId, onBack, onSelectSubcategory }) => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/categories/${categoryId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

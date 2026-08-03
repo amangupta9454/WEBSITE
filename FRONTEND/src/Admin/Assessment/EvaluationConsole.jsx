@@ -115,7 +115,7 @@ const EvaluationConsole = () => {
   const fetchEvaluationQueue = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
       const res = await axios.get("/api/admin/assessment/evaluations/queue", {
         params: { status: statusFilter !== "All" ? statusFilter : undefined },
@@ -160,7 +160,7 @@ const EvaluationConsole = () => {
 
   const triggerEvaluation = async (sessionId) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(`/api/admin/assessment/evaluate/${sessionId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast("Authoritative Server-Side Evaluation Completed! Handoff to Phase 11 Queued.");
@@ -177,7 +177,7 @@ const EvaluationConsole = () => {
 
   const triggerBulkEvaluation = async () => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post("/api/admin/assessment/evaluations/bulk", {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast(`Bulk Evaluation complete! Processed: ${res.data.evaluated}. All queued for Phase 11.`);

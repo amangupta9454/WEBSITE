@@ -27,7 +27,7 @@ const PublishControl = () => {
 
       const res = await axios.get("/api/admin/assessment/subcategories", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("adminToken") || localStorage.getItem("token") || ""}`
+          Authorization: `Bearer ${localStorage.getItem("adminToken") || localStorage.getItem("adminToken") || ""}`
         },
         timeout: 5000
       }).catch(async () => {

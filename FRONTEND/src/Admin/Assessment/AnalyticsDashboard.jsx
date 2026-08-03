@@ -24,7 +24,7 @@ const AnalyticsDashboard = () => {
   const fetchOverview = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/analytics/overview", {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -48,7 +48,7 @@ const AnalyticsDashboard = () => {
     try {
       setExporting(true);
       setExportMenuOpen(false);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const url = `/api/admin/assessment/analytics/export?reportType=${reportType}&format=${format}`;
       
       if (format === "csv") {

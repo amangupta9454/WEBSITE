@@ -27,7 +27,7 @@ const AssessmentOverview = ({ onNavigate, onLaunchWizard }) => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/dashboard/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });

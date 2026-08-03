@@ -19,7 +19,7 @@ const VerificationHistory = () => {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/recruiter/history?page=${page}&limit=20&status=${statusFilter}&method=${methodFilter}&search=${encodeURIComponent(searchTerm)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -49,7 +49,7 @@ const VerificationHistory = () => {
     try {
       setExporting(true);
       setExportMenuOpen(false);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const url = `/api/admin/assessment/recruiter/export?format=${format}&limit=500`;
 
       if (format === "csv") {

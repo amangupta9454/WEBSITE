@@ -39,7 +39,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/categories", {
         headers: { Authorization: `Bearer ${token}` },
         params: {
@@ -93,7 +93,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
 
   const handleToggleStatus = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.patch(`/api/admin/assessment/categories/${id}/status`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -106,7 +106,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
 
   const handleDuplicate = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(`/api/admin/assessment/categories/${id}/copy`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -119,7 +119,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.delete(`/api/admin/assessment/categories/${id}?force=true`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -134,7 +134,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const handleBulkStatus = async (isActive) => {
     if (selectedIds.length === 0) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post("/api/admin/assessment/categories/bulk-status", { ids: selectedIds, isActive }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -150,7 +150,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     if (selectedIds.length === 0) return;
     if (!window.confirm(`Are you sure you want to permanently delete ${selectedIds.length} category(s)?`)) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post("/api/admin/assessment/categories/bulk-delete", { ids: selectedIds, force: true }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -166,7 +166,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     e.preventDefault();
     if (!editingCat) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.put(`/api/admin/assessment/categories/${editingCat._id}`, editingCat, {
         headers: { Authorization: `Bearer ${token}` }
       });

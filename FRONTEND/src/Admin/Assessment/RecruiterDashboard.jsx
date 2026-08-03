@@ -19,7 +19,7 @@ const RecruiterDashboard = () => {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/recruiter/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -20,7 +20,7 @@ const CandidateVerification = () => {
       setLoading(true);
       setError(null);
       setCandidateData(null);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/recruiter/candidate/${encodeURIComponent(searchInput.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

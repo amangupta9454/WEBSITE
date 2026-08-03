@@ -92,7 +92,7 @@ const CredentialConsole = () => {
   const fetchCredentials = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/certificates", {
         params: { status: statusFilter !== "All" ? statusFilter : undefined },
         headers: { Authorization: `Bearer ${token}` }
@@ -130,7 +130,7 @@ const CredentialConsole = () => {
 
   const triggerGenerate = async (resultId) => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(`/api/admin/assessment/certificates/generate/${resultId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast(`Digital Credential generated successfully! SHA-256 seal verified.`);
@@ -153,7 +153,7 @@ const CredentialConsole = () => {
     }
 
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const endpoint = type === "REVOKE" ? `/api/admin/assessment/certificates/${targetId}/revoke`
         : type === "RESTORE" ? `/api/admin/assessment/certificates/${targetId}/restore`
         : `/api/admin/assessment/certificates/${targetId}/reissue`;
@@ -178,7 +178,7 @@ const CredentialConsole = () => {
   const triggerBulkGenerate = async () => {
     try {
       const ids = pendingEligible.map((p) => p.resultId);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post("/api/admin/assessment/certificates/bulk-generate", { identifiers: ids }, { headers: { Authorization: `Bearer ${token}` } });
       showToast(`Bulk synthesis complete for ${ids.length} passed candidate results!`);
       fetchCredentials();

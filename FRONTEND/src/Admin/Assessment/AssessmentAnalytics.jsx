@@ -13,7 +13,7 @@ const AssessmentAnalytics = () => {
   const fetchAssessmentStats = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/analytics/assessments?limit=50", {
         headers: { Authorization: `Bearer ${token}` }
       });

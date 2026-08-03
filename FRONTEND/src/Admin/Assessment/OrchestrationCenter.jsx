@@ -74,7 +74,7 @@ const OrchestrationCenter = () => {
   const loadAllOrchestrationData = useCallback(async () => {
     setLoading(true);
     try {
-      const authHeaders = { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } };
+      const authHeaders = { headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` } };
 
       const [workersRes, jobsRes, invRes, dlqRes, optRes, evtRes, schRes] = await Promise.all([
         axios.get(`${API_BASE}/api/admin/assessment/orchestration/workers`, authHeaders).catch(() => ({ data: { workers: [], metrics: {} } })),
@@ -108,7 +108,7 @@ const OrchestrationCenter = () => {
   const toggleWorkerState = async (workerId, action) => {
     try {
       const res = await axios.post(`${API_BASE}/api/admin/assessment/orchestration/workers/${workerId}/state`, { action }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       if (res.data.success) {
         notify(`Worker ${workerId} transitioned to ${action.toUpperCase()} state.`);
@@ -123,7 +123,7 @@ const OrchestrationCenter = () => {
     try {
       setLoading(true);
       const res = await axios.post(`${API_BASE}/api/admin/assessment/orchestration/inventory/trigger-recovery`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify(`Inventory Recovery cycle completed. Spun up ${res.data.inventoryReport?.jobsCreated || 0} replenishment jobs.`);
       loadAllOrchestrationData();
@@ -138,7 +138,7 @@ const OrchestrationCenter = () => {
     try {
       setLoading(true);
       const res = await axios.post(`${API_BASE}/api/admin/assessment/orchestration/optimization-scan`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify("Knowledge Optimizer scan completed across repository.");
       loadAllOrchestrationData();
@@ -152,7 +152,7 @@ const OrchestrationCenter = () => {
   const retryOrchestrationJob = async (jobId) => {
     try {
       await axios.post(`${API_BASE}/api/admin/assessment/orchestration/jobs/${jobId}/retry`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify(`Job ${jobId} requeued for execution.`);
       loadAllOrchestrationData();
@@ -167,7 +167,7 @@ const OrchestrationCenter = () => {
   const cancelOrchestrationJob = async (jobId) => {
     try {
       await axios.post(`${API_BASE}/api/admin/assessment/orchestration/jobs/${jobId}/cancel`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify(`Job ${jobId} cancelled.`);
       loadAllOrchestrationData();
@@ -182,7 +182,7 @@ const OrchestrationCenter = () => {
   const restoreFromDLQ = async (jobId) => {
     try {
       await axios.post(`${API_BASE}/api/admin/assessment/orchestration/dlq/${jobId}/restore`, { resetRetries: true }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify(`DLQ item ${jobId} restored back into active execution queue.`);
       loadAllOrchestrationData();
@@ -194,7 +194,7 @@ const OrchestrationCenter = () => {
   const archiveFromDLQ = async (jobId) => {
     try {
       await axios.delete(`${API_BASE}/api/admin/assessment/orchestration/dlq/${jobId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       notify(`DLQ item ${jobId} archived permanently.`);
       loadAllOrchestrationData();
@@ -207,7 +207,7 @@ const OrchestrationCenter = () => {
     e.preventDefault();
     try {
       const res = await axios.post(`${API_BASE}/api/admin/assessment/orchestration/jobs`, newJobForm, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       if (res.data.success) {
         notify(`Spawned automated job ${res.data.data.jobId}.`);
@@ -222,7 +222,7 @@ const OrchestrationCenter = () => {
   const toggleScheduler = async (action) => {
     try {
       const res = await axios.post(`${API_BASE}/api/admin/assessment/orchestration/scheduler/state`, { action }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       if (res.data) {
         setSchedulerStatus(res.data);

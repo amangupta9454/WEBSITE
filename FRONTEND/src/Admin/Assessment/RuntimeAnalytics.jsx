@@ -12,7 +12,7 @@ const RuntimeAnalytics = () => {
   const fetchRuntimeTelemetry = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/analytics/runtime", {
         headers: { Authorization: `Bearer ${token}` }
       });

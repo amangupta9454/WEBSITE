@@ -113,7 +113,7 @@ const AIBlueprintManager = () => {
   const fetchBlueprints = async (targetPage = page) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
 
       const res = await axios.get(`/api/admin/assessment/blueprints`, {
@@ -282,7 +282,7 @@ const AIBlueprintManager = () => {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
 
       let res;
@@ -311,7 +311,7 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id || selectedBlueprint._id === "new") return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `/api/admin/assessment/blueprints/${selectedBlueprint._id}/versions/${vNo}/activate`,
         {},
@@ -334,7 +334,7 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id || selectedBlueprint._id === "new") return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/blueprints/${selectedBlueprint._id}/compare`, {
         params: { v1: compareV1, v2: compareV2 },
         headers: { Authorization: `Bearer ${token}` }
@@ -354,7 +354,7 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id) return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `/api/admin/assessment/blueprints/${selectedBlueprint._id}/clone`,
         { targetSubcategoryId: cloneTargetSubcat || undefined, newName: cloneNewName || undefined },
@@ -377,7 +377,7 @@ const AIBlueprintManager = () => {
   const handleImportJson = async () => {
     try {
       const parsed = JSON.parse(importJsonText);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(`/api/admin/assessment/blueprints/import`, parsed, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -399,7 +399,7 @@ const AIBlueprintManager = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/blueprints/${bp._id}/export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -422,7 +422,7 @@ const AIBlueprintManager = () => {
   const handleRunMockTest = async () => {
     setIsMockRunning(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const targetId = selectedBlueprint?._id || "draft";
       const res = await axios.post(
         `/api/admin/assessment/blueprints/${targetId}/test`,

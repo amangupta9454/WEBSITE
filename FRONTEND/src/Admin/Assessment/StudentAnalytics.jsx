@@ -15,7 +15,7 @@ const StudentAnalytics = () => {
   const fetchStudentStats = async (currentPage) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/analytics/students?page=${currentPage}&limit=10`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -32,7 +32,7 @@ const StudentAnalytics = () => {
   const loadStudentDetail = async (candidateId) => {
     try {
       setDetailLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/analytics/students/${candidateId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

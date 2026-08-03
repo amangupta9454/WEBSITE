@@ -65,7 +65,7 @@ export default function QuestionBankManager() {
   };
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const token = localStorage.getItem("adminToken") || "";
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 

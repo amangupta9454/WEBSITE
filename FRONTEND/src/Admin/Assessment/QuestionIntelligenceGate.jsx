@@ -49,7 +49,7 @@ const QuestionIntelligenceGate = ({ showNotification }) => {
   });
 
   const getAuthHeader = () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const token = localStorage.getItem("adminToken") || "";
     return { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
   };
 

@@ -115,7 +115,7 @@ const AssessmentSessionManager = () => {
     // Heartbeat every 20 seconds to sync server clock & network resilience
     heartbeatIntervalRef.current = setInterval(async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("adminToken");
         const res = await axios.post(
           `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/heartbeat`,
           {},
@@ -144,7 +144,7 @@ const AssessmentSessionManager = () => {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`${backendUrl}/api/admin/assessment/sessions`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -162,7 +162,7 @@ const AssessmentSessionManager = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/start`,
         { candidateId: "candidate-live@test-suite.com" },
@@ -213,7 +213,7 @@ const AssessmentSessionManager = () => {
   const handleResumeAttempt = async (sessionId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${sessionId}/resume`,
         { candidateId: "candidate-live@test-suite.com" },
@@ -292,7 +292,7 @@ const AssessmentSessionManager = () => {
   const triggerAutosave = async (updatePayload) => {
     setAutosaveState("Saving...");
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/autosave`,
         { updates: updatePayload, currentQuestionIndex },
@@ -310,7 +310,7 @@ const AssessmentSessionManager = () => {
   const flushOfflineQueue = async () => {
     if (offlineQueue.length === 0) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/autosave`,
         { updates: offlineQueue },
@@ -327,7 +327,7 @@ const AssessmentSessionManager = () => {
       [eventType === "Tab Switch" ? "tabSwitches" : "fullscreenExits"]: (prev[eventType === "Tab Switch" ? "tabSwitches" : "fullscreenExits"] || 0) + 1,
     }));
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/anti-cheat`,
         { eventType, details },
@@ -340,7 +340,7 @@ const AssessmentSessionManager = () => {
     const batchSize = sessionConfig?.batchSize || 5;
     const targetBatch = Math.floor(targetIndex / batchSize) + 1;
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/batch/${targetBatch}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
@@ -364,7 +364,7 @@ const AssessmentSessionManager = () => {
   const handleFinalSubmit = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/submit`,
         { reason: "CANDIDATE_SUBMISSION" },
@@ -384,7 +384,7 @@ const AssessmentSessionManager = () => {
 
   const handleAutoSubmitOnExpiry = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       await axios.post(
         `${backendUrl}/api/admin/assessment/sessions/${activeSessionId}/submit`,
         { reason: "TIMER_EXPIRATION" },
@@ -399,7 +399,7 @@ const AssessmentSessionManager = () => {
   const viewSessionAudit = async (sessionId) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`${backendUrl}/api/admin/assessment/sessions/${sessionId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

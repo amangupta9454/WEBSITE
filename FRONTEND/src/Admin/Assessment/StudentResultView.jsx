@@ -19,7 +19,7 @@ const StudentResultView = ({ sessionIdOrResultId = "SESS-1001", onBack }) => {
   const fetchResult = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/assessment/results/${sessionIdOrResultId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -13,7 +13,7 @@ const QuestionAnalytics = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get("/api/admin/assessment/analytics/questions", {
         headers: { Authorization: `Bearer ${token}` }
       });

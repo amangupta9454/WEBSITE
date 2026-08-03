@@ -42,7 +42,7 @@ const AIRuntimeMonitor = () => {
     else setRefreshing(true);
 
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
       const [healthRes, logsRes] = await Promise.all([
         axios.get(`${API_BASE}/api/admin/assessment/runtime-engine/health`, { headers }),
@@ -72,7 +72,7 @@ const AIRuntimeMonitor = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `${API_BASE}/api/admin/assessment/runtime-engine/test`,
         { testType },
@@ -101,7 +101,7 @@ const AIRuntimeMonitor = () => {
   const handleResetCooldowns = async () => {
     setRefreshing(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.post(`${API_BASE}/api/admin/assessment/runtime-engine/cooldown-reset`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });

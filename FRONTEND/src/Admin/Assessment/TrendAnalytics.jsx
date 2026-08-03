@@ -13,7 +13,7 @@ const TrendAnalytics = () => {
   const fetchTrends = async (p) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/analytics/trends?period=${p}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

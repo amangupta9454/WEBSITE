@@ -19,7 +19,7 @@ const CertificateVerification = () => {
       setLoading(true);
       setError(null);
       setResult(null);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`/api/admin/assessment/recruiter/certificate/${encodeURIComponent(searchInput.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
