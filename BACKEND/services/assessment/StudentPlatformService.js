@@ -102,9 +102,13 @@ class StudentPlatformService {
    */
   static async getAssessmentCenter(candidateEmail, { search = "", category = "All", status = "All" } = {}) {
     try {
-      const categories = await AssessmentCategory.find({ status: "Active" })
-        .populate("subcategories", "name description icon difficulty status")
-        .lean();
+      const categoriesRaw = await AssessmentCategory.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).lean();
+      const subcategoriesRaw = await AssessmentSubcategory.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).lean();
+      
+      const categories = categoriesRaw.map(cat => ({
+        ...cat,
+        subcategories: subcategoriesRaw.filter(sub => sub.categoryId?.toString() === cat._id?.toString())
+      }));
 
       const candidateSessions = await AssessmentSession.find({
         $or: [{ candidateId: candidateEmail }, { "userId.email": candidateEmail }],

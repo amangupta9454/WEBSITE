@@ -35,6 +35,7 @@ import StudentSettingsView from "./StudentSettingsView";
  * Completely zero mock or hardcoded demo data; displays professional empty states.
  */
 const StudentExperiencePlatform = ({ isEmbedded = false }) => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [activeTab, setActiveTab] = useState("hub"); // hub | catalog | results | certificates | resume | timeline | profile | search | settings
   const [loading, setLoading] = useState(true);
   const [globalSettings, setGlobalSettings] = useState({
@@ -105,13 +106,13 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [dashRes, catRes, actRes, resRes, certRes, timeRes, profRes] = await Promise.allSettled([
-        axios.get("/api/assessment/student/dashboard", { headers }),
-        axios.get("/api/assessment/student/catalog", { headers }),
-        axios.get("/api/assessment/student/active", { headers }),
-        axios.get("/api/assessment/student/results", { headers }),
-        axios.get("/api/assessment/student/credentials", { headers }),
-        axios.get("/api/assessment/student/timeline", { headers }),
-        axios.get("/api/assessment/student/profile", { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/dashboard`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/catalog`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/active`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/results`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/credentials`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/timeline`, { headers }),
+        axios.get(`${backendUrl}/api/assessment/student/profile`, { headers }),
       ]);
 
       if (dashRes.status === "fulfilled" && dashRes.value.data?.success) {

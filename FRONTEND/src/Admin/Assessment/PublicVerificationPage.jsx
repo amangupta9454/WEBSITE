@@ -18,6 +18,7 @@ import {
  * Strictly displays only public certificate metadata while protecting all sensitive internal assessment formulas and scores.
  */
 const PublicVerificationPage = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [targetId, setTargetId] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ const PublicVerificationPage = () => {
     setResult(null);
 
     try {
-      const res = await axios.get(`/api/assessment/verify/${encodeURIComponent(idToVerify)}`);
+      const res = await axios.get(`${backendUrl}/api/assessment/verify/${encodeURIComponent(idToVerify)}`);
       if (res.data.success && res.data.data) {
         setResult(res.data.data);
       } else {

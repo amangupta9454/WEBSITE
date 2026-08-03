@@ -9,6 +9,7 @@ import { CheckCircle2, XCircle, AlertTriangle, BarChart2, HelpCircle, ArrowRight
  * STRICTLY EXCLUDES certificates, leaderboard rankings, and AI instructional recommendations (Phase 11-13).
  */
 const StudentResultView = ({ sessionIdOrResultId = "SESS-1001", onBack }) => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +21,7 @@ const StudentResultView = ({ sessionIdOrResultId = "SESS-1001", onBack }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/assessment/results/${sessionIdOrResultId}`, {
+      const res = await axios.get(`${backendUrl}/api/assessment/results/${sessionIdOrResultId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success && res.data.data) {
