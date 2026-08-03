@@ -234,16 +234,19 @@ const AssessmentTerminal = () => {
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-semibold text-slate-800 leading-relaxed">
-                  {currentQ.text}
+                  {currentQ.text || currentQ.questionText}
                 </h2>
 
                 <div className="space-y-3 pt-4">
                   {currentQ.options?.map((opt, optIdx) => {
-                    const isSelected = answers[currentQ._id] === opt._id;
+                    const optId = opt._id || `opt_${optIdx}`;
+                    const optText = typeof opt === 'string' ? opt : opt.text;
+                    const isSelected = answers[currentQ._id || currentQ.questionId] === optId || answers[currentQ._id || currentQ.questionId] === `option_idx_${optIdx}`;
+                    
                     return (
                       <button
-                        key={opt._id}
-                        onClick={() => handleSelectOption(currentQ._id, opt._id)}
+                        key={optId}
+                        onClick={() => handleSelectOption(currentQ._id || currentQ.questionId, optId)}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${
                           isSelected 
                             ? "border-indigo-600 bg-indigo-50/50 shadow-sm" 
@@ -257,7 +260,7 @@ const AssessmentTerminal = () => {
                             {String.fromCharCode(65 + optIdx)}
                           </div>
                           <span className={`text-base font-medium ${isSelected ? "text-indigo-900" : "text-slate-700"}`}>
-                            {opt.text}
+                            {optText}
                           </span>
                         </div>
                         {isSelected && <CheckCircle className="w-5 h-5 text-indigo-600 shrink-0" />}
@@ -284,7 +287,20 @@ const AssessmentTerminal = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-20 text-slate-500">Failed to load question data.</div>
+              <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <ShieldCheck className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-slate-700 mb-2">No Questions Found</h3>
+                <p className="text-slate-500 max-w-md mx-auto mb-6">
+                  There are no questions available in the inventory for this assessment category. 
+                  Please contact the administrator to add questions to the database.
+                </p>
+                <button 
+                  onClick={handleSubmit}
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl"
+                >
+                  Force Submit Empty Session
+                </button>
+              </div>
             )}
           </div>
         </main>
