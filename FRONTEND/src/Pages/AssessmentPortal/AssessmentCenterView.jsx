@@ -78,7 +78,7 @@ const AssessmentCenterView = ({ catalogData, onRefresh }) => {
     toast.success(`🚀 Initializing secure session for ${sub.name}...`);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
       const res = await axios.post(
         `${backendUrl}/api/assessment/sessions/start`,
         { subcategoryId: sub._id },

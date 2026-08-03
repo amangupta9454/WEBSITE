@@ -102,7 +102,7 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
   const fetchWorkspaceData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || "";
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token") || "";
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [dashRes, catRes, actRes, resRes, certRes, timeRes, profRes] = await Promise.allSettled([
