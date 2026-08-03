@@ -50,14 +50,17 @@ const AssessmentTerminal = () => {
       // 1. Resume the session to wake it up
       const resumeRes = await axios.post(`${backendUrl}/api/assessment/sessions/${sessionId}/resume`, {}, { headers });
       if (resumeRes.data.success) {
-        setSession(resumeRes.data.session);
-        setRemainingSeconds(resumeRes.data.session.remainingSeconds || 1800);
+        setSession(resumeRes.data);
+        setRemainingSeconds(resumeRes.data.timer?.remainingSeconds || 1800);
         
         // Populate existing answers if any
-        if (resumeRes.data.session.answers) {
+        if (resumeRes.data.questionPalette) {
           const loadedAnswers = {};
-          resumeRes.data.session.answers.forEach(a => {
-            loadedAnswers[a.questionId] = a.selectedOptionId;
+          resumeRes.data.questionPalette.forEach(a => {
+            if (a.selectedOptionId || a.selectedIndex !== undefined) {
+               // We fallback to checking if it was answered if selectedOptionId is stripped
+               loadedAnswers[a.questionId] = a.selectedOptionId || `option_idx_${a.selectedIndex}`;
+            }
           });
           setAnswers(loadedAnswers);
         }
@@ -157,7 +160,7 @@ const AssessmentTerminal = () => {
           </div>
           <div>
             <h1 className="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">
-              {session?.subcategoryId?.name || "Assessment Terminal"}
+              {session?.configSnapshot?.categoryName || "Assessment Terminal"}
             </h1>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 mt-0.5">
               <ShieldCheck className="w-3.5 h-3.5" />
