@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import { 
+
   Database, Award, Cpu, FileText, Upload, AlertOctagon, 
   BarChart, Sparkles, HelpCircle, Loader2, CheckCircle 
 } from "lucide-react";
@@ -14,7 +17,7 @@ const QuestionAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/analytics/questions", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/analytics/questions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

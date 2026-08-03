@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
+
 const SubcategoryManager = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -40,7 +43,7 @@ const SubcategoryManager = () => {
   const fetchDependencies = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/categories?limit=100", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/categories?limit=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {
@@ -55,7 +58,7 @@ const SubcategoryManager = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/subcategories", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/subcategories`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           page,
@@ -128,7 +131,7 @@ const SubcategoryManager = () => {
         });
         toast.success("Subcategory updated successfully!");
       } else {
-        await axios.post("/api/admin/assessment/subcategories", formData, {
+        await axios.post(`${API_BASE}/api/admin/assessment/subcategories`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Subcategory created with default config & AI blueprint!");

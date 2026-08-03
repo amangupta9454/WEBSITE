@@ -3,6 +3,9 @@ import axios from "axios";
 import { Layers, CheckCircle2, XCircle, Shield, Sparkles, Eye, Award, Lock, RefreshCw, Filter, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
+
 /**
  * Admin Panel -> Assessment -> Publish Control (⭐ Additional Recommendation)
  * Enterprise LMS Publishing & Visibility governance flags for every assessment/subcategory.
@@ -25,14 +28,14 @@ const PublishControl = () => {
       const savedControls = localStorage.getItem("CAN_ASSESSMENT_PUBLISH_CONTROLS") || "{}";
       const parsedControls = JSON.parse(savedControls);
 
-      const res = await axios.get("/api/admin/assessment/subcategories", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/subcategories`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("adminToken") || localStorage.getItem("adminToken") || ""}`
         },
         timeout: 5000
       }).catch(async () => {
         // Fallback to student catalog if admin specific fails or token differs
-        return await axios.get("/api/assessment/student/catalog");
+        return await axios.get(`${API_BASE}/api/assessment/student/catalog`);
       });
 
       const list = res.data?.data?.subcategories || res.data?.subcategories || res.data?.data || [];

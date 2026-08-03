@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import {
+
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -117,7 +120,7 @@ const EvaluationConsole = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.get("/api/admin/assessment/evaluations/queue", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/evaluations/queue`, {
         params: { status: statusFilter !== "All" ? statusFilter : undefined },
         headers,
       });
@@ -178,7 +181,7 @@ const EvaluationConsole = () => {
   const triggerBulkEvaluation = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.post("/api/admin/assessment/evaluations/bulk", {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/evaluations/bulk`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast(`Bulk Evaluation complete! Processed: ${res.data.evaluated}. All queued for Phase 11.`);
         fetchEvaluationQueue();

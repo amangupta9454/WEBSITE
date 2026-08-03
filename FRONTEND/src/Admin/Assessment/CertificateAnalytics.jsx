@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import { 
+
   Award, CheckCircle2, AlertOctagon, RefreshCw, Eye, Download, 
   Calendar, TrendingUp, Loader2, ShieldCheck 
 } from "lucide-react";
@@ -14,7 +17,7 @@ const CertificateAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/analytics/certificates", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/analytics/certificates`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

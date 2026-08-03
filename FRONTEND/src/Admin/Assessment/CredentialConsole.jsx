@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import {
+
   Award,
   Search,
   Filter,
@@ -93,7 +96,7 @@ const CredentialConsole = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/certificates", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/certificates`, {
         params: { status: statusFilter !== "All" ? statusFilter : undefined },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -179,7 +182,7 @@ const CredentialConsole = () => {
     try {
       const ids = pendingEligible.map((p) => p.resultId);
       const token = localStorage.getItem("adminToken");
-      await axios.post("/api/admin/assessment/certificates/bulk-generate", { identifiers: ids }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(`${API_BASE}/api/admin/assessment/certificates/bulk-generate`, { identifiers: ids }, { headers: { Authorization: `Bearer ${token}` } });
       showToast(`Bulk synthesis complete for ${ids.length} passed candidate results!`);
       fetchCredentials();
     } catch (err) {

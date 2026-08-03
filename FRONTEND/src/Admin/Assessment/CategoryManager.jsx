@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
+
 const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +43,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/categories", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/categories`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           page,
@@ -135,7 +138,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     if (selectedIds.length === 0) return;
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.post("/api/admin/assessment/categories/bulk-status", { ids: selectedIds, isActive }, {
+      await axios.post(`${API_BASE}/api/admin/assessment/categories/bulk-status`, { ids: selectedIds, isActive }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(`Updated ${selectedIds.length} categories.`);
@@ -151,7 +154,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     if (!window.confirm(`Are you sure you want to permanently delete ${selectedIds.length} category(s)?`)) return;
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.post("/api/admin/assessment/categories/bulk-delete", { ids: selectedIds, force: true }, {
+      await axios.post(`${API_BASE}/api/admin/assessment/categories/bulk-delete`, { ids: selectedIds, force: true }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(`Deleted ${selectedIds.length} categories.`);

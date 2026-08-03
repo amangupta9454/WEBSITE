@@ -36,6 +36,7 @@ import PublicVerificationPage from "./PublicVerificationPage";
 import PublishControl from "./PublishControl";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import RecruiterDashboard from "./RecruiterDashboard";
+import GeneralSettings from "./GeneralSettings";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");

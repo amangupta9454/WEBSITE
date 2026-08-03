@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import {
+
   Sliders,
   Save,
   RotateCcw,
@@ -124,7 +127,7 @@ const ConfigManager = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("/api/admin/assessment/categories", getAuthHeaders());
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/categories`, getAuthHeaders());
       if (res.data.success) setCategories(res.data.data || []);
     } catch (err) {
       console.error("Failed to load categories:", err);
@@ -133,7 +136,7 @@ const ConfigManager = () => {
 
   const fetchGlobalConfig = async () => {
     try {
-      const res = await axios.get("/api/admin/assessment/configs/global", getAuthHeaders());
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/configs/global`, getAuthHeaders());
       if (res.data.success) {
         setGlobalConfig(res.data.data || SYSTEM_DEFAULTS);
       }
@@ -145,7 +148,7 @@ const ConfigManager = () => {
   const fetchConfigs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/admin/assessment/configs", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/configs`, {
         params: { page, limit: 12, search, categoryId: selectedCategoryId },
         ...getAuthHeaders()
       });
@@ -239,7 +242,7 @@ const ConfigManager = () => {
     setSaving(true);
     try {
       if (activeView === "global_studio") {
-        const res = await axios.put("/api/admin/assessment/configs/global", { ...SYSTEM_DEFAULTS, versionSummary: "Reset global defaults" }, getAuthHeaders());
+        const res = await axios.put(`${API_BASE}/api/admin/assessment/configs/global`, { ...SYSTEM_DEFAULTS, versionSummary: "Reset global defaults" }, getAuthHeaders());
         if (res.data.success) setGlobalConfig(res.data.data);
       } else {
         await axios.post(`/api/admin/assessment/configs/${selectedItem.subcategory._id}/reset`, {}, getAuthHeaders());
@@ -305,7 +308,7 @@ const ConfigManager = () => {
   const handleExecuteBulkUpdate = async () => {
     setSaving(true);
     try {
-      const res = await axios.post("/api/admin/assessment/configs/bulk-update", {
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/configs/bulk-update`, {
         subcategoryIds: selectedIds,
         updateData: bulkData
       }, getAuthHeaders());

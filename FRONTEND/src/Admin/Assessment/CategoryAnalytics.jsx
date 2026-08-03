@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import { 
+
   FolderTree, BookOpen, Users, TrendingUp, AlertTriangle, 
   CheckCircle, PieChart, Loader2 
 } from "lucide-react";
@@ -13,7 +16,7 @@ const CategoryAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/analytics/categories", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/analytics/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import { 
+
   Layers, CheckCircle2, XCircle, Clock, Target, BarChart2, 
   ChevronDown, ChevronUp, AlertCircle, Loader2, PieChart 
 } from "lucide-react";
@@ -14,7 +17,7 @@ const AssessmentAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/analytics/assessments?limit=50", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/analytics/assessments?limit=50`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

@@ -14,6 +14,9 @@ import RuntimeAnalytics from "./RuntimeAnalytics";
 import CertificateAnalytics from "./CertificateAnalytics";
 import TrendAnalytics from "./TrendAnalytics";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
+
 const AnalyticsDashboard = () => {
   const [activeSubTab, setActiveSubTab] = useState("overview");
   const [overviewData, setOverviewData] = useState(null);
@@ -25,7 +28,7 @@ const AnalyticsDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/analytics/overview", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/analytics/overview`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

@@ -11,6 +11,9 @@ import CandidateVerification from "./CandidateVerification";
 import VerificationHistory from "./VerificationHistory";
 import PublicVerification from "./PublicVerification";
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+
+
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [dashboardData, setDashboardData] = useState(null);
@@ -20,7 +23,7 @@ const RecruiterDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/recruiter/dashboard", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/recruiter/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

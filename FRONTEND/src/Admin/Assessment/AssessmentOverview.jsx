@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 import {
+
   FolderTree,
   Layers,
   Database,
@@ -28,7 +31,7 @@ const AssessmentOverview = ({ onNavigate, onLaunchWizard }) => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get("/api/admin/assessment/dashboard/stats", {
+      const res = await axios.get(`${API_BASE}/api/admin/assessment/dashboard/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data && res.data.success) {
