@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 /**
  * Assessment Center (Part 7 & 8)
@@ -23,6 +24,7 @@ import { useNavigate } from "react-router-dom";
  */
 const AssessmentCenterView = ({ catalogData, onRefresh }) => {
   const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [activeFilter, setActiveFilter] = useState("AVAILABLE"); // AVAILABLE | ACTIVE | COMPLETED | EXPIRED
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -68,13 +70,32 @@ const AssessmentCenterView = ({ catalogData, onRefresh }) => {
 
   const categoriesSet = ["ALL", ...new Set(subcategoryList.map((s) => s.parentCategoryName).filter(Boolean))];
 
-  const handleStartAttempt = (sub) => {
+  const handleStartAttempt = async (sub) => {
     if (!sub.acceptingAttempts) {
       toast.error("This assessment is temporarily paused by course instructors.");
       return;
     }
     toast.success(`🚀 Initializing secure session for ${sub.name}...`);
-    // Connects seamlessly to Phase 9 session execution harness
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${backendUrl}/api/assessment/sessions/start`,
+        { subcategoryId: sub._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data.success) {
+        toast.success("Session created successfully!");
+        onRefresh();
+        navigate("/dashboard/assessment/attempt/active");
+      } else {
+        toast.error(res.data.error || "Failed to start assessment session.");
+      }
+    } catch (err) {
+      console.error("Start attempt error:", err);
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to start session. Server error.");
+    }
   };
 
   return (
