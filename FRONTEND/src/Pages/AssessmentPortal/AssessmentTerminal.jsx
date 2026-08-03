@@ -69,7 +69,7 @@ const AssessmentTerminal = () => {
       // 2. Load Question Batch
       const batchRes = await axios.get(`${backendUrl}/api/assessment/sessions/${sessionId}/batch/1`, { headers });
       if (batchRes.data.success) {
-        setQuestions(batchRes.data.data.questions || []);
+        setQuestions(batchRes.data.questions || []);
       }
     } catch (err) {
       console.error("Terminal initialization error:", err);
