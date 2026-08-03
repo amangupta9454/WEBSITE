@@ -333,7 +333,7 @@ assessmentAIBlueprintSchema.pre("save", function (next) {
     }
   }
 
-  next();
+  if (typeof next === "function") next();
 });
 
 module.exports = mongoose.model("AssessmentAIBlueprint", assessmentAIBlueprintSchema);

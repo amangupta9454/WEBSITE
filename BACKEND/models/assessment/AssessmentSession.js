@@ -38,7 +38,11 @@ const questionSnapshotSchema = new mongoose.Schema(
     difficulty:      { type: String },
     bloomLevel:      { type: String },
     tags:            [{ type: String }],
-    // Note: Correct answers and explanations are omitted or stripped in delivery payloads to prevent tampering
+    correctIndex:    { type: Number },
+    correctOptionIndex: { type: Number },
+    correctAnswer:   { type: String },
+    explanation:     { type: String },
+    // Note: Correct answers and explanations are stored server-side for immutable grading and stripped in delivery payloads via BatchManagerService
   },
   { _id: false }
 );

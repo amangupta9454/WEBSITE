@@ -171,9 +171,9 @@ assessmentCertificateSchema.index({ resultId: 1, version: 1 });
 assessmentCertificateSchema.pre("findOneAndUpdate", function(next) {
   const update = this.getUpdate() || {};
   if (update.$set && update.$set.snapshot) {
-    return next(new Error("SECURITY VIOLATION: Credential Snapshot is strictly immutable once synthesized. Use versioned Reissue instead of overwrite."));
+    return typeof next === "function" ? next(new Error("SECURITY VIOLATION: Credential Snapshot is strictly immutable once synthesized. Use versioned Reissue instead of overwrite.")) : null;
   }
-  next();
+  if (typeof next === "function") next();
 });
 
 module.exports = mongoose.models.AssessmentCertificate || mongoose.model("AssessmentCertificate", assessmentCertificateSchema);

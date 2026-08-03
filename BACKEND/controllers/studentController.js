@@ -216,7 +216,9 @@ const getDashboardInfo = async (req, res) => {
         github: user.github,
         linkedin: user.linkedin,
         portfolio: user.portfolio,
-        resumeData: user.resumeData || {}
+        resumeData: user.resumeData || {},
+        roles: typeof user.getUserRoles === 'function' ? user.getUserRoles() : (user.roles || ['student']),
+        status: user.status || 'Registered'
       },
       internships: enrichedInternships,
       notifications: activeNotifications,

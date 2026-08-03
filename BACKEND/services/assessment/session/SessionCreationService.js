@@ -174,11 +174,14 @@ class SessionCreationService {
           fingerprint: doc.fingerprint || doc.hash || `HASH-${doc._id}`,
           sequenceOrder: seqOrder,
           source: source,
-          questionText: doc.questionText,
+          questionText: doc.questionText || doc.text,
           options: doc.options || [],
           difficulty: doc.difficulty || "medium",
           bloomLevel: doc.bloomLevel || "Apply",
           tags: doc.tags || [],
+          correctIndex: doc.correctIndex !== undefined ? doc.correctIndex : (doc.correctOptionIndex !== undefined ? doc.correctOptionIndex : doc.correctOption),
+          correctAnswer: doc.correctAnswer,
+          explanation: doc.explanation,
         });
 
         answers.push({

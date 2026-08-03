@@ -20,6 +20,8 @@ const orchestrationController = require("../../controllers/assessment/orchestrat
 const sessionController       = require("../../controllers/assessment/sessionController");
 const evaluationController    = require("../../controllers/assessment/evaluationController");
 const certificateController   = require("../../controllers/assessment/certificateController");
+const analyticsController     = require("../../controllers/assessment/analyticsController");
+const recruiterController     = require("../../controllers/assessment/recruiterController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -241,7 +243,25 @@ router.post("/certificates/:id/revoke",               verifyAdmin, certificateCo
 router.post("/certificates/:id/restore",              verifyAdmin, certificateController.restoreCertificate);
 router.post("/certificates/:id/reissue",              verifyAdmin, certificateController.reissueCertificate);
 
-// ── Placeholders (Future Phases) ───────────────────────────────────────────
-router.get("/analytics/overview", verifyAdmin, (req, res) => res.json({ success: true, data: {}, message: "Phase 13" }));
+// ── Phase 13 Enterprise Analytics & Intelligence Platform (Read-Only) ────────
+router.get("/analytics/overview",                     verifyAdmin, analyticsController.getGlobalDashboard);
+router.get("/analytics/assessments",                  verifyAdmin, analyticsController.getAssessmentAnalytics);
+router.get("/analytics/assessments/:id",              verifyAdmin, analyticsController.getAssessmentDetail);
+router.get("/analytics/students",                     verifyAdmin, analyticsController.getStudentAnalytics);
+router.get("/analytics/students/:candidateId",          verifyAdmin, analyticsController.getStudentDetail);
+router.get("/analytics/categories",                   verifyAdmin, analyticsController.getCategoryAnalytics);
+router.get("/analytics/questions",                    verifyAdmin, analyticsController.getQuestionAnalytics);
+router.get("/analytics/runtime",                      verifyAdmin, analyticsController.getRuntimeAnalytics);
+router.get("/analytics/certificates",                 verifyAdmin, analyticsController.getCertificateAnalytics);
+router.get("/analytics/trends",                       verifyAdmin, analyticsController.getTrendAnalytics);
+router.get("/analytics/export",                       verifyAdmin, analyticsController.exportAnalytics);
+
+// ── Phase 14 Recruiter Verification Platform (Read-Only) ─────────────────────
+router.get("/recruiter/dashboard",                      verifyAdmin, (req, res) => recruiterController.getDashboard(req, res));
+router.get("/recruiter/search",                         verifyAdmin, (req, res) => recruiterController.search(req, res));
+router.get("/recruiter/history",                        verifyAdmin, (req, res) => recruiterController.getHistory(req, res));
+router.get("/recruiter/export",                         verifyAdmin, (req, res) => recruiterController.exportReport(req, res));
+router.get("/recruiter/candidate/:id",                  verifyAdmin, (req, res) => recruiterController.getCandidate(req, res));
+router.get("/recruiter/certificate/:id",                verifyAdmin, (req, res) => recruiterController.getCertificate(req, res));
 
 module.exports = router;

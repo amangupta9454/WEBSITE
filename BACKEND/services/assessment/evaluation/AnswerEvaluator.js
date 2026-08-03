@@ -100,7 +100,7 @@ class AnswerEvaluator {
     const selectedIndex = candidateAnswer.selectedIndex;
     const selectedText = candidateAnswer.selectedAnswer || "";
 
-    const serverCorrectIndex = question.correctOptionIndex !== undefined ? Number(question.correctOptionIndex) : (question.correctOption !== undefined ? Number(question.correctOption) : -1);
+    const serverCorrectIndex = question.correctIndex !== undefined ? Number(question.correctIndex) : (question.correctOptionIndex !== undefined ? Number(question.correctOptionIndex) : (question.correctOption !== undefined ? Number(question.correctOption) : -1));
     const serverCorrectText = question.correctAnswer || (question.options && serverCorrectIndex >= 0 ? question.options[serverCorrectIndex] : "");
 
     // Zero Trust: Determine correctness purely from server keys

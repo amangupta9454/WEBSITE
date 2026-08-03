@@ -64,6 +64,14 @@ async function connectToDatabase() {
     // Seed default interview configurations if none exist
     await InterviewConfigInitializer.seedDefaultConfigs();
 
+    // Phase 15 Assessment module compound database index optimization (non-blocking background sync)
+    try {
+      const AssessmentIndexOptimizer = require("./initializers/AssessmentIndexOptimizer");
+      AssessmentIndexOptimizer.optimizeIndexes().catch(() => {});
+    } catch(idxErr) {
+      console.warn("AssessmentIndexOptimizer note:", idxErr.message);
+    }
+
     return db;
   } catch (err) {
     console.error("MongoDB connection error:", err);

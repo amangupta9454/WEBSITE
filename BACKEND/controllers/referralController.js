@@ -230,6 +230,8 @@ exports.assignAmbassador = async (req, res) => {
         mobile: "Pending Registration",
         isAmbassador: true,
         ambassadorCollege: college || "N/A",
+        status: "Pending Registration",
+        roles: ["student", "campus_ambassador"],
       });
     }
 
@@ -252,6 +254,8 @@ exports.assignAmbassador = async (req, res) => {
     user.isAmbassador = true;
     user.ambassadorCode = code;
     user.ambassadorCollege = college || user.ambassadorCollege || "N/A";
+    if (!user.roles) user.roles = ["student"];
+    if (!user.roles.includes("campus_ambassador")) user.roles.push("campus_ambassador");
     await user.save();
 
     // Create or update referral document for ambassador
@@ -904,9 +908,31 @@ exports.syncAndMergeAmbassadorData = async (user, email) => {
       }
     }
 
+    if (user.status === "Pending Registration") {
+      user.status = "Registered";
+      if (user.mobile === "Pending Registration") {
+        user.mobile = "Registered";
+      }
+      updated = true;
+    }
+
+    if (!user.roles) user.roles = ["student"];
+    if (!user.roles.includes("student")) {
+      user.roles.push("student");
+      updated = true;
+    }
+    if (user.internships && user.internships.length > 0 && !user.roles.includes("intern")) {
+      user.roles.push("intern");
+      updated = true;
+    }
+    if (user.isAmbassador && !user.roles.includes("campus_ambassador")) {
+      user.roles.push("campus_ambassador");
+      updated = true;
+    }
+
     if (updated) {
       await user.save();
-      console.log(`[Ambassador Merge] Seamlessly synced and merged Campus Ambassador data for user ${cleanEmail}`);
+      console.log(`[Ambassador & RBAC Merge] Seamlessly synced status and roles for user ${cleanEmail}: ${user.roles}`);
     }
     return user;
   } catch (error) {

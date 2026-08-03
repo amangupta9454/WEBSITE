@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw, GraduationCap } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
+import { hasPermission, getUserRolesFromStorage } from "../../../utils/permissionEngine";
+import toast from "react-hot-toast";
 
 // V2 Panel Components
 import ExecutiveSummaryCard from "./reports/ExecutiveSummaryCard";
@@ -631,10 +633,12 @@ export function FeedbackModal({ feedback: session, onClose }) {
   );
 }
 
-export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, resumeEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick }) {
+export default function InterviewDashboardContent({ credits, isUnlimited, interviewEnabled = true, resumeEnabled = true, sessions, isLoading, onStartInterview, isIntern, userData, onBuyClick, userRoles: propRoles }) {
+  const [userRoles] = useState(() => propRoles || getUserRolesFromStorage());
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [rePracticeSession, setRePracticeSession] = useState(null);
   const [showJobPortal, setShowJobPortal] = useState(true);
+  const [assessmentEnabled, setAssessmentEnabled] = useState(true);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -647,6 +651,16 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
       }
     };
     fetchSetting();
+
+    const settings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
+    if (settings) {
+      try {
+        const parsed = JSON.parse(settings);
+        setAssessmentEnabled(parsed.assessmentModuleEnabled !== false);
+      } catch (e) {
+        setAssessmentEnabled(true);
+      }
+    }
   }, []);
   
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
@@ -691,24 +705,26 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
         
         {/* AI Resume Builder Card */}
-        <div 
-          className={`bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${resumeEnabled ? 'border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer' : 'border-slate-200 opacity-75 cursor-not-allowed'} relative overflow-hidden group transition-all duration-300`} 
-          onClick={() => {
-            if (resumeEnabled) navigate('/my-resumes');
-            else toast.error("Resume feature is currently disabled.");
-          }}
-        >
-          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
-            <FileText className="w-12 h-12 sm:w-20 sm:h-20" />
+        {hasPermission(userRoles, "ai_resume") && (
+          <div 
+            className={`bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${resumeEnabled ? 'border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer' : 'border-slate-200 opacity-75 cursor-not-allowed'} relative overflow-hidden group transition-all duration-300`} 
+            onClick={() => {
+              if (resumeEnabled) navigate('/my-resumes');
+              else toast.error("Resume feature is currently disabled.");
+            }}
+          >
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <FileText className="w-12 h-12 sm:w-20 sm:h-20" />
+            </div>
+            <div className={`w-8 h-8 sm:w-12 sm:h-12 ${resumeEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10`}>
+              <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">{resumeEnabled ? 'Bypass ATS smartly' : 'Currently Not Available'}</p>
           </div>
-          <div className={`w-8 h-8 sm:w-12 sm:h-12 ${resumeEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10`}>
-            <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
-          </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">{resumeEnabled ? 'Bypass ATS smartly' : 'Currently Not Available'}</p>
-        </div>
+        )}
 
-        {interviewEnabled ? (
+        {hasPermission(userRoles, "mock_interviews") && (interviewEnabled ? (
           <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={() => navigate('/my-interviews')}>
             <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
               <Video className="w-12 h-12 sm:w-20 sm:h-20" />
@@ -730,7 +746,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Currently Not Available</p>
           </div>
-        )}
+        ))}
         
         {showJobPortal && (
           <div 
@@ -748,31 +764,50 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
         )}
 
-        <div 
-          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-cyan-200 shadow-sm shadow-cyan-100 hover:-translate-y-1 hover:shadow-md hover:shadow-cyan-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
-          onClick={() => navigate('/student-assessment')}
-        >
-          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-cyan-600">
-            <CheckCircle className="w-12 h-12 sm:w-20 sm:h-20" />
+        {hasPermission(userRoles, "assessment") && (assessmentEnabled ? (
+          <div 
+            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-cyan-200 shadow-sm shadow-cyan-100 hover:-translate-y-1 hover:shadow-md hover:shadow-cyan-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+            onClick={() => navigate('/dashboard/assessment')}
+          >
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-cyan-600">
+              <GraduationCap className="w-12 h-12 sm:w-20 sm:h-20" />
+            </div>
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-cyan-100 text-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+              <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
+            <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 mb-1.5 leading-tight">Take quizzes, coding tests and track certifications.</p>
+            <p className="text-[10px] sm:text-sm text-cyan-600 font-bold relative z-10 leading-tight">Open →</p>
           </div>
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-cyan-100 text-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
-            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6" />
+        ) : (
+          <div 
+            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed relative overflow-hidden"
+            onClick={() => toast.error("Assessment feature is currently disabled by administrator.")}
+          >
+            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10">
+              <GraduationCap className="w-12 h-12 sm:w-20 sm:h-20" />
+            </div>
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+              <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Currently unavailable</p>
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Assessments</h3>
-          <p className="text-[9px] sm:text-sm text-cyan-600 font-semibold relative z-10 leading-tight">Launch & Evaluate</p>
-        </div>
+        ))}
 
-        <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
-            <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
+        {hasPermission(userRoles, "project_sandbox") && (
+          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
+              <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Project Sandbox</h3>
+            <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Project Sandbox</h3>
-          <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
-        </div>
+        )}
 
         <div 
           className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-amber-200 shadow-sm shadow-amber-100 hover:-translate-y-1 hover:shadow-md hover:shadow-amber-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
-          onClick={() => navigate('/student-assessment')}
+          onClick={() => navigate('/dashboard/assessment/certificates')}
         >
           <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-amber-600">
             <Tag className="w-12 h-12 sm:w-20 sm:h-20" />

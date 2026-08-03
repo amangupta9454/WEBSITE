@@ -1,23 +1,24 @@
 const express = require('express');
 const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink } = require('../controllers/studentController');
 const authMiddleware = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 
 const router = express.Router();
 
-router.get('/dashboard', authMiddleware, getDashboardInfo);
-router.post('/profile', authMiddleware, updateProfile);
-router.post('/mark-alert', authMiddleware, markAlertRead);
-router.post('/submit-repo', authMiddleware, submitProjectRepo);
-router.post('/final-submit-repo', authMiddleware, finalSubmitProjectRepo);
-router.post('/update-project-link', authMiddleware, updateProjectLink);
-router.post('/dismiss-notification', authMiddleware, dismissNotification);
+router.get('/dashboard', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin', 'recruiter', 'mentor'), getDashboardInfo);
+router.post('/profile', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin', 'recruiter', 'mentor'), updateProfile);
+router.post('/mark-alert', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin'), markAlertRead);
+router.post('/submit-repo', authMiddleware, requireRole('intern', 'admin'), submitProjectRepo);
+router.post('/final-submit-repo', authMiddleware, requireRole('intern', 'admin'), finalSubmitProjectRepo);
+router.post('/update-project-link', authMiddleware, requireRole('intern', 'admin'), updateProjectLink);
+router.post('/dismiss-notification', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin'), dismissNotification);
 router.get('/leaderboard', getPublicLeaderboard);
 
 const { getV2Projects, submitV2Project } = require('../controllers/studentControllerV2');
 const { getStudentAmbassadorStats, trackUserActivity, submitAmbassadorApplication } = require('../controllers/referralController');
-router.get('/v2-projects', authMiddleware, getV2Projects);
-router.post('/submit-v2-project', authMiddleware, submitV2Project);
-router.get('/ambassador-stats', authMiddleware, getStudentAmbassadorStats);
+router.get('/v2-projects', authMiddleware, requireRole('intern', 'admin'), getV2Projects);
+router.post('/submit-v2-project', authMiddleware, requireRole('intern', 'admin'), submitV2Project);
+router.get('/ambassador-stats', authMiddleware, requireRole('student', 'campus_ambassador', 'intern', 'admin'), getStudentAmbassadorStats);
 router.post('/track-activity', authMiddleware, trackUserActivity);
 router.post('/ambassador-apply', submitAmbassadorApplication);
 

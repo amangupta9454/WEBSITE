@@ -191,9 +191,9 @@ AssessmentResultSchema.pre("findOneAndUpdate", function (next) {
   // Only allow updating evaluationMetadata (e.g. handoff status or reevaluation count) if necessary
   const update = this.getUpdate();
   if (update.$set && update.$set.isImmutable === false) {
-    return next(new Error("SECURITY_ERROR: AssessmentResult objects are strictly immutable once created."));
+    return typeof next === "function" ? next(new Error("SECURITY_ERROR: AssessmentResult objects are strictly immutable once created.")) : null;
   }
-  next();
+  if (typeof next === "function") next();
 });
 
 // Component 9 (Phase 11.5): Performance & Analytical Query Optimization Indexes

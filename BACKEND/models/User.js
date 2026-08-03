@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true }, // No unique constraint needed if duplicates allowed
     mobile: { type: String, required: true },
     role: { type: String, default: 'user' },
+    status: { type: String, enum: ['Pending Registration', 'Registered', 'Inactive'], default: 'Registered' },
+    roles: { type: [String], default: ['student'] },
 
     // Student Auth & Profile Fields
     password: { type: String },
@@ -157,5 +159,23 @@ userSchema.pre('save', async function () {
     }
   }
 });
+
+userSchema.methods.getUserRoles = function () {
+  const roleSet = new Set(this.roles && this.roles.length > 0 ? this.roles : ['student']);
+  roleSet.add('student');
+  if (this.internships && this.internships.length > 0) {
+    roleSet.add('intern');
+  }
+  if (this.isAmbassador === true) {
+    roleSet.add('campus_ambassador');
+  }
+  if (this.role === 'admin' || this.email === 'admin@code-a-nova.online') {
+    roleSet.add('admin');
+  }
+  if (this.role && !['user', 'interview_user', 'student'].includes(this.role)) {
+    roleSet.add(this.role);
+  }
+  return Array.from(roleSet);
+};
 
 module.exports = mongoose.model("User", userSchema);

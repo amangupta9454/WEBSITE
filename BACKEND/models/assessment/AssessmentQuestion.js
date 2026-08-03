@@ -220,7 +220,7 @@ assessmentQuestionSchema.pre("save", function (next) {
       .update(this.text.toLowerCase().replace(/[^a-z0-9]/g, "").trim())
       .digest("hex");
   }
-  next();
+  if (typeof next === "function") next();
 });
 
 // ── COMPONENT 8: AUTOMATED INVENTORY SYNCHRONIZATION ──────────────────────────

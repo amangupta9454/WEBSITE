@@ -57,7 +57,7 @@ assessmentSubcategorySchema.pre("save", async function (next) {
     }
     this.slug = generatedSlug;
   }
-  next();
+  if (typeof next === "function") next();
 });
 
 // Virtual field for Inventory Health status

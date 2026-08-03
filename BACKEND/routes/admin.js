@@ -490,17 +490,48 @@ router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: "Email is required" });
     
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found with this email" });
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email.trim()}$`, "i") } });
+    const inviteUrl = `${process.env.FRONTEND_URL || "https://code-a-nova.online"}/student-login?invite=${encodeURIComponent(email)}`;
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        errorType: "USER_NOT_FOUND",
+        status: "User account not found.",
+        message: "This person has not registered on Code-A-Nova yet.",
+        invitationLink: inviteUrl 
+      });
+    }
+
+    if (user.status === "Pending Registration" || user.mobile === "Pending Registration") {
+      return res.status(403).json({
+        success: false,
+        errorType: "PENDING_REGISTRATION",
+        status: "Pending Registration",
+        message: "Cannot impersonate.\nThis user hasn't completed registration yet.",
+        invitationLink: inviteUrl
+      });
+    }
+
+    if (user.status === "Inactive") {
+      return res.status(403).json({
+        success: false,
+        errorType: "INACTIVE_ACCOUNT",
+        status: "Inactive",
+        message: "Cannot impersonate an inactive account."
+      });
+    }
 
     // Extract the first studentId if available
     const studentId = user.internships?.length > 0 ? user.internships[0].studentId : null;
+    const roles = typeof user.getUserRoles === "function" ? user.getUserRoles() : (user.roles || ["student"]);
 
     // Generate token matching normal student login exactly
     const payload = { 
       id: user._id, 
       email: user.email, 
-      studentId 
+      studentId,
+      roles
     };
     
     jwt.sign(
@@ -517,6 +548,8 @@ router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
             name: user.name,
             email: user.email,
             studentId,
+            roles,
+            status: user.status || "Registered",
             isFirstLogin: user.isFirstLogin === undefined ? true : user.isFirstLogin,
           }
         });
@@ -524,6 +557,42 @@ router.post("/impersonate", auth, verifyAdmin, async (req, res) => {
     );
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+router.post("/impersonate/invite", auth, verifyAdmin, async (req, res) => {
+  try {
+    const { email, resend } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+    
+    const nodemailer = require("nodemailer");
+    if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_APP_PASSWORD,
+        },
+      });
+      const inviteUrl = `${process.env.FRONTEND_URL || "https://code-a-nova.online"}/student-login?invite=${encodeURIComponent(email)}`;
+      await transporter.sendMail({
+        from: `"Code-A-Nova Admin" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `${resend ? "[Reminder] " : ""}Invitation to Register on Code-A-Nova Portal`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2>Welcome to Code-A-Nova!</h2>
+            <p>You have been invited to join the Code-A-Nova platform by an administrator.</p>
+            <p>Please complete your registration to automatically access all your assigned role portals (such as Campus Ambassador, Internship, or Assessment modules).</p>
+            <p><a href="${inviteUrl}" style="display: inline-block; padding: 12px 24px; background: #4f46e5; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold;">Complete Registration</a></p>
+            <p>Or copy this link: <br /><code>${inviteUrl}</code></p>
+          </div>
+        `
+      }).catch(err => console.error("Error sending invite email:", err));
+    }
+    res.json({ success: true, message: resend ? "Invitation resent successfully" : "Invitation email sent successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error sending invitation" });
   }
 });
 

@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Outlet,
+  Navigate,
 } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import Home from "./Pages/Home";
@@ -120,14 +121,18 @@ function App() {
 
           {/* Old Legacy Functional Pages, Interview Portal, and Assessment Module */}
           <Route element={<UnifiedLayout />}>
-            {/* Phase 12 Student Assessment Platform (Integrated natively) */}
-            <Route path="/student-assessment" element={<StudentExperiencePlatform />} />
-            <Route path="/student-portal" element={<StudentExperiencePlatform />} />
-            <Route path="/student/dashboard/assessment" element={<StudentExperiencePlatform />} />
+            {/* Unified Dashboard with Native Assessment Module Feature Integration */}
+            <Route path="/dashboard" element={<UnifiedDashboard />} />
+            <Route path="/dashboard/assessment/*" element={<UnifiedDashboard />} />
+            <Route path="/dashboard/assessment" element={<UnifiedDashboard />} />
+
+            {/* Legacy Standalone Assessment Routes Redirect to Unified Dashboard */}
+            <Route path="/student-assessment" element={<Navigate to="/dashboard/assessment" replace />} />
+            <Route path="/student-portal" element={<Navigate to="/dashboard/assessment" replace />} />
+            <Route path="/student/dashboard/assessment" element={<Navigate to="/dashboard/assessment" replace />} />
 
             {/* Interview Portal Routes */}
             <Route path="/student-login" element={<InterviewLogin />} />
-            <Route path="/dashboard" element={<UnifiedDashboard />} />
             <Route path="/profile" element={<MyProfile />} />
             <Route path="/interview-setup" element={<InterviewSetup />} />
             <Route path="/setup-password" element={<SetupPassword />} />

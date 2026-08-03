@@ -62,7 +62,9 @@ const loginStudent = async (req, res) => {
         isFirstLogin:
           user.isFirstLogin === undefined ? true : user.isFirstLogin,
         isPhoneVerified: !!verifiedPhone,
-        mobile: verifiedPhone || ''
+        mobile: verifiedPhone || '',
+        roles: typeof user.getUserRoles === 'function' ? user.getUserRoles() : (user.roles || ['student']),
+        status: user.status || 'Registered'
       },
     });
   } catch (err) {

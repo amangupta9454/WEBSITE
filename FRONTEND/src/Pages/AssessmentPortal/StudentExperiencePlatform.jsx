@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   LayoutDashboard,
@@ -59,6 +60,31 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
   const [credentialsData, setCredentialsData] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
   const [profileData, setProfileData] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("/catalog")) setActiveTab("catalog");
+    else if (path.includes("/attempt") || path.includes("/active")) setActiveTab("resume");
+    else if (path.includes("/results")) setActiveTab("results");
+    else if (path.includes("/certificates") || path.includes("/credentials")) setActiveTab("certificates");
+    else if (path.includes("/timeline")) setActiveTab("timeline");
+    else if (path.includes("/profile")) setActiveTab("profile");
+    else if (path.includes("/search")) setActiveTab("search");
+    else if (path.includes("/settings")) setActiveTab("settings");
+    else setActiveTab("hub");
+  }, [location.pathname]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === "hub") navigate("/dashboard/assessment");
+    else if (tabId === "catalog") navigate("/dashboard/assessment/catalog");
+    else if (tabId === "resume") navigate("/dashboard/assessment/attempt/active");
+    else if (tabId === "results") navigate("/dashboard/assessment/results");
+    else if (tabId === "certificates") navigate("/dashboard/assessment/certificates");
+    else navigate(`/dashboard/assessment/${tabId}`);
+  };
 
   useEffect(() => {
     const savedSettings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
@@ -176,7 +202,7 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleTabChange(item.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap shrink-0 ${
                 isActive
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
@@ -207,7 +233,7 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
         {!loading && activeTab === "hub" && (
           <DashboardHome
             data={dashboardData}
-            onNavigate={(tabId) => setActiveTab(tabId)}
+            onNavigate={(tabId) => handleTabChange(tabId)}
             globalSettings={globalSettings}
           />
         )}
@@ -242,9 +268,9 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
             results={resultsData}
             credentials={credentialsData}
             onSelect={(item, domain) => {
-              if (domain === "result") setActiveTab("results");
-              else if (domain === "certificate") setActiveTab("certificates");
-              else setActiveTab("catalog");
+              if (domain === "result") handleTabChange("results");
+              else if (domain === "certificate") handleTabChange("certificates");
+              else handleTabChange("catalog");
             }}
           />
         )}

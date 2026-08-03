@@ -1906,10 +1906,31 @@ const AdminDashboard = () => {
   const ImpersonateIntern = () => {
     const [impersonateForm, setImpersonateForm] = useState({ email: "" });
     const [impersonating, setImpersonating] = useState(false);
+    const [impersonateError, setImpersonateError] = useState(null);
+    const [sendingInvite, setSendingInvite] = useState(false);
+
+    const handleSendInvite = async (resend = false) => {
+      setSendingInvite(true);
+      try {
+        const token = localStorage.getItem("adminToken");
+        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/impersonate/invite`, {
+          email: impersonateForm.email,
+          resend
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success(res.data.message || "Invitation email sent successfully!");
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to send invitation email.");
+      } finally {
+        setSendingInvite(false);
+      }
+    };
 
     const handleImpersonate = async (e) => {
       e.preventDefault();
       setImpersonating(true);
+      setImpersonateError(null);
       try {
         const token = localStorage.getItem("adminToken");
         const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/admin/impersonate`, {
@@ -1932,7 +1953,12 @@ const AdminDashboard = () => {
           window.open('/dashboard', '_blank'); // Open intern dashboard in new tab
         }
       } catch (err) {
-        toast.error(err.response?.data?.message || "Login failed. Check credentials.");
+        const data = err.response?.data;
+        if (data && (data.errorType === "USER_NOT_FOUND" || data.errorType === "PENDING_REGISTRATION")) {
+          setImpersonateError(data);
+        } else {
+          toast.error(data?.message || "Login failed. Check credentials.");
+        }
       } finally {
         setImpersonating(false);
       }
@@ -1950,7 +1976,6 @@ const AdminDashboard = () => {
           </div>
         </div>
         <form onSubmit={handleImpersonate} className="p-6 space-y-5 bg-slate-50/50">
-
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Email Address
@@ -1960,10 +1985,60 @@ const AdminDashboard = () => {
               required
               placeholder="student@example.com"
               value={impersonateForm.email}
-              onChange={e => setImpersonateForm({ ...impersonateForm, email: e.target.value })}
+              onChange={e => {
+                setImpersonateForm({ ...impersonateForm, email: e.target.value });
+                if (impersonateError) setImpersonateError(null);
+              }}
               className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
             />
           </div>
+
+          {impersonateError && (
+            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-slate-800 space-y-3 animate-fade-in">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900">{impersonateError.status || "Cannot impersonate."}</h4>
+                  <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-line">{impersonateError.message}</p>
+                  <div className="mt-2 inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-200 text-slate-700">
+                    Status: {impersonateError.errorType === "PENDING_REGISTRATION" ? "Pending Registration" : "Not Registered"}
+                  </div>
+                </div>
+              </div>
+              
+              {impersonateError.invitationLink && (
+                <div className="pt-3 border-t border-amber-200/60 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(impersonateError.invitationLink);
+                      toast.success("Invitation link copied to clipboard!");
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-sm transition"
+                  >
+                    Copy Invitation Link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendInvite(false)}
+                    disabled={sendingInvite}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm transition disabled:opacity-50"
+                  >
+                    {sendingInvite ? "Sending..." : "Send Invite Email"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendInvite(true)}
+                    disabled={sendingInvite}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-xs font-bold text-white shadow-sm transition disabled:opacity-50"
+                  >
+                    {sendingInvite ? "Resending..." : "Resend Invitation"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={impersonating || !impersonateForm.email}
@@ -3302,7 +3377,7 @@ const AdminDashboard = () => {
           )}
 
           {activeSidebarTab === "assessment" && (
-            <div className="w-full animate-fade-in">
+            <div className="flex-1 min-w-0 animate-fade-in">
               <AssessmentDashboard />
             </div>
           )}

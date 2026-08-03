@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Briefcase, GraduationCap, Layers } from "lucide-react";
 import axios from "axios";
+import { hasPermission, getUserRolesFromStorage } from "../utils/permissionEngine";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
 import AmbassadorTab from "../Components/AmbassadorTab";
@@ -9,16 +11,20 @@ import StudentExperiencePlatform from "./AssessmentPortal/StudentExperiencePlatf
 
 export default function UnifiedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [isIntern, setIsIntern] = useState(false);
-  const [isAmbassador, setIsAmbassador] = useState(false);
+  const [userRoles, setUserRoles] = useState(() => getUserRolesFromStorage());
   const [assessmentEnabled, setAssessmentEnabled] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAssessmentRoute = location.pathname.startsWith("/dashboard/assessment");
 
   useEffect(() => {
-    // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
+    // Check if URL specifies initial tab (e.g. /dashboard?tab=internship)
     const params = new URLSearchParams(window.location.search);
     const initialTab = params.get("tab");
-    if (initialTab && ["overview", "internship", "ambassador", "assessment"].includes(initialTab)) {
+    if (initialTab && ["overview", "internship", "ambassador"].includes(initialTab)) {
       setActiveTab(initialTab);
+    } else if (initialTab === "assessment") {
+      navigate("/dashboard/assessment", { replace: true });
     }
 
     // Check General Settings master switch
@@ -32,28 +38,27 @@ export default function UnifiedDashboard() {
       }
     }
 
-    // Check if user is an intern or ambassador
-    const checkRole = async () => {
-      const role = localStorage.getItem("interviewUserRole");
-      setIsIntern(role === "intern");
-
+    // Dynamic RBAC Role verification
+    const verifyRoles = async () => {
+      let roles = getUserRolesFromStorage();
       const token = localStorage.getItem("studentToken") || localStorage.getItem("adminToken");
-      if (token) {
+      if (token && !roles.includes('admin')) {
         try {
           const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
           const res = await axios.get(`${apiUrl}/api/student/ambassador-stats`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          if (res.data.success) {
-            setIsAmbassador(true);
+          if (res.data.success && !roles.includes("campus_ambassador")) {
+            roles = [...roles, "campus_ambassador"];
           }
         } catch (e) {
-          setIsAmbassador(false);
+          // Ignore API verification fallback
         }
       }
+      setUserRoles(roles);
     };
-    checkRole();
-  }, []);
+    verifyRoles();
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20 sm:pt-28 pb-16 px-4 max-w-7xl mx-auto relative">
@@ -66,39 +71,33 @@ export default function UnifiedDashboard() {
         {/* Top Header Section (Welcome and Profile/Wallet) */}
         <DashboardTopSection />
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation dynamically filtered by RBAC permissions */}
         <div className="flex bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full sm:w-auto overflow-x-auto gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
-              activeTab === "overview"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-            My Dashboard
-          </button>
-
-          {assessmentEnabled && (
+          {hasPermission(userRoles, "my_dashboard") && (
             <button
-              onClick={() => setActiveTab("assessment")}
+              onClick={() => {
+                setActiveTab("overview");
+                if (isAssessmentRoute) navigate("/dashboard");
+              }}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
-                activeTab === "assessment"
+                (activeTab === "overview" || isAssessmentRoute)
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <Layers className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-              Assessment
+              <LayoutDashboard className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              My Dashboard
             </button>
           )}
 
-          {isIntern && (
+          {hasPermission(userRoles, "intern_dashboard") && (
             <button
-              onClick={() => setActiveTab("internship")}
+              onClick={() => {
+                setActiveTab("internship");
+                if (isAssessmentRoute) navigate("/dashboard?tab=internship");
+              }}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
-                activeTab === "internship"
+                (!isAssessmentRoute && activeTab === "internship")
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
@@ -108,11 +107,14 @@ export default function UnifiedDashboard() {
             </button>
           )}
 
-          {isAmbassador && (
+          {hasPermission(userRoles, "campus_ambassador") && (
             <button
-              onClick={() => setActiveTab("ambassador")}
+              onClick={() => {
+                setActiveTab("ambassador");
+                if (isAssessmentRoute) navigate("/dashboard?tab=ambassador");
+              }}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${
-                activeTab === "ambassador"
+                (!isAssessmentRoute && activeTab === "ambassador")
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
@@ -125,10 +127,23 @@ export default function UnifiedDashboard() {
       </div>
 
       <div className="relative z-[60] w-full max-w-6xl mx-auto">
-        {activeTab === "overview" && <InterviewDashboard />}
-        {activeTab === "assessment" && assessmentEnabled && <StudentExperiencePlatform isEmbedded={true} />}
-        {activeTab === "internship" && isIntern && <StudentDashboard />}
-        {activeTab === "ambassador" && isAmbassador && <AmbassadorTab />}
+        {isAssessmentRoute ? (
+          assessmentEnabled && hasPermission(userRoles, "assessment") ? (
+            <StudentExperiencePlatform isEmbedded={true} />
+          ) : (
+            <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 font-bold my-4">
+              {!hasPermission(userRoles, "assessment")
+                ? "403 Forbidden: Your user role does not have permission to access the Assessment Module."
+                : "Assessment module is currently unavailable."}
+            </div>
+          )
+        ) : (
+          <>
+            {activeTab === "overview" && hasPermission(userRoles, "my_dashboard") && <InterviewDashboard userRoles={userRoles} />}
+            {activeTab === "internship" && hasPermission(userRoles, "intern_dashboard") && <StudentDashboard />}
+            {activeTab === "ambassador" && hasPermission(userRoles, "campus_ambassador") && <AmbassadorTab />}
+          </>
+        )}
       </div>
     </div>
   );

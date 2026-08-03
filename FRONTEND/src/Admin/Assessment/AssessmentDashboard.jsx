@@ -33,8 +33,9 @@ import EvaluationConsole from "./EvaluationConsole";
 import StudentResultView from "./StudentResultView";
 import CredentialConsole from "./CredentialConsole";
 import PublicVerificationPage from "./PublicVerificationPage";
-import GeneralSettings from "./GeneralSettings";
 import PublishControl from "./PublishControl";
+import AnalyticsDashboard from "./AnalyticsDashboard";
+import RecruiterDashboard from "./RecruiterDashboard";
 
 const AssessmentDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -54,6 +55,8 @@ const AssessmentDashboard = () => {
     { id: "evaluation", label: "Evaluation", icon: Cpu, phase: "Phase 10 / Live" },
     { id: "certificates", label: "Certificates", icon: Award, phase: "Phase 11 / Live" },
     { id: "student_result", label: "Student Experience", icon: FileCheck, phase: "Phase 12 / Live" },
+    { id: "analytics", label: "Analytics Platform", icon: BarChart3, phase: "Phase 13 / Live" },
+    { id: "recruiter_verification", label: "Recruiter Verification", icon: ShieldCheck, phase: "Phase 14 / Live" },
     { id: "general_settings", label: "General Settings", icon: Settings, phase: "Part 9 / Live" },
     { id: "publish_control", label: "Publish Control", icon: Layers, phase: "LMS Control / Live" }
   ];
@@ -201,7 +204,15 @@ const AssessmentDashboard = () => {
             <PublishControl />
           )}
 
-          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments", "evaluation", "student_result", "certificates", "general_settings", "publish_control"].includes(activeTab) && (
+          {activeTab === "analytics" && (
+            <AnalyticsDashboard />
+          )}
+
+          {activeTab === "recruiter_verification" && (
+            <RecruiterDashboard />
+          )}
+
+          {!["dashboard", "categories", "category_detail", "subcategories", "wizard", "config", "ai_config", "ai_runtime", "ai_quality_gate", "questions", "jobs", "assessments", "evaluation", "student_result", "certificates", "analytics", "recruiter_verification", "general_settings", "publish_control"].includes(activeTab) && (
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm max-w-2xl mx-auto my-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs border border-indigo-100">
                 {React.createElement(navItems.find(i => i.id === activeTab)?.icon || FolderTree, { className: "w-8 h-8" })}
