@@ -5,7 +5,8 @@
  */
 const express = require("express");
 const router  = express.Router();
-const { verifyAdmin } = require("../../middleware/verifyAdmin");
+const authMiddleware  = require("../../middleware/auth");        // ← CRITICAL: Populates req.user via JWT decode
+const { verifyAdmin } = require("../../middleware/verifyAdmin"); // ← Requires req.user to be set first
 const groqManager     = require("../../services/assessment/GroqManager");
 
 // Controllers
@@ -30,6 +31,13 @@ const AssessmentQuestion    = require("../../models/assessment/AssessmentQuestio
 const AssessmentAIJob       = require("../../models/assessment/AssessmentAIJob");
 const AssessmentCertificate = require("../../models/assessment/AssessmentCertificate");
 const AssessmentSession     = require("../../models/assessment/AssessmentSession");
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRITICAL: Apply JWT auth middleware globally to ALL routes in this router.
+// authMiddleware decodes the JWT and populates req.user BEFORE verifyAdmin
+// attempts to read req.user.id. Without this, all routes return HTTP 500.
+// ═══════════════════════════════════════════════════════════════════════════
+router.use(authMiddleware);
 
 // ── Health Check & AI Status ───────────────────────────────────────────────
 router.get("/groq/health", verifyAdmin, (req, res) => {

@@ -464,6 +464,17 @@ exports.createCategoryWizard = async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).json({ success: false, message: "A category or subcategory with this name/slug already exists." });
     }
-    res.status(500).json({ success: false, message: "Wizard publishing failed." });
+    // Return real exception details in structured error — never swallow exceptions
+    return res.status(500).json({
+      success: false,
+      message: "Wizard publishing failed.",
+      debug: {
+        errorName:    err.name    || "UnknownError",
+        errorMessage: err.message || "No error message available",
+        errorCode:    err.code    || null,
+        errorField:   err.keyValue || err.path || null,
+        stack:        process.env.NODE_ENV === "production" ? undefined : err.stack
+      }
+    });
   }
 };

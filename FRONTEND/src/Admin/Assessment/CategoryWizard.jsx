@@ -87,7 +87,7 @@ const CategoryWizard = ({ onComplete, onCancel }) => {
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken"); // Fix: admin login stores JWT as 'adminToken', not 'token'
 
       // Prepare enriched payload matching backend atomic wizard expects
       const payload = {
