@@ -48,6 +48,8 @@ import {
  * Live AI question synthesis (Groq inference calls) and candidate delivery belong to Phase 5+.
  */
 const AIBlueprintManager = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
   // Navigation & View State
   const [currentView, setCurrentView] = useState("GRID"); // GRID | STUDIO | TEMPLATES
   const [activeStudioTab, setActiveStudioTab] = useState("PROMPT"); // PROMPT | SCHEMA | TEST | ANALYTICS
@@ -116,7 +118,7 @@ const AIBlueprintManager = () => {
       const token = localStorage.getItem("adminToken");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const res = await axios.get(`/api/admin/assessment/blueprints`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints`, {
         params: {
           page: targetPage,
           limit: 15,
@@ -136,7 +138,7 @@ const AIBlueprintManager = () => {
       }
 
       // Simultaneously fetch templates library
-      const tplRes = await axios.get(`/api/admin/assessment/blueprints`, {
+      const tplRes = await axios.get(`${backendUrl}/api/admin/assessment/blueprints`, {
         params: { isTemplate: "true", limit: 50 },
         headers
       });
@@ -145,13 +147,13 @@ const AIBlueprintManager = () => {
       }
 
       // Fetch Subcategories for Clone / Link operations
-      const subRes = await axios.get(`/api/admin/assessment/subcategories`, { headers });
+      const subRes = await axios.get(`${backendUrl}/api/admin/assessment/subcategories`, { headers });
       if (subRes.data.success) {
         setSubcategories(subRes.data.data || []);
       }
 
       // Fetch Phase 4.1 Decoupled Runtime Libraries
-      const libRes = await axios.get(`/api/admin/assessment/runtime/libraries`, { headers });
+      const libRes = await axios.get(`${backendUrl}/api/admin/assessment/runtime/libraries`, { headers });
       if (libRes.data.success && libRes.data.libraries) {
         setRuntimeLibraries(libRes.data.libraries);
       }
@@ -287,9 +289,9 @@ const AIBlueprintManager = () => {
 
       let res;
       if (selectedBlueprint?._id === "new" || !selectedBlueprint?._id) {
-        res = await axios.post(`/api/admin/assessment/blueprints`, studioForm, { headers });
+        res = await axios.post(`${backendUrl}/api/admin/assessment/blueprints`, studioForm, { headers });
       } else {
-        res = await axios.put(`/api/admin/assessment/blueprints/${selectedBlueprint._id}`, studioForm, { headers });
+        res = await axios.put(`${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}`, studioForm, { headers });
       }
 
       if (res.data.success) {
@@ -313,7 +315,7 @@ const AIBlueprintManager = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const res = await axios.post(
-        `/api/admin/assessment/blueprints/${selectedBlueprint._id}/versions/${vNo}/activate`,
+        `${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/versions/${vNo}/activate`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -335,7 +337,7 @@ const AIBlueprintManager = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/blueprints/${selectedBlueprint._id}/compare`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/compare`, {
         params: { v1: compareV1, v2: compareV2 },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -356,7 +358,7 @@ const AIBlueprintManager = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const res = await axios.post(
-        `/api/admin/assessment/blueprints/${selectedBlueprint._id}/clone`,
+        `${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/clone`,
         { targetSubcategoryId: cloneTargetSubcat || undefined, newName: cloneNewName || undefined },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -378,7 +380,7 @@ const AIBlueprintManager = () => {
     try {
       const parsed = JSON.parse(importJsonText);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.post(`/api/admin/assessment/blueprints/import`, parsed, {
+      const res = await axios.post(`${backendUrl}/api/admin/assessment/blueprints/import`, parsed, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -400,7 +402,7 @@ const AIBlueprintManager = () => {
     }
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/blueprints/${bp._id}/export`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints/${bp._id}/export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -425,7 +427,7 @@ const AIBlueprintManager = () => {
       const token = localStorage.getItem("adminToken");
       const targetId = selectedBlueprint?._id || "draft";
       const res = await axios.post(
-        `/api/admin/assessment/blueprints/${targetId}/test`,
+        `${backendUrl}/api/admin/assessment/blueprints/${targetId}/test`,
         { testVariables, draftPrompt: studioForm?.prompt, providerOverride: studioForm?.provider, validationLevel },
         { headers: { Authorization: `Bearer ${token}` } }
       );

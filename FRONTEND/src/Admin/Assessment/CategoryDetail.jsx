@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 const CategoryDetail = ({ categoryId, onBack, onSelectSubcategory }) => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +28,7 @@ const CategoryDetail = ({ categoryId, onBack, onSelectSubcategory }) => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/categories/${categoryId}`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/categories/${categoryId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

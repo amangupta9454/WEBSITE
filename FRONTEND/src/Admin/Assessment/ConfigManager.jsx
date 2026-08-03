@@ -215,8 +215,8 @@ const ConfigManager = () => {
     setSaving(true);
     try {
       const endpoint = activeView === "global_studio" 
-        ? "/api/admin/assessment/configs/global" 
-        : `/api/admin/assessment/configs/${selectedItem.subcategory._id}`;
+        ? `${API_BASE}/api/admin/assessment/configs/global` 
+        : `${API_BASE}/api/admin/assessment/configs/${selectedItem.subcategory._id}`;
 
       const payload = { ...formData, versionSummary: versionSummaryNote || "Updated operational parameters and rules" };
 
@@ -245,7 +245,7 @@ const ConfigManager = () => {
         const res = await axios.put(`${API_BASE}/api/admin/assessment/configs/global`, { ...SYSTEM_DEFAULTS, versionSummary: "Reset global defaults" }, getAuthHeaders());
         if (res.data.success) setGlobalConfig(res.data.data);
       } else {
-        await axios.post(`/api/admin/assessment/configs/${selectedItem.subcategory._id}/reset`, {}, getAuthHeaders());
+        await axios.post(`${API_BASE}/api/admin/assessment/configs/${selectedItem.subcategory._id}/reset`, {}, getAuthHeaders());
         await fetchConfigs();
       }
       showAlertMessage("success", "Configuration reset to system baseline parameters (75% Passing, 20 Qs, 7s AI Timeout).");
@@ -273,7 +273,7 @@ const ConfigManager = () => {
     }
     setSaving(true);
     try {
-      const res = await axios.post(`/api/admin/assessment/configs/${cloneSourceItem.subcategory._id}/clone`, {
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/configs/${cloneSourceItem.subcategory._id}/clone`, {
         targetSubcategoryIds: cloneTargetIds
       }, getAuthHeaders());
       if (res.data.success) {

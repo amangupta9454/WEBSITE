@@ -97,7 +97,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const handleToggleStatus = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.patch(`/api/admin/assessment/categories/${id}/status`, {}, {
+      await axios.patch(`${API_BASE}/api/admin/assessment/categories/${id}/status`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Status toggled successfully!");
@@ -110,7 +110,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const handleDuplicate = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.post(`/api/admin/assessment/categories/${id}/copy`, {}, {
+      await axios.post(`${API_BASE}/api/admin/assessment/categories/${id}/copy`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Category duplicated!");
@@ -123,7 +123,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.delete(`/api/admin/assessment/categories/${id}?force=true`, {
+      await axios.delete(`${API_BASE}/api/admin/assessment/categories/${id}?force=true`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Category deleted!");
@@ -170,7 +170,7 @@ const CategoryManager = ({ onSelectCategory, onLaunchWizard }) => {
     if (!editingCat) return;
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.put(`/api/admin/assessment/categories/${editingCat._id}`, editingCat, {
+      await axios.put(`${API_BASE}/api/admin/assessment/categories/${editingCat._id}`, editingCat, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Category updated successfully!");

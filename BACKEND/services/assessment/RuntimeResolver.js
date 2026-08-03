@@ -426,6 +426,10 @@ class RuntimeResolver {
       dependencyGraph
     };
   }
+
+  async resolveRuntimePreview(params) {
+    return this.resolveRuntimeContext(params);
+  }
 }
 
 module.exports = new RuntimeResolver();

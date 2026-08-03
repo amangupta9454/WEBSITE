@@ -66,7 +66,7 @@ class AIRuntimeEngine {
         runtimeResolver.resolveBlueprintAssignment({ subcategoryId, categoryId, fallbackBlueprintId: blueprintId })
       ]);
       const runtimeProviderConfig = providerConfigRes.config || {};
-      const resolverOutput = await runtimeResolver.resolveRuntimePreview({
+      const resolverOutput = await runtimeResolver.resolveRuntimeContext({
         blueprintId: blueprintRes.selectedBlueprint?._id || blueprintId,
         subcategoryId,
         validationLevel: "Strict",

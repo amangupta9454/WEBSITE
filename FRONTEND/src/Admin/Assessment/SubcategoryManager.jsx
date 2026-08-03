@@ -126,7 +126,7 @@ const SubcategoryManager = () => {
     try {
       const token = localStorage.getItem("adminToken");
       if (editingId) {
-        await axios.put(`/api/admin/assessment/subcategories/${editingId}`, formData, {
+        await axios.put(`${API_BASE}/api/admin/assessment/subcategories/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Subcategory updated successfully!");
@@ -146,7 +146,7 @@ const SubcategoryManager = () => {
   const handleToggleStatus = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.patch(`/api/admin/assessment/subcategories/${id}/status`, {}, {
+      await axios.patch(`${API_BASE}/api/admin/assessment/subcategories/${id}/status`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Status toggled!");
@@ -159,7 +159,7 @@ const SubcategoryManager = () => {
   const handleDuplicate = async (id) => {
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.post(`/api/admin/assessment/subcategories/${id}/copy`, {}, {
+      await axios.post(`${API_BASE}/api/admin/assessment/subcategories/${id}/copy`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Subcategory duplicated!");
@@ -173,7 +173,7 @@ const SubcategoryManager = () => {
     if (!window.confirm("Delete this subcategory and its configurations?")) return;
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.delete(`/api/admin/assessment/subcategories/${id}?force=true`, {
+      await axios.delete(`${API_BASE}/api/admin/assessment/subcategories/${id}?force=true`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Subcategory deleted.");
