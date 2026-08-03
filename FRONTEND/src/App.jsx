@@ -45,6 +45,7 @@ import { InterviewConfigProvider } from "./context/InterviewConfigContext";
 import CampusAmbassadorApply from "./Pages/CampusAmbassadorApply";
 import StudentExperiencePlatform from "./Pages/AssessmentPortal/StudentExperiencePlatform";
 import PublicVerificationPage from "./Admin/Assessment/PublicVerificationPage";
+import AssessmentTerminal from "./Pages/AssessmentPortal/AssessmentTerminal";
 
 import ReferralTracker from "./Components/ReferralTracker";
 
@@ -114,6 +115,9 @@ function App() {
           {/* InterviewActive needs full screen, so it doesn't get UnifiedLayout */}
           <Route path="/interview-active/:sessionId" element={<InterviewActive />} />
           <Route path="/panel-interview-active/:sessionId" element={<PanelInterviewActive />} />
+          
+          {/* Assessment Terminal (Phase 9) full screen */}
+          <Route path="/assessment-terminal/:sessionId" element={<AssessmentTerminal />} />
           
           {/* Standalone full-screen pages without standard website navbar */}
           <Route path="/resume-builder/:id" element={<ResumeBuilder />} />

@@ -10,6 +10,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Resume Assessment (Part 10 — formerly Active Assessment Watchdog)
@@ -17,8 +18,11 @@ import toast from "react-hot-toast";
  * Zero mock sessions; shows professional empty states when no active attempt exists.
  */
 const ActiveAssessmentView = ({ activeSessions = [], onRefresh }) => {
+  const navigate = useNavigate();
+  
   const handleResume = (sess) => {
-    toast.success(`▶️ Resuming session (${sess.sessionId || sess._id}). Loading encrypted answers...`);
+    toast.success(`▶️ Resuming session (${sess.sessionId || sess._id}). Loading secure terminal...`);
+    navigate(`/assessment-terminal/${sess.sessionId || sess._id}`);
   };
 
   return (
