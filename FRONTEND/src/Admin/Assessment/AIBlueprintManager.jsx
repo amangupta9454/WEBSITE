@@ -1426,7 +1426,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                         </pre>
                       </div>
                       <div className="bg-slate-900/80 px-6 py-3 border-t border-slate-800 text-[11px] text-slate-400">
-                        Includes compiled instruction with all {{ tokens }} substituted from variable library.
+                        Includes compiled instruction with all {"{{ tokens }}"} substituted from variable library.
                       </div>
                     </div>
 
