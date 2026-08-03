@@ -126,7 +126,7 @@ class SessionCreationService {
             options: { simulationOnly: true },
           });
 
-          let synthesizedItems = synthesisRes?.executionResult?.parsedContent?.questions || [];
+          let synthesizedItems = synthesisRes?.parsedData?.questions || [];
           if (synthesizedItems.length > 0) {
             const normalized = synthesizedItems.map((q) => ({
               ...q,
