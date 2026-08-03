@@ -126,6 +126,9 @@ class SessionCreationService {
             options: { simulationOnly: true },
           });
 
+          if (!synthesisRes.success) {
+            console.warn(`[SessionCreationService] AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}`);
+          }
           let synthesizedItems = synthesisRes?.parsedData?.questions || [];
           if (synthesizedItems.length > 0) {
             const normalized = synthesizedItems.map((q) => ({
