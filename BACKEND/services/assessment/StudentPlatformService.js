@@ -142,10 +142,13 @@ class StudentPlatformService {
   /**
    * Component 3: Active Assessment Watchdog
    */
-  static async getActiveSessions(candidateEmail) {
+  static async getActiveSessions(candidateEmail, userId = null) {
     try {
+      const queryOr = [{ candidateId: candidateEmail }, { "userId.email": candidateEmail }];
+      if (userId) queryOr.push({ userId });
+
       const active = await AssessmentSession.find({
-        $or: [{ candidateId: candidateEmail }, { "userId.email": candidateEmail }],
+        $or: queryOr,
         status: { $in: ["Created", "Initializing", "Running", "Paused", "in_progress"] },
         isLocked: false,
       })

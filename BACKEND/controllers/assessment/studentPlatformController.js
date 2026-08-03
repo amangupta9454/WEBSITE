@@ -42,7 +42,8 @@ class StudentPlatformController {
   static async getActiveSessions(req, res) {
     try {
       const candidateEmail = StudentPlatformController.getCandidateIdentifier(req);
-      const result = await StudentPlatformService.getActiveSessions(candidateEmail);
+      const userId = req.user?.id || req.user?._id;
+      const result = await StudentPlatformService.getActiveSessions(candidateEmail, userId);
       if (!result.success) return res.status(400).json(result);
       return res.status(200).json(IntegrityUtil.successResponse("Active assessment sessions retrieved", result.data));
     } catch (err) {
