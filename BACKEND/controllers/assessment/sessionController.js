@@ -16,9 +16,9 @@ exports.createSession = async (req, res) => {
 
     if (!subcategoryId) {
       // In demo or test mode, pick any active subcategory if not explicitly supplied
-      const subcat = await AssessmentSubcategory.findOne({ isDeleted: false }).lean();
+      const subcat = await AssessmentSubcategory.findOne({ isActive: { $ne: false } }).sort({ createdAt: -1 }).lean() || await AssessmentSubcategory.findOne({}).sort({ createdAt: -1 }).lean();
       if (!subcat) {
-        return res.status(400).json({ success: false, error: "Subcategory ID is required to start assessment session." });
+        return res.status(400).json({ success: false, error: "Subcategory ID is required to start assessment session. No subcategories found in inventory." });
       }
       req.body.subcategoryId = subcat._id;
     }

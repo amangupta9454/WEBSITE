@@ -83,7 +83,7 @@ class SessionCreationService {
       }
 
       const runtimeConfig = await AssessmentRuntimeConfig.findOne({ status: "Active" }).lean() || { versionNumber: 1 };
-      const blueprint = await AssessmentAIBlueprint.findOne({ subcategoryId, isDeleted: false }).lean() || { versionNumber: 1 };
+      const blueprint = await AssessmentAIBlueprint.findOne({ subcategoryId }).lean() || { versionNumber: 1 };
 
       const totalQuestions = config.totalQuestions || 15;
       const timeLimitMinutes = config.timeLimitMinutes || 30;

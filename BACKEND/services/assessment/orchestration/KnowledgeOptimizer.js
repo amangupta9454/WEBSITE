@@ -24,7 +24,7 @@ class KnowledgeOptimizer {
     console.log(`[KnowledgeOptimizer] 🔍 Initiating diagnostic optimization scan [${reportId}] initiated by ${triggeredBy}...`);
 
     const activeQuestions = await Question.find({ isDeleted: false, ...filter }).lean();
-    const activeBlueprints = await AIBlueprint.find({ isDeleted: false }).lean();
+    const activeBlueprints = await AIBlueprint.find({}).lean();
 
     // Map blueprints by subcategory ID for fast drift checking
     const blueprintMap = {};

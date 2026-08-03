@@ -3367,23 +3367,22 @@ const AdminDashboard = () => {
               </div>
             );
           })()}
-        </div>
 
           {/* Settings Tab */}
           {activeSidebarTab === "impersonate" && (
-            <div className="w-full">
+            <div className="w-full animate-fade-in">
               <ImpersonateIntern />
             </div>
           )}
 
           {activeSidebarTab === "assessment" && (
-            <div className="flex-1 min-w-0 animate-fade-in">
+            <div className="w-full animate-fade-in">
               <AssessmentDashboard />
             </div>
           )}
 
           {activeSidebarTab === "settings" && (
-            <div className="flex-1 min-w-0 animate-fade-in">
+            <div className="w-full animate-fade-in">
               <div className="mb-6">
                 <h2 className="text-xl font-black text-slate-800">Settings</h2>
                 <p className="text-sm text-slate-500 mt-1">Manage global site toggles and sync operations.</p>
@@ -3446,6 +3445,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+        </div>
         </div>
         )}
       </div>
