@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const CertificateVerification = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [searchInput, setSearchInput] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ const CertificateVerification = () => {
       setError(null);
       setResult(null);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/recruiter/certificate/${encodeURIComponent(searchInput.trim())}`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/recruiter/certificate/${encodeURIComponent(searchInput.trim())}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

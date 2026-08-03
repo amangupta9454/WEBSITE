@@ -134,7 +134,7 @@ const CredentialConsole = () => {
   const triggerGenerate = async (resultId) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.post(`/api/admin/assessment/certificates/generate/${resultId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/certificates/generate/${resultId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast(`Digital Credential generated successfully! SHA-256 seal verified.`);
         fetchCredentials();
@@ -157,9 +157,9 @@ const CredentialConsole = () => {
 
     try {
       const token = localStorage.getItem("adminToken");
-      const endpoint = type === "REVOKE" ? `/api/admin/assessment/certificates/${targetId}/revoke`
-        : type === "RESTORE" ? `/api/admin/assessment/certificates/${targetId}/restore`
-        : `/api/admin/assessment/certificates/${targetId}/reissue`;
+      const endpoint = type === "REVOKE" ? `${API_BASE}/api/admin/assessment/certificates/${targetId}/revoke`
+        : type === "RESTORE" ? `${API_BASE}/api/admin/assessment/certificates/${targetId}/restore`
+        : `${API_BASE}/api/admin/assessment/certificates/${targetId}/reissue`;
 
       await axios.post(endpoint, { reason, candidateName }, { headers: { Authorization: `Bearer ${token}` } });
       showToast(`Action ${type} completed successfully for certificate ${targetId}.`);

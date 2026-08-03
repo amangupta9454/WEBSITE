@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const StudentAnalytics = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [data, setData] = useState({ items: [], pagination: { page: 1, totalPages: 1 } });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -16,7 +17,7 @@ const StudentAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/analytics/students?page=${currentPage}&limit=10`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/analytics/students?page=${currentPage}&limit=10`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {
@@ -33,7 +34,7 @@ const StudentAnalytics = () => {
     try {
       setDetailLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/analytics/students/${candidateId}`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/analytics/students/${candidateId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

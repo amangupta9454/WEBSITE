@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const TrendAnalytics = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [period, setPeriod] = useState("monthly"); // 'daily' | 'weekly' | 'monthly' | 'yearly'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +15,7 @@ const TrendAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/analytics/trends?period=${p}`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/analytics/trends?period=${p}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success) {

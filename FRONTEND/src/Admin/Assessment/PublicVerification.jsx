@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const PublicVerification = ({ initialCertificateId = null }) => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [certIdInput, setCertIdInput] = useState(initialCertificateId || "");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ const PublicVerification = ({ initialCertificateId = null }) => {
       setSearched(true);
       setResult(null);
       // Query public zero-sensitive verification API gateway
-      const res = await axios.get(`/api/public/assessment/verify/${encodeURIComponent(idToVerify.trim())}`);
+      const res = await axios.get(`${backendUrl}/api/public/assessment/verify/${encodeURIComponent(idToVerify.trim())}`);
       if (res.data) {
         setResult(res.data);
       }

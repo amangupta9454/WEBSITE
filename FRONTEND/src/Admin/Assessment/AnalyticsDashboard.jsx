@@ -52,7 +52,7 @@ const AnalyticsDashboard = () => {
       setExporting(true);
       setExportMenuOpen(false);
       const token = localStorage.getItem("adminToken");
-      const url = `/api/admin/assessment/analytics/export?reportType=${reportType}&format=${format}`;
+      const url = `${API_BASE}/api/admin/assessment/analytics/export?reportType=${reportType}&format=${format}`;
       
       if (format === "csv") {
         const response = await axios.get(url, {

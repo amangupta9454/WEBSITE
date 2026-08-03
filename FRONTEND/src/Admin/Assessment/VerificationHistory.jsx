@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const VerificationHistory = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -20,7 +21,7 @@ const VerificationHistory = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/assessment/recruiter/history?page=${page}&limit=20&status=${statusFilter}&method=${methodFilter}&search=${encodeURIComponent(searchTerm)}`, {
+      const res = await axios.get(`${backendUrl}/api/admin/assessment/recruiter/history?page=${page}&limit=20&status=${statusFilter}&method=${methodFilter}&search=${encodeURIComponent(searchTerm)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -50,7 +51,7 @@ const VerificationHistory = () => {
       setExporting(true);
       setExportMenuOpen(false);
       const token = localStorage.getItem("adminToken");
-      const url = `/api/admin/assessment/recruiter/export?format=${format}&limit=500`;
+      const url = `${backendUrl}/api/admin/assessment/recruiter/export?format=${format}&limit=500`;
 
       if (format === "csv") {
         const res = await axios.get(url, {

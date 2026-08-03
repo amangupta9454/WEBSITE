@@ -164,7 +164,7 @@ const EvaluationConsole = () => {
   const triggerEvaluation = async (sessionId) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.post(`/api/admin/assessment/evaluate/${sessionId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_BASE}/api/admin/assessment/evaluate/${sessionId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         showToast("Authoritative Server-Side Evaluation Completed! Handoff to Phase 11 Queued.");
         fetchEvaluationQueue();

@@ -911,11 +911,15 @@ exports.testBlueprint = async (req, res) => {
     const { testVariables, draftPrompt, providerOverride, validationLevel = "Strict" } = req.body;
 
     let blueprint = null;
-    if (id !== "draft" && id !== "undefined") {
-      blueprint = await AssessmentAIBlueprint.findById(id);
+    if (id !== "draft" && id !== "undefined" && id !== "new") {
+      try {
+        blueprint = await AssessmentAIBlueprint.findById(id);
+      } catch (e) {
+        // Ignore invalid ObjectId and fall back to temporary draft blueprint
+      }
     }
     
-    if (!blueprint && id !== "draft") {
+    if (!blueprint) {
       // Create temporary representation if testing unsaved template or draft
       blueprint = {
         name: "Draft Runtime Preview",
@@ -1023,7 +1027,7 @@ exports.testBlueprint = async (req, res) => {
       architectureMode: "Phase 4.1 AI Runtime Decoupled Preview",
       message: "⚡ Phase 4.1 Runtime Verification: Prompt rendered, variables resolved, and schema validated without fake question generation or API calls.",
       previewResult: {
-        blueprintName: blueprint.name || "Custom Blueprint",
+        blueprintName: blueprint?.name || "Custom Blueprint",
         selectedProvider: provider,
         selectedModel: model,
         resolvedVariables: defaults,
