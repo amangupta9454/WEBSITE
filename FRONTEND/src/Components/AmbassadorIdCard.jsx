@@ -67,52 +67,52 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         <div style={{ position: 'absolute', bottom: 0, left: 0, width: '200px', height: '200px', backgroundColor: 'rgba(139,92,246,0.15)', filter: 'blur(60px)', borderRadius: '50%', transform: 'translate(-50%, 50%)', pointerEvents: 'none' }}></div>
 
         {/* TOP ROW */}
-        <div style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', right: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '6.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+        <div style={{ position: 'absolute', top: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '70px', objectFit: 'contain', filter: 'brightness(0) invert(1)', mixBlendMode: 'screen' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
               Official
             </div>
-            <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '0.25rem' }}>
+            <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '4px' }}>
               Ambassador
             </div>
           </div>
         </div>
 
         {/* MIDDLE ROW */}
-        <div style={{ position: 'absolute', top: '120px', left: '2.5rem', right: '2.5rem', zIndex: 10 }}>
-          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+        <div style={{ position: 'absolute', top: '150px', left: '40px', right: '40px', zIndex: 10 }}>
+          <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>
             Campus Lead
           </div>
-          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.25rem', lineHeight: 1.2, paddingBottom: '0.2em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ color: '#ffffff', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '8px', lineHeight: 1.2, paddingBottom: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {name}
           </div>
-          <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
+          <div style={{ color: '#c7d2fe', fontSize: '14px', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
             {college}
           </div>
         </div>
 
         {/* BOTTOM ROW */}
-        <div style={{ position: 'absolute', bottom: '2.5rem', left: '2.5rem', right: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10, paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10, paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+            <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
               ID Number
             </div>
-            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
+            <div style={{ color: '#cbd5e1', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
               {idCode}
             </div>
           </div>
-          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '0.5rem', color: '#818cf8', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ padding: '6px 12px', backgroundColor: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '8px', color: '#818cf8', fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
               CAN-VERIFIED
             </div>
-            <div>
-              <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 Valid Thru
               </div>
-              <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
+              <div style={{ color: '#cbd5e1', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
                 2026
               </div>
             </div>
