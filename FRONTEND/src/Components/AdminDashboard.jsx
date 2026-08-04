@@ -77,6 +77,7 @@ const AdminDashboard = () => {
   const [exportDuration, setExportDuration] = useState("1");
   const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [interviewEnabled, setInterviewEnabled] = useState(true);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(false);
   const [assignTasksModal, setAssignTasksModal] = useState({
     isOpen: false,
@@ -111,6 +112,7 @@ const AdminDashboard = () => {
     fetchPaymentSetting(token);
     fetchRegistrationSetting(token);
     fetchLeaderboardSetting(token);
+    fetchInterviewSetting();
     fetchRecentPayments(token);
   }, []);
 
@@ -243,13 +245,39 @@ const AdminDashboard = () => {
       const token = localStorage.getItem("adminToken");
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/leaderboard`,
-        {},
+        { showLeaderboard: !leaderboardEnabled },
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setLeaderboardEnabled(res.data.showLeaderboard);
       toast.success(res.data.message);
     } catch (err) {
       toast.error("Failed to toggle leaderboard setting");
+    }
+  };
+
+  const fetchInterviewSetting = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/interview-settings`
+      );
+      setInterviewEnabled(res.data.interviewEnabled);
+    } catch (err) {
+      console.error("Failed to load interview setting:", err);
+    }
+  };
+
+  const handleToggleInterview = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/interview-settings/toggle`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setInterviewEnabled(res.data.interviewEnabled);
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error("Failed to toggle interview setting");
     }
   };
 
@@ -3423,11 +3451,25 @@ const AdminDashboard = () => {
                     onClick={handleTogglePayment}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${
                       paymentEnabled
-                        ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                        ? "bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-600"
                         : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
                     }`}
                   >
                     <CreditCard className="w-4 h-4" /> Payments: {paymentEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Interviews</p>
+                  <p className="text-sm text-slate-600 mb-4">Enable or disable the mock interview portal.</p>
+                  <button
+                    onClick={handleToggleInterview}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                      interviewEnabled
+                        ? "bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20 text-indigo-600"
+                        : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/20 text-slate-500"
+                    }`}
+                  >
+                    <Activity className="w-4 h-4" /> Interviews: {interviewEnabled ? "ON" : "OFF"}
                   </button>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
