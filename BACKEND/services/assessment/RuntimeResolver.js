@@ -57,7 +57,7 @@ class RuntimeResolver {
         scope: "Global",
         primaryProvider: "Groq",
         modelName: "llama-3.3-70b-versatile",
-        fallbackProviders: ["OpenAI", "Gemini"],
+        fallbackProviders: [],
         temperature: 0.65,
         topP: 0.9,
         maxTokens: 2500,
