@@ -197,7 +197,7 @@ class QuestionBankController {
         options: { simulationOnly: true }
       });
 
-      if (!synthesisRes.success) {
+      if (!synthesisRes.success && synthesisRes.status !== "VALIDATION_WARNING") {
         return res.status(400).json({ success: false, error: `AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}` });
       }
 
