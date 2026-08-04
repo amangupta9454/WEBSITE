@@ -22,7 +22,7 @@ const SYSTEM_TEMPLATES = [
     description: "Rigorous algorithmic and software design pattern question synthesizer.",
     templateCategory: "Programming",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Programming", "Syntax", "Patterns", "Official"],
     prompt: {
       systemInstruction: "You are an enterprise software architect and technical lead conducting high-stakes technical engineering evaluations. Your primary mandate is to synthesize challenging, unambiguous questions that test deep semantic understanding, memory management, thread safety, and architecture rather than superficial vocabulary.",
@@ -38,7 +38,7 @@ const SYSTEM_TEMPLATES = [
     description: "Specialized prompt blueprint for time/space complexity analysis and algorithmic data structures.",
     templateCategory: "DSA",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["DSA", "Big-O", "Algorithms", "Official"],
     prompt: {
       systemInstruction: "You are a competitive programming judge and senior algorithmic theorist. Your goal is to evaluate computational efficiency, Big-O asymptomatic analysis, tree optimizations, graphs, dynamic programming, and hash collisions.",
@@ -54,7 +54,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates numerical ability, logical reasoning, data interpretation, and pattern recognition.",
     templateCategory: "Aptitude",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Aptitude", "Logic", "Math", "Official"],
     prompt: {
       systemInstruction: "You are an industrial psychometrist and executive recruitment evaluator specializing in quantitative aptitude and critical reasoning batteries.",
@@ -70,7 +70,7 @@ const SYSTEM_TEMPLATES = [
     description: "Synthesizes advanced SQL query optimization, indexing, ACID transaction isolation, and NoSQL architecture questions.",
     templateCategory: "Database",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["SQL", "NoSQL", "Database", "Official"],
     prompt: {
       systemInstruction: "You are a Principal Database Administrator (DBA) and Distributed Data Systems Architect. You test deep knowledge of relational algebra, B-Tree index cardinality, query execution plans, deadlock resolution, and shard rebalancing.",
@@ -86,7 +86,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates kernel virtualization, concurrency mutexes, process memory mapping, and page scheduling.",
     templateCategory: "Operating System",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["OS", "Kernel", "Concurrency", "Official"],
     prompt: {
       systemInstruction: "You are an Operating Systems Kernel Engineer and Systems Programmer. You examine low-level process synchronization, inter-process communication (IPC), virtual memory paging, syscall overhauls, and interrupt handlers.",
@@ -102,7 +102,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates TCP/IP handshakes, DNS packet routing, firewall subnets, BGP peering, and OSI model behaviors.",
     templateCategory: "Computer Networks",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Networking", "TCP/IP", "Protocols", "Official"],
     prompt: {
       systemInstruction: "You are a Senior Network Engineer and RFC Protocol Specialist. You construct realistic networking scenarios examining packet dissection, TLS handshakes, subnet mask calculation, and routing routing convergence.",
@@ -118,7 +118,7 @@ const SYSTEM_TEMPLATES = [
     description: "Covers DOM reactivity, REST/GraphQL design, server-side rendering, CORS security, and modern bundling.",
     templateCategory: "Web Development",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Web", "Frontend", "Backend", "Official"],
     prompt: {
       systemInstruction: "You are a Principal Full-Stack Developer and Web Application Architect. You design questions evaluating Reactivity, browser rendering pipelines, WebSockets, OAuth2 tokens, microservices, and web accessibility.",
@@ -134,7 +134,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates neural networks, gradient descent optimization, LLM prompt engineering, and hyperparameter tuning.",
     templateCategory: "AI",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["AI", "ML", "Neural Networks", "Official"],
     prompt: {
       systemInstruction: "You are an AI Research Scientist and Deep Learning Systems Engineer. You create evaluations covering Transformer architectures, loss function gradients, regularizations, embedding vectors, and RAG pipelines.",
@@ -150,7 +150,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates Kubernetes container orchestration, AWS/GCP serverless scaling, IaC Terraform pipelines, and resilience.",
     templateCategory: "Cloud",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Cloud", "DevOps", "Kubernetes", "Official"],
     prompt: {
       systemInstruction: "You are a Principal Cloud Solutions Architect and DevOps Automation Specialist. You formulate rigorous scenario-based evaluations on multi-region high-availability, IAM privilege boundaries, container orchestration, and CI/CD deployment strategies.",
@@ -166,7 +166,7 @@ const SYSTEM_TEMPLATES = [
     description: "Evaluates OWASP Top 10 vulnerabilities, cryptographic ciphers, zero-trust perimeter defense, and forensics.",
     templateCategory: "Cyber Security",
     provider: "Groq",
-    providerModel: "llama3-70b-8192",
+    providerModel: "llama-3.3-70b-versatile",
     tags: ["Security", "OWASP", "Crypto", "Official"],
     prompt: {
       systemInstruction: "You are a Chief Information Security Officer (CISO) and Certified Ethical Hacker (CEH). You formulate high-fidelity defensive security and vulnerability evaluation challenges covering SQL injection, XSS payloads, TLS cipher suites, privilege escalation, and Incident Response.",
@@ -417,7 +417,7 @@ exports.getBlueprintById = async (req, res) => {
           categoryId: subcat.categoryId ? subcat.categoryId._id : undefined,
           description: `Primary automated AI evaluation blueprint for ${subcat.name}.`,
           provider: "Groq",
-          providerModel: "llama3-70b-8192",
+          providerModel: "llama-3.3-70b-versatile",
           tags: [subcat.name, "AI-First", "Production"],
           status: "Active",
           createdBy: req.user?.name || "Admin",
@@ -505,7 +505,7 @@ exports.createBlueprint = async (req, res) => {
       categoryId: categoryId || undefined,
       description,
       provider: provider || "Groq",
-      providerModel: providerModel || "llama3-70b-8192",
+      providerModel: providerModel || "llama-3.3-70b-versatile",
       status: status || "Active",
       tags: tags || ["Custom", "AI"],
       isTemplate: Boolean(isTemplate),
@@ -833,7 +833,7 @@ exports.importBlueprint = async (req, res) => {
       name: payload.name.endsWith(" (Imported)") ? payload.name : `${payload.name} (Imported)`,
       description: payload.description || "Imported prompt architecture.",
       provider: payload.provider || "Groq",
-      providerModel: payload.providerModel || "llama3-70b-8192",
+      providerModel: payload.providerModel || "llama-3.3-70b-versatile",
       tags: [...(payload.tags || ["AI"]), "Imported"],
       status: "Active",
       isTemplate: Boolean(payload.isTemplate),
@@ -990,7 +990,7 @@ exports.testBlueprint = async (req, res) => {
 
     // Resolve Provider from Runtime Configuration Abstraction (Refinement 6, 7)
     const provider = providerOverride || "Groq";
-    const model = "llama3-70b-8192"; // Runtime Managed target
+    const model = "llama-3.3-70b-versatile"; // Runtime Managed target
 
     // Construct Runtime Request Body Preview
     const preparedRuntimePayload = {

@@ -201,7 +201,7 @@ class GroqManager {
             success: true,
             rawText: sampleMockJson,
             provider: "Groq (Simulation Engine)",
-            model: payload.targetModel || "llama3-70b-8192",
+            model: payload.targetModel || "llama-3.3-70b-versatile",
             apiKeyMasked: activeKey.apiKeyMasked,
             latencyMs: execDuration,
             retryCount: retriesPerformed,

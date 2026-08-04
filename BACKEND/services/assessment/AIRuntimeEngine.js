@@ -50,7 +50,7 @@ class AIRuntimeEngine {
     let parseTimeMs = 0;
     let validationTimeMs = 0;
     let targetProvider = "Groq";
-    let targetModel = "llama3-70b-8192";
+    let targetModel = "llama-3.3-70b-versatile";
     let apiKeyMasked = "UNRESOLVED";
     let retryCount = 0;
     let requestFingerprint = null;
@@ -75,7 +75,7 @@ class AIRuntimeEngine {
       queueTimeMs = Date.now() - resolverStartTime;
 
       targetProvider = runtimeProviderConfig.primaryProvider || "Groq";
-      targetModel = runtimeProviderConfig.modelName || "llama3-70b-8192";
+      targetModel = runtimeProviderConfig.modelName || "llama-3.3-70b-versatile";
       blueprintVersion = resolverOutput.blueprint?.activeVersion || 1;
 
       // ── STEP 2: AI REQUEST BUILDER (Component 1) ─────────────────────────────
@@ -215,7 +215,7 @@ class AIRuntimeEngine {
       const errStatus = mappedErr.errorCode === "TIMEOUT_EXCEEDED" ? "TIMEOUT" :
                         mappedErr.errorCode === "RATE_LIMIT_EXCEEDED" ? "RATE_LIMITED" : "FAILED";
 
-      console.error(`[AIRuntimeEngine] ❌ Pipeline terminated with failure (${mappedErr.errorCode}): ${mappedErr.errorMessage}`);
+      console.error(`[AIRuntimeEngine] ❌ Pipeline terminated with failure (${mappedErr.errorCode}): ${mappedErr.errorMessage}`, pipelineError);
 
       await runtimeLogger.recordLog({
         requestId,

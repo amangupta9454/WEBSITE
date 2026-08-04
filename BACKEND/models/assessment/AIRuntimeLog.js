@@ -26,7 +26,7 @@ const aiRuntimeLogSchema = new mongoose.Schema(
     model: {
       type: String,
       required: true,
-      default: "llama3-70b-8192",
+      default: "llama-3.3-70b-versatile",
       trim: true
     },
     apiKeyMasked: {

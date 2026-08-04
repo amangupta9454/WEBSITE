@@ -164,7 +164,7 @@ async function ensureDefaultLibrariesSeeded() {
       await AssessmentRuntimeConfig.create({
         scope: "Global",
         primaryProvider: "Groq",
-        modelName: "llama3-70b-8192",
+        modelName: "llama-3.3-70b-versatile",
         fallbackProviders: ["OpenAI", "Gemini"],
         temperature: 0.65,
         topP: 0.9,
