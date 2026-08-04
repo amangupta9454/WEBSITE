@@ -62,7 +62,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          padding: '2.5rem',
+          padding: '2rem',
           border: '1px solid #312e81',
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.7)',
           fontFamily: 'ui-sans-serif, system-ui, sans-serif'
@@ -75,7 +75,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {/* TOP ROW */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '6.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)', mixBlendMode: 'screen' }} />
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '6rem', objectFit: 'contain', filter: 'brightness(0) invert(1)', mixBlendMode: 'screen' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -88,11 +88,11 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         </div>
 
         {/* MIDDLE ROW */}
-        <div style={{ position: 'relative', zIndex: 10, marginTop: '2rem' }}>
+        <div style={{ position: 'relative', zIndex: 10, marginTop: '1rem' }}>
           <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             Campus Lead
           </div>
-          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1.2, paddingBottom: '0.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {name}
           </div>
           <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
@@ -101,7 +101,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         </div>
 
         {/* BOTTOM ROW */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', position: 'relative', zIndex: 10, marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', position: 'relative', zIndex: 10, paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
             <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
               ID Number
