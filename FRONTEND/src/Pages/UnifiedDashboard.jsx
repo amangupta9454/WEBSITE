@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { LayoutDashboard, Briefcase, GraduationCap, Layers } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
@@ -13,15 +14,24 @@ export default function UnifiedDashboard() {
   const [isAmbassador, setIsAmbassador] = useState(() => localStorage.getItem("isAmbassador") === "true");
   const [assessmentEnabled, setAssessmentEnabled] = useState(true);
   const [ambassadorEnabled, setAmbassadorEnabled] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
     const params = new URLSearchParams(window.location.search);
     const initialTab = params.get("tab");
-    if (initialTab && ["overview", "internship", "ambassador", "assessment"].includes(initialTab)) {
+    const pathname = window.location.pathname;
+    
+    if (pathname.includes('/dashboard/assessment')) {
+      setActiveTab("assessment");
+    } else if (pathname === '/dashboard') {
+      setActiveTab("overview");
+    } else if (initialTab && ["overview", "internship", "ambassador", "assessment"].includes(initialTab)) {
       setActiveTab(initialTab);
     }
+  }, [location.pathname, location.search]);
 
+  useEffect(() => {
     // Read Assessment Settings
     const savedAssessmentSettings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
     if (savedAssessmentSettings) {
