@@ -230,9 +230,15 @@ exports.assignAmbassador = async (req, res) => {
         mobile: "Pending Registration",
         isAmbassador: true,
         ambassadorCollege: college || "N/A",
+        ambassadorName: req.body.name || defaultName,
         status: "Pending Registration",
         roles: ["student", "campus_ambassador"],
       });
+    } else {
+      if (req.body.name) {
+        user.ambassadorName = req.body.name;
+        user.name = req.body.name; // Keep main name in sync for dashboard display
+      }
     }
 
     let code = customCode
@@ -625,6 +631,7 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       success: true,
       ambassadorCode: code,
       ambassadorCollege: user.ambassadorCollege || "",
+      ambassadorName: user.ambassadorName || user.name || "",
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
       totalSignups: brandNewUserSignupsCount,

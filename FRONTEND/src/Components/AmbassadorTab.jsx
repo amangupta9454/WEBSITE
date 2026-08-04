@@ -23,6 +23,7 @@ import {
   Users
 } from "lucide-react";
 import { toast } from "react-toastify";
+import AmbassadorIdCard from "./AmbassadorIdCard";
 
 const AmbassadorTab = () => {
   const [stats, setStats] = useState(null);
@@ -167,6 +168,9 @@ const AmbassadorTab = () => {
           <RefreshCw className="w-3.5 h-3.5" /> Refresh Dashboard
         </button>
       </div>
+
+      {/* Ambassador ID Card Section */}
+      <AmbassadorIdCard stats={stats} />
 
       {/* Join Official Ambassador Group Card */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 sm:p-5 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/30">

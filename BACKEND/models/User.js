@@ -141,6 +141,7 @@ const userSchema = new mongoose.Schema(
     isAmbassador: { type: Boolean, default: false },
     ambassadorCode: { type: String, default: null },
     ambassadorCollege: { type: String, default: "" },
+    ambassadorName: { type: String, default: "" },
   },
   { timestamps: true },
 );
