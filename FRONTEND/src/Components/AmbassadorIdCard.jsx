@@ -73,10 +73,14 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       cardRef.current.style.transform = 'none';
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: window.innerWidth < 768 ? 2 : 3, // Lower scale on mobile to prevent memory crash
+        scale: window.innerWidth < 768 ? 2 : 4,
         useCORS: true,
         backgroundColor: '#0a0f1d',
         logging: false,
+        width: 550,
+        height: 350,
+        windowWidth: 550,
+        windowHeight: 350
       });
       
       cardRef.current.style.transform = originalTransform;
@@ -89,7 +93,19 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       });
       
       pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.pdf`);
+      
+      // Robust download method for mobile devices
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     } catch (err) {
       console.error("Error generating ID card PDF:", err);
       alert("Failed to download ID card. Please try again.");

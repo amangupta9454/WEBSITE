@@ -196,7 +196,7 @@ const AmbassadorTab = () => {
 
       
       {/* Hidden Card for direct download */}
-      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '600px', height: '375px', pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', top: '0', left: '0', opacity: 0, zIndex: -9999, width: '600px', height: '375px', pointerEvents: 'none' }}>
         <AmbassadorIdCard stats={stats} ref={idCardRef} />
       </div>
 
