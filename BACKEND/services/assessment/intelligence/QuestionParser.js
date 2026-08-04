@@ -117,7 +117,7 @@ class QuestionParser {
       options = Object.values(item.options).map(v => String(v).trim());
     }
 
-    const correctAnswer = String(item.correctAnswer || item.answer || item.correct || "").trim();
+    const correctAnswer = String(item.correctAnswer || item.answer || item.correct || (item.correctIndex !== undefined ? item.correctIndex : "")).trim();
     const explanation = String(item.explanation || item.rationale || item.solution || "").trim();
     const difficulty = this.normalizeDifficulty(item.difficulty || item.level || "Medium");
     const topic = String(item.topic || item.category || item.domain || "General Tech").trim();
