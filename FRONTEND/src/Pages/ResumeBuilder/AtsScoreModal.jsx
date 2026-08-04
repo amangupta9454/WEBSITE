@@ -16,11 +16,11 @@ const AtsScoreModal = ({ isOpen, onClose, score, suggestions }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 relative">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden border border-slate-200 relative">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" /> AI ATS Analysis
           </h2>
@@ -33,7 +33,7 @@ const AtsScoreModal = ({ isOpen, onClose, score, suggestions }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 md:p-8 flex flex-col items-center">
+        <div className="p-6 md:p-8 flex flex-col items-center overflow-y-auto">
           
           {/* Score Display */}
           <div className="mb-8 flex flex-col items-center text-center">
