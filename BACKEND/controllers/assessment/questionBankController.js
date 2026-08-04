@@ -177,6 +177,60 @@ class QuestionBankController {
       res.status(500).json({ success: false, error: err.message });
     }
   }
+  /**
+   * POST /categories/:categoryId/generate-ai-questions
+   * Admin bulk generation of AI questions in "Draft" state
+   */
+  static async generateOnDemandAIQuestions(req, res) {
+    try {
+      const { categoryId } = req.params;
+      const { questionCount = 5 } = req.body;
+      const actor = req.user?.email || req.user?.name || "admin_on_demand_generator";
+
+      const aiRuntimeEngine = require("../../services/assessment/AIRuntimeEngine");
+      const questionIntelligenceEngine = require("../../services/assessment/QuestionIntelligenceEngine");
+
+      // 1. Synthesize Questions via Runtime Engine
+      const synthesisRes = await aiRuntimeEngine.execute({
+        categoryId,
+        dynamicVariables: { questionCount: parseInt(questionCount) || 5 },
+        options: { simulationOnly: true }
+      });
+
+      if (!synthesisRes.success) {
+        return res.status(400).json({ success: false, error: `AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}` });
+      }
+
+      let synthesizedItems = synthesisRes?.parsedData?.questions || [];
+      if (!synthesizedItems || synthesizedItems.length === 0) {
+        return res.status(400).json({ success: false, error: "AI Engine returned zero questions." });
+      }
+
+      // 2. Normalize and Force Status to Draft
+      const normalized = synthesizedItems.map((q) => ({
+        ...q,
+        categoryId,
+        createdSource: "AI Generated Bulk",
+        status: "Draft", // Force draft state pending admin approval
+      }));
+
+      // 3. Vet through Intelligence Engine
+      const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ" });
+      
+      // 4. Persist to Database
+      if (vetted.approvedQuestions && vetted.approvedQuestions.length > 0) {
+        // Intelligence Engine might have rewritten status to Approved. We force it back to Draft right before persist
+        const drafts = vetted.approvedQuestions.map(q => ({ ...q, status: "Draft" }));
+        await KnowledgeBaseManager.persistBatch(drafts, { actor, source: "Admin On-Demand Generation" });
+        return res.status(200).json({ success: true, count: drafts.length, message: `Successfully generated ${drafts.length} questions. They are now pending approval.` });
+      } else {
+        return res.status(400).json({ success: false, error: "AI generated questions failed intelligence vetting." });
+      }
+    } catch (err) {
+      console.error("[QuestionBankController:GenerateOnDemand] Error:", err.message);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
 }
 
 module.exports = QuestionBankController;

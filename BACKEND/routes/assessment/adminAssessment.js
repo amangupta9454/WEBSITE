@@ -246,6 +246,9 @@ router.get("/certificates",                           verifyAdmin, certificateCo
 router.get("/certificates/stats/overview",            verifyAdmin, certificateController.getStatistics);
 router.post("/certificates/generate/:sessionIdOrResultId", verifyAdmin, certificateController.generateCertificate);
 router.post("/certificates/bulk-generate",            verifyAdmin, certificateController.bulkGenerate);
+
+// Category Level AI Generation
+router.post("/categories/:categoryId/generate-ai-questions", verifyAdmin, questionBankController.generateOnDemandAIQuestions);
 router.get("/certificates/:id",                       verifyAdmin, certificateController.getCertificate);
 router.post("/certificates/:id/revoke",               verifyAdmin, certificateController.revokeCertificate);
 router.post("/certificates/:id/restore",              verifyAdmin, certificateController.restoreCertificate);
