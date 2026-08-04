@@ -38,18 +38,16 @@ const ResumeBuilder = () => {
     if (atsLoading) return;
     setAtsLoading(true);
     try {
-      if (!resume.atsScore) {
-        const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
-        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/ats-score`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data.success) {
-          setResume(prev => ({
-            ...prev,
-            atsScore: res.data.atsScore,
-            atsSuggestions: res.data.atsSuggestions
-          }));
-        }
+      const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/ats-score`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setResume(prev => ({
+          ...prev,
+          atsScore: res.data.atsScore,
+          atsSuggestions: res.data.atsSuggestions
+        }));
       }
       setIsAtsModalOpen(true);
     } catch (err) {

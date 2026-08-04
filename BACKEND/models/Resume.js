@@ -41,6 +41,10 @@ const resumeSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    atsDataHash: {
+      type: String,
+      default: null
+    },
     data: {
       personalInfo: {
         firstName: { type: String, default: "" },

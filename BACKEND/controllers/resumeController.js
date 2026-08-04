@@ -290,7 +290,19 @@ exports.checkAtsScore = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Resume not found' });
     }
 
+    const crypto = require('crypto');
     const { data } = resume;
+    const currentDataHash = crypto.createHash('md5').update(JSON.stringify(data || {})).digest('hex');
+
+    if (resume.atsScore && resume.atsDataHash === currentDataHash) {
+      return res.json({
+        success: true,
+        atsScore: resume.atsScore,
+        atsSuggestions: resume.atsSuggestions,
+        cached: true
+      });
+    }
+
     const personal = data.personalInfo || {};
     
     // Construct Resume Text for Groq
@@ -378,6 +390,7 @@ ${resumeText}`;
 
     resume.atsScore = parsed.score;
     resume.atsSuggestions = parsed.suggestions;
+    resume.atsDataHash = currentDataHash;
     await resume.save();
 
     res.json({
