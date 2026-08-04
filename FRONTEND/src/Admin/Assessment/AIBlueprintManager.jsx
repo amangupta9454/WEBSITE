@@ -207,7 +207,7 @@ const AIBlueprintManager = () => {
       name: bp?.name || "New Custom Blueprint",
       description: bp?.description || "Production AI Prompt Blueprint governing structured question synthesis.",
       provider: bp?.provider || "Groq",
-      providerModel: bp?.providerModel || "llama3-70b-8192",
+      providerModel: bp?.providerModel || "llama-3.3-70b-versatile",
       status: bp?.status || "Active",
       tags: bp?.tags || ["AI", "Custom", "v1"],
       prompt: promptObj,
@@ -234,7 +234,7 @@ const AIBlueprintManager = () => {
       name: "New AI Assessment Blueprint",
       description: "Custom AI Blueprint architecture designed for high-precision technical evaluations.",
       provider: "Groq",
-      providerModel: "llama3-70b-8192",
+      providerModel: "llama-3.3-70b-versatile",
       status: "Active",
       tags: ["AI", "Draft", "Custom"],
       activeVersion: 1,
@@ -952,7 +952,7 @@ const AIBlueprintManager = () => {
                   value={studioForm.providerModel}
                   onChange={(e) => setStudioForm({ ...studioForm, providerModel: e.target.value })}
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-purple-300 focus:outline-none focus:border-indigo-500"
-                  placeholder="llama3-70b-8192"
+                  placeholder="llama-3.3-70b-versatile"
                 />
               </div>
 
