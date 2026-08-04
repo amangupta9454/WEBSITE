@@ -222,10 +222,6 @@ class GroqManager {
             top_p: payload.topP !== undefined ? payload.topP : 0.9
           };
 
-          if (payload.responseFormat) {
-            createParams.response_format = payload.responseFormat;
-          }
-
           // Strict Promise.race enforcing 7000ms zero-pause SLA boundary
           const completion = await Promise.race([
             activeKey.client.chat.completions.create(createParams),
