@@ -193,8 +193,7 @@ class QuestionBankController {
       // 1. Synthesize Questions via Runtime Engine
       const synthesisRes = await aiRuntimeEngine.execute({
         categoryId,
-        dynamicVariables: { questionCount: parseInt(questionCount) || 5 },
-        options: { simulationOnly: true }
+        dynamicVariables: { questionCount: parseInt(questionCount) || 5 }
       });
 
       if (!synthesisRes.success && synthesisRes.status !== "VALIDATION_WARNING") {
