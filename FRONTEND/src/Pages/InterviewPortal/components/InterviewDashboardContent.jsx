@@ -705,22 +705,19 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
         
         {/* AI Resume Builder Card */}
-        {hasPermission(userRoles, "ai_resume") && (
+        {hasPermission(userRoles, "ai_resume") && resumeEnabled && (
           <div 
-            className={`bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${resumeEnabled ? 'border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer' : 'border-slate-200 opacity-75 cursor-not-allowed'} relative overflow-hidden group transition-all duration-300`} 
-            onClick={() => {
-              if (resumeEnabled) navigate('/my-resumes');
-              else toast.error("Resume feature is currently disabled.");
-            }}
+            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+            onClick={() => navigate('/my-resumes')}
           >
             <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
               <FileText className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
-            <div className={`w-8 h-8 sm:w-12 sm:h-12 ${resumeEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10`}>
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
-            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">{resumeEnabled ? 'Bypass ATS smartly' : 'Currently Not Available'}</p>
+            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Bypass ATS smartly</p>
           </div>
         )}
 
@@ -753,7 +750,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
         )}
 
-        {hasPermission(userRoles, "assessment") && (assessmentEnabled ? (
+        {hasPermission(userRoles, "assessment") && assessmentEnabled && (
           <div 
             className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-cyan-200 shadow-sm shadow-cyan-100 hover:-translate-y-1 hover:shadow-md hover:shadow-cyan-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
             onClick={() => navigate('/dashboard/assessment')}
@@ -768,45 +765,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 mb-1.5 leading-tight">Take quizzes, coding tests and track certifications.</p>
             <p className="text-[10px] sm:text-sm text-cyan-600 font-bold relative z-10 leading-tight">Open →</p>
           </div>
-        ) : (
-          <div 
-            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed relative overflow-hidden"
-            onClick={() => toast.error("Assessment feature is currently disabled by administrator.")}
-          >
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10">
-              <GraduationCap className="w-12 h-12 sm:w-20 sm:h-20" />
-            </div>
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
-              <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
-            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Currently unavailable</p>
-          </div>
-        ))}
-
-        {hasPermission(userRoles, "project_sandbox") && (
-          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed">
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4">
-              <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1">Project Sandbox</h3>
-            <p className="text-[9px] sm:text-sm text-slate-500 leading-tight">Coming Soon</p>
-          </div>
         )}
-
-        <div 
-          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-amber-200 shadow-sm shadow-amber-100 hover:-translate-y-1 hover:shadow-md hover:shadow-amber-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
-          onClick={() => navigate('/dashboard/assessment/certificates')}
-        >
-          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-amber-600">
-            <Tag className="w-12 h-12 sm:w-20 sm:h-20" />
-          </div>
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
-            <Tag className="w-4 h-4 sm:w-6 sm:h-6" />
-          </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Certifications</h3>
-          <p className="text-[9px] sm:text-sm text-amber-600 font-semibold relative z-10 leading-tight">View Verified Badges</p>
-        </div>
 
       </div>
 

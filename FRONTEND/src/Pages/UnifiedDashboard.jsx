@@ -95,18 +95,7 @@ export default function UnifiedDashboard() {
             My Dashboard
           </button>
 
-          {assessmentEnabled && (
-            <button
-              onClick={() => setActiveTab("assessment")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${activeTab === "assessment"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                }`}
-            >
-              <Layers className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-              Assessment
-            </button>
-          )}
+
 
           {isIntern && (
             <button
