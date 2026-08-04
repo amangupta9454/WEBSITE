@@ -22,13 +22,15 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {`
           @media print {
             @page {
-              size: 550px 344px;
-              margin: 0;
+              size: auto;
+              margin: 0mm;
             }
-            body {
-              margin: 0;
-              padding: 0;
-              background: white;
+            html, body, #root {
+              height: 100vh !important;
+              overflow: hidden !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
             }
             body * {
               visibility: hidden;
@@ -38,17 +40,17 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
             }
             #printable-id-card {
               position: absolute;
-              left: 0;
-              top: 0;
+              left: 50%;
+              top: 50%;
+              transform: translate(-50%, -50%) !important;
               width: 550px !important;
-              height: 344px !important;
+              aspect-ratio: 1.6 / 1 !important;
               margin: 0;
               padding: 0;
               box-shadow: none !important;
               border: none !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
-              transform: none !important;
             }
             button {
               display: none !important;
