@@ -724,7 +724,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
         )}
 
-        {hasPermission(userRoles, "mock_interviews") && (interviewEnabled ? (
+        {hasPermission(userRoles, "mock_interviews") && interviewEnabled && (
           <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={() => navigate('/my-interviews')}>
             <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
               <Video className="w-12 h-12 sm:w-20 sm:h-20" />
@@ -735,18 +735,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Practice with AI</p>
           </div>
-        ) : (
-          <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 opacity-60 cursor-not-allowed relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10">
-              <Video className="w-12 h-12 sm:w-20 sm:h-20" />
-            </div>
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-slate-100 text-slate-400 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
-              <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
-            </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
-            <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Currently Not Available</p>
-          </div>
-        ))}
+        )}
         
         {showJobPortal && (
           <div 
