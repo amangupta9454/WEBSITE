@@ -245,7 +245,7 @@ class RuntimeResolver {
     if (!config && categoryId) config = await AssessmentConfig.findOne({ categoryId });
 
     // 2. Resolve Blueprint Assignment & Latest Active Blueprint Version
-    const { assignment, selectedBlueprint, resolvedScope: assignmentScope } = await this.resolveBlueprintAssignment({
+    let { assignment, selectedBlueprint, resolvedScope: assignmentScope } = await this.resolveBlueprintAssignment({
       subcategoryId,
       categoryId,
       assessmentType,
