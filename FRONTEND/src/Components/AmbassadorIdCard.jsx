@@ -92,23 +92,39 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         format: [canvas.width, canvas.height]
       });
       
-      pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
+      pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height, undefined, 'FAST');
       
-      // Robust download method for mobile devices
       const blob = pdf.output('blob');
+      const fileName = `CodeANova-Ambassador-${(stats?.ambassadorName || "Card").replace(/\s+/g, '_')}.pdf`;
+
+      // Try Native Web Share API first (highly reliable on mobile iOS/Android)
+      if (navigator.canShare && navigator.share) {
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Code-A-Nova Ambassador ID',
+            text: 'Here is my Official Code-A-Nova Campus Ambassador ID Card!',
+          });
+          setDownloading(false);
+          return;
+        }
+      }
+
+      // Fallback for Desktop / browsers without share support
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.pdf`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      }, 100);
+      }, 150);
     } catch (err) {
       console.error("Error generating ID card PDF:", err);
-      alert("Failed to download ID card. Please try again.");
+      alert(`Failed to download ID card. Reason: ${err.message || "Unknown Error"}`);
     } finally {
       setDownloading(false);
     }
