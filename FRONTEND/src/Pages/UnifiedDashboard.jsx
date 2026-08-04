@@ -22,16 +22,29 @@ export default function UnifiedDashboard() {
       setActiveTab(initialTab);
     }
 
-    // Check General Settings master switch
-    const settings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
-    if (settings) {
+    // Read Assessment Settings
+    const savedAssessmentSettings = localStorage.getItem("CAN_ASSESSMENT_GENERAL_SETTINGS");
+    if (savedAssessmentSettings) {
       try {
-        const parsed = JSON.parse(settings);
-        setAssessmentEnabled(parsed.assessmentModuleEnabled !== false);
-        setAmbassadorEnabled(parsed.ambassadorDashboardEnabled !== false);
-      } catch (e) {
-        setAssessmentEnabled(true);
-        setAmbassadorEnabled(true);
+        const parsed = JSON.parse(savedAssessmentSettings);
+        if (parsed.assessmentModuleEnabled === false) {
+          setAssessmentEnabled(false);
+        }
+      } catch (err) {
+        console.error("Failed to read settings", err);
+      }
+    }
+
+    // Read Ambassador Settings
+    const savedAmbassadorSettings = localStorage.getItem("CAN_AMBASSADOR_GENERAL_SETTINGS");
+    if (savedAmbassadorSettings) {
+      try {
+        const parsed = JSON.parse(savedAmbassadorSettings);
+        if (parsed.ambassadorDashboardEnabled === false) {
+          setAmbassadorEnabled(false);
+        }
+      } catch (err) {
+        console.error("Failed to read ambassador settings", err);
       }
     }
 

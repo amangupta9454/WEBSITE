@@ -36,6 +36,8 @@ const ReferralAdmin = () => {
   const [stats, setStats] = useState({ totalCodes: 0, totalClicks: 0, totalUses: 0 });
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
+  
+  const [ambassadorDashboardEnabled, setAmbassadorDashboardEnabled] = useState(true);
 
   const [applications, setApplications] = useState([]);
 
@@ -167,7 +169,23 @@ const ReferralAdmin = () => {
 
   useEffect(() => {
     fetchData();
+    const savedAmbassadorSettings = localStorage.getItem("CAN_AMBASSADOR_GENERAL_SETTINGS");
+    if (savedAmbassadorSettings) {
+      try {
+        const parsed = JSON.parse(savedAmbassadorSettings);
+        setAmbassadorDashboardEnabled(parsed.ambassadorDashboardEnabled);
+      } catch (err) {
+        console.error("Failed to load ambassador settings:", err);
+      }
+    }
   }, []);
+
+  const handleToggleAmbassadorDashboard = () => {
+    const newState = !ambassadorDashboardEnabled;
+    setAmbassadorDashboardEnabled(newState);
+    localStorage.setItem("CAN_AMBASSADOR_GENERAL_SETTINGS", JSON.stringify({ ambassadorDashboardEnabled: newState }));
+    toast.success(`Campus Ambassador Dashboard is now ${newState ? "ENABLED" : "DISABLED"}`);
+  };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -355,13 +373,33 @@ const ReferralAdmin = () => {
             Assign Campus Ambassadors, manage active/inactive statuses, set WhatsApp group link, and track clicks & signups.
           </p>
         </div>
-        <button
-          onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh Stats
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-800">Ambassador Dashboard</span>
+              <span className="text-[10px] text-slate-500 font-medium">Student visibility</span>
+            </div>
+            <button
+              onClick={handleToggleAmbassadorDashboard}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                ambassadorDashboardEnabled ? "bg-emerald-500" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  ambassadorDashboardEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          <button
+            onClick={fetchData}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh Stats
+          </button>
+        </div>
       </div>
 
       {/* Metrics Row */}
