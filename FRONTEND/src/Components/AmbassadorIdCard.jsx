@@ -67,7 +67,9 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {/* TOP ROW */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '3.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: '#ffffff' }}>
+              Code<span style={{ color: '#818cf8' }}>-A-</span>Nova
+            </span>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
