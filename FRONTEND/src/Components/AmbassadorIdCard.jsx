@@ -11,7 +11,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
     try {
       setDownloading(true);
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, 
+        scale: 3,
         useCORS: true,
         backgroundColor: null,
       });
@@ -38,10 +38,10 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
 
   return (
     <div className={`flex flex-col items-center justify-center w-full ${inline ? 'my-4' : ''}`}>
-      
+
       {/* ─── ACTUAL CARD TO BE DOWNLOADED ─── */}
-      <div 
-        ref={cardRef} 
+      <div
+        ref={cardRef}
         style={{
           width: '100%',
           maxWidth: '550px',
@@ -67,9 +67,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {/* TOP ROW */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: '#ffffff' }}>
-              Code<span style={{ color: '#818cf8' }}>-A-</span>Nova
-            </span>
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '4.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>

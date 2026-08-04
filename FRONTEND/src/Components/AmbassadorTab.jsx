@@ -186,19 +186,10 @@ const AmbassadorTab = () => {
         </button>
       </div>
 
-      {/* Download ID Card Button */}
-      <div className="flex justify-center my-6">
-        <button
-          onClick={handleDownloadClick}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
-        >
-          <Download className="w-5 h-5" />
-          Download Ambassador ID Card
-        </button>
-      </div>
+
       
       {/* Hidden Card for direct download */}
-      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '600px', height: '375px', pointerEvents: 'none' }}>
         <AmbassadorIdCard stats={stats} ref={idCardRef} />
       </div>
 
@@ -233,16 +224,25 @@ const AmbassadorTab = () => {
           </div>
         </div>
 
-        <a
-          href={stats.ambassadorGroupUrl || "https://chat.whatsapp.com/"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs rounded-xl shadow-md transition-all shrink-0 w-full sm:w-auto"
-        >
-          <Users className="w-4 h-4 text-emerald-700" />
-          Join WhatsApp Group Now
-          <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-        </a>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+          <button
+            onClick={handleDownloadClick}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-800 text-white hover:bg-emerald-900 font-bold text-xs rounded-xl shadow-md transition-all w-full sm:w-auto"
+          >
+            <Download className="w-4 h-4" />
+            Download ID Card
+          </button>
+          <a
+            href={stats.ambassadorGroupUrl || "https://chat.whatsapp.com/"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-bold text-xs rounded-xl shadow-md transition-all w-full sm:w-auto"
+          >
+            <Users className="w-4 h-4 text-emerald-700" />
+            Join WhatsApp Group
+            <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+          </a>
+        </div>
       </div>
 
       {/* Metrics Row */}

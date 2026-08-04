@@ -62,7 +62,7 @@ const AmbassadorIdCardModal = ({ stats, onClose, onSuccess }) => {
             <strong> Please download it and share your new role on LinkedIn.</strong> Once you've posted it, paste the post link below to fully unlock your dashboard.
           </p>
 
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8 overflow-x-auto pb-4">
             <AmbassadorIdCard stats={stats} inline={true} />
           </div>
 
