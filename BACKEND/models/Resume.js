@@ -33,6 +33,14 @@ const resumeSchema = new mongoose.Schema(
       enum: ["Draft", "Completed"], 
       default: "Draft" 
     },
+    atsScore: {
+      type: Number,
+      default: null
+    },
+    atsSuggestions: {
+      type: [String],
+      default: []
+    },
     data: {
       personalInfo: {
         firstName: { type: String, default: "" },

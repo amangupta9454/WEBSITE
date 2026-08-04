@@ -13,7 +13,6 @@ router.post('/final-submit-repo', authMiddleware, requireRole('intern', 'admin')
 router.post('/update-project-link', authMiddleware, requireRole('intern', 'admin'), updateProjectLink);
 router.post('/dismiss-notification', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin'), dismissNotification);
 router.get('/leaderboard', getPublicLeaderboard);
-
 const { getV2Projects, submitV2Project } = require('../controllers/studentControllerV2');
 const { getStudentAmbassadorStats, trackUserActivity, submitAmbassadorApplication, saveAmbassadorLinkedInPost } = require('../controllers/referralController');
 router.get('/v2-projects', authMiddleware, requireRole('intern', 'admin'), getV2Projects);

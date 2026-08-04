@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Loader2, Save, Download, ArrowLeft, LayoutTemplate, ZoomIn, ZoomOut, Maximize, Send, X } from 'lucide-react';
+import { Loader2, Save, Download, ArrowLeft, LayoutTemplate, ZoomIn, ZoomOut, Maximize, Send, X, Sparkles } from 'lucide-react';
 import ResumeForm from './ResumeForm';
 import ResumePreview from './ResumePreview';
+import AtsScoreModal from './AtsScoreModal';
 import { useReactToPrint } from 'react-to-print';
 import { useDebounce } from 'react-use';
 import html2canvas from 'html2canvas-pro';
@@ -29,6 +30,34 @@ const ResumeBuilder = () => {
   const [whatsappSending, setWhatsappSending] = useState(false);
 
   const [verifiedPhone, setVerifiedPhone] = useState(null);
+
+  const [atsLoading, setAtsLoading] = useState(false);
+  const [isAtsModalOpen, setIsAtsModalOpen] = useState(false);
+
+  const handleCheckAtsScore = async () => {
+    if (atsLoading) return;
+    setAtsLoading(true);
+    try {
+      if (!resume.atsScore) {
+        const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
+        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/resume/${id}/ats-score`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success) {
+          setResume(prev => ({
+            ...prev,
+            atsScore: res.data.atsScore,
+            atsSuggestions: res.data.atsSuggestions
+          }));
+        }
+      }
+      setIsAtsModalOpen(true);
+    } catch (err) {
+      toast.error('Failed to generate ATS Score. Please try again.');
+    } finally {
+      setAtsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchResume();
@@ -237,6 +266,15 @@ const ResumeBuilder = () => {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
+              onClick={handleCheckAtsScore}
+              disabled={atsLoading}
+              className="bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-bold flex items-center gap-1 sm:gap-2 transition-all shadow-sm shrink-0 disabled:opacity-70"
+            >
+              {atsLoading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />}
+              <span className="hidden sm:inline">AI ATS Score</span>
+              <span className="sm:hidden">ATS</span>
+            </button>
+            <button
               onClick={handleExport}
               disabled={downloading}
               className="hidden md:flex bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-base font-bold items-center gap-1 sm:gap-2 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 shrink-0"
@@ -350,6 +388,14 @@ const ResumeBuilder = () => {
           </div>
         </div>
       )}
+
+      <AtsScoreModal 
+        isOpen={isAtsModalOpen} 
+        onClose={() => setIsAtsModalOpen(false)} 
+        score={resume?.atsScore || 0} 
+        suggestions={resume?.atsSuggestions || []} 
+      />
+
     </div>
   );
 };
