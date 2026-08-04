@@ -98,7 +98,8 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       const fileName = `CodeANova-Ambassador-${(stats?.ambassadorName || "Card").replace(/\s+/g, '_')}.pdf`;
 
       // Try Native Web Share API first (highly reliable on mobile iOS/Android)
-      if (navigator.canShare && navigator.share) {
+      const isMobile = window.innerWidth < 1024 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile && navigator.canShare && navigator.share) {
         const file = new File([blob], fileName, { type: 'application/pdf' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
