@@ -89,7 +89,7 @@ class ProviderManager {
    */
   async dispatchRequest(payload) {
     const primaryProvider = payload.targetProvider || "Groq";
-    const fallbackList = Array.isArray(payload.fallbackProviders) ? payload.fallbackProviders : ["OpenAI", "Gemini"];
+    const fallbackList = Array.isArray(payload.fallbackProviders) ? payload.fallbackProviders : [];
 
     const attemptQueue = [primaryProvider, ...fallbackList.filter(p => p !== primaryProvider)];
 
