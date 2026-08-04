@@ -129,7 +129,9 @@ class SessionCreationService {
           if (!synthesisRes.success) {
             console.warn(`[SessionCreationService] AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}`);
           }
-          let synthesizedItems = synthesisRes?.parsedData?.questions || [];
+          let synthesizedItems = Array.isArray(synthesisRes?.parsedData) 
+            ? synthesisRes.parsedData 
+            : (synthesisRes?.parsedData?.questions || []);
           if (synthesizedItems.length > 0) {
             const normalized = synthesizedItems.map((q) => ({
               ...q,

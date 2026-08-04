@@ -201,7 +201,10 @@ class QuestionBankController {
         return res.status(400).json({ success: false, error: `AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}` });
       }
 
-      let synthesizedItems = synthesisRes?.parsedData?.questions || [];
+      let synthesizedItems = Array.isArray(synthesisRes?.parsedData) 
+        ? synthesisRes.parsedData 
+        : (synthesisRes?.parsedData?.questions || []);
+        
       if (!synthesizedItems || synthesizedItems.length === 0) {
         return res.status(400).json({ success: false, error: "AI Engine returned zero questions." });
       }
