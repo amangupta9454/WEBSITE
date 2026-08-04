@@ -1,11 +1,39 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { Download, Loader2, Printer } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
   const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = () => {
-    window.print();
+  const handleDownload = async () => {
+    if (!cardRef.current) return;
+    try {
+      setDownloading(true);
+      // Capture the element visually exactly as it looks
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 3, // High resolution
+        useCORS: true,
+        backgroundColor: '#0a0f1d',
+      });
+      const imgData = canvas.toDataURL("image/png");
+      
+      // Calculate PDF dimensions to perfectly match the canvas aspect ratio
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [canvas.width, canvas.height]
+      });
+      
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(`CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.pdf`);
+    } catch (err) {
+      console.error("Error generating ID card PDF:", err);
+      alert("Failed to download ID card. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   useImperativeHandle(ref, () => ({
@@ -18,54 +46,6 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
 
   return (
     <div className={`flex flex-col items-center justify-center w-full ${inline ? 'my-4' : ''}`}>
-      <style>
-        {`
-          @media print {
-            @page {
-              size: landscape;
-              margin: 0mm;
-            }
-            html {
-              font-size: 22px !important; /* Scale up rem values for full page */
-            }
-            html, body, #root {
-              height: 100vh !important;
-              width: 100vw !important;
-              overflow: hidden !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              background: #0a0f1d !important;
-            }
-            body * {
-              visibility: hidden;
-            }
-            #printable-id-card, #printable-id-card * {
-              visibility: visible;
-            }
-            #printable-id-card {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100vw !important;
-              height: 100vh !important;
-              max-width: none !important;
-              aspect-ratio: auto !important;
-              margin: 0 !important;
-              padding: 4rem !important; /* Good padding for A4 size */
-              box-shadow: none !important;
-              border: none !important;
-              border-radius: 0 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              transform: none !important;
-            }
-            button {
-              display: none !important;
-            }
-          }
-        `}
-      </style>
-
       {/* ─── ACTUAL CARD TO BE DOWNLOADED ─── */}
       <div
         id="printable-id-card"
@@ -88,9 +68,9 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
           fontFamily: 'ui-sans-serif, system-ui, sans-serif'
         }}
       >
-        {/* Subtle glow elements */}
-        <div style={{ position: 'absolute', top: 0, right: 0, width: '250px', height: '250px', backgroundColor: 'rgba(99,102,241,0.15)', filter: 'blur(60px)', borderRadius: '50%', transform: 'translate(50%, -50%)', pointerEvents: 'none' }}></div>
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '200px', height: '200px', backgroundColor: 'rgba(139,92,246,0.15)', filter: 'blur(60px)', borderRadius: '50%', transform: 'translate(-50%, 50%)', pointerEvents: 'none' }}></div>
+        {/* Subtle glow elements - using absolute top/left instead of transform to avoid html2canvas bugs */}
+        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '250px', height: '250px', backgroundColor: 'rgba(99,102,241,0.15)', filter: 'blur(60px)', borderRadius: '50%', pointerEvents: 'none' }}></div>
+        <div style={{ position: 'absolute', bottom: '-100px', left: '-100px', width: '200px', height: '200px', backgroundColor: 'rgba(139,92,246,0.15)', filter: 'blur(60px)', borderRadius: '50%', pointerEvents: 'none' }}></div>
 
         {/* TOP ROW */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
@@ -132,7 +112,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
           </div>
           <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '0.5rem', color: '#818cf8', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>
-              CAN-VERIFIED
+              VERIFIED
             </div>
             <div>
               <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
@@ -150,10 +130,11 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       {inline && (
         <button
           onClick={handleDownload}
-          className="mt-6 flex items-center justify-center gap-2 w-full max-w-[550px] px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5"
+          disabled={downloading}
+          className="mt-6 flex items-center justify-center gap-2 w-full max-w-[550px] px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-70"
         >
-          <Printer className="w-5 h-5" />
-          Print ID Card (Save as PDF)
+          {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+          {downloading ? "Generating PDF..." : "Download Official ID Card (PDF)"}
         </button>
       )}
 
