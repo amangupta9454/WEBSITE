@@ -218,14 +218,21 @@ class QuestionBankController {
       }));
 
       // 3. Vet through Intelligence Engine
-      const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ" });
+      const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ", requireExplanation: false });
       
-      // 4. Persist to Database
-      if (vetted.approvedQuestions && vetted.approvedQuestions.length > 0) {
-        // Intelligence Engine might have rewritten status to Approved. We force it back to Draft right before persist
-        const drafts = vetted.approvedQuestions.map(q => ({ ...q, status: "Draft" }));
-        await KnowledgeBaseManager.persistBatch(drafts, { actor, source: "Admin On-Demand Generation" });
-        return res.status(200).json({ success: true, count: drafts.length, message: `Successfully generated ${drafts.length} questions. They are now pending approval.` });
+      // 4. Persist to Database - Save both Approved and Needs Review as Drafts
+      const itemsToSave = [...(vetted.approvedQuestions || []), ...(vetted.needsReviewQuestions || [])];
+
+      if (itemsToSave.length > 0) {
+        // Force status to Draft since this is an admin bulk generation workflow
+        const finalDrafts = itemsToSave.map(q => ({ ...q, status: "Draft" }));
+
+        // Persist via KnowledgeBaseManager (Component 22)
+        const persistResult = await KnowledgeBaseManager.persistBatch(finalDrafts, {
+          allowPartialSuccess: true,
+          userId: req.user?._id
+        });
+        return res.status(200).json({ success: true, count: finalDrafts.length, message: `Successfully generated ${finalDrafts.length} questions. They are now pending approval.` });
       } else {
         return res.status(400).json({ success: false, error: "AI generated questions failed intelligence vetting." });
       }
