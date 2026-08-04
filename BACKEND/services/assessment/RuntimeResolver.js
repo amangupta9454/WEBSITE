@@ -252,21 +252,39 @@ class RuntimeResolver {
       fallbackBlueprintId: blueprintId
     });
 
+    let versionNumber = 1;
+    let versionData = {};
+    let promptData = {};
+
     if (!selectedBlueprint) {
-      throw new Error("No active blueprint found for this domain or assignment hierarchy.");
+      // Automatic Fallback: If admin hasn't configured a blueprint, use a smart system default!
+      console.warn("[RuntimeResolver] No active blueprint found. Using automatic system fallback blueprint.");
+      selectedBlueprint = {
+        _id: "auto-fallback-blueprint",
+        name: "System Fallback AI Blueprint",
+        activeVersion: 1,
+        status: "Active"
+      };
+      promptData = {
+        systemInstruction: "You are an expert technical assessor. Generate {{questionCount}} multiple choice questions for the {{category}} domain.",
+        context: "The candidate is taking a professional assessment. Ensure questions are challenging and accurate.",
+        rules: "1. Return strictly valid JSON.\n2. Ensure exactly 4 options per question.\n3. Make sure the correct index is between 0 and 3.",
+        outputFormat: "JSON Array of Question objects.",
+        validationRulesText: ""
+      };
+    } else {
+      versionNumber = selectedBlueprint.activeVersion || 1;
+      versionData = selectedBlueprint.versions?.find(v => v.versionNumber === versionNumber) || 
+                         selectedBlueprint.versions?.[selectedBlueprint.versions?.length - 1] || {};
+
+      promptData = versionData.prompt || {
+        systemInstruction: selectedBlueprint.systemPrompt || "",
+        context: "",
+        rules: "",
+        outputFormat: "",
+        validationRulesText: ""
+      };
     }
-
-    const versionNumber = selectedBlueprint.activeVersion;
-    const versionData = selectedBlueprint.versions.find(v => v.versionNumber === versionNumber) || 
-                       selectedBlueprint.versions[selectedBlueprint.versions.length - 1] || {};
-
-    const promptData = versionData.prompt || {
-      systemInstruction: selectedBlueprint.systemPrompt || "",
-      context: "",
-      rules: "",
-      outputFormat: "",
-      validationRulesText: ""
-    };
 
     // 3. Resolve Shared Variable Library References (Refinement 4)
     let resolvedVariables = [];
