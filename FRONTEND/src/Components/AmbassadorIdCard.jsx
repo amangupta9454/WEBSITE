@@ -49,15 +49,14 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       <div
         ref={cardRef}
         style={{
-          width: '100%',
-          maxWidth: '550px',
-          aspectRatio: '1.6 / 1',
+          width: '560px',
+          height: '350px',
           backgroundColor: '#0a0f1d',
           backgroundImage: 'linear-gradient(135deg, #0a0f1d 0%, #111827 100%)',
           borderRadius: '1.5rem',
           position: 'relative',
           overflow: 'hidden',
-          display: 'block', // changed from flex to prevent squash
+          display: 'block', // use block with absolute children
           border: '1px solid #312e81',
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.7)',
           fontFamily: 'ui-sans-serif, system-ui, sans-serif'
@@ -70,9 +69,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {/* TOP ROW */}
         <div style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', right: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.05em', color: '#ffffff' }}>
-              Code<span style={{ color: '#818cf8' }}>-A-</span>Nova
-            </span>
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '6.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -85,11 +82,11 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         </div>
 
         {/* MIDDLE ROW */}
-        <div style={{ position: 'absolute', top: '50%', left: '2.5rem', right: '2.5rem', transform: 'translateY(-50%)', zIndex: 10 }}>
-          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+        <div style={{ position: 'absolute', top: '120px', left: '2.5rem', right: '2.5rem', zIndex: 10 }}>
+          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
             Campus Lead
           </div>
-          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.25rem', lineHeight: 1.2, paddingBottom: '0.2em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {name}
           </div>
           <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
