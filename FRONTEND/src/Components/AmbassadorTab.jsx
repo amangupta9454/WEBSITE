@@ -36,11 +36,10 @@ const AmbassadorTab = () => {
   const idCardRef = useRef(null);
 
   const handleDownloadClick = () => {
-    if (stats?.ambassadorLinkedInPost) {
-      if (idCardRef.current) {
-        idCardRef.current.triggerDownload();
-      }
-    } else {
+    if (idCardRef.current) {
+      idCardRef.current.triggerDownload();
+    }
+    if (!stats?.ambassadorLinkedInPost) {
       setIsModalOpen(true);
     }
   };

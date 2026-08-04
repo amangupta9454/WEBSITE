@@ -73,7 +73,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       cardRef.current.style.transform = 'none';
       
       const canvas = await html2canvas(cardRef.current, {
-        scale: 4, // Ultra high resolution for perfect PDF
+        scale: window.innerWidth < 768 ? 2 : 3, // Lower scale on mobile to prevent memory crash
         useCORS: true,
         backgroundColor: '#0a0f1d',
         logging: false,
@@ -81,14 +81,14 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
       
       cardRef.current.style.transform = originalTransform;
       
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
         format: [canvas.width, canvas.height]
       });
       
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
       pdf.save(`CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.pdf`);
     } catch (err) {
       console.error("Error generating ID card PDF:", err);
