@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   GraduationCap,
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import AmbassadorIdCardModal from "./AmbassadorIdCardModal";
+import AmbassadorIdCard from "./AmbassadorIdCard";
 import { Download } from "lucide-react";
 
 const AmbassadorTab = () => {
@@ -32,6 +33,17 @@ const AmbassadorTab = () => {
   const [copiedFeature, setCopiedFeature] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const idCardRef = useRef(null);
+
+  const handleDownloadClick = () => {
+    if (stats?.ambassadorLinkedInPost) {
+      if (idCardRef.current) {
+        idCardRef.current.triggerDownload();
+      }
+    } else {
+      setIsModalOpen(true);
+    }
+  };
 
   const fetchAmbassadorStats = async () => {
     try {
@@ -177,12 +189,17 @@ const AmbassadorTab = () => {
       {/* Download ID Card Button */}
       <div className="flex justify-center my-6">
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleDownloadClick}
           className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
         >
           <Download className="w-5 h-5" />
           Download Ambassador ID Card
         </button>
+      </div>
+      
+      {/* Hidden Card for direct download */}
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
+        <AmbassadorIdCard stats={stats} ref={idCardRef} />
       </div>
 
       {isModalOpen && (

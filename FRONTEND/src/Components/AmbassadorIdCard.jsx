@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
-const AmbassadorIdCard = ({ stats, inline = false }) => {
+const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -11,14 +11,14 @@ const AmbassadorIdCard = ({ stats, inline = false }) => {
     try {
       setDownloading(true);
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // High resolution
+        scale: 3, 
         useCORS: true,
         backgroundColor: null,
       });
       const image = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = image;
-      link.download = `CodeANova-Ambassador-${stats.ambassadorName || "Card"}.png`;
+      link.download = `CodeANova-Ambassador-${stats?.ambassadorName || "Card"}.png`;
       link.click();
     } catch (err) {
       console.error("Error generating ID card:", err);
@@ -28,72 +28,92 @@ const AmbassadorIdCard = ({ stats, inline = false }) => {
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    triggerDownload: handleDownload
+  }));
+
   const name = stats?.ambassadorName || "Code A Nova Ambassador";
   const college = stats?.ambassadorCollege || "Campus Network";
   const idCode = stats?.ambassadorCode || "CAN-CA-PENDING";
 
   return (
-    <div className={`flex flex-col items-center justify-center w-full ${inline ? 'my-8 animate-fade-in' : ''}`}>
+    <div className={`flex flex-col items-center justify-center w-full ${inline ? 'my-4' : ''}`}>
       
       {/* ─── ACTUAL CARD TO BE DOWNLOADED ─── */}
       <div 
         ref={cardRef} 
-        className="relative overflow-hidden rounded-2xl sm:rounded-3xl w-full max-w-[500px] aspect-[1.6/1] bg-[#0a0f1d] flex flex-col justify-between p-6 sm:p-8 border border-indigo-500/20"
         style={{
-          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 40px -10px rgba(99, 102, 241, 0.2)',
-          backgroundImage: 'linear-gradient(135deg, #0a0f1d 0%, #111827 100%)'
+          width: '100%',
+          maxWidth: '550px',
+          aspectRatio: '1.6 / 1',
+          backgroundColor: '#0a0f1d',
+          backgroundImage: 'linear-gradient(135deg, #0a0f1d 0%, #111827 100%)',
+          borderRadius: '1.5rem',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '2.5rem',
+          border: '1px solid #312e81',
+          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.7)',
+          fontFamily: 'ui-sans-serif, system-ui, sans-serif'
         }}
       >
-        {/* Subtle glow elements using standard hex/rgba */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[rgba(99,102,241,0.1)] blur-[60px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[rgba(139,92,246,0.1)] blur-[60px] rounded-full pointer-events-none transform -translate-x-1/2 translate-y-1/2"></div>
+        {/* Subtle glow elements */}
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '250px', height: '250px', backgroundColor: 'rgba(99,102,241,0.15)', filter: 'blur(60px)', borderRadius: '50%', transform: 'translate(50%, -50%)', pointerEvents: 'none' }}></div>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '200px', height: '200px', backgroundColor: 'rgba(139,92,246,0.15)', filter: 'blur(60px)', borderRadius: '50%', transform: 'translate(-50%, 50%)', pointerEvents: 'none' }}></div>
 
         {/* TOP ROW */}
-        <div className="flex justify-between items-start w-full relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <img src="/LOGO.png" alt="Code-A-Nova Logo" className="h-6 sm:h-8 object-contain" style={{ filter: 'brightness(0) invert(1)' }} crossOrigin="anonymous" />
-            </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '3.5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
-          <div className="text-right">
-            <div className="text-indigo-400 font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase">
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
               Official
             </div>
-            <div className="text-white font-bold text-xs sm:text-sm tracking-[0.1em] uppercase mt-0.5">
+            <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '0.25rem' }}>
               Ambassador
             </div>
           </div>
         </div>
 
         {/* MIDDLE ROW */}
-        <div className="relative z-10 mt-6">
-          <div className="text-slate-400 text-[10px] sm:text-xs font-semibold tracking-wider uppercase mb-1">
+        <div style={{ position: 'relative', zIndex: 10, marginTop: '2rem' }}>
+          <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             Campus Lead
           </div>
-          <div className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-1 sm:mb-2 leading-none truncate">
+          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {name}
           </div>
-          <div className="text-indigo-200/80 text-[10px] sm:text-xs font-medium uppercase truncate max-w-[90%]">
+          <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
             {college}
           </div>
         </div>
 
         {/* BOTTOM ROW */}
-        <div className="flex justify-between items-end w-full relative z-10 mt-auto pt-4 border-t border-white/5">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', position: 'relative', zIndex: 10, marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-0.5">
+            <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
               ID Number
             </div>
-            <div className="text-slate-300 text-xs sm:text-sm font-mono tracking-wider font-bold">
+            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
               {idCode}
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-slate-500 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-0.5">
-              Valid Thru
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Added a small badge/icon area for "premium" look */}
+            <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '0.5rem', color: '#818cf8', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>
+              CAN-VERIFIED
             </div>
-            <div className="text-slate-300 text-xs sm:text-sm font-mono font-bold tracking-wider">
-              2026
+            <div>
+              <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                Valid Thru
+              </div>
+              <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
+                2026
+              </div>
             </div>
           </div>
         </div>
@@ -104,14 +124,15 @@ const AmbassadorIdCard = ({ stats, inline = false }) => {
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="mt-6 flex items-center justify-center gap-2 w-full max-w-[500px] px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-70"
+          className="mt-6 flex items-center justify-center gap-2 w-full max-w-[550px] px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-70"
         >
           {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-          {downloading ? "Generating..." : "Download Official ID Card"}
+          {downloading ? "Generating PNG..." : "Download Official ID Card"}
         </button>
       )}
+
     </div>
   );
-};
+});
 
 export default AmbassadorIdCard;
