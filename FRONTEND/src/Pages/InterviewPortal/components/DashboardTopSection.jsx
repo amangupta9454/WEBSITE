@@ -16,9 +16,17 @@ function loadScript(src) {
 }
 
 export default function DashboardTopSection() {
-  const [credits, setCredits] = useState(0);
-  const [isUnlimited, setIsUnlimited] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [credits, setCredits] = useState(() => {
+    const val = localStorage.getItem('interviewUserCredits');
+    return val ? parseInt(val) : 0;
+  });
+  const [isUnlimited, setIsUnlimited] = useState(() => {
+    return localStorage.getItem('interviewUserUnlimited') === 'true';
+  });
+  const [userData, setUserData] = useState(() => {
+    const saved = localStorage.getItem('interviewUserData');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeVisible, setWelcomeVisible] = useState(true);
@@ -34,8 +42,11 @@ export default function DashboardTopSection() {
       if (res.data.success) {
         setCredits(res.data.credits);
         setIsUnlimited(res.data.isUnlimited);
+        localStorage.setItem('interviewUserCredits', res.data.credits);
+        localStorage.setItem('interviewUserUnlimited', res.data.isUnlimited);
         if (res.data.user) {
           setUserData(res.data.user);
+          localStorage.setItem('interviewUserData', JSON.stringify(res.data.user));
         }
         if (res.data.role) {
           localStorage.setItem('interviewUserRole', res.data.role);

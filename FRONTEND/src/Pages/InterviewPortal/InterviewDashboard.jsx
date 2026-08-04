@@ -25,8 +25,14 @@ function InterviewDashboard() {
   const [sessions, setSessions] = useState([]);
   const [credits, setCredits] = useState(0);
   const [isUnlimited, setIsUnlimited] = useState(false);
-  const [interviewEnabled, setInterviewEnabled] = useState(true);
-  const [resumeEnabled, setResumeEnabled] = useState(true);
+  const [interviewEnabled, setInterviewEnabled] = useState(() => {
+    const val = localStorage.getItem('CAN_INTERVIEW_ENABLED');
+    return val !== null ? val === 'true' : false; // Default to false so they don't flash, then pop in if true
+  });
+  const [resumeEnabled, setResumeEnabled] = useState(() => {
+    const val = localStorage.getItem('CAN_RESUME_ENABLED');
+    return val !== null ? val === 'true' : false;
+  });
   const [isIntern, setIsIntern] = useState(false);
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,9 +110,11 @@ function InterviewDashboard() {
         }
         if (creditsRes.data.interviewEnabled !== undefined) {
           setInterviewEnabled(creditsRes.data.interviewEnabled);
+          localStorage.setItem('CAN_INTERVIEW_ENABLED', creditsRes.data.interviewEnabled);
         }
         if (creditsRes.data.resumeEnabled !== undefined) {
           setResumeEnabled(creditsRes.data.resumeEnabled);
+          localStorage.setItem('CAN_RESUME_ENABLED', creditsRes.data.resumeEnabled);
         }
         if (creditsRes.data.role === 'intern') {
           setIsIntern(true);
