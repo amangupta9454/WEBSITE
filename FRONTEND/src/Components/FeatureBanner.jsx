@@ -18,6 +18,12 @@ const FeatureBanner = () => {
   });
 
   useEffect(() => {
+    // Hide banner if user is referred, so they don't get distracted by the ambassador popup
+    const params = new URLSearchParams(window.location.search);
+    const hasRef = params.get("ref") || params.get("referralCode") || params.get("referredByCode");
+    const hasStoredRef = sessionStorage.getItem("referralCode") || localStorage.getItem("referralCode");
+    if (hasRef || hasStoredRef) return;
+
     const dismissed = sessionStorage.getItem('featureBannerDismissed');
     if (dismissed) return;
 
