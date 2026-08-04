@@ -11,12 +11,25 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
     if (!cardRef.current) return;
     try {
       setDownloading(true);
-      // Capture the element visually exactly as it looks
+      
+      // Temporarily force EXACT pixel dimensions to bypass any flex/aspect-ratio bugs in html2canvas
+      const originalCss = cardRef.current.style.cssText;
+      cardRef.current.style.width = '550px';
+      cardRef.current.style.height = '343px';
+      cardRef.current.style.maxWidth = 'none';
+      cardRef.current.style.aspectRatio = 'auto';
+
+      // Capture the element
       const canvas = await html2canvas(cardRef.current, {
         scale: 3, // High resolution
         useCORS: true,
         backgroundColor: '#0a0f1d',
+        logging: false,
       });
+      
+      // Restore original responsive styles immediately
+      cardRef.current.style.cssText = originalCss;
+
       const imgData = canvas.toDataURL("image/png");
       
       // Calculate PDF dimensions to perfectly match the canvas aspect ratio
@@ -63,6 +76,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '2rem',
+          boxSizing: 'border-box',
           border: '1px solid #312e81',
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.7)',
           fontFamily: 'ui-sans-serif, system-ui, sans-serif'
@@ -75,7 +89,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         {/* TOP ROW */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '6rem', objectFit: 'contain', filter: 'brightness(0) invert(1)', mixBlendMode: 'screen' }} />
+            <img src="/LOGO.png" alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '5rem', objectFit: 'contain', filter: 'brightness(0) invert(1)', mixBlendMode: 'screen' }} />
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: '#818cf8', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -88,14 +102,15 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
         </div>
 
         {/* MIDDLE ROW */}
-        <div style={{ position: 'relative', zIndex: 10, marginTop: '1rem' }}>
+        <div style={{ position: 'relative', zIndex: 10, marginTop: '0.5rem' }}>
           <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             Campus Lead
           </div>
-          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {/* Removed overflow: hidden to prevent ANY descender clipping in html2canvas */}
+          <div style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
             {name}
           </div>
-          <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
+          <div style={{ color: '#c7d2fe', fontSize: '0.875rem', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
             {college}
           </div>
         </div>
