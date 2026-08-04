@@ -36,7 +36,7 @@ class ProviderManager {
     const status = error.status || error.statusCode || 500;
 
     let canonicalCode = "UNKNOWN_RUNTIME_ERROR";
-    let explanation = "Unhandled operational exception occurred during third-party AI execution.";
+    let explanation = `Unhandled operational exception occurred during third-party AI execution. Raw error: ${rawMessage}`;
 
     if (rawMessage.includes("all_keys_unavailable") || rawMessage.includes("pool exhaustion") || rawMessage.includes("offline")) {
       canonicalCode = "PROVIDER_OFFLINE";
