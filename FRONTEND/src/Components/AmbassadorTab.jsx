@@ -23,13 +23,15 @@ import {
   Users
 } from "lucide-react";
 import { toast } from "react-toastify";
-import AmbassadorIdCard from "./AmbassadorIdCard";
+import AmbassadorIdCardModal from "./AmbassadorIdCardModal";
+import { Download } from "lucide-react";
 
 const AmbassadorTab = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copiedFeature, setCopiedFeature] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchAmbassadorStats = async () => {
     try {
@@ -43,6 +45,9 @@ const AmbassadorTab = () => {
 
       if (res.data.success) {
         setStats(res.data);
+        if (!res.data.ambassadorLinkedInPost) {
+          setIsModalOpen(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching ambassador stats:", error);
@@ -169,8 +174,28 @@ const AmbassadorTab = () => {
         </button>
       </div>
 
-      {/* Ambassador ID Card Section */}
-      <AmbassadorIdCard stats={stats} />
+      {/* Download ID Card Button */}
+      <div className="flex justify-center my-6">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
+        >
+          <Download className="w-5 h-5" />
+          Download Ambassador ID Card
+        </button>
+      </div>
+
+      {isModalOpen && (
+        <AmbassadorIdCardModal 
+          stats={stats} 
+          onClose={() => setIsModalOpen(false)} 
+          onSuccess={(url) => {
+            setStats({...stats, ambassadorLinkedInPost: url});
+            setIsModalOpen(false);
+            toast.success("Successfully verified! Dashboard unlocked.");
+          }} 
+        />
+      )}
 
       {/* Join Official Ambassador Group Card */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-4 sm:p-5 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/30">

@@ -12,6 +12,7 @@ export default function UnifiedDashboard() {
   const [isIntern, setIsIntern] = useState(false);
   const [isAmbassador, setIsAmbassador] = useState(false);
   const [assessmentEnabled, setAssessmentEnabled] = useState(true);
+  const [ambassadorEnabled, setAmbassadorEnabled] = useState(true);
 
   useEffect(() => {
     // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
@@ -27,8 +28,10 @@ export default function UnifiedDashboard() {
       try {
         const parsed = JSON.parse(settings);
         setAssessmentEnabled(parsed.assessmentModuleEnabled !== false);
+        setAmbassadorEnabled(parsed.ambassadorDashboardEnabled !== false);
       } catch (e) {
         setAssessmentEnabled(true);
+        setAmbassadorEnabled(true);
       }
     }
 
@@ -105,7 +108,7 @@ export default function UnifiedDashboard() {
             </button>
           )}
 
-          {isAmbassador && (
+          {isAmbassador && ambassadorEnabled && (
             <button
               onClick={() => setActiveTab("ambassador")}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${activeTab === "ambassador"
@@ -124,7 +127,7 @@ export default function UnifiedDashboard() {
         {activeTab === "overview" && <InterviewDashboard />}
         {activeTab === "assessment" && assessmentEnabled && <StudentExperiencePlatform isEmbedded={true} />}
         {activeTab === "internship" && isIntern && <StudentDashboard />}
-        {activeTab === "ambassador" && isAmbassador && <AmbassadorTab />}
+        {activeTab === "ambassador" && isAmbassador && ambassadorEnabled && <AmbassadorTab />}
       </div>
     </div>
   );

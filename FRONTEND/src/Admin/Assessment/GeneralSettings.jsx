@@ -16,6 +16,7 @@ const GeneralSettings = () => {
     aiQuestionGenerationEnabled: true,
     questionBankFallbackEnabled: true,
     resumeAssessmentEnabled: true,
+    ambassadorDashboardEnabled: true,
   });
 
   useEffect(() => {
@@ -77,6 +78,11 @@ const GeneralSettings = () => {
       key: "resumeAssessmentEnabled",
       title: "Resume Assessment Enabled",
       description: "Enables autosaved attempt restoration without resetting timers when students exit sessions midway.",
+    },
+    {
+      key: "ambassadorDashboardEnabled",
+      title: "Campus Ambassador Dashboard Enabled",
+      description: "Master switch for the Ambassador Program tab on the student unified dashboard.",
     },
   ];
 

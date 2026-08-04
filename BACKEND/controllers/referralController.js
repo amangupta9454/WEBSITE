@@ -330,6 +330,8 @@ exports.assignAmbassador = async (req, res) => {
         mobile: user.mobile,
         isAmbassador: user.isAmbassador,
         ambassadorCode: user.ambassadorCode,
+        ambassadorName: String(user.ambassadorName || ""),
+        ambassadorLinkedInPost: String(user.ambassadorLinkedInPost || ""),
         ambassadorCollege: user.ambassadorCollege,
       },
     });
@@ -632,6 +634,7 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       ambassadorCode: code,
       ambassadorCollege: user.ambassadorCollege || "",
       ambassadorName: user.ambassadorName || user.name || "",
+      ambassadorLinkedInPost: user.ambassadorLinkedInPost || "",
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
       totalSignups: brandNewUserSignupsCount,
@@ -681,6 +684,33 @@ const mailTransporter = nodemailer.createTransport({
     pass: process.env.EMAIL_APP_PASSWORD,
   },
 });
+
+// --- Student: Save LinkedIn Post Link ---
+exports.saveAmbassadorLinkedInPost = async (req, res) => {
+  try {
+    const { linkedInUrl } = req.body;
+    if (!linkedInUrl) {
+      return res.status(400).json({ success: false, message: "LinkedIn URL is required" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (!user.isAmbassador) {
+      return res.status(403).json({ success: false, message: "Only ambassadors can save LinkedIn post" });
+    }
+
+    user.ambassadorLinkedInPost = linkedInUrl;
+    await user.save();
+
+    res.json({ success: true, message: "LinkedIn post saved successfully" });
+  } catch (err) {
+    console.error("Error saving LinkedIn post:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 
 // Student: Submit Campus Ambassador Application
 exports.submitAmbassadorApplication = async (req, res) => {

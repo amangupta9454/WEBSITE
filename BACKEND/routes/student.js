@@ -15,11 +15,12 @@ router.post('/dismiss-notification', authMiddleware, requireRole('student', 'int
 router.get('/leaderboard', getPublicLeaderboard);
 
 const { getV2Projects, submitV2Project } = require('../controllers/studentControllerV2');
-const { getStudentAmbassadorStats, trackUserActivity, submitAmbassadorApplication } = require('../controllers/referralController');
+const { getStudentAmbassadorStats, trackUserActivity, submitAmbassadorApplication, saveAmbassadorLinkedInPost } = require('../controllers/referralController');
 router.get('/v2-projects', authMiddleware, requireRole('intern', 'admin'), getV2Projects);
 router.post('/submit-v2-project', authMiddleware, requireRole('intern', 'admin'), submitV2Project);
 router.get('/ambassador-stats', authMiddleware, requireRole('student', 'campus_ambassador', 'intern', 'admin'), getStudentAmbassadorStats);
 router.post('/track-activity', authMiddleware, trackUserActivity);
 router.post('/ambassador-apply', submitAmbassadorApplication);
+router.post('/ambassador-linkedin-post', authMiddleware, requireRole('campus_ambassador', 'admin'), saveAmbassadorLinkedInPost);
 
 module.exports = router;

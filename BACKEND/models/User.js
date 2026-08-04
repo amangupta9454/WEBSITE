@@ -142,6 +142,7 @@ const userSchema = new mongoose.Schema(
     ambassadorCode: { type: String, default: null },
     ambassadorCollege: { type: String, default: "" },
     ambassadorName: { type: String, default: "" },
+    ambassadorLinkedInPost: { type: String, default: "" },
   },
   { timestamps: true },
 );
