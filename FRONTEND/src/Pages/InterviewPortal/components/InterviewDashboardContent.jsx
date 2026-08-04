@@ -762,8 +762,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
               <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
-            <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 mb-1.5 leading-tight">Take quizzes, coding tests and track certifications.</p>
-            <p className="text-[10px] sm:text-sm text-cyan-600 font-bold relative z-10 leading-tight">Open →</p>
+            <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Take quizzes, coding tests and track certifications.</p>
           </div>
         )}
 

@@ -9,8 +9,8 @@ import StudentExperiencePlatform from "./AssessmentPortal/StudentExperiencePlatf
 
 export default function UnifiedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [isIntern, setIsIntern] = useState(false);
-  const [isAmbassador, setIsAmbassador] = useState(false);
+  const [isIntern, setIsIntern] = useState(() => localStorage.getItem("interviewUserRole") === "intern");
+  const [isAmbassador, setIsAmbassador] = useState(() => localStorage.getItem("isAmbassador") === "true");
   const [assessmentEnabled, setAssessmentEnabled] = useState(true);
   const [ambassadorEnabled, setAmbassadorEnabled] = useState(true);
 
@@ -62,9 +62,14 @@ export default function UnifiedDashboard() {
           });
           if (res.data.success) {
             setIsAmbassador(true);
+            localStorage.setItem("isAmbassador", "true");
+          } else {
+            setIsAmbassador(false);
+            localStorage.setItem("isAmbassador", "false");
           }
         } catch (e) {
           setIsAmbassador(false);
+          localStorage.setItem("isAmbassador", "false");
         }
       }
     };
