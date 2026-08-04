@@ -268,7 +268,7 @@ class RuntimeResolver {
       promptData = {
         systemInstruction: "You are an expert technical assessor. Generate {{questionCount}} multiple choice questions for the {{category}} domain.",
         context: "The candidate is taking a professional assessment. Ensure questions are challenging and accurate.",
-        rules: "1. Return strictly valid JSON.\n2. Ensure exactly 4 options per question.\n3. Make sure the correct index is between 0 and 3.",
+        rules: "1. Return strictly valid JSON array of objects.\n2. Ensure exactly 4 options per question.\n3. Make sure the correct index is between 0 and 3.\n4. Every object MUST contain these exact keys: 'question', 'options', 'correctIndex', 'explanation', 'topic', 'difficulty'.",
         outputFormat: "JSON Array of Question objects.",
         validationRulesText: ""
       };
