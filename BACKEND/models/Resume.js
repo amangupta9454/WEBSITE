@@ -113,6 +113,21 @@ const resumeSchema = new mongoose.Schema(
           link: { type: String }
         }
       ],
+      customSections: [
+        {
+          id: { type: String },
+          heading: { type: String },
+          items: [
+            {
+              id: { type: String },
+              title: { type: String },
+              subtitle: { type: String },
+              date: { type: String },
+              description: { type: String }
+            }
+          ]
+        }
+      ],
       sectionOrder: { 
         type: [String], 
         default: ['experience', 'projects', 'education', 'skills', 'achievements', 'certifications'] 

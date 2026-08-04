@@ -161,9 +161,79 @@ const ResumeForm = ({ resume, setResume }) => {
     updateData('sectionOrder', newOrder);
   };
 
+  const addCustomSection = () => {
+    const newId = `custom_${Date.now()}`;
+    const newSection = { id: newId, heading: 'New Section', items: [] };
+    updateData('customSections', [...(data.customSections || []), newSection]);
+    updateData('sectionOrder', [...sectionOrder, newId]);
+    setOpenSection(newId);
+  };
+
+  const removeCustomSection = (secId) => {
+    const customSecs = (data.customSections || []).filter(cs => cs.id !== secId);
+    updateData('customSections', customSecs);
+    updateData('sectionOrder', sectionOrder.filter(id => id !== secId));
+  };
+
+  const updateCustomSectionHeading = (secId, newHeading) => {
+    const customSecs = [...(data.customSections || [])];
+    const secIdx = customSecs.findIndex(cs => cs.id === secId);
+    if (secIdx === -1) return;
+    customSecs[secIdx].heading = newHeading;
+    updateData('customSections', customSecs);
+  };
+
+  const addCustomSectionItem = (secId) => {
+    const customSecs = [...(data.customSections || [])];
+    const secIdx = customSecs.findIndex(cs => cs.id === secId);
+    if (secIdx === -1) return;
+    const defaultItem = { id: Date.now().toString(), title: '', subtitle: '', date: '', description: '' };
+    customSecs[secIdx].items = [...(customSecs[secIdx].items || []), defaultItem];
+    updateData('customSections', customSecs);
+    setOpenSection(secId);
+  };
+
+  const updateCustomSectionItem = (secId, itemIdx, field, value) => {
+    const customSecs = [...(data.customSections || [])];
+    const secIdx = customSecs.findIndex(cs => cs.id === secId);
+    if (secIdx === -1) return;
+    const newItems = [...customSecs[secIdx].items];
+    newItems[itemIdx] = { ...newItems[itemIdx], [field]: value };
+    customSecs[secIdx] = { ...customSecs[secIdx], items: newItems };
+    updateData('customSections', customSecs);
+  };
+
+  const removeCustomSectionItem = (secId, itemIdx) => {
+    const customSecs = [...(data.customSections || [])];
+    const secIdx = customSecs.findIndex(cs => cs.id === secId);
+    if (secIdx === -1) return;
+    const newItems = [...customSecs[secIdx].items];
+    newItems.splice(itemIdx, 1);
+    customSecs[secIdx] = { ...customSecs[secIdx], items: newItems };
+    updateData('customSections', customSecs);
+  };
+  
+  const moveCustomSectionItem = (secId, itemIdx, direction) => {
+    const customSecs = [...(data.customSections || [])];
+    const secIdx = customSecs.findIndex(cs => cs.id === secId);
+    if (secIdx === -1) return;
+    const newItems = [...customSecs[secIdx].items];
+    if (direction === 'up' && itemIdx > 0) {
+      const temp = newItems[itemIdx - 1];
+      newItems[itemIdx - 1] = newItems[itemIdx];
+      newItems[itemIdx] = temp;
+    } else if (direction === 'down' && itemIdx < newItems.length - 1) {
+      const temp = newItems[itemIdx + 1];
+      newItems[itemIdx + 1] = newItems[itemIdx];
+      newItems[itemIdx] = temp;
+    }
+    customSecs[secIdx] = { ...customSecs[secIdx], items: newItems };
+    updateData('customSections', customSecs);
+  };
+
   // updateSkills removed, using updateNested instead
 
-  const renderSectionHeader = (title, key, index) => {
+  const renderSectionHeader = (title, key, index, isCustom = false) => {
     const isOpen = openSection === key;
     return (
     <div className="flex justify-between items-center mb-0 pb-2 cursor-pointer group" onClick={() => setOpenSection(isOpen ? null : key)}>
@@ -172,25 +242,46 @@ const ResumeForm = ({ resume, setResume }) => {
           <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="text-slate-400 hover:text-blue-600 disabled:opacity-0 hover:bg-blue-50 rounded"><ChevronUp size={16}/></button>
           <button onClick={() => moveSection(index, 'down')} disabled={index === sectionOrder.length - 1} className="text-slate-400 hover:text-blue-600 disabled:opacity-0 hover:bg-blue-50 rounded"><ChevronDown size={16}/></button>
         </div>
-        <h2 className="text-lg font-black text-slate-800 capitalize -ml-1">{title}</h2>
+        {isCustom ? (
+           <input 
+             className="text-lg font-black text-slate-800 bg-transparent border-b border-transparent focus:border-blue-500 focus:outline-none -ml-1 px-1 min-w-[150px]"
+             value={title}
+             onClick={e => e.stopPropagation()}
+             onChange={(e) => updateCustomSectionHeading(key, e.target.value)}
+             placeholder="Section Heading"
+           />
+        ) : (
+          <h2 className="text-lg font-black text-slate-800 capitalize -ml-1">{title}</h2>
+        )}
       </div>
       <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
-        <button onClick={() => handleImport(key)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold border border-indigo-100">
-          <Download size={14}/> Import
-        </button>
+        {!isCustom && (
+          <button onClick={() => handleImport(key)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold border border-indigo-100">
+            <Download size={14}/> Import
+          </button>
+        )}
         <button onClick={() => {
-          let defaultItem = {};
-          if (key === 'skills') defaultItem = { category: '', items: '' };
-          else if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
-          else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
-          else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
-          else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
-          else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
-          addItem(key, defaultItem);
-          setOpenSection(key);
+          if (isCustom) {
+            addCustomSectionItem(key);
+          } else {
+            let defaultItem = {};
+            if (key === 'skills') defaultItem = { category: '', items: '' };
+            else if (key === 'experience') defaultItem = { company: '', position: '', startDate: '', endDate: '', description: '' };
+            else if (key === 'projects') defaultItem = { title: '', liveLink: '', githubLink: '', startDate: '', endDate: '', technologies: '', description: '' };
+            else if (key === 'education') defaultItem = { institution: '', degree: '', fieldOfStudy: '', location: '', startDate: '', endDate: '', score: '' };
+            else if (key === 'achievements') defaultItem = { title: '', date: '', description: '' };
+            else if (key === 'certifications') defaultItem = { name: '', issuer: '', date: '', link: '' };
+            addItem(key, defaultItem);
+            setOpenSection(key);
+          }
         }} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
           <Plus size={16}/> Add
         </button>
+        {isCustom && (
+          <button onClick={() => removeCustomSection(key)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex items-center gap-1 text-sm font-bold">
+            <Trash2 size={16}/> Delete
+          </button>
+        )}
         <button className="text-slate-500" onClick={() => setOpenSection(isOpen ? null : key)}>
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
@@ -357,6 +448,35 @@ const ResumeForm = ({ resume, setResume }) => {
           </section>
         );
       default:
+        if (key.startsWith('custom_')) {
+          const customSecIndex = (data.customSections || []).findIndex(cs => cs.id === key);
+          const customSec = data.customSections && data.customSections[customSecIndex];
+          if (!customSec) return null;
+          return (
+            <section key={key} className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm border-l-4 border-l-indigo-400">
+              {renderSectionHeader(customSec.heading || 'New Section', key, index, true)}
+              {openSection === key && (
+              <div className="space-y-4 mt-4 pt-4 border-t border-slate-100">
+                {(customSec.items || []).map((item, idx) => (
+                  <div key={item.id || idx} className="bg-slate-50 border border-slate-200 p-4 rounded-xl relative group">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => moveCustomSectionItem(key, idx, 'up')} className="p-1 hover:bg-white rounded"><ArrowUp size={14} /></button>
+                      <button onClick={() => moveCustomSectionItem(key, idx, 'down')} className="p-1 hover:bg-white rounded"><ArrowDown size={14} /></button>
+                      <button onClick={() => removeCustomSectionItem(key, idx)} className="p-1 text-red-500 hover:bg-red-50 rounded"><Trash2 size={14} /></button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3 pr-20">
+                      <input className="input-field col-span-2 md:col-span-1" placeholder="Title (e.g. President)" value={item.title || ''} onChange={(e) => updateCustomSectionItem(key, idx, 'title', e.target.value)} />
+                      <input className="input-field col-span-2 md:col-span-1" placeholder="Subtitle (e.g. Tech Club)" value={item.subtitle || ''} onChange={(e) => updateCustomSectionItem(key, idx, 'subtitle', e.target.value)} />
+                      <input className="input-field col-span-2" placeholder="Date/Duration" value={item.date || ''} onChange={(e) => updateCustomSectionItem(key, idx, 'date', e.target.value)} />
+                    </div>
+                    <textarea className="input-field w-full h-20" placeholder="Description (Bullet points separated by newline)" value={item.description || ''} onChange={(e) => updateCustomSectionItem(key, idx, 'description', e.target.value)} />
+                  </div>
+                ))}
+              </div>
+              )}
+            </section>
+          );
+        }
         return null;
     }
   };
@@ -389,6 +509,10 @@ const ResumeForm = ({ resume, setResume }) => {
       </section>
 
       {sectionOrder.map((key, index) => renderSection(key, index))}
+
+      <button onClick={addCustomSection} className="w-full py-4 mt-2 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold hover:bg-slate-50 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm">
+        <Plus size={20} /> Add Custom Section
+      </button>
 
       <style>{`
         .input-field {

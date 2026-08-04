@@ -328,6 +328,50 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
         );
 
       default:
+        if (key.startsWith('custom_')) {
+          const customSections = data.customSections || [];
+          const customSec = customSections.find(cs => cs.id === key);
+          if (!customSec || !customSec.items || customSec.items.length === 0) return null;
+          
+          return (
+            <div className="break-inside-avoid" style={{ marginBottom: 'var(--section-mb)' }} key={key}>
+              <h2 className="font-bold uppercase border-b border-gray-400 pb-0.5 text-gray-900 tracking-wider" style={{ fontSize: 'var(--h2-size)', marginBottom: 'var(--item-mb)' }}>
+                {customSec.heading || 'Section'}
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {customSec.items.map((item, index) => (
+                  <div key={item.id} className="break-inside-avoid">
+                    {index > 0 && (
+                      <div style={{ height: '5px' }} />
+                    )}
+                    <div className="flex flex-col">
+                      {(item.title || item.date) && (
+                        <div className="flex justify-between items-baseline">
+                          {item.title && <h3 className="font-bold text-gray-900 leading-tight" style={{ fontSize: 'var(--h3-size)' }}>{item.title}</h3>}
+                          {item.date && (
+                            <span className="text-gray-600 font-medium whitespace-nowrap ml-4" style={{ fontSize: 'var(--text-size)' }}>
+                              {item.date}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {item.subtitle && (
+                        <div className="leading-none" style={{ marginTop: '-2px' }}>
+                          <span className="font-semibold text-gray-700 italic" style={{ fontSize: 'var(--text-size)' }}>{item.subtitle}</span>
+                        </div>
+                      )}
+                      {item.description && (
+                        <ul className="mt-1">
+                          {renderBulletPoints(item.description)}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
         return null;
     }
   };
