@@ -138,7 +138,7 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
             <div style={{ position: 'absolute', bottom: '-100px', left: '-100px', width: '200px', height: '200px', backgroundColor: 'rgba(139,92,246,0.15)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }}></div>
 
             {/* TOP ROW - Absolutely Positioned */}
-            <div style={{ position: 'absolute', top: '30px', left: '30px', right: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: '25px', left: '30px', right: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <img src={logoSrc} alt="Code-A-Nova" crossOrigin="anonymous" style={{ height: '80px', objectFit: 'contain' }} />
               </div>
@@ -153,20 +153,20 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
             </div>
 
             {/* MIDDLE ROW - Absolutely Positioned */}
-            <div style={{ position: 'absolute', top: '150px', left: '30px', right: '30px', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: '125px', left: '30px', right: '30px', zIndex: 10 }}>
               <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>
                 Campus Lead
               </div>
-              <div style={{ color: '#ffffff', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '8px', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ color: '#ffffff', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '8px', lineHeight: 1.2 }}>
                 {name}
               </div>
-              <div style={{ color: '#c7d2fe', fontSize: '14px', fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
+              <div style={{ color: '#c7d2fe', fontSize: '14px', fontWeight: 500, textTransform: 'uppercase', maxWidth: '90%', lineHeight: 1.4 }}>
                 {college}
               </div>
             </div>
 
             {/* BOTTOM ROW - Absolutely Positioned */}
-            <div style={{ position: 'absolute', bottom: '30px', left: '30px', right: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10, paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ position: 'absolute', bottom: '25px', left: '30px', right: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10, paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <div>
                 <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                   ID Number
