@@ -118,7 +118,7 @@ class ProviderManager {
           response = {
             success: true,
             rawText: JSON.stringify([{ question: "OpenAI Fallback Evaluation Question?", options: ["A", "B", "C", "D"], correctIndex: 0, explanation: "OpenAI Fallback stub explanation", topic: "Architecture", difficulty: "Medium" }]),
-            provider: "OpenAI (Runtime Stub)",
+            provider: "OpenAI",
             model: "gpt-4o-fallback",
             apiKeyMasked: "sk-proj-••••••••••••••••xxxx",
             latencyMs: 305,
@@ -133,7 +133,7 @@ class ProviderManager {
           response = {
             success: true,
             rawText: JSON.stringify([{ question: `${provider} Fallback Evaluation Item?`, options: ["Opt 1", "Opt 2", "Opt 3", "Opt 4"], correctIndex: 0, explanation: `${provider} stub verification`, topic: "System Systems", difficulty: "Hard" }]),
-            provider: `${provider} (Runtime Stub)`,
+            provider: provider,
             model: `${provider.toLowerCase()}-pro-fallback`,
             apiKeyMasked: `${provider.slice(0, 3)}••••••••••••••••xxxx`,
             latencyMs: 350,
