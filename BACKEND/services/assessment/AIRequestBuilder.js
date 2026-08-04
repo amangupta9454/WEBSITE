@@ -48,14 +48,27 @@ class AIRequestBuilder {
     if (!finalVariables.language) finalVariables.language = "English";
 
     // 3. Extract and Merge Prompt Sections
-    let systemInstruction = blueprint.systemInstruction || resolverOutput.resolvedPrompt?.systemInstruction || "You are a senior principal AI technical evaluator and examination architect at Code-A-Nova.";
-    let generationRules = blueprint.rules || resolverOutput.resolvedPrompt?.rules || "1. Generate high-fidelity items matching difficulty tier.\n2. Ensure zero textual duplication or conversational introduction.";
+    let systemInstruction = blueprint.systemInstruction || resolverOutput.resolvedPrompt?.systemInstruction || "You are a senior principal AI technical evaluator and examination architect at Code-A-Nova. Generate high-quality technical assessment questions.";
+    let generationRules = blueprint.rules || resolverOutput.resolvedPrompt?.rules || "1. Generate exactly {{questionCount}} high-fidelity items matching difficulty tier.\n2. Ensure zero textual duplication or conversational introduction.";
     let additionalContext = blueprint.context || resolverOutput.resolvedPrompt?.context || "Target candidate assessment execution.";
 
     // 4. Attach Output Schema Specification
+    const defaultMCQSchema = `[
+  {
+    "questionText": "Clear, detailed technical question...",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+    "correctIndex": 0,
+    "explanation": "Detailed explanation of why the correct option is right and others are wrong.",
+    "difficulty": "Medium",
+    "tags": ["category1", "category2"]
+  }
+]`;
     const outputSchemaObj = resolverOutput.selectedSchema || blueprint.outputSchema || {};
-    const schemaString = outputSchemaObj.jsonSchemaString || (typeof outputSchemaObj === "string" ? outputSchemaObj : JSON.stringify(outputSchemaObj, null, 2)) || "[]";
-    const expectedFormat = outputSchemaObj.expectedResponseFormat || outputSchemaObj.name || "JSON Array";
+    let schemaString = outputSchemaObj.jsonSchemaString || (typeof outputSchemaObj === "string" ? outputSchemaObj : JSON.stringify(outputSchemaObj, null, 2));
+    if (!schemaString || schemaString === "{}" || schemaString === "[]") {
+      schemaString = defaultMCQSchema;
+    }
+    const expectedFormat = outputSchemaObj.expectedResponseFormat || outputSchemaObj.name || "JSON Array of Questions";
 
     const schemaInstruction = `\n\n### MANDATORY JSON OUTPUT SCHEMA DIRECTIVE ###\nYou MUST respond STRICTLY with a valid JSON string conforming exactly to the following structure (${expectedFormat}). Do NOT wrap the JSON in markdown code blocks or provide explanatory conversational text before or after the JSON:\n${schemaString}`;
 
