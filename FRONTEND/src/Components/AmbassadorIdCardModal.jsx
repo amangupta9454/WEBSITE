@@ -10,8 +10,9 @@ const AmbassadorIdCardModal = ({ stats, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!linkedinUrl.includes('linkedin.com')) {
-      setError("Please enter a valid LinkedIn URL");
+    const urlLower = linkedinUrl.toLowerCase();
+    if (!urlLower.includes('linkedin') && !urlLower.includes('lnkd')) {
+      setError("Please enter a valid LinkedIn URL (must contain 'linkedin' or 'lnkd')");
       return;
     }
 
