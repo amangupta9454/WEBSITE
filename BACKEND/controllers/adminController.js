@@ -1812,7 +1812,7 @@ const importInterns = async (req, res) => {
         if (!email) continue;
 
         const name = (row.name || row.studentname || row.candidatename || "").toString().trim() || "Unknown Intern";
-        const mobile = (row.mobile || row.phone || row.contact || row.whatsapp || "N/A").toString().trim() || "N/A";
+        const mobile = (row.mobile || row.mobileno || row.phone || row.phoneno || row.contact || row.contactno || row.whatsapp || row.whatsappno || "N/A").toString().trim() || "N/A";
         const domain = (row.domain || row.internshipdomain || row.stream || "General Internship").toString().trim();
         const duration = (row.duration || row.internshipduration || "1 Month").toString().trim();
         const studentId = (row.studentid || row.id || row.registrationid || `CN${Math.floor(1000 + Math.random() * 9000)}`).toString().trim();
