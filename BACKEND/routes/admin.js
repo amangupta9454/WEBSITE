@@ -118,6 +118,48 @@ router.delete("/quiz-applicants/:id", auth, verifyAdmin, deleteQuizApplicant);
 router.delete("/applications/:id", auth, verifyAdmin, deleteApplication);
 router.post("/applications/bulk-delete", auth, verifyAdmin, bulkDeleteApplications);
 
+// One-time migration: backfill batch from startDate for all existing intern records
+router.post("/migrate-batch-from-startdate", auth, verifyAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ "internships.0": { $exists: true } }).lean();
+    let updatedUsers = 0;
+    let updatedRecords = 0;
+
+    for (const user of users) {
+      let dirty = false;
+      const updatedInternships = user.internships.map(intern => {
+        // Only backfill if batch is empty/null AND startDate exists
+        if ((!intern.batch || intern.batch.trim() === "") && intern.startDate) {
+          const d = new Date(intern.startDate);
+          if (!isNaN(d.getTime())) {
+            const batch = d.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+            dirty = true;
+            updatedRecords++;
+            return { ...intern, batch };
+          }
+        }
+        return intern;
+      });
+
+      if (dirty) {
+        await User.updateOne(
+          { _id: user._id },
+          { $set: { internships: updatedInternships } }
+        );
+        updatedUsers++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Migration complete! Updated ${updatedRecords} internship record(s) across ${updatedUsers} user(s).`
+    });
+  } catch (err) {
+    console.error("[Admin] Batch migration error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Summer Projects management routes
 router.get("/summer-projects", auth, verifyAdmin, getSummerProjects);
 router.post("/summer-projects", auth, verifyAdmin, upload.single("pdf"), createSummerProject);
