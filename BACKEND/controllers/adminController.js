@@ -1887,32 +1887,124 @@ const importQuizUsers = async (req, res) => {
       const email = (row.candidatesemail || row.email || "").toString().trim().toLowerCase();
       if (!email) continue;
 
-      const name = (row.candidatesname || row.name || "").toString().trim() || "Unknown User";
+      const name = (row.candidatesname || row.name || "").toString().trim();
       const mobile = (row.candidatesmobile || row.mobile || "").toString().trim();
-      
-      const quizApplicant = new QuizApplicant({
-        quizName: quizName.trim(),
-        registrationId: (row.registrationid || "").toString().trim(),
-        name,
-        email,
-        mobile,
-        gender: (row.candidatesgender || row.gender || "").toString().trim(),
-        location: (row.candidateslocation || row.location || "").toString().trim(),
-        userType: (row.usertype || "").toString().trim(),
-        domain: (row.domain || "").toString().trim(),
-        course: (row.course || "").toString().trim(),
-        specialization: (row.specialization || "").toString().trim(),
-        courseDuration: (row.courseduration || "").toString().trim(),
-        yearOfGraduation: (row.yearofgraduation || "").toString().trim(),
-        organisation: (row.candidatesorganisation || row.organisation || "").toString().trim(),
-        resumeUrl: (row.resume || "").toString().trim()
-      });
+      const registrationId = (row.registrationid || "").toString().trim();
+      const gender = (row.candidatesgender || row.gender || "").toString().trim();
+      const location = (row.candidateslocation || row.location || "").toString().trim();
+      const userType = (row.usertype || "").toString().trim();
+      const domain = (row.domain || "").toString().trim();
+      const course = (row.course || "").toString().trim();
+      const specialization = (row.specialization || "").toString().trim();
+      const courseDuration = (row.courseduration || "").toString().trim();
+      const yearOfGraduation = (row.yearofgraduation || "").toString().trim();
+      const organisation = (row.candidatesorganisation || row.organisation || "").toString().trim();
+      const resumeUrl = (row.resume || "").toString().trim();
 
-      await quizApplicant.save();
+      // Result and score detection
+      const score = (row.score || row.marks || row.obtainedmarks || "").toString().trim() || "N/A";
+      const totalScore = (row.totalscore || row.maxmarks || row.total || "").toString().trim() || "N/A";
+      const result = (row.result || row.status || row.qualificationstatus || row.remarks || "").toString().trim() || "N/A";
+      const percentage = (row.percentage || row.percentile || "").toString().trim() || "N/A";
+
+      const currentQuizName = quizName.trim();
+      const quizItem = {
+        quizName: currentQuizName,
+        registrationId,
+        score,
+        totalScore,
+        result,
+        percentage,
+        importedAt: new Date()
+      };
+
+      // Check if user with this email already exists
+      let existingApplicant = await QuizApplicant.findOne({ email });
+
+      if (existingApplicant) {
+        if (name && name !== "Unknown User") existingApplicant.name = name;
+        if (mobile) existingApplicant.mobile = mobile;
+        if (gender) existingApplicant.gender = gender;
+        if (location) existingApplicant.location = location;
+        if (userType) existingApplicant.userType = userType;
+        if (domain) existingApplicant.domain = domain;
+        if (course) existingApplicant.course = course;
+        if (specialization) existingApplicant.specialization = specialization;
+        if (courseDuration) existingApplicant.courseDuration = courseDuration;
+        if (yearOfGraduation) existingApplicant.yearOfGraduation = yearOfGraduation;
+        if (organisation) existingApplicant.organisation = organisation;
+        if (resumeUrl) existingApplicant.resumeUrl = resumeUrl;
+
+        if (!existingApplicant.quizzes || !Array.isArray(existingApplicant.quizzes)) {
+          existingApplicant.quizzes = [];
+        }
+
+        // If quizzes array is empty but top level quiz exists, migrate top-level quiz to array
+        if (existingApplicant.quizzes.length === 0 && existingApplicant.quizName) {
+          existingApplicant.quizzes.push({
+            quizName: existingApplicant.quizName,
+            registrationId: existingApplicant.registrationId || "",
+            score: existingApplicant.score || "N/A",
+            totalScore: existingApplicant.totalScore || "N/A",
+            result: existingApplicant.result || "N/A",
+            percentage: existingApplicant.percentage || "N/A",
+            importedAt: existingApplicant.createdAt || new Date()
+          });
+        }
+
+        const existingQuizIdx = existingApplicant.quizzes.findIndex(
+          q => q.quizName.toLowerCase() === currentQuizName.toLowerCase()
+        );
+
+        if (existingQuizIdx >= 0) {
+          existingApplicant.quizzes[existingQuizIdx].registrationId = registrationId || existingApplicant.quizzes[existingQuizIdx].registrationId;
+          if (score !== "N/A") existingApplicant.quizzes[existingQuizIdx].score = score;
+          if (totalScore !== "N/A") existingApplicant.quizzes[existingQuizIdx].totalScore = totalScore;
+          if (result !== "N/A") existingApplicant.quizzes[existingQuizIdx].result = result;
+          if (percentage !== "N/A") existingApplicant.quizzes[existingQuizIdx].percentage = percentage;
+        } else {
+          existingApplicant.quizzes.push(quizItem);
+        }
+
+        existingApplicant.quizName = currentQuizName;
+        if (registrationId) existingApplicant.registrationId = registrationId;
+        if (score !== "N/A") existingApplicant.score = score;
+        if (totalScore !== "N/A") existingApplicant.totalScore = totalScore;
+        if (result !== "N/A") existingApplicant.result = result;
+        if (percentage !== "N/A") existingApplicant.percentage = percentage;
+
+        await existingApplicant.save();
+      } else {
+        const newApplicant = new QuizApplicant({
+          quizName: currentQuizName,
+          registrationId,
+          name: name || "Unknown User",
+          email,
+          mobile,
+          gender,
+          location,
+          userType,
+          domain,
+          course,
+          specialization,
+          courseDuration,
+          yearOfGraduation,
+          organisation,
+          resumeUrl,
+          score,
+          totalScore,
+          result,
+          percentage,
+          quizzes: [quizItem]
+        });
+
+        await newApplicant.save();
+      }
+
       importedCount++;
     }
 
-    res.json({ success: true, message: `Successfully imported ${importedCount} quiz applications.` });
+    res.json({ success: true, message: `Successfully processed and imported ${importedCount} quiz entries.` });
   } catch (error) {
     console.error("[Admin] Error importing quiz users:", error);
     res.status(500).json({ success: false, message: "Server error during quiz user import." });
@@ -1921,11 +2013,25 @@ const importQuizUsers = async (req, res) => {
 
 const getQuizApplicants = async (req, res) => {
   try {
-    const applicants = await QuizApplicant.find().sort({ createdAt: -1 });
+    const applicants = await QuizApplicant.find().sort({ updatedAt: -1, createdAt: -1 });
     res.json({ success: true, applicants });
   } catch (error) {
     console.error("[Admin] Error fetching quiz applicants:", error);
     res.status(500).json({ success: false, message: "Server error fetching quiz applicants" });
+  }
+};
+
+const deleteQuizApplicant = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await QuizApplicant.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Quiz applicant not found" });
+    }
+    res.json({ success: true, message: "Quiz applicant deleted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error deleting quiz applicant:", error);
+    res.status(500).json({ success: false, message: "Server error deleting quiz applicant" });
   }
 };
 
@@ -1941,6 +2047,7 @@ module.exports = {
   importInterns,
   importQuizUsers,
   getQuizApplicants,
+  deleteQuizApplicant,
   toggleLeaderboardSetting,
   getJobPortalSetting,
   toggleJobPortalSetting,

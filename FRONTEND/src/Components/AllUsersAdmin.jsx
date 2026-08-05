@@ -14,16 +14,16 @@ import {
   RefreshCw,
   Eye,
   X,
-  ChevronRight,
-  ShieldCheck,
+  BrainCircuit,
+  FileText,
   ExternalLink,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const AllUsersAdmin = () => {
   const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({ total: 0, interns: 0, registered: 0 });
-  const [filterType, setFilterType] = useState("all"); // 'all', 'intern', 'registered'
+  const [stats, setStats] = useState({ total: 0, interns: 0, registered: 0, quiz: 0 });
+  const [filterType, setFilterType] = useState("all"); // 'all', 'intern', 'registered', 'quiz'
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -42,7 +42,7 @@ const AllUsersAdmin = () => {
       );
       if (res.data.success) {
         setUsers(res.data.users);
-        setStats(res.data.stats || { total: 0, interns: 0, registered: 0 });
+        setStats(res.data.stats || { total: 0, interns: 0, registered: 0, quiz: 0 });
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -71,7 +71,7 @@ const AllUsersAdmin = () => {
             Website Users Directory
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Overview of all registered accounts, interns, and sign-ups across Code-A-Nova.
+            Overview of all registered accounts, interns, and quiz applicants across Code-A-Nova.
           </p>
         </div>
         <button
@@ -84,7 +84,7 @@ const AllUsersAdmin = () => {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
           onClick={() => setFilterType("all")}
           className={`cursor-pointer p-5 rounded-2xl border transition-all ${
@@ -95,13 +95,13 @@ const AllUsersAdmin = () => {
         >
           <div className="flex items-center justify-between">
             <span className={`text-xs font-bold uppercase tracking-wider ${filterType === "all" ? "text-blue-100" : "text-slate-500"}`}>
-              Total Website Users
+              Total Users
             </span>
             <Users className={`w-5 h-5 ${filterType === "all" ? "text-blue-200" : "text-blue-600"}`} />
           </div>
           <div className="text-3xl font-black mt-2">{stats.total}</div>
           <p className={`text-xs mt-1 ${filterType === "all" ? "text-blue-100" : "text-slate-500"}`}>
-            All registered accounts
+            All registered accounts & applicants
           </p>
         </div>
 
@@ -126,22 +126,42 @@ const AllUsersAdmin = () => {
         </div>
 
         <div
+          onClick={() => setFilterType("quiz")}
+          className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+            filterType === "quiz"
+              ? "bg-gradient-to-br from-indigo-600 to-purple-700 text-white border-indigo-600 shadow-lg shadow-indigo-500/25"
+              : "bg-white text-slate-900 border-slate-200 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-bold uppercase tracking-wider ${filterType === "quiz" ? "text-indigo-100" : "text-slate-500"}`}>
+              Quiz Users
+            </span>
+            <BrainCircuit className={`w-5 h-5 ${filterType === "quiz" ? "text-indigo-200" : "text-indigo-600"}`} />
+          </div>
+          <div className="text-3xl font-black mt-2">{stats.quiz}</div>
+          <p className={`text-xs mt-1 ${filterType === "quiz" ? "text-indigo-100" : "text-slate-500"}`}>
+            Imported / Registered for Quizzes
+          </p>
+        </div>
+
+        <div
           onClick={() => setFilterType("registered")}
           className={`cursor-pointer p-5 rounded-2xl border transition-all ${
             filterType === "registered"
-              ? "bg-gradient-to-br from-purple-600 to-indigo-700 text-white border-purple-600 shadow-lg shadow-purple-500/25"
+              ? "bg-gradient-to-br from-purple-600 to-pink-700 text-white border-purple-600 shadow-lg shadow-purple-500/25"
               : "bg-white text-slate-900 border-slate-200 hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between">
             <span className={`text-xs font-bold uppercase tracking-wider ${filterType === "registered" ? "text-purple-100" : "text-slate-500"}`}>
-              Registered / Non-Intern Users
+              Registered / Non-Intern
             </span>
             <UserPlus className={`w-5 h-5 ${filterType === "registered" ? "text-purple-200" : "text-purple-600"}`} />
           </div>
           <div className="text-3xl font-black mt-2">{stats.registered}</div>
           <p className={`text-xs mt-1 ${filterType === "registered" ? "text-purple-100" : "text-slate-500"}`}>
-            Signed up via Google or Form (No internships yet)
+            Signed up via Website Form / Google
           </p>
         </div>
       </div>
@@ -149,10 +169,10 @@ const AllUsersAdmin = () => {
       {/* Filters & Search Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Filter Pills */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
           <button
             onClick={() => setFilterType("all")}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
               filterType === "all"
                 ? "bg-white text-slate-900 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -162,7 +182,7 @@ const AllUsersAdmin = () => {
           </button>
           <button
             onClick={() => setFilterType("intern")}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
               filterType === "intern"
                 ? "bg-white text-emerald-700 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -171,8 +191,18 @@ const AllUsersAdmin = () => {
             Interns Only ({stats.interns})
           </button>
           <button
+            onClick={() => setFilterType("quiz")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              filterType === "quiz"
+                ? "bg-white text-indigo-700 shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Quiz Users ({stats.quiz})
+          </button>
+          <button
             onClick={() => setFilterType("registered")}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
               filterType === "registered"
                 ? "bg-white text-purple-700 shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
@@ -222,9 +252,9 @@ const AllUsersAdmin = () => {
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4">User Details</th>
-                  <th className="py-3.5 px-4">Account Type</th>
+                  <th className="py-3.5 px-4">Account / Badges</th>
                   <th className="py-3.5 px-4">Mobile / Whatsapp</th>
-                  <th className="py-3.5 px-4">Applications / Domains</th>
+                  <th className="py-3.5 px-4">Applications & Quizzes</th>
                   <th className="py-3.5 px-4">Tokens</th>
                   <th className="py-3.5 px-4">Joined Date</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -256,15 +286,23 @@ const AllUsersAdmin = () => {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      {user.isIntern ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <UserCheck className="w-3.5 h-3.5" /> Intern ({user.internshipsCount})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                          <UserPlus className="w-3.5 h-3.5" /> Registered User
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {user.isIntern && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <UserCheck className="w-3.5 h-3.5" /> Intern ({user.internshipsCount})
+                          </span>
+                        )}
+                        {user.isQuizUser && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" /> Quiz ({user.quizzesCount})
+                          </span>
+                        )}
+                        {!user.isIntern && !user.isQuizUser && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                            <UserPlus className="w-3.5 h-3.5" /> Registered User
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-700">
@@ -275,23 +313,35 @@ const AllUsersAdmin = () => {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      {user.appliedDomains && user.appliedDomains.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {user.appliedDomains.map((d, i) => (
-                            <span key={i} className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200">
-                              {d}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">No applications</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {user.appliedDomains && user.appliedDomains.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {user.appliedDomains.map((d, i) => (
+                              <span key={i} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200">
+                                {d}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {user.quizzes && user.quizzes.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {user.quizzes.map((q, i) => (
+                              <span key={i} className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium border border-indigo-100">
+                                {q.quizName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {(!user.appliedDomains || user.appliedDomains.length === 0) && (!user.quizzes || user.quizzes.length === 0) && (
+                          <span className="text-xs text-slate-400 italic">No applications</span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
                         <Award className="w-3.5 h-3.5" />
-                        {user.interviewCredits}
+                        {user.interviewCredits || 0}
                       </span>
                     </td>
 
@@ -345,7 +395,7 @@ const AllUsersAdmin = () => {
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Mobile Number</span>
-                <span className="text-slate-800 font-bold text-sm">{selectedUser.mobile}</span>
+                <span className="text-slate-800 font-bold text-sm">{selectedUser.mobile || "N/A"}</span>
               </div>
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Account Role</span>
@@ -353,13 +403,42 @@ const AllUsersAdmin = () => {
               </div>
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Interview Tokens</span>
-                <span className="text-indigo-600 font-bold text-sm">{selectedUser.interviewCredits} Credits</span>
+                <span className="text-indigo-600 font-bold text-sm">{selectedUser.interviewCredits || 0} Credits</span>
               </div>
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-slate-400 font-semibold block">Referred By Code</span>
-                <span className="text-amber-700 font-mono font-bold text-sm">{selectedUser.referredByCode || "None (Direct)"}</span>
+                <span className="text-slate-400 font-semibold block">Organisation / College</span>
+                <span className="text-slate-800 font-bold text-sm">{selectedUser.organisation || "N/A"}</span>
               </div>
             </div>
+
+            {/* Quizzes Enrolled & Results Section */}
+            {selectedUser.quizzes && selectedUser.quizzes.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                  <BrainCircuit className="w-4 h-4 text-indigo-600" />
+                  Quiz Registrations & Results ({selectedUser.quizzes.length})
+                </h4>
+                <div className="space-y-2">
+                  {selectedUser.quizzes.map((q, idx) => (
+                    <div key={idx} className="p-3.5 bg-indigo-50/50 rounded-2xl border border-indigo-100 text-xs space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-indigo-950 text-sm">{q.quizName}</span>
+                        {q.registrationId && (
+                          <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-mono text-[11px]">
+                            ID: {q.registrationId}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-slate-600 pt-1">
+                        <div>Score: <strong className="text-slate-900">{q.score || "N/A"}</strong></div>
+                        <div>Result: <strong className="text-emerald-700">{q.result || "N/A"}</strong></div>
+                        <div>Imported: <strong className="text-slate-800">{q.importedAt ? new Date(q.importedAt).toLocaleDateString() : "N/A"}</strong></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Internship Applications Breakdown */}
             <div>
@@ -388,7 +467,7 @@ const AllUsersAdmin = () => {
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200 text-center">
-                  This user has signed up but has not submitted any internship applications yet.
+                  No internship applications submitted for this user.
                 </p>
               )}
             </div>
