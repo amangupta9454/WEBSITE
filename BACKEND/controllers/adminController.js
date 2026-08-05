@@ -1853,12 +1853,18 @@ const importInterns = async (req, res) => {
           i => i.domain && i.domain.toLowerCase().trim() === domain.toLowerCase().trim()
         );
 
+        // Auto-derive batch from startDate (e.g. "August 2026")
+        const batchFromDate = startDate
+          ? startDate.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+          : undefined;
+
         if (existingIdx >= 0) {
           // Update existing internship details
           user.internships[existingIdx].studentId = studentId || user.internships[existingIdx].studentId;
           user.internships[existingIdx].duration = duration || user.internships[existingIdx].duration;
           if (startDate) user.internships[existingIdx].startDate = startDate;
           if (endDate) user.internships[existingIdx].endDate = endDate;
+          if (batchFromDate) user.internships[existingIdx].batch = batchFromDate;
           updatedCount++;
         } else {
           // Push new internship record
@@ -1873,6 +1879,7 @@ const importInterns = async (req, res) => {
             appliedAt: new Date(),
             startDate,
             endDate,
+            batch: batchFromDate || undefined,
           });
           importedCount++;
         }
