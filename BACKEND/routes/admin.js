@@ -335,7 +335,16 @@ router.get("/token-data", auth, verifyAdmin, async (req, res) => {
 
 router.get("/interview-data", auth, verifyAdmin, async (req, res) => {
   try {
-    const users = await User.find({
+    // Fetch ALL interview sessions first
+    const sessions = await InterviewSession.find().populate("userId", "name email interviewCredits interviewIsUnlimited interviewAccessOverride interviewPayments").lean();
+
+    // Collect all unique user IDs that have sessions
+    const sessionUserIds = [...new Set(
+      sessions.map(s => s.userId?._id?.toString() || s.userId?.toString()).filter(Boolean)
+    )];
+
+    // Also fetch users with special interview flags (payments, unlimited, override) even if no sessions
+    const specialUsers = await User.find({
       $or: [
         { interviewPayments: { $not: { $size: 0 } } },
         { interviewCredits: { $ne: 30 } },
@@ -343,32 +352,38 @@ router.get("/interview-data", auth, verifyAdmin, async (req, res) => {
         { interviewAccessOverride: true }
       ]
     }).lean();
-    const sessions = await InterviewSession.find().populate("userId", "name email").lean();
 
+    // Build user map from special users
     const userMap = {};
-    users.forEach(u => { 
-      userMap[u._id.toString()] = { 
-        ...u, 
-        credits: u.interviewCredits, 
+    specialUsers.forEach(u => {
+      userMap[u._id.toString()] = {
+        ...u,
+        credits: u.interviewCredits,
         isUnlimited: u.interviewIsUnlimited,
-        sessions: [] 
-      }; 
+        sessions: []
+      };
     });
+
+    // Map sessions to users; populate missing users from session's populated userId field
     sessions.forEach(s => {
       const uid = s.userId?._id?.toString() || s.userId?.toString();
-      if (uid && userMap[uid]) {
-        userMap[uid].sessions.push(s);
-      } else if (uid && !userMap[uid]) {
-        // If user has sessions but didn't match the query above (e.g. they only used free credits)
+      if (!uid) return;
+
+      if (!userMap[uid]) {
+        // User only used free credits — still include them since they have sessions
+        const u = s.userId || {};
         userMap[uid] = {
           _id: uid,
-          name: s.userId?.name || "Unknown",
-          email: s.userId?.email || "",
-          credits: 0,
-          isUnlimited: false,
-          sessions: [s]
+          name: u.name || "Unknown",
+          email: u.email || "",
+          credits: u.interviewCredits ?? 30,
+          isUnlimited: u.interviewIsUnlimited || false,
+          interviewAccessOverride: u.interviewAccessOverride || false,
+          interviewPayments: u.interviewPayments || [],
+          sessions: []
         };
       }
+      userMap[uid].sessions.push(s);
     });
 
     res.json({

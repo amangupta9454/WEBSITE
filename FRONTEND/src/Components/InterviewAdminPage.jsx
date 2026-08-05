@@ -316,8 +316,8 @@ export default function InterviewAdminPage() {
       
       if (dataRes.data.success) {
         const usersArray = dataRes.data.data || [];
-        const filteredUsers = usersArray.filter(u => (u.sessions && u.sessions.length > 0) || u.interviewAccessOverride);
-        setData(filteredUsers);
+        // Show all users returned from backend (users with sessions OR special flags)
+        setData(usersArray);
         setEarnings(dataRes.data.earnings || null);
       }
       if (settingRes.data.success) {
