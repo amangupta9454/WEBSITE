@@ -109,6 +109,12 @@ router.post("/mark-paid-exported", auth, verifyAdmin, markPaidExported);
 router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
 router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
+// Bulk Import & Quiz Routes
+const { importInterns, importQuizUsers, getQuizApplicants } = require("../controllers/adminController");
+router.post("/import-interns", auth, verifyAdmin, upload.single("excelFile"), importInterns);
+router.post("/import-quiz-users", auth, verifyAdmin, upload.single("excelFile"), importQuizUsers);
+router.get("/quiz-applicants", auth, verifyAdmin, getQuizApplicants);
+
 // Summer Projects management routes
 router.get("/summer-projects", auth, verifyAdmin, getSummerProjects);
 router.post("/summer-projects", auth, verifyAdmin, upload.single("pdf"), createSummerProject);

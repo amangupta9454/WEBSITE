@@ -1929,6 +1929,154 @@ const resetAIEvaluations = async (req, res) => {
   }
 };
 
+const importInterns = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const xlsx = require("xlsx");
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    let importedCount = 0;
+
+    for (const rawRow of data) {
+      // Normalize keys: lowercase and remove special characters/spaces
+      const row = {};
+      for (const key in rawRow) {
+        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        row[cleanKey] = rawRow[key];
+      }
+
+      const email = (row.email || "").toString().trim().toLowerCase();
+      if (!email) continue;
+
+      const name = (row.name || row.studentname || "").toString().trim() || "Unknown Intern";
+      const domain = (row.domain || "").toString().trim();
+      const duration = (row.duration || "1").toString().trim();
+      const studentId = (row.studentid || `CN${Math.floor(1000 + Math.random() * 9000)}`).toString().trim();
+      
+      // Parse dates properly if they exist (can be string or excel date serial)
+      const startDateStr = row.startdate;
+      const endDateStr = row.enddate;
+
+      let user = await User.findOne({ email });
+      if (!user) {
+        user = new User({
+          name,
+          email,
+          roles: ["student"],
+          status: "Registered",
+          isFirstLogin: true,
+          // No password field required
+        });
+      } else {
+        if (!user.name) user.name = name;
+        if (!user.roles.includes("student")) user.roles.push("student");
+      }
+
+      const exists = user.internships?.find(i => i.domain === domain);
+      if (!exists && domain) {
+        if (!user.internships) user.internships = [];
+        user.internships.push({
+          studentId,
+          name: user.name,
+          email: user.email,
+          domain,
+          duration,
+          internshipType: "Normal Intern",
+          appliedAt: new Date(),
+          startDate: startDateStr ? new Date(startDateStr) : new Date(),
+          endDate: endDateStr ? new Date(endDateStr) : undefined,
+        });
+        importedCount++;
+      }
+      
+      await user.save();
+    }
+
+    res.json({ success: true, message: `Successfully imported ${importedCount} internship records.` });
+  } catch (error) {
+    console.error("[Admin] Error importing interns:", error);
+    res.status(500).json({ success: false, message: "Server error during intern import." });
+  }
+};
+
+const QuizApplicant = require("../models/QuizApplicant");
+
+const importQuizUsers = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const { quizName } = req.body;
+    if (!quizName) {
+      return res.status(400).json({ success: false, message: "Quiz Name is required" });
+    }
+
+    const xlsx = require("xlsx");
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    let importedCount = 0;
+
+    for (const rawRow of data) {
+      // Normalize keys: lowercase and remove special characters/spaces
+      const row = {};
+      for (const key in rawRow) {
+        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        row[cleanKey] = rawRow[key];
+      }
+
+      const email = (row.candidatesemail || row.email || "").toString().trim().toLowerCase();
+      if (!email) continue;
+
+      const name = (row.candidatesname || row.name || "").toString().trim() || "Unknown User";
+      const mobile = (row.candidatesmobile || row.mobile || "").toString().trim();
+      
+      const quizApplicant = new QuizApplicant({
+        quizName: quizName.trim(),
+        registrationId: (row.registrationid || "").toString().trim(),
+        name,
+        email,
+        mobile,
+        gender: (row.candidatesgender || row.gender || "").toString().trim(),
+        location: (row.candidateslocation || row.location || "").toString().trim(),
+        userType: (row.usertype || "").toString().trim(),
+        domain: (row.domain || "").toString().trim(),
+        course: (row.course || "").toString().trim(),
+        specialization: (row.specialization || "").toString().trim(),
+        courseDuration: (row.courseduration || "").toString().trim(),
+        yearOfGraduation: (row.yearofgraduation || "").toString().trim(),
+        organisation: (row.candidatesorganisation || row.organisation || "").toString().trim(),
+        resumeUrl: (row.resume || "").toString().trim()
+      });
+
+      await quizApplicant.save();
+      importedCount++;
+    }
+
+    res.json({ success: true, message: `Successfully imported ${importedCount} quiz applications.` });
+  } catch (error) {
+    console.error("[Admin] Error importing quiz users:", error);
+    res.status(500).json({ success: false, message: "Server error during quiz user import." });
+  }
+};
+
+const getQuizApplicants = async (req, res) => {
+  try {
+    const applicants = await QuizApplicant.find().sort({ createdAt: -1 });
+    res.json({ success: true, applicants });
+  } catch (error) {
+    console.error("[Admin] Error fetching quiz applicants:", error);
+    res.status(500).json({ success: false, message: "Server error fetching quiz applicants" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -1938,6 +2086,9 @@ module.exports = {
   updateOfferStatus,
   getLeaderboardSetting,
   manualAcceptAssignment,
+  importInterns,
+  importQuizUsers,
+  getQuizApplicants,
   toggleLeaderboardSetting,
   getJobPortalSetting,
   toggleJobPortalSetting,

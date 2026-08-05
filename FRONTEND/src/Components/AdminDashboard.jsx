@@ -53,7 +53,8 @@ import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
 import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
 import EmailCenter from "../Admin/Email/EmailCenter";
-import { Bell, Settings, Zap, Database, Share2, Check } from "lucide-react";
+import QuizUsersAdmin from "./QuizUsersAdmin";
+import { Bell, Settings, Zap, Database, Share2, Check, BrainCircuit } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -99,6 +100,8 @@ const AdminDashboard = () => {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
   const [selectedStartDates, setSelectedStartDates] = useState({});
+  const [importingInterns, setImportingInterns] = useState(false);
+  const [importingQuiz, setImportingQuiz] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -483,6 +486,51 @@ const AdminDashboard = () => {
       toast.error("Export failed. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleBulkImport = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = localStorage.getItem("adminToken");
+    const formData = new FormData();
+    formData.append("excelFile", file);
+
+    const isIntern = type === 'interns';
+    
+    if (type === 'quiz') {
+      const quizName = window.prompt("Enter the name of the Quiz you are importing users for:");
+      if (!quizName) {
+        e.target.value = "";
+        return;
+      }
+      formData.append("quizName", quizName);
+    }
+
+    const endpoint = isIntern ? "/api/admin/import-interns" : "/api/admin/import-quiz-users";
+    
+    isIntern ? setImportingInterns(true) : setImportingQuiz(true);
+    
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}${endpoint}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success(res.data.message);
+      if (isIntern) fetchApplications(token);
+    } catch (err) {
+      toast.error(`Failed to import ${type}`);
+      console.error(err);
+    } finally {
+      isIntern ? setImportingInterns(false) : setImportingQuiz(false);
+      e.target.value = "";
     }
   };
 
@@ -2381,6 +2429,13 @@ const AdminDashboard = () => {
               <Award className="w-4 h-4 text-indigo-600" /> Assessment
             </button>
             <button
+              onClick={() => setActiveSidebarTab("quiz_users")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "quiz_users" ? "bg-cyan-50 text-cyan-700 font-bold border border-cyan-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <BrainCircuit className="w-5 h-5" />
+              Quiz Users
+            </button>
+            <button
               onClick={() => setActiveSidebarTab("settings")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "settings" ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
@@ -2621,6 +2676,55 @@ const AdminDashboard = () => {
                       disabled={uploadingExcel}
                     />
                   </label>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h3 className="text-slate-900 font-semibold text-sm">
+                      Bulk Intern/Quiz Import
+                    </h3>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Upload Excel/CSV file to import historical interns or quiz users.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <label
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${importingInterns ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600" : "border-slate-300 bg-slate-50/50 text-slate-700 hover:border-indigo-500/50 hover:text-indigo-600 hover:bg-indigo-500/10"}`}
+                    >
+                      {importingInterns ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4" />
+                      )}
+                      <span>Import Interns</span>
+                      <input
+                        type="file"
+                        accept=".xlsx, .csv"
+                        onChange={(e) => handleBulkImport(e, 'interns')}
+                        className="hidden"
+                        disabled={importingInterns}
+                      />
+                    </label>
+                    <label
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${importingQuiz ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" : "border-slate-300 bg-slate-50/50 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 hover:bg-emerald-500/10"}`}
+                    >
+                      {importingQuiz ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4" />
+                      )}
+                      <span>Import Quiz Users</span>
+                      <input
+                        type="file"
+                        accept=".xlsx, .csv"
+                        onChange={(e) => handleBulkImport(e, 'quiz')}
+                        className="hidden"
+                        disabled={importingQuiz}
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -3406,6 +3510,12 @@ const AdminDashboard = () => {
           {activeSidebarTab === "assessment" && (
             <div className="w-full animate-fade-in">
               <AssessmentDashboard />
+            </div>
+          )}
+
+          {activeSidebarTab === "quiz_users" && (
+            <div className="w-full animate-fade-in">
+              <QuizUsersAdmin />
             </div>
           )}
 
