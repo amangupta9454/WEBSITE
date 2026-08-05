@@ -371,72 +371,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
             </div>
           </details>
         </div>
-        {isStarted ? internship.workflowVersion === 'v2' ? (
-          <div className="space-y-8">
-            {Array.from({ length: totalMonths }).map((_, monthIdx) => {
-              const monthNum = monthIdx + 1;
-              const monthProjects = v2Projects.filter(p => p.studentId === internship.studentId && p.monthNumber === monthNum).sort((a,b) => a.projectNumber - b.projectNumber);
-              if (monthProjects.length === 0) return null;
-              
-              return (
-                <div key={monthIdx} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <Calendar className="text-blue-600 w-5 h-5" /> Month {monthNum} Projects
-                    </h3>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    {monthProjects.map((proj, pIdx) => {
-                      const isLocked = proj.status === 'Locked';
-                      const isAvailable = proj.status === 'Available';
-                      const isSubmitted = proj.submission;
-                      
-                      return (
-                        <div key={pIdx} className={`p-4 border rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${isLocked ? "border-slate-200 bg-slate-50 opacity-75" : isSubmitted ? "border-emerald-200 bg-emerald-50" : "border-blue-200 bg-blue-50/30"}`}>
-                          <div>
-                            <h4 className={`font-bold text-lg leading-tight flex items-center gap-2 ${isLocked ? "text-slate-600" : isSubmitted ? "text-emerald-900" : "text-blue-900"}`}>
-                              {isLocked && <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px]">🔒</div>}
-                              {proj.projectName}
-                            </h4>
-                            <div className="flex items-center gap-3 mt-2">
-                              {proj.resources && (
-                                <a href={proj.resources} target="_blank" rel="noreferrer" className={`text-xs font-bold underline ${isLocked ? 'text-slate-400 pointer-events-none' : 'text-blue-600'}`}>View Resources</a>
-                              )}
-                              <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Deadline: {proj.deadline}</span>
-                            </div>
-                            {isLocked && (
-                              <p className="text-sm text-slate-500 mt-2 font-medium flex items-center gap-1.5">
-                                <Clock size={14} /> Unlocks on {new Date(proj.visibleFrom).toLocaleDateString("en-IN")}
-                              </p>
-                            )}
-                            {isSubmitted && proj.submission.aiStatus && (
-                              <p className="text-sm text-emerald-700 mt-2 font-medium">Status: {proj.submission.aiStatus}</p>
-                            )}
-                          </div>
-                          
-                          {isAvailable && (
-                            <button
-                              onClick={() => setV2SubmissionModal({ isOpen: true, project: proj })}
-                              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-sm flex items-center gap-2 justify-center shrink-0 text-sm"
-                            >
-                              Submit Project <ArrowRight size={16} />
-                            </button>
-                          )}
-                          
-                          {isSubmitted && (
-                            <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-bold flex items-center gap-2 justify-center shrink-0 text-sm">
-                              <CheckCircle size={16} /> Submitted
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
+        {isStarted ? (
           <div className="space-y-4">
             {Array.from({
               length: Math.min(
