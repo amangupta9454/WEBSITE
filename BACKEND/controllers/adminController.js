@@ -1788,11 +1788,12 @@ const importInterns = async (req, res) => {
     }
 
     const xlsx = require("xlsx");
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     let importedCount = 0;
+    let updatedCount = 0;
 
     for (const rawRow of data) {
       // Normalize keys: lowercase and remove special characters/spaces
@@ -1802,36 +1803,57 @@ const importInterns = async (req, res) => {
         row[cleanKey] = rawRow[key];
       }
 
-      const email = (row.email || "").toString().trim().toLowerCase();
+      const email = (row.email || row.candidatesemail || row.studentemail || "").toString().trim().toLowerCase();
       if (!email) continue;
 
-      const name = (row.name || row.studentname || "").toString().trim() || "Unknown Intern";
-      const domain = (row.domain || "").toString().trim();
-      const duration = (row.duration || "1").toString().trim();
-      const studentId = (row.studentid || `CN${Math.floor(1000 + Math.random() * 9000)}`).toString().trim();
-      
-      // Parse dates properly if they exist (can be string or excel date serial)
-      const startDateStr = row.startdate;
-      const endDateStr = row.enddate;
+      const name = (row.name || row.studentname || row.candidatename || "").toString().trim() || "Unknown Intern";
+      const domain = (row.domain || row.internshipdomain || row.stream || "General Internship").toString().trim();
+      const duration = (row.duration || row.internshipduration || "1 Month").toString().trim();
+      const studentId = (row.studentid || row.id || row.registrationid || `CN${Math.floor(1000 + Math.random() * 9000)}`).toString().trim();
+
+      const parseDate = (val) => {
+        if (!val) return undefined;
+        if (val instanceof Date && !isNaN(val.getTime())) return val;
+        const parsed = new Date(val);
+        if (!isNaN(parsed.getTime())) return parsed;
+        return undefined;
+      };
+
+      const startDate = parseDate(row.startdate || row.joiningdate) || new Date();
+      const endDate = parseDate(row.enddate || row.completiondate);
 
       let user = await User.findOne({ email });
       if (!user) {
         user = new User({
           name,
           email,
+          role: "intern",
           roles: ["student"],
           status: "Registered",
           isFirstLogin: true,
-          // No password field required
+          internships: []
         });
       } else {
-        if (!user.name) user.name = name;
+        if (!user.name || user.name === "Unknown User") user.name = name;
+        user.role = "intern";
         if (!user.roles.includes("student")) user.roles.push("student");
+        if (!user.internships) user.internships = [];
       }
 
-      const exists = user.internships?.find(i => i.domain === domain);
-      if (!exists && domain) {
-        if (!user.internships) user.internships = [];
+      // Check if internship in this domain already exists (case-insensitive)
+      const existingIdx = user.internships.findIndex(
+        i => i.domain && i.domain.toLowerCase().trim() === domain.toLowerCase().trim()
+      );
+
+      if (existingIdx >= 0) {
+        // Update existing internship details
+        user.internships[existingIdx].studentId = studentId || user.internships[existingIdx].studentId;
+        user.internships[existingIdx].duration = duration || user.internships[existingIdx].duration;
+        if (startDate) user.internships[existingIdx].startDate = startDate;
+        if (endDate) user.internships[existingIdx].endDate = endDate;
+        updatedCount++;
+      } else {
+        // Push new internship record
         user.internships.push({
           studentId,
           name: user.name,
@@ -1840,16 +1862,20 @@ const importInterns = async (req, res) => {
           duration,
           internshipType: "Normal Intern",
           appliedAt: new Date(),
-          startDate: startDateStr ? new Date(startDateStr) : new Date(),
-          endDate: endDateStr ? new Date(endDateStr) : undefined,
+          startDate,
+          endDate,
         });
         importedCount++;
       }
-      
+
       await user.save();
     }
 
-    res.json({ success: true, message: `Successfully imported ${importedCount} internship records.` });
+    const totalProcessed = importedCount + updatedCount;
+    res.json({
+      success: true,
+      message: `Successfully processed ${totalProcessed} intern records (${importedCount} new, ${updatedCount} updated).`
+    });
   } catch (error) {
     console.error("[Admin] Error importing interns:", error);
     res.status(500).json({ success: false, message: "Server error during intern import." });
