@@ -14,11 +14,13 @@ import {
   X,
   GraduationCap,
   Building2,
-  MapPin,
-  UserCheck,
   FileText,
   Award,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles,
+  Users,
+  RefreshCw
 } from 'lucide-react';
 
 const QuizUsersAdmin = () => {
@@ -35,6 +37,7 @@ const QuizUsersAdmin = () => {
 
   const fetchQuizApplicants = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('adminToken');
       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -87,154 +90,267 @@ const QuizUsersAdmin = () => {
     );
   });
 
+  // Calculate quick metrics
+  const uniqueQuizzes = Array.from(
+    new Set(
+      quizApplicants.flatMap(app => 
+        app.quizzes && app.quizzes.length > 0
+          ? app.quizzes.map(q => q.quizName)
+          : [app.quizName]
+      ).filter(Boolean)
+    )
+  ).length;
+
+  const totalResumes = quizApplicants.filter(
+    app => app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A'
+  ).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header & Refresh */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <BrainCircuit className="w-6 h-6 text-indigo-600" />
-            Imported Quiz Users ({quizApplicants.length})
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+              <BrainCircuit className="w-6 h-6" />
+            </div>
+            Imported Quiz Applicants
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            View all candidate data imported from Unstop for different quizzes.
+            Manage candidates imported from Unstop & external quiz registrations.
           </p>
         </div>
 
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchQuizApplicants}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Top Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Candidates</span>
+            <div className="text-3xl font-black text-slate-900 mt-1">{quizApplicants.length}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+            <Users className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quizzes Active</span>
+            <div className="text-3xl font-black text-indigo-600 mt-1">{uniqueQuizzes}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+            <Award className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumes Attached</span>
+            <div className="text-3xl font-black text-emerald-600 mt-1">{totalResumes}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <FileText className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar & Search */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-xs font-semibold text-slate-500">
+          Showing <strong className="text-slate-900">{filteredApplicants.length}</strong> of {quizApplicants.length} applicants
+        </div>
+
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search name, email, quiz, ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-2 w-full sm:w-72 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-medium"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Candidate Info</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quiz Registrations</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Score / Result</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Domain & Organisation</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4">Candidate Info</th>
+                <th className="px-6 py-4">Quiz Enrolled</th>
+                <th className="px-6 py-4">Status & Score</th>
+                <th className="px-6 py-4">Domain & College</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 text-sm">
               {filteredApplicants.length > 0 ? (
                 filteredApplicants.map((app) => {
                   const quizList = app.quizzes && app.quizzes.length > 0
                     ? app.quizzes
                     : [{ quizName: app.quizName, registrationId: app.registrationId, score: app.score, result: app.result }];
-                  
+
+                  const hasResume = app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A';
+                  const firstQuiz = quizList[0];
+
                   return (
-                    <tr key={app._id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr key={app._id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* Candidate Avatar & Name */}
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
-                            {app.name}
-                            {quizList.length > 1 && (
-                              <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full">
-                                {quizList.length} Quizzes
-                              </span>
-                            )}
-                          </span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            <span className="text-xs text-slate-500">{app.email}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
+                            {app.name?.charAt(0)?.toUpperCase() || "Q"}
                           </div>
-                          {app.mobile && (
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <Phone className="w-3 h-3 text-slate-400" />
-                              <span className="text-xs text-slate-500">{app.mobile}</span>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                              {app.name}
+                              {quizList.length > 1 && (
+                                <span className="text-[10px] bg-indigo-100 text-indigo-700 font-extrabold px-2 py-0.5 rounded-full border border-indigo-200">
+                                  {quizList.length} Quizzes
+                                </span>
+                              )}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+                              <Mail className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="truncate max-w-[200px]">{app.email}</span>
                             </div>
-                          )}
+                            {app.mobile && (
+                              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{app.mobile}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
+
+                      {/* Quiz Details Pill & ID */}
                       <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5 items-start">
                           {quizList.slice(0, 2).map((q, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <div key={idx} className="flex items-center gap-2 flex-wrap">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[240px] truncate" title={q.quizName}>
+                                <Sparkles className="w-3 h-3 text-indigo-500 flex-shrink-0" />
                                 {q.quizName}
                               </span>
                               {q.registrationId && (
-                                <span className="text-[11px] text-slate-400 font-mono">({q.registrationId})</span>
+                                <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                  ID: {q.registrationId}
+                                </span>
                               )}
                             </div>
                           ))}
                           {quizList.length > 2 && (
-                            <span className="text-[11px] text-indigo-600 font-medium cursor-pointer" onClick={() => setSelectedApplicant(app)}>
-                              +{quizList.length - 2} more quizzes
+                            <button 
+                              onClick={() => setSelectedApplicant(app)}
+                              className="text-xs text-indigo-600 font-bold hover:underline"
+                            >
+                              +{quizList.length - 2} more quiz registrations
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Score & Status */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-start gap-1">
+                          {firstQuiz.score && firstQuiz.score !== "N/A" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-slate-900 text-white shadow-sm">
+                              Score: {firstQuiz.score} {firstQuiz.totalScore && firstQuiz.totalScore !== "N/A" ? `/ ${firstQuiz.totalScore}` : ""}
+                            </span>
+                          ) : null}
+
+                          {firstQuiz.result && firstQuiz.result !== "N/A" ? (
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              firstQuiz.result?.toLowerCase().includes("pass") || firstQuiz.result?.toLowerCase().includes("qual")
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                            }`}>
+                              {firstQuiz.result}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Registered
                             </span>
                           )}
                         </div>
                       </td>
+
+                      {/* Domain & College */}
                       <td className="px-6 py-4">
-                        <div className="flex flex-col text-xs">
-                          {app.score && app.score !== "N/A" ? (
-                            <span className="font-bold text-slate-900">
-                              Score: {app.score} {app.totalScore && app.totalScore !== "N/A" ? `/ ${app.totalScore}` : ""}
+                        <div className="flex flex-col max-w-[220px]">
+                          <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                            {app.domain || app.course || "General"}
+                          </span>
+                          {app.organisation && app.organisation !== "N/A" ? (
+                            <span className="text-xs text-slate-500 flex items-center gap-1 mt-1 truncate" title={app.organisation}>
+                              <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                              <span className="truncate">{app.organisation}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">Score: N/A</span>
-                          )}
-                          {app.result && app.result !== "N/A" ? (
-                            <span className="text-emerald-700 font-semibold mt-0.5">{app.result}</span>
-                          ) : (
-                            <span className="text-slate-400 text-[11px] mt-0.5">Result: N/A</span>
+                            <span className="text-xs text-slate-400 italic mt-0.5">College: N/A</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-slate-700">{app.domain || "N/A"}</span>
-                          {app.course && <span className="text-xs text-slate-500 mt-0.5">{app.course}</span>}
-                          {app.organisation && <span className="text-xs text-slate-400 mt-0.5 truncate max-w-[180px]">{app.organisation}</span>}
-                        </div>
-                      </td>
+
+                      {/* Action Buttons */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* View Details Button */}
                           <button
                             onClick={() => setSelectedApplicant(app)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all border border-indigo-100"
                             title="View Full Details"
                           >
                             <Eye className="w-3.5 h-3.5" /> Details
                           </button>
 
                           {/* Resume Link */}
-                          {app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A' && (
+                          {hasResume && (
                             <a
                               href={app.resumeUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center justify-center p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="View Resume"
+                              className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition-colors"
+                              title="Open Candidate Resume"
                             >
-                              <ExternalLink className="w-4 h-4" />
+                              <FileText className="w-4 h-4" />
                             </a>
                           )}
 
                           {/* Delete Button */}
                           <button
                             onClick={() => setApplicantToDelete(app)}
-                            className="inline-flex items-center justify-center p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                             title="Delete Applicant"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -251,8 +367,8 @@ const QuizUsersAdmin = () => {
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                         <Search className="w-6 h-6 text-slate-400" />
                       </div>
-                      <p className="text-slate-600 font-medium">No quiz applicants found</p>
-                      <p className="text-slate-400 text-sm mt-1">Try adjusting your search query or import new data.</p>
+                      <p className="text-slate-600 font-bold">No quiz applicants found</p>
+                      <p className="text-slate-400 text-xs mt-1">Try tweaking your search term or upload a new Excel file.</p>
                     </div>
                   </td>
                 </tr>
@@ -280,7 +396,7 @@ const QuizUsersAdmin = () => {
               </div>
               <button
                 onClick={() => setSelectedApplicant(null)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -288,27 +404,27 @@ const QuizUsersAdmin = () => {
 
             {/* Candidate Info Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Mobile Number</span>
                 <span className="text-slate-800 font-bold text-sm mt-0.5 block">{selectedApplicant.mobile || "N/A"}</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Gender</span>
                 <span className="text-slate-800 font-bold text-sm mt-0.5 block">{selectedApplicant.gender || "N/A"}</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Location</span>
                 <span className="text-slate-800 font-bold text-sm mt-0.5 block">{selectedApplicant.location || "N/A"}</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Domain</span>
                 <span className="text-indigo-700 font-bold text-sm mt-0.5 block">{selectedApplicant.domain || "N/A"}</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Course</span>
                 <span className="text-slate-800 font-bold text-sm mt-0.5 block">{selectedApplicant.course || "N/A"}</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-400 font-semibold block">Graduation Year</span>
                 <span className="text-slate-800 font-bold text-sm mt-0.5 block">{selectedApplicant.yearOfGraduation || "N/A"}</span>
               </div>
@@ -350,7 +466,7 @@ const QuizUsersAdmin = () => {
               <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold">
+                    <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-bold">
                       <th className="p-3">Quiz Name</th>
                       <th className="p-3">Registration ID</th>
                       <th className="p-3">Score / Marks</th>
@@ -374,7 +490,7 @@ const QuizUsersAdmin = () => {
                           {qz.score || "N/A"} {qz.totalScore && qz.totalScore !== "N/A" ? `/ ${qz.totalScore}` : ""}
                         </td>
                         <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                             qz.result?.toLowerCase().includes("pass") || qz.result?.toLowerCase().includes("qual")
                               ? "bg-emerald-100 text-emerald-800"
                               : qz.result && qz.result !== "N/A"
@@ -394,7 +510,7 @@ const QuizUsersAdmin = () => {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedApplicant(null)}
-                className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all"
+                className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all shadow-md"
               >
                 Close Details
               </button>
@@ -407,7 +523,7 @@ const QuizUsersAdmin = () => {
       {applicantToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="text-center">
