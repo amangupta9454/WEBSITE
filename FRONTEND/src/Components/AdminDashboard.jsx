@@ -97,9 +97,11 @@ const AdminDashboard = () => {
   });
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
-  const [selectedStartDates, setSelectedStartDates] = useState({});
   const [importingInterns, setImportingInterns] = useState(false);
   const [importingQuiz, setImportingQuiz] = useState(false);
+  const [deletingApplication, setDeletingApplication] = useState(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -1032,6 +1034,51 @@ const AdminDashboard = () => {
       toast.error("Bulk update failed");
     } finally {
       setBulkUpdating(false);
+    }
+  };
+
+  const handleSingleDeleteApp = async () => {
+    if (!deletingApplication) return;
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/applications/${deletingApplication._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Application deleted successfully!");
+        setApplications(prev => prev.filter(app => app._id !== deletingApplication._id));
+        setSelectedApplications(prev => prev.filter(id => id !== deletingApplication._id));
+        setDeletingApplication(null);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to delete application");
+    }
+  };
+
+  const handleBulkDeleteApps = async () => {
+    if (selectedApplications.length === 0) return;
+    try {
+      setIsBulkDeleting(true);
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/applications/bulk-delete`,
+        { applicationIds: selectedApplications },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(res.data.message || "Selected applications deleted successfully!");
+        setApplications(prev => prev.filter(app => !selectedApplications.includes(app._id)));
+        setSelectedApplications([]);
+        setShowBulkDeleteConfirm(false);
+        setShowBulkActionModal(false);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to bulk delete applications");
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -2548,6 +2595,13 @@ const AdminDashboard = () => {
                           <LayoutDashboard className="w-4 h-4" />
                           Bulk Actions ({selectedApplications.length})
                         </button>
+                        <button
+                          onClick={() => setShowBulkDeleteConfirm(true)}
+                          className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white rounded-xl text-sm font-bold transition-all duration-200 shadow-lg shadow-red-500/20 whitespace-nowrap animate-fade-in"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Bulk Delete ({selectedApplications.length})
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2773,6 +2827,9 @@ const AdminDashboard = () => {
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                   Tasks
                                 </th>
+                                <th className="text-right py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Actions
+                                </th>
                               </>
                             ) : (
                               <>
@@ -2828,6 +2885,9 @@ const AdminDashboard = () => {
                                 </th>
                                 <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                   Tasks
+                                </th>
+                                <th className="text-right py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                  Actions
                                 </th>
                               </>
                             )}
@@ -3194,6 +3254,15 @@ const AdminDashboard = () => {
                                   </td>
                                 </>
                               )}
+                                  <td className="py-3.5 px-4 text-right">
+                                    <button
+                                      onClick={() => setDeletingApplication(app)}
+                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center border border-transparent hover:border-red-200"
+                                      title="Delete Application"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
                             </tr>
                           ))}
                         </tbody>
@@ -3609,6 +3678,20 @@ const AdminDashboard = () => {
                   <option value="Yes">Yes</option>
                 </select>
               </div>
+
+              <div className="pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBulkActionModal(false);
+                    setShowBulkDeleteConfirm(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-sm font-bold transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Selected Applications ({selectedApplications.length})
+                </button>
+              </div>
             </div>
             <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
               <button
@@ -3629,6 +3712,70 @@ const AdminDashboard = () => {
                   <Save className="w-4 h-4" />
                 )}
                 Apply Updates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE APPLICATION DELETE CONFIRMATION MODAL */}
+      {deletingApplication && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-900">Delete Application?</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to delete application for <strong className="text-slate-800">{deletingApplication.name}</strong> ({deletingApplication.studentId || deletingApplication.email})? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeletingApplication(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSingleDeleteApp}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK APPLICATIONS DELETE CONFIRMATION MODAL */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-900">Bulk Delete Applications?</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to permanently delete <strong className="text-red-600 font-bold">{selectedApplications.length}</strong> selected application(s)? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                disabled={isBulkDeleting}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeleteApps}
+                disabled={isBulkDeleting}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25"
+              >
+                {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : `Delete (${selectedApplications.length})`}
               </button>
             </div>
           </div>

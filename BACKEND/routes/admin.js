@@ -110,11 +110,13 @@ router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
 router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
 // Bulk Import & Quiz Routes
-const { importInterns, importQuizUsers, getQuizApplicants, deleteQuizApplicant } = require("../controllers/adminController");
+const { importInterns, importQuizUsers, getQuizApplicants, deleteQuizApplicant, deleteApplication, bulkDeleteApplications } = require("../controllers/adminController");
 router.post("/import-interns", auth, verifyAdmin, upload.single("excelFile"), importInterns);
 router.post("/import-quiz-users", auth, verifyAdmin, upload.single("excelFile"), importQuizUsers);
 router.get("/quiz-applicants", auth, verifyAdmin, getQuizApplicants);
 router.delete("/quiz-applicants/:id", auth, verifyAdmin, deleteQuizApplicant);
+router.delete("/applications/:id", auth, verifyAdmin, deleteApplication);
+router.post("/applications/bulk-delete", auth, verifyAdmin, bulkDeleteApplications);
 
 // Summer Projects management routes
 router.get("/summer-projects", auth, verifyAdmin, getSummerProjects);

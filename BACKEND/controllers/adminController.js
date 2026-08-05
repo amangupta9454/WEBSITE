@@ -2073,6 +2073,54 @@ const deleteQuizApplicant = async (req, res) => {
   }
 };
 
+const deleteApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOne({ "internships._id": id });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    user.internships = user.internships.filter(i => i._id.toString() !== id);
+    if (user.internships.length === 0 && user.role === "intern") {
+      user.role = "user";
+    }
+
+    await user.save();
+    res.json({ success: true, message: "Application deleted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error deleting application:", error);
+    res.status(500).json({ success: false, message: "Server error deleting application" });
+  }
+};
+
+const bulkDeleteApplications = async (req, res) => {
+  try {
+    const { applicationIds } = req.body;
+    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No application IDs provided" });
+    }
+
+    await User.updateMany(
+      { "internships._id": { $in: applicationIds } },
+      { $pull: { internships: { _id: { $in: applicationIds } } } }
+    );
+
+    await User.updateMany(
+      { role: "intern", "internships.0": { $exists: false } },
+      { $set: { role: "user" } }
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${applicationIds.length} application(s).`
+    });
+  } catch (error) {
+    console.error("[Admin] Error bulk deleting applications:", error);
+    res.status(500).json({ success: false, message: "Server error during bulk delete" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -2086,6 +2134,8 @@ module.exports = {
   importQuizUsers,
   getQuizApplicants,
   deleteQuizApplicant,
+  deleteApplication,
+  bulkDeleteApplications,
   toggleLeaderboardSetting,
   getJobPortalSetting,
   toggleJobPortalSetting,
