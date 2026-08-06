@@ -770,7 +770,7 @@ exports.getAdminInteractions = async (req, res) => {
     if (type === 'saved') {
       const saved = await SavedJob.find()
         .populate('user', 'name email mobile phone phoneNo unifiedUserId')
-        .populate('job', 'title company location planType salary isRemote')
+        .populate('job', 'title company location planType salary isRemote applyUrl applyEmail')
         .sort({ savedAt: -1, createdAt: -1 })
         .limit(300);
       records = saved.filter(r => r.user && r.job).map(r => ({
@@ -783,7 +783,7 @@ exports.getAdminInteractions = async (req, res) => {
     } else {
       const applied = await AppliedJob.find()
         .populate('user', 'name email mobile phone phoneNo unifiedUserId')
-        .populate('job', 'title company location planType salary isRemote')
+        .populate('job', 'title company location planType salary isRemote applyUrl applyEmail')
         .sort({ appliedAt: -1, createdAt: -1 })
         .limit(300);
       records = applied.filter(r => r.user && r.job).map(r => ({
@@ -799,5 +799,81 @@ exports.getAdminInteractions = async (req, res) => {
   } catch (error) {
     console.error('Error fetching admin interactions:', error);
     res.status(500).json({ success: false, message: 'Server error loading student interaction records' });
+  }
+};
+
+// Admin endpoint to get all students with their Job Portal subscription plans and tokens
+exports.getAdminUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select('name email mobile phone phoneNo jobPortalPremium jobPortalPremiumExpires interviewCredits createdAt')
+      .sort({ createdAt: -1 });
+
+    const now = new Date();
+    const result = users.map(u => {
+      let isPremium = false;
+      if (u.jobPortalPremium && u.jobPortalPremiumExpires && new Date(u.jobPortalPremiumExpires) > now) {
+        isPremium = true;
+      }
+      return {
+        _id: u._id,
+        name: u.name || 'Anonymous User',
+        email: u.email || 'No email provided',
+        phone: u.mobile || u.phone || u.phoneNo || 'No phone',
+        tokens: u.interviewCredits || 0,
+        isPremium,
+        expiresAt: isPremium ? u.jobPortalPremiumExpires : null,
+        joinedAt: u.createdAt
+      };
+    });
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error fetching admin student list:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching student subscription list' });
+  }
+};
+
+// Admin endpoint to modify a student's plan and duration
+exports.updateUserPlan = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { plan, durationDays = 30 } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Student not found in database' });
+    }
+
+    if (plan === 'basic') {
+      user.jobPortalPremium = false;
+      user.jobPortalPremiumExpires = null;
+    } else if (plan === 'premium') {
+      user.jobPortalPremium = true;
+      const now = new Date();
+      const addedMs = Number(durationDays) * 86400000;
+      if (user.jobPortalPremiumExpires && new Date(user.jobPortalPremiumExpires) > now) {
+        user.jobPortalPremiumExpires = new Date(new Date(user.jobPortalPremiumExpires).getTime() + addedMs);
+      } else {
+        user.jobPortalPremiumExpires = new Date(now.getTime() + addedMs);
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid plan specified' });
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Updated ${user.name || user.email}'s subscription to ${plan.toUpperCase()}`,
+      data: {
+        isPremium: user.jobPortalPremium,
+        expiresAt: user.jobPortalPremiumExpires,
+        tokens: user.interviewCredits || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error modifying user subscription plan:', error);
+    res.status(500).json({ success: false, message: 'Server error modifying user subscription' });
   }
 };

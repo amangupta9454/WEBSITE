@@ -12,6 +12,8 @@ router.get('/', jobController.getAllJobs);
 router.post('/sync', jobController.manualSync);
 router.post('/import-excel', upload.single('excelFile'), jobController.importJobsFromExcel);
 router.get('/admin/interactions', jobController.getAdminInteractions);
+router.get('/admin/users', jobController.getAdminUsers);
+router.put('/admin/user-plan/:userId', jobController.updateUserPlan);
 
 // Protected routes for students (saved & applied jobs)
 router.post('/save/:id', authMiddleware, jobController.saveJob);

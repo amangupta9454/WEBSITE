@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { RefreshCw, Edit, Trash2, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight, Plus, Sparkles } from 'lucide-react';
+import { RefreshCw, Edit, Trash2, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight, Plus, Sparkles, ExternalLink } from 'lucide-react';
 
 const JobAdminPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -21,6 +21,15 @@ const JobAdminPage = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [creatingJob, setCreatingJob] = useState(false);
+
+  // Student Plans management state
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState('all');
+  const [modifyingUser, setModifyingUser] = useState(null);
+  const [planForm, setPlanForm] = useState({ plan: 'basic', durationDays: 30 });
+  const [updatingPlan, setUpdatingPlan] = useState(false);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -52,7 +61,50 @@ const JobAdminPage = () => {
     fetchGlobalSetting();
     fetchJobs();
     fetchInteractions('applied');
+    fetchStudents();
   }, []);
+
+  const fetchStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setStudents(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching students list:', error);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const handleUpdateUserPlan = async (e) => {
+    e.preventDefault();
+    if (!modifyingUser) return;
+    setUpdatingPlan(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/admin/user-plan/${modifyingUser._id}`, {
+        plan: planForm.plan,
+        durationDays: Number(planForm.durationDays) || 30
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || 'Plan updated successfully!');
+        setModifyingUser(null);
+        fetchStudents();
+      }
+    } catch (error) {
+      console.error('Failed to update plan:', error);
+      toast.error(error.response?.data?.message || 'Error modifying plan');
+    } finally {
+      setUpdatingPlan(false);
+    }
+  };
 
   const fetchInteractions = async (type) => {
     setLoadingInteractions(true);
@@ -486,25 +538,25 @@ const JobAdminPage = () => {
             </p>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0">
               <button
                 onClick={() => handleTabChange('applied')}
-                className={`px-4 py-2 rounded-lg transition-all ${interactionType === 'applied' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all ${interactionType === 'applied' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
               >
-                ✅ Applied Ticks & Applications
+                Applied
               </button>
               <button
                 onClick={() => handleTabChange('saved')}
-                className={`px-4 py-2 rounded-lg transition-all ${interactionType === 'saved' ? 'bg-white text-indigo-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all ${interactionType === 'saved' ? 'bg-white text-indigo-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
               >
-                📌 Saved Bookmarks
+                Saved
               </button>
             </div>
             
             <button
               onClick={() => fetchInteractions(interactionType)}
-              className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold flex items-center gap-2 text-sm"
+              className="p-2.5 sm:p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold flex items-center justify-center shrink-0 shadow-sm"
               title="Refresh Records"
             >
               <RefreshCw className={`w-4 h-4 ${loadingInteractions ? 'animate-spin' : ''}`} />
@@ -581,8 +633,22 @@ const JobAdminPage = () => {
                         {item.user?.mobile || item.user?.phone || item.user?.phoneNo || 'N/A'}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="font-extrabold text-slate-900">{item.job?.title}</div>
-                        <div className="text-xs font-semibold text-slate-500">{item.job?.company} ({item.job?.location})</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-slate-900">{item.job?.title || 'Job Unavailable'}</span>
+                          {item.job && (
+                            <a 
+                              href={item.job?.applyUrl || (item.job?._id ? `/jobs/${item.job._id}` : '#')} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded text-[11px] font-black border border-indigo-200 shrink-0 transition-colors"
+                              title="Open Job URL"
+                            >
+                              <span>Open URL</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="text-xs font-semibold text-slate-500 mt-0.5">{item.job?.company} ({item.job?.location})</div>
                       </td>
                       <td className="py-4 px-6">
                         <span className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-black ${
@@ -612,7 +678,252 @@ const JobAdminPage = () => {
           </table>
         </div>
       </div>
-      
+
+      {/* Student Plans & Subscriptions Management Dashboard */}
+      <div className="mt-14 pt-12 border-t-2 border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
+              <span>🎓 Student Plans & Membership Tier Management</span>
+            </h2>
+            <p className="text-slate-600 font-semibold text-sm sm:text-base mt-1">
+              Inspect student subscriptions, check wallet balances, and modify membership plans with custom validity durations.
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0">
+              <button
+                onClick={() => setPlanFilter('all')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${planFilter === 'all' ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                All ({students.length})
+              </button>
+              <button
+                onClick={() => setPlanFilter('basic')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${planFilter === 'basic' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                🟢 Basic
+              </button>
+              <button
+                onClick={() => setPlanFilter('premium')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${planFilter === 'premium' ? 'bg-white text-amber-900 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                👑 Premium
+              </button>
+            </div>
+            
+            <button
+              onClick={fetchStudents}
+              className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold flex items-center justify-center shrink-0 shadow-sm"
+              title="Refresh Students"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingStudents ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Search candidate by name, email, or phone number..."
+            value={studentSearch}
+            onChange={(e) => setStudentSearch(e.target.value)}
+            className="w-full sm:max-w-md px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-left border-b border-slate-200">
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider">Candidate Name</th>
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider">Contact & Phone</th>
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider">Token Balance</th>
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider">Current Tier</th>
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider">Plan Validity</th>
+                <th className="py-4 px-6 font-black text-xs text-slate-700 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium text-sm text-slate-700">
+              {loadingStudents ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-slate-500">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
+                    Loading student membership tiers...
+                  </td>
+                </tr>
+              ) : students.filter(s => {
+                if (planFilter === 'basic' && s.isPremium) return false;
+                if (planFilter === 'premium' && !s.isPremium) return false;
+                if (!studentSearch) return true;
+                const q = studentSearch.toLowerCase();
+                return (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toString().includes(q);
+              }).length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-slate-400">
+                    No matching candidates found.
+                  </td>
+                </tr>
+              ) : (
+                students
+                  .filter(s => {
+                    if (planFilter === 'basic' && s.isPremium) return false;
+                    if (planFilter === 'premium' && !s.isPremium) return false;
+                    if (!studentSearch) return true;
+                    const q = studentSearch.toLowerCase();
+                    return (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toString().includes(q);
+                  })
+                  .map((user) => (
+                    <tr key={user._id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-black text-slate-900">{user.name}</div>
+                        <div className="text-xs text-slate-500 font-medium">{user.email}</div>
+                      </td>
+                      <td className="py-4 px-6 text-xs font-bold text-slate-600">
+                        {user.phone}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-black text-xs border border-indigo-200 shadow-xs">
+                          🪙 {user.tokens} Tokens
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        {user.isPremium ? (
+                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-xs">
+                            👑 Premium VIP
+                          </span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            🟢 Basic Free
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-xs font-bold text-slate-600">
+                        {user.isPremium && user.expiresAt ? (
+                          <span className="text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                            🗓️ {new Date(user.expiresAt).toLocaleDateString()}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Free Lifeway</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => {
+                            setModifyingUser(user);
+                            setPlanForm({
+                              plan: user.isPremium ? 'premium' : 'basic',
+                              durationDays: 30
+                            });
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-sm hover:scale-105 cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5" /> Modify Plan
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modify User Plan Modal */}
+      {modifyingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-black text-lg text-slate-900 flex items-center gap-2">
+                <span>⚙️ Modify Candidate Subscription</span>
+              </h3>
+              <button onClick={() => setModifyingUser(null)} className="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
+            </div>
+            <form onSubmit={handleUpdateUserPlan} className="p-6 space-y-5">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs space-y-1">
+                <div><span className="font-bold text-slate-500">Candidate:</span> <span className="font-black text-slate-900">{modifyingUser.name} ({modifyingUser.email})</span></div>
+                <div><span className="font-bold text-slate-500">Current Balance:</span> <span className="font-black text-indigo-600">🪙 {modifyingUser.tokens} Tokens</span></div>
+                <div><span className="font-bold text-slate-500">Current Plan:</span> <span className="font-black text-slate-800">{modifyingUser.isPremium ? '👑 Premium VIP' : '🟢 Basic Free'}</span></div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">Select Target Plan Tier</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPlanForm({ ...planForm, plan: 'basic' })}
+                    className={`py-3 px-4 rounded-2xl font-black text-xs border-2 transition-all flex flex-col items-center gap-1 ${
+                      planForm.plan === 'basic' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-base">🟢</span>
+                    <span>Basic (Free Plan)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPlanForm({ ...planForm, plan: 'premium' })}
+                    className={`py-3 px-4 rounded-2xl font-black text-xs border-2 transition-all flex flex-col items-center gap-1 ${
+                      planForm.plan === 'premium' ? 'border-amber-500 bg-amber-50 text-amber-950 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-base">👑</span>
+                    <span>Premium (VIP Plan)</span>
+                  </button>
+                </div>
+              </div>
+
+              {planForm.plan === 'premium' && (
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Set Plan Duration (In Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="3650"
+                    value={planForm.durationDays}
+                    onChange={(e) => setPlanForm({ ...planForm, durationDays: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-900 text-base focus:border-indigo-600 outline-none text-center shadow-inner"
+                    placeholder="Enter days e.g. 30, 90..."
+                  />
+                  <div className="grid grid-cols-4 gap-2">
+                    {[30, 90, 180, 365].map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setPlanForm({ ...planForm, durationDays: d })}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-black transition-colors ${
+                          Number(planForm.durationDays) === d ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        +{d} Days
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModifyingUser(null)}
+                  className="px-5 py-2.5 text-slate-600 hover:text-slate-900 font-extrabold text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingPlan}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-sm rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {updatingPlan && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Save Subscription Plan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Create Job Opportunity Modal */}
       {creatingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
