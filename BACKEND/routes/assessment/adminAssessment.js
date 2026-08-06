@@ -22,6 +22,7 @@ const evaluationController    = require("../../controllers/assessment/evaluation
 const certificateController   = require("../../controllers/assessment/certificateController");
 const analyticsController     = require("../../controllers/assessment/analyticsController");
 const recruiterController     = require("../../controllers/assessment/recruiterController");
+const generateQuestionsController = require("../../controllers/assessment/generateQuestionsController");
 
 // Models for Dashboard analytics
 const AssessmentCategory    = require("../../models/assessment/AssessmentCategory");
@@ -99,6 +100,10 @@ router.get("/dashboard/stats", verifyAdmin, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch dashboard stats." });
   }
 });
+
+// ── Simple AI Question Generator Routes ──────────────────────────────────────
+router.post("/generate-questions",       verifyAdmin, generateQuestionsController.generateQuestions);
+router.get("/generate-questions/count",  verifyAdmin, generateQuestionsController.getQuestionCount);
 
 // ── Category Routes ────────────────────────────────────────────────────────
 router.get("/categories",             verifyAdmin, categoryController.listCategories);

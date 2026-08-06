@@ -67,9 +67,9 @@ class SessionCreationService {
       const sessionId = `SES-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       // 2. Component 2: Configuration Snapshot (Immutable snapshot of Config, Runtime, and Blueprint)
-      let config = await AssessmentConfig.findOne({ subcategory: subcategoryId }).lean();
+      let config = await AssessmentConfig.findOne({ subcategoryId: subcategoryId }).lean();
       if (!config && categoryId) {
-        config = await AssessmentConfig.findOne({ category: categoryId }).lean();
+        config = await AssessmentConfig.findOne({ categoryId: categoryId }).lean();
       }
       if (!config) {
         config = await AssessmentConfig.findOne({ isGlobal: true }).lean() || {
@@ -101,7 +101,7 @@ class SessionCreationService {
         batchSize: 5, // Default batch delivery size (Component 4)
         allowReview: config.allowReview !== undefined ? config.allowReview : true,
         allowPrevious: config.allowPrevious !== undefined ? config.allowPrevious : true,
-        questionTimerSeconds: config.questionTimerSeconds || 0,
+        questionTimerSeconds: config.questionTimerSeconds || 7, // 7-second per-question rule
       };
 
       // 3. Component 3: Question Snapshot (AI-First / DB Fallback immutable set generation)
