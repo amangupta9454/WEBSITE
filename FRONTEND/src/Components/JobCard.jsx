@@ -1,8 +1,58 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import { MapPin, DollarSign, Briefcase, ExternalLink, Bookmark, Building } from 'lucide-react';
 
 const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
+  const navigate = useNavigate();
+
+  const handleUnauthenticated = (actionName) => {
+    // Record unauthenticated guest IP and activity attempt in Admin Audit Logs
+    axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
+      action: `Unauthenticated ${actionName} Attempt / Redirected to Login`,
+      jobId: job._id,
+      jobTitle: job.title || '',
+      company: job.company || ''
+    }).catch(() => {});
+
+    toast.error(`🔒 Please login first to ${actionName.toLowerCase()} or interact with job opportunities!`);
+    sessionStorage.setItem('redirectAfterLogin', `/jobs/${job._id}`);
+    navigate('/student-login');
+  };
+
+  const checkLoginAndExecute = (e, callback, actionName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      handleUnauthenticated(actionName);
+      return;
+    }
+    if (callback) callback();
+  };
+
+  const handleApplyClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      handleUnauthenticated('Apply');
+      return;
+    }
+
+    if (onToggleApply && !isApplied) {
+      onToggleApply(job._id);
+    }
+    if (job.applyUrl) {
+      window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
+    } else if (job.applyEmail) {
+      window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
+    } else {
+      toast.error('Application link not specified.');
+    }
+  };
+
   return (
     <Link 
       to={`/jobs/${job._id}`}
@@ -68,34 +118,26 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
 
       <div className="flex items-center justify-between gap-2 mt-auto pt-5 border-t border-slate-100 relative z-10">
         {job.isLocked ? (
-          <span 
-            className="flex-1 inline-flex justify-center items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 px-3 py-3 rounded-xl font-black hover:from-amber-300 hover:to-yellow-300 transition-all shadow-md shadow-amber-500/10 text-xs sm:text-sm"
+          <button 
+            type="button"
+            onClick={(e) => checkLoginAndExecute(e, () => navigate(`/jobs/${job._id}`), 'Unlock Premium')}
+            className="flex-1 inline-flex justify-center items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 px-3 py-3 rounded-xl font-black hover:from-amber-300 hover:to-yellow-300 transition-all shadow-md shadow-amber-500/10 text-xs sm:text-sm cursor-pointer"
           >
             🔒 Unlock to Apply
-          </span>
+          </button>
         ) : (
-          <a 
-            href={job.applyUrl || (job.applyEmail ? `mailto:${job.applyEmail}` : '#')} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onToggleApply && !isApplied) {
-                onToggleApply(job._id);
-              }
-            }}
-            className="flex-1 inline-flex justify-center items-center gap-2 bg-indigo-600 text-white px-3 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-xs sm:text-sm"
+          <button 
+            type="button"
+            onClick={handleApplyClick}
+            className="flex-1 inline-flex justify-center items-center gap-2 bg-indigo-600 text-white px-3 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-xs sm:text-sm cursor-pointer"
           >
             {job.applyEmail && !job.applyUrl ? '📧 Email Recruiter' : 'Apply Now'}
             <ExternalLink className="w-4 h-4" />
-          </a>
+          </button>
         )}
         <button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onSave(job._id);
-          }}
+          type="button"
+          onClick={(e) => checkLoginAndExecute(e, () => onSave(job._id), 'Bookmark Job')}
           className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl border-2 transition-all ${
             isSaved 
               ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
@@ -107,11 +149,8 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         </button>
         {onToggleApply && (
           <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleApply(job._id);
-            }}
+            type="button"
+            onClick={(e) => checkLoginAndExecute(e, () => onToggleApply(job._id), 'Record Application')}
             className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl border-2 transition-all text-sm sm:text-base font-black ${
               isApplied 
                 ? 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-sm' 

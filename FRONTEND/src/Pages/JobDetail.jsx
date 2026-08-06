@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MainLayout from '../layouts/MainLayout';
 import { MapPin, DollarSign, Briefcase, ExternalLink, ArrowLeft, Clock, Bookmark, Building, CheckCircle, Lock, Crown, Mail, ShieldAlert } from 'lucide-react';
@@ -7,11 +7,41 @@ import { toast } from 'react-hot-toast';
 
 const JobDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
   const [premiumPrice, setPremiumPrice] = useState(199);
+
+  const handleUnauthenticatedAttempt = (actionName) => {
+    axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
+      action: `Unauthenticated ${actionName} Attempt / Redirected to Login`,
+      jobId: job?._id || id,
+      jobTitle: job?.title || '',
+      company: job?.company || ''
+    }).catch(() => {});
+
+    toast.error(`🔒 Please login first to ${actionName.toLowerCase()} or interact with this opportunity!`);
+    sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+    navigate('/student-login');
+  };
+
+  const handleOpenApplication = (targetUrl, isMail = false) => {
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      handleUnauthenticatedAttempt(isMail ? 'Email Recruiter' : 'Apply');
+      return;
+    }
+    if (!isApplied) {
+      toggleApplyJob();
+    }
+    if (isMail) {
+      window.location.href = targetUrl;
+    } else {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -25,6 +55,15 @@ const JobDetail = () => {
           if (res.data.premiumPrice) {
             setPremiumPrice(res.data.premiumPrice);
           }
+          // Track visitor IP activity in admin audit logs even if not logged in
+          const email = localStorage.getItem('studentEmail') || localStorage.getItem('userEmail') || '';
+          axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
+            action: `Visited Job Details: ${res.data.data.title || ''}`,
+            jobId: res.data.data._id,
+            jobTitle: res.data.data.title || '',
+            company: res.data.data.company || '',
+            email: email || undefined
+          }, token ? { headers: { Authorization: `Bearer ${token}` } } : {}).catch(() => {});
         }
       } catch (error) {
         console.error('Failed to fetch job details:', error);
@@ -74,7 +113,7 @@ const JobDetail = () => {
   const toggleSaveJob = async () => {
     const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
     if (!token) {
-      toast.error('Please login to save jobs');
+      handleUnauthenticatedAttempt('Save Bookmark');
       return;
     }
 
@@ -101,7 +140,7 @@ const JobDetail = () => {
   const toggleApplyJob = async () => {
     const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
     if (!token) {
-      toast.error('Please login first to record application');
+      handleUnauthenticatedAttempt('Record Application');
       return;
     }
 
@@ -272,11 +311,10 @@ const JobDetail = () => {
                 ) : (
                   <button 
                     onClick={() => {
-                      if (!isApplied) toggleApplyJob();
                       if (job.applyUrl) {
-                        window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
+                        handleOpenApplication(job.applyUrl, false);
                       } else if (job.applyEmail) {
-                        window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
+                        handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true);
                       } else {
                         toast.error('Application link is not currently specified.');
                       }
@@ -349,10 +387,7 @@ const JobDetail = () => {
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
                 {job.applyEmail && (
                   <button
-                    onClick={() => {
-                      if (!isApplied) toggleApplyJob();
-                      window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
-                    }}
+                    onClick={() => handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true)}
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border-2 border-indigo-200 px-6 py-3.5 rounded-2xl font-extrabold shadow-sm transition-all text-sm cursor-pointer"
                   >
                     <Mail className="w-4 h-4 text-indigo-600" />
@@ -361,10 +396,7 @@ const JobDetail = () => {
                 )}
                 {job.applyUrl && (
                   <button
-                    onClick={() => {
-                      if (!isApplied) toggleApplyJob();
-                      window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
-                    }}
+                    onClick={() => handleOpenApplication(job.applyUrl, false)}
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-7 py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-600/20 transition-all text-sm cursor-pointer"
                   >
                     🚀 Click to Open Career Link
