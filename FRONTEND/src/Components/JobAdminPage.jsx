@@ -37,6 +37,7 @@ const JobAdminPage = () => {
     company: '',
     location: '',
     salary: '',
+    jobType: 'Full-time',
     applyUrl: '',
     applyEmail: '',
     description: '',
@@ -50,6 +51,7 @@ const JobAdminPage = () => {
     company: '',
     location: '',
     salary: '',
+    jobType: 'Full-time',
     applyUrl: '',
     applyEmail: '',
     description: '',
@@ -279,6 +281,7 @@ const JobAdminPage = () => {
       company: job.company || '',
       location: job.location || '',
       salary: job.salary || '',
+      jobType: job.jobType || 'Full-time',
       applyUrl: job.applyUrl || '',
       applyEmail: job.applyEmail || '',
       description: job.description || '',
@@ -313,6 +316,7 @@ const JobAdminPage = () => {
           company: '',
           location: '',
           salary: '',
+          jobType: 'Full-time',
           applyUrl: '',
           applyEmail: '',
           description: '',
@@ -784,18 +788,18 @@ const JobAdminPage = () => {
                         {user.phone}
                       </td>
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-black text-xs border border-indigo-200 shadow-xs">
-                          🪙 {user.tokens} Tokens
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-black text-xs border border-indigo-200 shadow-xs whitespace-nowrap">
+                          🪙 {user.tokens}
                         </span>
                       </td>
                       <td className="py-4 px-6">
                         {user.isPremium ? (
-                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-xs">
-                            👑 Premium VIP
+                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-xs whitespace-nowrap">
+                            👑 Premium
                           </span>
                         ) : (
-                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            🟢 Basic Free
+                          <span className="inline-block px-3 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                            🟢 Basic
                           </span>
                         )}
                       </td>
@@ -1017,6 +1021,19 @@ const JobAdminPage = () => {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">Employment Type *</label>
+                  <select
+                    value={createForm.jobType || 'Full-time'}
+                    onChange={(e) => setCreateForm({...createForm, jobType: e.target.value})}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Full-time">💼 Full-time</option>
+                    <option value="Part-time">⏱️ Part-time</option>
+                    <option value="Internship">🎓 Internship</option>
+                    <option value="Contract">📝 Contract</option>
+                  </select>
+                </div>
                 <div className="flex items-center gap-2 mt-6">
                   <input
                     type="checkbox"
@@ -1141,6 +1158,19 @@ const JobAdminPage = () => {
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 uppercase mb-1">Employment Type *</label>
+                  <select
+                    value={editForm.jobType || 'Full-time'}
+                    onChange={(e) => setEditForm({...editForm, jobType: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="Full-time">💼 Full-time</option>
+                    <option value="Part-time">⏱️ Part-time</option>
+                    <option value="Internship">🎓 Internship</option>
+                    <option value="Contract">📝 Contract</option>
+                  </select>
+                </div>
                 <div className="flex items-center gap-2 mt-6">
                   <input
                     type="checkbox"
@@ -1252,6 +1282,12 @@ const JobAdminPage = () => {
                       <td className="p-3 text-slate-400">Optional</td>
                       <td className="p-3">CTC or monthly stipend amount</td>
                       <td className="p-3 font-mono bg-slate-50">₹8 - 12 LPA</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-bold text-slate-900">jobType (or employmentType)</td>
+                      <td className="p-3 text-slate-400">Optional</td>
+                      <td className="p-3">Specify <b>Full-time</b>, <b>Part-time</b>, <b>Internship</b>, or <b>Contract</b>. Defaults to Full-time.</td>
+                      <td className="p-3 font-mono bg-indigo-50 text-indigo-900 font-bold">Internship</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-bold text-slate-900">applyUrl (or applyLink)</td>

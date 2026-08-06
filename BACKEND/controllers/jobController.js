@@ -476,11 +476,11 @@ exports.toggleJobStatus = async (req, res) => {
 // Admin endpoint to edit a job
 exports.editJob = async (req, res) => {
   try {
-    const { title, company, location, isRemote, salary, applyUrl, applyEmail, description, planType } = req.body;
+    const { title, company, location, isRemote, salary, jobType, applyUrl, applyEmail, description, planType } = req.body;
     
     const job = await Job.findByIdAndUpdate(
       req.params.id,
-      { title, company, location, isRemote, salary, applyUrl, applyEmail, description, planType },
+      { title, company, location, isRemote, salary, jobType, applyUrl, applyEmail, description, planType },
       { new: true, runValidators: true }
     );
     
@@ -516,7 +516,7 @@ exports.deleteJob = async (req, res) => {
 // Admin endpoint to manually create a job opportunity
 exports.createJob = async (req, res) => {
   try {
-    const { title, company, location, salary, isRemote, category, description, applyUrl, applyEmail, planType } = req.body;
+    const { title, company, location, salary, isRemote, jobType, category, description, applyUrl, applyEmail, planType } = req.body;
     
     if (!title || !company || !location || (!applyUrl && !applyEmail)) {
       return res.status(400).json({ success: false, message: 'Please fill in all required fields (Title, Company, Location, Apply Link or Email)' });
@@ -529,6 +529,7 @@ exports.createJob = async (req, res) => {
       company,
       location,
       salary: salary || 'Not disclosed',
+      jobType: jobType || 'Full-time',
       isRemote: Boolean(isRemote || (location && location.toLowerCase().includes('remote'))),
       category: category || 'General',
       description: description || '',
@@ -655,9 +656,11 @@ exports.importJobsFromExcel = async (req, res) => {
     const rawData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     let importedCount = 0;
+    let rowIdx = 0;
     const jobsToInsert = [];
 
     for (const rawRow of rawData) {
+      rowIdx++;
       const row = {};
       for (const key in rawRow) {
         const cleanKey = key.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -683,18 +686,29 @@ exports.importJobsFromExcel = async (req, res) => {
       const remoteRaw = (row.isremote || row.remote || row.wfh || "").toString().trim().toLowerCase();
       const isRemote = (remoteRaw === 'true' || remoteRaw === 'yes' || remoteRaw === '1' || location.toLowerCase().includes('remote'));
 
+      const jobTypeRaw = (row.jobtype || row.employmenttype || row.worktype || row.rolecategory || "Full-time").toString().trim();
+      let jobType = 'Full-time';
+      if (jobTypeRaw.toLowerCase().includes('intern')) jobType = 'Internship';
+      else if (jobTypeRaw.toLowerCase().includes('part')) jobType = 'Part-time';
+      else if (jobTypeRaw.toLowerCase().includes('contract')) jobType = 'Contract';
+      else if (jobTypeRaw.toLowerCase().includes('full')) jobType = 'Full-time';
+      else if (jobTypeRaw) jobType = jobTypeRaw.charAt(0).toUpperCase() + jobTypeRaw.slice(1);
+
+      const externalId = 'excel_' + Date.now() + '_' + rowIdx + '_' + Math.random().toString(36).substr(2, 6);
+
       jobsToInsert.push({
+        externalId,
         title,
         company,
         location,
         salary,
-        applyUrl,
+        applyUrl: applyUrl || (applyEmail ? `mailto:${applyEmail}` : '#'),
         applyEmail,
         description,
         isRemote,
         planType,
         source: 'Excel Import',
-        jobType: 'Full-Time',
+        jobType,
         isActive: true,
         postedAt: new Date(),
         fetchedAt: new Date()
@@ -713,7 +727,7 @@ exports.importJobsFromExcel = async (req, res) => {
     });
   } catch (error) {
     console.error('Error importing jobs from Excel:', error);
-    res.status(500).json({ success: false, message: 'Server error parsing and importing spreadsheet' });
+    res.status(500).json({ success: false, message: `Server error importing spreadsheet: ${error.message || 'Validation failed'}` });
   }
 };
 

@@ -57,6 +57,9 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
           <DollarSign className="w-3.5 h-3.5" />
           {job.salary || 'Not disclosed'}
         </span>
+        <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-100">
+          💼 {job.jobType || 'Full-time'}
+        </span>
       </div>
 
       <p className="text-sm text-slate-500 line-clamp-3 mb-6 relative z-10 flex-grow">
