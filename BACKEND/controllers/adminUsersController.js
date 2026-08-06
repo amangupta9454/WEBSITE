@@ -144,7 +144,8 @@ exports.getAllUsers = async (req, res) => {
     if (type === "intern") {
       filteredUsers = formattedUsers.filter((u) => u.isIntern);
     } else if (type === "registered") {
-      filteredUsers = formattedUsers.filter((u) => !u.isIntern && u.role !== "quiz_applicant");
+      // Users who ONLY signed up — no internship applied and no quiz given
+      filteredUsers = formattedUsers.filter((u) => !u.isIntern && !u.isQuizUser && u.role !== "quiz_applicant" && u.internshipsCount === 0);
     } else if (type === "quiz") {
       filteredUsers = formattedUsers.filter((u) => u.isQuizUser);
     }
@@ -152,7 +153,7 @@ exports.getAllUsers = async (req, res) => {
     const stats = {
       total: formattedUsers.length,
       interns: formattedUsers.filter((u) => u.isIntern).length,
-      registered: formattedUsers.filter((u) => !u.isIntern && u.role !== "quiz_applicant").length,
+      registered: formattedUsers.filter((u) => !u.isIntern && !u.isQuizUser && u.role !== "quiz_applicant" && u.internshipsCount === 0).length,
       quiz: formattedUsers.filter((u) => u.isQuizUser).length,
     };
 

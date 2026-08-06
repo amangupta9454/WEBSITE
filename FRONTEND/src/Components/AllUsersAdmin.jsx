@@ -155,13 +155,13 @@ const AllUsersAdmin = () => {
         >
           <div className="flex items-center justify-between">
             <span className={`text-xs font-bold uppercase tracking-wider ${filterType === "registered" ? "text-purple-100" : "text-slate-500"}`}>
-              Registered / Non-Intern
+              Registered / Signup Only
             </span>
             <UserPlus className={`w-5 h-5 ${filterType === "registered" ? "text-purple-200" : "text-purple-600"}`} />
           </div>
           <div className="text-3xl font-black mt-2">{stats.registered}</div>
           <p className={`text-xs mt-1 ${filterType === "registered" ? "text-purple-100" : "text-slate-500"}`}>
-            Signed up via Website Form / Google
+            Signed up on website with no activity yet
           </p>
         </div>
       </div>
@@ -208,7 +208,7 @@ const AllUsersAdmin = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Registered Users ({stats.registered})
+            Registered / Signup Only ({stats.registered})
           </button>
         </div>
 
