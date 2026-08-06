@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { LayoutDashboard, Briefcase, GraduationCap, Layers, Sparkles, Link as LinkIcon, Copy } from "lucide-react";
+import { LayoutDashboard, Briefcase, GraduationCap, Layers, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { toast } from "react-hot-toast";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
 import AmbassadorTab from "../Components/AmbassadorTab";
@@ -18,21 +17,6 @@ export default function UnifiedDashboard() {
   const [showAmbassadorBanner, setShowAmbassadorBanner] = useState(() => localStorage.getItem("hideAmbassadorBanner") !== "true");
   const location = useLocation();
   const navigate = useNavigate();
-
-  const getJobPortalRefLink = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("interviewUserData") || "{}");
-      const ref = userData?.ambassadorCode || userData?.referralCode || userData?._id || localStorage.getItem("studentEmail") || "invite";
-      return `${window.location.origin}/jobs?ref=${ref}`;
-    } catch (e) {
-      return `${window.location.origin}/jobs?ref=${localStorage.getItem("studentEmail") || "invite"}`;
-    }
-  };
-
-  const copyRefLink = () => {
-    navigator.clipboard.writeText(getJobPortalRefLink());
-    toast.success("Job Portal Referral Link copied to clipboard!");
-  };
 
   useEffect(() => {
     // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
@@ -114,43 +98,6 @@ export default function UnifiedDashboard() {
       <div className="relative z-50 w-full max-w-6xl mx-auto mb-3 sm:mb-6">
         {/* Top Header Section (Welcome and Profile/Wallet) */}
         <DashboardTopSection />
-
-        {/* Job Portal Share Banner */}
-        <div className="mb-4 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="flex items-center gap-4 w-full sm:w-auto relative z-10">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex flex-col items-center justify-center shrink-0 border border-indigo-100 shadow-sm">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-1.5">
-                Share Job Portal & Track Referrals <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Invite friends to apply for jobs and build your professional network!
-              </p>
-            </div>
-          </div>
-          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 relative z-10">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl flex-1 sm:w-64 max-w-full">
-              <LinkIcon className="w-4 h-4 text-slate-400 shrink-0" />
-              <input 
-                type="text" 
-                readOnly 
-                value={getJobPortalRefLink()} 
-                className="bg-transparent border-none outline-none text-xs sm:text-sm text-slate-600 font-medium w-full truncate cursor-text"
-                onClick={(e) => e.target.select()}
-              />
-            </div>
-            <button
-              onClick={copyRefLink}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              <Copy className="w-4 h-4" />
-              Copy Link
-            </button>
-          </div>
-        </div>
 
         {/* Dismissible Become an Ambassador Promotional Banner Above Tabs */}
         {showAmbassadorBanner && ambassadorEnabled && (
