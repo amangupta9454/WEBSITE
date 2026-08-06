@@ -226,7 +226,7 @@ const AmbassadorTab = () => {
               </span>
             </h3>
             <p className="text-xs text-emerald-100/90 mt-0.5">
-              Connect with fellow Campus Ambassadors, get exclusive updates, guidance, & rewards announcements!
+              Connect with fellow Campus Ambassadors, share campus updates, & get expert guidance!
             </p>
           </div>
         </div>

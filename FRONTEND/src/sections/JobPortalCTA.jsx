@@ -217,7 +217,7 @@ const JobPortalCTA = () => {
               {/* Promo badge inside mock card */}
               <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-100 text-center">
                 <div className="text-xs font-black text-purple-900 mb-1">
-                  🎓 Want to earn free rewards & certifications?
+                  🎓 Want to build leadership skills & earn certifications?
                 </div>
                 <button 
                   onClick={() => navigate('/campus-ambassador')}

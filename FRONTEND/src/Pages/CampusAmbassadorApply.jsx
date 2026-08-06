@@ -108,8 +108,8 @@ const CampusAmbassadorApply = () => {
           {[
             { icon: <Award className="w-5 h-5" />, label: "Official Certificate", color: "purple" },
             { icon: <Users className="w-5 h-5" />, label: "Leadership Experience", color: "indigo" },
-            { icon: <Star className="w-5 h-5" />, label: "Exclusive Perks", color: "amber" },
-            { icon: <Gift className="w-5 h-5" />, label: "Rewards & Recognition", color: "emerald" },
+            { icon: <Star className="w-5 h-5" />, label: "Resume Enhancement", color: "amber" },
+            { icon: <Gift className="w-5 h-5" />, label: "Campus Recognition", color: "emerald" },
           ].map(({ icon, label, color }) => (
             <div
               key={label}
