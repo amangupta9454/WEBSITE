@@ -102,6 +102,7 @@ const AdminDashboard = () => {
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [selectedStartDates, setSelectedStartDates] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
