@@ -1,294 +1,356 @@
 import React, { useState, useEffect } from "react";
 import {
-  Search,
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  Play,
-  ArrowRight,
-  RefreshCw,
-  Layers,
-  Award,
-  AlertCircle,
-  FolderOpen,
-  Lock,
+  ChevronRight, ChevronLeft, Play, RefreshCw, Sparkles,
+  BookOpen, Clock, Target, CheckCircle2, Loader2, ArrowRight,
+  Lock, Database, Zap, Award
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+const DIFFICULTIES = [
+  { id: "easy",   label: "Easy",     color: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", desc: "Basic concepts & recall" },
+  { id: "medium", label: "Medium",   color: "bg-amber-100 text-amber-700 border-amber-200",       dot: "bg-amber-500",   desc: "Application & analysis" },
+  { id: "hard",   label: "Hard",     color: "bg-orange-100 text-orange-700 border-orange-200",    dot: "bg-orange-500",  desc: "Deep understanding" },
+  { id: "expert", label: "Expert",   color: "bg-rose-100 text-rose-700 border-rose-200",          dot: "bg-rose-500",    desc: "Professional mastery" },
+];
+
 /**
- * Assessment Center (Part 7 & 8)
- * Displays ONLY assessments that exist in the backend database (Categories -> Subcategories -> Enabled Assessments).
- * Adheres to platform Light Theme and respects Admin Publish Control flags. Zero hardcoded domain cards.
+ * Assessment Center — Clean 3-step flow:
+ * Step 1: Select Category
+ * Step 2: Select Subcategory
+ * Step 3: Select Difficulty → Start (AI-first 7s, then DB fallback)
  */
 const AssessmentCenterView = ({ catalogData, onRefresh }) => {
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-  const [activeFilter, setActiveFilter] = useState("AVAILABLE"); // AVAILABLE | ACTIVE | COMPLETED | EXPIRED
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [publishControls, setPublishControls] = useState({});
 
-  useEffect(() => {
-    const savedControls = localStorage.getItem("CAN_ASSESSMENT_PUBLISH_CONTROLS");
-    if (savedControls) {
-      try {
-        setPublishControls(JSON.parse(savedControls));
-      } catch (err) {
-        console.error("Failed to parse publish controls:", err);
-      }
-    }
-  }, []);
+  // Step: 1=category, 2=subcategory, 3=difficulty
+  const [step, setStep] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
+  const [starting, setStarting] = useState(false);
+  const [aiStatus, setAiStatus] = useState(null); // null | "generating" | "success" | "fallback"
 
-  const { availableCategories = [], attempts = {} } = catalogData || {};
-  const { active = [], completed = [], expired = [] } = attempts;
+  // Pull data from catalogData prop (already fetched by parent)
+  const categories = (catalogData?.availableCategories || []);
 
-  // Flatten subcategories from backend database exclusively
-  const subcategoryList = [];
-  availableCategories.forEach((cat) => {
-    (cat.subcategories || []).forEach((sub) => {
-      const controls = publishControls[sub._id] || { visibleToStudents: sub.isActive !== false, acceptingAttempts: true };
-      if (controls.visibleToStudents) {
-        subcategoryList.push({
-          ...sub,
-          parentCategoryName: cat.name,
-          categoryId: cat._id,
-          acceptingAttempts: controls.acceptingAttempts !== false,
-        });
-      }
-    });
-  });
+  const subcategories = selectedCategory
+    ? (selectedCategory.subcategories || []).filter(s => s.isActive !== false)
+    : [];
 
-  const filteredSubcategories = subcategoryList.filter((sub) => {
-    const matchesSearch =
-      sub.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.parentCategoryName?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === "ALL" || sub.parentCategoryName === selectedCategory;
-    return matchesSearch && matchesCat;
-  });
+  const handleStartAssessment = async () => {
+    if (!selectedSubcategory) return;
+    setStarting(true);
+    setAiStatus("generating");
 
-  const categoriesSet = ["ALL", ...new Set(subcategoryList.map((s) => s.parentCategoryName).filter(Boolean))];
+    const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
 
-  const handleStartAttempt = async (sub) => {
-    if (!sub.acceptingAttempts) {
-      toast.error("This assessment is temporarily paused by course instructors.");
-      return;
-    }
-    toast.success(`🚀 Initializing secure session for ${sub.name}...`);
-    
     try {
-      const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
-      const res = await axios.post(
-        `${backendUrl}/api/assessment/sessions/start`,
-        { subcategoryId: sub._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      const res = await axios.post(`${API}/api/assessment/sessions/start-smart`, {
+        subcategoryId: selectedSubcategory._id,
+        categoryId: selectedCategory._id,
+        difficulty: selectedDifficulty,
+      }, { headers });
+
       if (res.data.success) {
-        toast.success("Session created successfully!");
-        onRefresh();
-        navigate("/dashboard/assessment/attempt/active");
+        const { aiGenerated, data } = res.data;
+        setAiStatus(aiGenerated ? "success" : "fallback");
+        toast.success(
+          aiGenerated
+            ? "✨ AI generated fresh questions for you!"
+            : "📚 Loaded questions from our database."
+        );
+        setTimeout(() => {
+          onRefresh?.();
+          navigate("/dashboard/assessment/attempt/active");
+        }, 800);
       } else {
-        toast.error(res.data.error || "Failed to start assessment session.");
+        setAiStatus(null);
+        toast.error(res.data.error || "Failed to start assessment.");
       }
     } catch (err) {
-      console.error("Start attempt error:", err);
-      toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to start session. Server error.");
+      setAiStatus(null);
+      const errMsg = err.response?.data?.error || err.response?.data?.message || "Failed to start session.";
+      if (err.response?.status === 409) {
+        toast.error("You already have an active session! Go to 'Resume Assessment'.");
+        navigate("/dashboard/assessment/attempt/active");
+      } else {
+        toast.error(errMsg);
+      }
+    } finally {
+      setStarting(false);
     }
   };
 
+  const resetFlow = () => {
+    setStep(1);
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+    setSelectedDifficulty("medium");
+    setAiStatus(null);
+  };
+
   return (
-    <div className="space-y-6 text-slate-800 animate-fade-in">
-      {/* Header & Catalog Control Box */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Layers className="w-6 h-6 text-indigo-600" />
-              <span>Assessment Center</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Browse AI-enabled domain examinations synthesized directly from verified curriculum knowledge bases.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onRefresh}
-              className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all text-xs font-bold flex items-center gap-1.5 shrink-0"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Refresh</span>
-            </button>
-          </div>
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black text-slate-900">Assessment Center</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Select a topic → pick difficulty → AI generates fresh questions in real-time
+          </p>
         </div>
+        <button
+          onClick={() => { resetFlow(); onRefresh?.(); }}
+          className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500 transition-all"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
 
-        {/* Filter Tabs & Search Input */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
-          <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-            {["AVAILABLE", "ACTIVE", "COMPLETED", "EXPIRED"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveFilter(tab)}
-                className={`px-3.5 py-1.5 rounded-lg font-bold text-xs capitalize transition-all whitespace-nowrap ${
-                  activeFilter === tab
-                    ? "bg-indigo-600 text-white shadow-xs"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
-                }`}
-              >
-                {tab.toLowerCase()}
-                {tab === "ACTIVE" && active.length > 0 && ` (${active.length})`}
-                {tab === "COMPLETED" && completed.length > 0 && ` (${completed.length})`}
-              </button>
-            ))}
-          </div>
-
-          {activeFilter === "AVAILABLE" && (
-            <div className="relative w-full sm:w-64 shrink-0">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search assessments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          )}
+      {/* Progress Steps */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          {["Category", "Topic", "Difficulty"].map((label, idx) => {
+            const num = idx + 1;
+            const isActive = step === num;
+            const isDone = step > num;
+            return (
+              <React.Fragment key={num}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs transition-all ${
+                    isDone ? "bg-indigo-600 text-white" :
+                    isActive ? "bg-indigo-100 text-indigo-700 ring-2 ring-indigo-600" :
+                    "bg-slate-100 text-slate-400"
+                  }`}>
+                    {isDone ? <CheckCircle2 className="w-4 h-4" /> : num}
+                  </div>
+                  <span className={`text-xs font-bold hidden sm:block ${isActive ? "text-indigo-700" : isDone ? "text-slate-700" : "text-slate-400"}`}>
+                    {label}
+                  </span>
+                </div>
+                {idx < 2 && <div className={`flex-1 h-px ${step > num ? "bg-indigo-300" : "bg-slate-200"}`} />}
+              </React.Fragment>
+            );
+          })}
         </div>
-
-        {/* Domain Categories Pill Strip */}
-        {activeFilter === "AVAILABLE" && categoriesSet.length > 1 && (
-          <div className="flex items-center gap-2 pt-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Domain:</span>
-            {categoriesSet.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded-full text-[11px] font-extrabold transition-all whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {cat}
+        {/* Breadcrumb */}
+        {(selectedCategory || selectedSubcategory) && (
+          <div className="flex items-center gap-1.5 mt-3 text-xs font-bold text-slate-500">
+            {selectedCategory && (
+              <button onClick={() => { setStep(1); setSelectedSubcategory(null); }} className="hover:text-indigo-600">
+                {selectedCategory.name}
               </button>
-            ))}
+            )}
+            {selectedSubcategory && (
+              <>
+                <ChevronRight className="w-3 h-3 text-slate-300" />
+                <button onClick={() => setStep(2)} className="hover:text-indigo-600">
+                  {selectedSubcategory.name}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Catalog Display Content Area */}
-      {activeFilter === "AVAILABLE" && (
-        <>
-          {filteredSubcategories.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm space-y-3">
-              <FolderOpen className="w-10 h-10 text-slate-400 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No assessments available.</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                {searchQuery
-                  ? `No assessments matched your search "${searchQuery}". Try clearing filters.`
-                  : "Instructors have not published domain assessments to your candidate group yet. Please check back soon."}
-              </p>
+      {/* STEP 1: Category */}
+      {step === 1 && (
+        <div className="space-y-3">
+          <p className="text-sm font-bold text-slate-600 px-1">Choose a Category</p>
+          {categories.length === 0 ? (
+            <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center">
+              <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-400 font-medium text-sm">No categories available yet.</p>
+              <p className="text-slate-400 text-xs mt-1">Ask admin to add categories & generate questions.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredSubcategories.map((sub) => (
-                <div
-                  key={sub._id}
-                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between group space-y-4"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map(cat => (
+                <button
+                  key={cat._id}
+                  onClick={() => { setSelectedCategory(cat); setStep(2); }}
+                  className="group bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl p-5 text-left transition-all hover:shadow-md"
                 >
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[10px] uppercase tracking-wide truncate">
-                        {sub.parentCategoryName || "General Domain"}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                        {sub.difficulty || "Standard"}
-                      </span>
+                  <div className="flex items-start justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 flex items-center justify-center transition-all mb-3">
+                      <BookOpen className="w-5 h-5 text-indigo-600" />
                     </div>
-
-                    <h3 className="font-extrabold text-base text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors">
-                      {sub.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                      {sub.description || "Comprehensive evaluation evaluating theoretical fundamentals and practical problem-solving capability."}
-                    </p>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-0.5" />
                   </div>
-
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>{sub.questionsCount || 20} Qs</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{sub.durationMinutes || 30}m</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleStartAttempt(sub)}
-                      disabled={!sub.acceptingAttempts}
-                      className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1 transition-all shadow-xs ${
-                        sub.acceptingAttempts
-                          ? "bg-indigo-600 hover:bg-indigo-700 text-white group-hover:translate-x-0.5"
-                          : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {sub.acceptingAttempts ? (
-                        <>
-                          <span>Launch</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>Paused</span>
-                        </>
-                      )}
-                    </button>
+                  <h3 className="font-black text-slate-900 group-hover:text-indigo-700 transition-colors">{cat.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{cat.description || "Click to explore topics"}</p>
+                  <div className="mt-3 text-xs font-bold text-slate-400">
+                    {(cat.subcategories || []).length} topic{(cat.subcategories || []).length !== 1 ? "s" : ""}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Active attempts tab view */}
-      {activeFilter === "ACTIVE" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm space-y-3">
-          {active.length === 0 ? (
-            <>
-              <Clock className="w-10 h-10 text-slate-400 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No ongoing sessions.</h3>
-              <p className="text-xs text-slate-400">You currently have no paused or active assessment attempts running.</p>
-            </>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              {active.map((s) => (
-                <div key={s._id || s.sessionId} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900">{s.title || "Assessment Session"}</h4>
-                    <span className="text-xs text-slate-500 font-mono">ID: {s.sessionId || s._id}</span>
-                  </div>
-                  <button className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs">Resume</button>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Completed & Expired simple empty/render state */}
-      {(activeFilter === "COMPLETED" || activeFilter === "EXPIRED") && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm space-y-3">
-          <CheckCircle2 className="w-10 h-10 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-800">No {activeFilter.toLowerCase()} assessments found.</h3>
-          <p className="text-xs text-slate-400">Your completed evaluation history will appear in My Results after submission.</p>
+      {/* STEP 2: Subcategory */}
+      {step === 2 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setStep(1); setSelectedSubcategory(null); }}
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <p className="text-sm font-bold text-slate-600">Choose a Topic in <span className="text-indigo-600">{selectedCategory?.name}</span></p>
+          </div>
+
+          {subcategories.length === 0 ? (
+            <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center">
+              <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-400 font-medium text-sm">No topics in this category yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subcategories.map(sub => (
+                <button
+                  key={sub._id}
+                  onClick={() => { setSelectedSubcategory(sub); setStep(3); }}
+                  className="group bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl p-5 text-left transition-all hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-violet-50 group-hover:bg-violet-100 flex items-center justify-center transition-all">
+                      <Target className="w-5 h-5 text-violet-600" />
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-0.5" />
+                  </div>
+                  <h3 className="font-black text-slate-900 group-hover:text-indigo-700 transition-colors">{sub.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{sub.description || "AI-powered assessment available"}</p>
+                  <div className="flex items-center gap-3 mt-3 text-xs font-bold text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-indigo-400" /> AI Ready
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* STEP 3: Difficulty + Launch */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setStep(2); setSelectedSubcategory(null); }}
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <p className="text-sm font-bold text-slate-600">
+              Choose Difficulty for <span className="text-indigo-600">{selectedSubcategory?.name}</span>
+            </p>
+          </div>
+
+          {/* Difficulty Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {DIFFICULTIES.map(d => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDifficulty(d.id)}
+                className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                  selectedDifficulty === d.id
+                    ? "border-indigo-600 bg-indigo-50 shadow-md"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <div className={`w-3 h-3 rounded-full mb-3 ${d.dot}`} />
+                <div className={`inline-block px-2 py-0.5 rounded-md text-xs font-black border mb-1.5 ${d.color}`}>
+                  {d.label}
+                </div>
+                <p className="text-xs text-slate-500">{d.desc}</p>
+                {selectedDifficulty === d.id && (
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 mt-2" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* AI Info Card */}
+          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-indigo-800">AI-Powered Questions</p>
+              <p className="text-xs text-indigo-600 mt-0.5">
+                When you start, AI generates fresh questions specifically for <strong>{selectedSubcategory?.name}</strong> at <strong>{selectedDifficulty}</strong> difficulty.
+                If AI takes more than 7 seconds, we'll use our question bank instead.
+              </p>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+                  <Zap className="w-3 h-3" /> AI First (≤7s)
+                </span>
+                <span className="flex items-center gap-1 text-xs font-bold text-slate-600">
+                  <Database className="w-3 h-3" /> DB Fallback
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Status Indicator */}
+          {aiStatus === "generating" && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+              <div>
+                <p className="text-sm font-bold text-amber-800">Generating questions with AI...</p>
+                <p className="text-xs text-amber-600">This may take up to 7 seconds</p>
+              </div>
+            </div>
+          )}
+          {aiStatus === "success" && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2 text-emerald-700">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-sm font-bold">AI generated fresh questions! Launching quiz...</span>
+            </div>
+          )}
+          {aiStatus === "fallback" && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-2 text-slate-600">
+              <Database className="w-4 h-4" />
+              <span className="text-sm font-bold">Using question bank. Launching quiz...</span>
+            </div>
+          )}
+
+          {/* Start Button */}
+          <button
+            onClick={handleStartAssessment}
+            disabled={starting}
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-200 text-base"
+          >
+            {starting ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Starting Assessment...</>
+            ) : (
+              <><Play className="w-5 h-5" /> Start {selectedSubcategory?.name} Assessment</>
+            )}
+          </button>
+
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { icon: Target, label: "Category", value: selectedCategory?.name },
+              { icon: BookOpen, label: "Topic", value: selectedSubcategory?.name },
+              { icon: Award, label: "Difficulty", value: selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1) },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="bg-white border border-slate-200 rounded-xl p-3 text-center">
+                <Icon className="w-4 h-4 text-slate-400 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+                <p className="text-xs font-black text-slate-800 mt-0.5 truncate">{value}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

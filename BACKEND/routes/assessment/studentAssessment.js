@@ -21,6 +21,7 @@ const allowOptionalAuth = (req, res, next) => {
 
 // Component 14: Secure APIs for candidate session workflow
 router.post("/sessions/start",              allowOptionalAuth, sessionController.createSession);
+router.post("/sessions/start-smart",        allowOptionalAuth, sessionController.createSmartSession); // AI-first 7s, DB fallback
 router.get("/sessions/:sessionId",          allowOptionalAuth, sessionController.getSession);
 router.post("/sessions/:sessionId/resume",  allowOptionalAuth, sessionController.resumeSession);
 router.post("/sessions/:sessionId/autosave",allowOptionalAuth, sessionController.autosave);

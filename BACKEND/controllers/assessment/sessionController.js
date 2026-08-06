@@ -1,6 +1,9 @@
 const AssessmentSessionEngine = require("../../services/assessment/AssessmentSessionEngine");
 const AssessmentSubcategory = require("../../models/assessment/AssessmentSubcategory");
+const AssessmentCategory = require("../../models/assessment/AssessmentCategory");
+const AssessmentQuestion = require("../../models/assessment/AssessmentQuestion");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 /**
  * Component 14 & Component 17: Secure APIs and Controller for Assessment Session Engine.
@@ -216,6 +219,153 @@ exports.getSessionStatus = async (req, res) => {
 };
 
 // ── Admin Supervision & Monitoring APIs ──────────────────────────────────────
+exports.createSmartSession = async (req, res) => {
+  try {
+    const { subcategoryId, categoryId, difficulty = "medium" } = req.body;
+    const userId = req.user?.id || req.user?._id || new mongoose.Types.ObjectId("600000000000000000000001");
+    const userEmail = req.user?.email || "candidate@portal.com";
+
+    if (!subcategoryId) {
+      return res.status(400).json({ success: false, error: "subcategoryId is required." });
+    }
+
+    // Step 1: Try AI generation in the background with 7s timeout
+    let aiGenerated = false;
+    try {
+      const [subcat, category] = await Promise.all([
+        AssessmentSubcategory.findById(subcategoryId).lean(),
+        categoryId ? AssessmentCategory.findById(categoryId).lean() : Promise.resolve(null),
+      ]);
+
+      if (subcat) {
+        const catName = category?.name || subcat.parentCategoryName || "General";
+        const subName = subcat.name || "Topic";
+
+        // Dynamic import to avoid circular deps
+        let Groq = null;
+        try { Groq = require("groq-sdk"); } catch {}
+
+        const buildGroqClient = () => {
+          const keys = [
+            process.env.GROQ_API_KEY,
+            process.env.GROQ_API_KEY_2,
+            process.env.GROQ_API_KEY_3,
+            process.env.GROQ_API_KEY_4,
+          ].filter(Boolean);
+          if (!keys.length || !Groq) return null;
+          return new Groq({ apiKey: keys[Math.floor(Math.random() * keys.length)] });
+        };
+
+        const difficultyDesc = {
+          easy: "beginner-level, basic recall and understanding",
+          medium: "intermediate-level, application and analysis",
+          hard: "advanced, deep understanding and complex problem-solving",
+          expert: "expert/professional mastery level",
+        }[difficulty] || "intermediate-level";
+
+        const prompt = `Generate exactly 5 multiple choice questions about "${subName}" in "${catName}".
+Difficulty: ${difficulty.toUpperCase()} (${difficultyDesc})
+Return ONLY a valid JSON array, no markdown:
+[{"text":"Question?","options":["A","B","C","D"],"correctIndex":0,"explanation":"Why correct."}]`;
+
+        const client = buildGroqClient();
+        if (client) {
+          // Race: 7000ms timeout vs AI completion
+          const aiRace = await Promise.race([
+            client.chat.completions.create({
+              model: "llama-3.3-70b-versatile",
+              messages: [
+                { role: "system", content: "You are a JSON-only MCQ generator. Return only valid JSON arrays, no markdown." },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7,
+              max_tokens: 1500,
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("AI_TIMEOUT")), 7000)),
+          ]);
+
+          const rawText = aiRace.choices?.[0]?.message?.content || "";
+          let questions = [];
+          try {
+            const match = rawText.trim().match(/\[[\s\S]*\]/);
+            questions = match ? JSON.parse(match[0]) : [];
+          } catch {}
+
+          if (questions.length > 0) {
+            // Save AI questions to DB
+            for (const q of questions) {
+              if (!q.text || !Array.isArray(q.options)) continue;
+              const fp = crypto.createHash("sha256")
+                .update((q.text || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim())
+                .digest("hex");
+              const exists = await AssessmentQuestion.findOne({ fingerprint: fp });
+              if (!exists) {
+                await AssessmentQuestion.create({
+                  text: q.text.trim(),
+                  options: q.options.map(o => String(o).trim()),
+                  correctIndex: typeof q.correctIndex === "number" ? q.correctIndex : 0,
+                  correctAnswer: q.options[q.correctIndex] || q.options[0] || "",
+                  explanation: q.explanation || "",
+                  difficulty,
+                  categoryId: categoryId || subcat.categoryId || null,
+                  subcategoryId,
+                  status: "Approved",
+                  createdSource: "AI Generated",
+                  assessmentType: "MCQ",
+                  fingerprint: fp,
+                  tags: ["ai-generated", difficulty, "smart-session"],
+                  qualityScore: 90,
+                }).catch(() => {});
+              }
+            }
+            aiGenerated = true;
+            console.log(`[SmartSession] ✅ AI generated ${questions.length} questions for ${subName} (${difficulty}) in <7s`);
+          }
+        }
+      }
+    } catch (aiErr) {
+      if (aiErr.message !== "AI_TIMEOUT") {
+        console.warn(`[SmartSession] AI generation skipped: ${aiErr.message}`);
+      } else {
+        console.warn(`[SmartSession] ⏱️ AI timeout — using DB fallback for ${subcategoryId}`);
+      }
+    }
+
+    // Step 2: Create the assessment session (SessionCreationService will pick questions from DB)
+    const result = await AssessmentSessionEngine.startAssessment({
+      userId,
+      candidateId: userEmail,
+      subcategoryId,
+      categoryId: categoryId || null,
+      options: { simulatedAiFirst: false }, // Don't re-trigger AI in session engine, we already did it
+    });
+
+    if (!result.success) {
+      if (result.code === "ACTIVE_SESSION_EXISTS") return res.status(409).json(result);
+      return res.status(400).json(result);
+    }
+
+    const initialBatch = await AssessmentSessionEngine.getQuestionBatch(result.sessionId, 1, userEmail);
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        ...result,
+        initialBatch: initialBatch.success ? initialBatch : null,
+        aiGenerated,
+        difficulty,
+      },
+      message: aiGenerated
+        ? "Session created with AI-generated questions."
+        : "Session created with database questions (AI fallback).",
+    });
+  } catch (err) {
+    console.error("[SessionController.createSmartSession]", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+
 exports.adminListSessions = async (req, res) => {
   try {
     const { page, limit, status, search, subcategoryId } = req.query;
