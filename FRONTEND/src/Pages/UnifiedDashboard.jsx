@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { LayoutDashboard, Briefcase, GraduationCap, Layers } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { LayoutDashboard, Briefcase, GraduationCap, Layers, Sparkles } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import InterviewDashboard from "./InterviewPortal/InterviewDashboard";
 import StudentDashboard from "../Components/StudentDashboard";
@@ -15,6 +15,7 @@ export default function UnifiedDashboard() {
   const [assessmentEnabled, setAssessmentEnabled] = useState(true);
   const [ambassadorEnabled, setAmbassadorEnabled] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if URL specifies initial tab (e.g. /dashboard?tab=assessment)
@@ -137,6 +138,14 @@ export default function UnifiedDashboard() {
               Ambassador Dashboard
             </button>
           )}
+
+          <button
+            onClick={() => navigate("/campus-ambassador")}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all whitespace-nowrap sm:ml-auto"
+          >
+            <Sparkles className="w-4 h-4 text-purple-600 animate-pulse" />
+            Become an Ambassador
+          </button>
         </div>
       </div>
 
