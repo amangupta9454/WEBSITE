@@ -1,10 +1,37 @@
 const Job = require('../models/Job');
 const SavedJob = require('../models/SavedJob');
 const AppliedJob = require('../models/AppliedJob');
+const JobAuditLog = require('../models/JobAuditLog');
 const axios = require('axios');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const jwt = require('jsonwebtoken');
+
+const logJobAction = async (req, userId, action, job, details = '') => {
+  try {
+    const clientIp = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : (req.socket?.remoteAddress || req.ip || '0.0.0.0');
+    let email = 'Anonymous / Guest';
+    if (req.user?.email) {
+      email = req.user.email;
+    } else if (userId) {
+      const u = await User.findById(userId).catch(() => null);
+      if (u && u.email) email = u.email;
+    }
+    await JobAuditLog.create({
+      userId,
+      email,
+      ip: clientIp,
+      action,
+      jobId: job?._id || null,
+      jobTitle: job?.title || '',
+      company: job?.company || '',
+      details,
+      createdAt: new Date()
+    });
+  } catch (err) {
+    // Silently continue if logging fails
+  }
+};
 
 const getJobPortalConfig = async () => {
   try {
@@ -162,6 +189,7 @@ exports.saveJob = async (req, res) => {
     }
 
     await SavedJob.create({ user: userId, job: jobId });
+    logJobAction(req, userId, 'Saved Job', job);
 
     res.status(200).json({ success: true, message: 'Job saved successfully' });
   } catch (error) {
@@ -181,6 +209,7 @@ exports.unsaveJob = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Saved job not found' });
     }
+    logJobAction(req, userId, 'Unsaved Job', null);
 
     res.status(200).json({ success: true, message: 'Job removed from saved list' });
   } catch (error) {
@@ -745,9 +774,11 @@ exports.toggleAppliedJob = async (req, res) => {
     const existing = await AppliedJob.findOne({ user: userId, job: jobId });
     if (existing) {
       await AppliedJob.findOneAndDelete({ user: userId, job: jobId });
+      logJobAction(req, userId, 'Removed Apply Mark', job);
       return res.status(200).json({ success: true, isApplied: false, message: 'Removed from applied list' });
     } else {
       await AppliedJob.create({ user: userId, job: jobId, status: 'Applied' });
+      logJobAction(req, userId, 'Clicked Apply / Applied', job);
       return res.status(200).json({ success: true, isApplied: true, message: '✅ Recorded as Applied!' });
     }
   } catch (error) {
@@ -891,3 +922,60 @@ exports.updateUserPlan = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error modifying user subscription' });
   }
 };
+
+// Record Job Portal visitor & activity audit logs
+exports.recordAuditLog = async (req, res) => {
+  try {
+    const { action, jobId, jobTitle, company, details, email: providedEmail } = req.body;
+    const clientIp = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : (req.socket?.remoteAddress || req.ip || '0.0.0.0');
+    
+    let email = providedEmail || 'Anonymous / Guest';
+    let userId = null;
+    
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || 'secret');
+        userId = decoded.unifiedUserId || decoded.id || decoded.userId;
+        if (userId) {
+          const u = await User.findById(userId);
+          if (u && u.email) {
+            email = u.email;
+          }
+        }
+      } catch (e) {
+        // Ignore token errors for guest browsing
+      }
+    }
+
+    const log = await JobAuditLog.create({
+      userId,
+      email,
+      ip: clientIp,
+      action: action || 'Visited Job Portal',
+      jobId: jobId || null,
+      jobTitle: jobTitle || '',
+      company: company || '',
+      details: details || '',
+      createdAt: new Date()
+    });
+
+    res.status(200).json({ success: true, logId: log._id });
+  } catch (error) {
+    console.error('Error recording job audit log:', error);
+    res.status(500).json({ success: false, message: 'Failed to record audit log' });
+  }
+};
+
+// Get all job audit logs for Admin Panel (grouped by IP on frontend)
+exports.getAdminAuditLogs = async (req, res) => {
+  try {
+    const logs = await JobAuditLog.find().sort({ createdAt: -1 }).limit(2000);
+    res.status(200).json({ success: true, count: logs.length, data: logs });
+  } catch (error) {
+    console.error('Error fetching admin audit logs:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching audit logs' });
+  }
+};
+

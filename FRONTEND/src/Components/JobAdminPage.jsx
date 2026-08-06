@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { RefreshCw, Edit, Trash2, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight, Plus, Sparkles, ExternalLink } from 'lucide-react';
+import { RefreshCw, Edit, Trash2, Eye, EyeOff, Loader2, ToggleLeft, ToggleRight, Plus, Sparkles, ExternalLink, Info, Activity, Globe, ChevronDown, ChevronUp, Clock, X, Shield } from 'lucide-react';
 
 const JobAdminPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -16,11 +16,44 @@ const JobAdminPage = () => {
   const [interactionType, setInteractionType] = useState('applied');
   const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [interactionSearch, setInteractionSearch] = useState('');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [expandedIps, setExpandedIps] = useState({});
+  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [excelFile, setExcelFile] = useState(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [creatingJob, setCreatingJob] = useState(false);
+
+  const groupedAuditLogs = useMemo(() => {
+    const map = {};
+    auditLogs.forEach(log => {
+      const ip = log.ip || 'Unknown IP';
+      if (!map[ip]) {
+        map[ip] = {
+          ip,
+          emails: new Set(),
+          actionsCount: 0,
+          latestActionAt: log.createdAt,
+          actionCounts: {},
+          logs: []
+        };
+      }
+      map[ip].actionsCount++;
+      if (log.email && log.email !== 'Anonymous / Guest') {
+        map[ip].emails.add(log.email);
+      } else if (map[ip].emails.size === 0) {
+        map[ip].emails.add(log.email || 'Anonymous / Guest');
+      }
+      map[ip].actionCounts[log.action] = (map[ip].actionCounts[log.action] || 0) + 1;
+      map[ip].logs.push(log);
+      if (new Date(log.createdAt) > new Date(map[ip].latestActionAt)) {
+        map[ip].latestActionAt = log.createdAt;
+      }
+    });
+    return Object.values(map).sort((a, b) => new Date(b.latestActionAt) - new Date(a.latestActionAt));
+  }, [auditLogs]);
 
   // Student Plans management state
   const [students, setStudents] = useState([]);
@@ -125,9 +158,30 @@ const JobAdminPage = () => {
     }
   };
 
+  const fetchAuditLogs = async () => {
+    setLoadingAuditLogs(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/jobs/admin/audit-logs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setAuditLogs(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
   const handleTabChange = (type) => {
     setInteractionType(type);
-    fetchInteractions(type);
+    if (type === 'audit') {
+      fetchAuditLogs();
+    } else {
+      fetchInteractions(type);
+    }
   };
 
   const fetchGlobalSetting = async () => {
@@ -500,6 +554,13 @@ const JobAdminPage = () => {
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setSelectedJobDetails(job)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Job Info & Complete Details"
+                        >
+                          <Info className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                        <button
                           onClick={() => handleToggleJob(job._id)}
                           className={`p-2 rounded-lg transition-colors ${job.isActive ? 'text-amber-600 hover:bg-amber-50' : 'text-green-600 hover:bg-green-50'}`}
                           title={job.isActive ? 'Hide Job' : 'Show Job'}
@@ -542,8 +603,8 @@ const JobAdminPage = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0 flex-wrap">
               <button
                 onClick={() => handleTabChange('applied')}
                 className={`px-3 sm:px-4 py-2 rounded-lg transition-all ${interactionType === 'applied' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
@@ -556,10 +617,17 @@ const JobAdminPage = () => {
               >
                 Saved
               </button>
+              <button
+                onClick={() => handleTabChange('audit')}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 ${interactionType === 'audit' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow' : 'text-purple-700 hover:text-purple-900 font-extrabold'}`}
+              >
+                <Activity className="w-4 h-4 animate-pulse" />
+                <span>Audit Logs (IP Activity)</span>
+              </button>
             </div>
             
             <button
-              onClick={() => fetchInteractions(interactionType)}
+              onClick={() => interactionType === 'audit' ? fetchAuditLogs() : fetchInteractions(interactionType)}
               className="p-2.5 sm:p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold flex items-center justify-center shrink-0 shadow-sm"
               title="Refresh Records"
             >
@@ -579,7 +647,119 @@ const JobAdminPage = () => {
           />
         </div>
 
-        {/* Activity Table */}
+        {/* Activity or Audit Log View */}
+        {interactionType === 'audit' ? (
+          <div className="space-y-4">
+            {loadingAuditLogs ? (
+              <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-purple-600" />
+                <p className="text-slate-600 font-extrabold text-base">Aggregating unique IP visits and portal interactions...</p>
+              </div>
+            ) : groupedAuditLogs.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm text-slate-500 font-extrabold text-base">
+                🌐 No visitor activity recorded yet on the Job Portal.
+              </div>
+            ) : (
+              groupedAuditLogs
+                .filter(group => {
+                  if (!interactionSearch) return true;
+                  const q = interactionSearch.toLowerCase();
+                  const ipMatch = group.ip.toLowerCase().includes(q);
+                  const emailMatch = Array.from(group.emails).some(e => e.toLowerCase().includes(q));
+                  const jobMatch = group.logs.some(l => (l.jobTitle || '').toLowerCase().includes(q) || (l.company || '').toLowerCase().includes(q) || (l.action || '').toLowerCase().includes(q));
+                  return ipMatch || emailMatch || jobMatch;
+                })
+                .map((group) => {
+                  const isExpanded = expandedIps[group.ip];
+                  return (
+                    <div key={group.ip} className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden transition-all hover:border-purple-300">
+                      {/* Expandable Header Card */}
+                      <div 
+                        onClick={() => setExpandedIps(prev => ({ ...prev, [group.ip]: !prev[group.ip] }))}
+                        className="p-5 bg-gradient-to-r from-slate-50 via-purple-50/20 to-slate-50 hover:bg-slate-100/70 cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4 select-none"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                            <Globe className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-base sm:text-lg font-black text-slate-900 font-mono tracking-tight">{group.ip}</span>
+                              <span className="px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[11px] font-black rounded-full border border-purple-200 uppercase tracking-wider">
+                                Unique Visitor IP
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
+                              <span className="text-slate-500">📧 Associated Email(s):</span>
+                              {Array.from(group.emails).map((email, idx) => (
+                                <span key={idx} className={`px-2 py-0.5 rounded text-[11px] font-extrabold ${email === 'Anonymous / Guest' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                                  {email}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Count Badges */}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:justify-end">
+                          <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl font-black text-xs border border-indigo-100 shadow-2xs">
+                            ⚡ {group.actionsCount} Total Actions
+                          </span>
+                          {Object.entries(group.actionCounts).slice(0, 3).map(([act, count]) => (
+                            <span key={act} className="px-2.5 py-1.5 bg-slate-100 text-slate-800 rounded-lg text-xs font-extrabold border border-slate-200">
+                              {count}x {act}
+                            </span>
+                          ))}
+                          <div className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-xs ml-auto lg:ml-0">
+                            {isExpanded ? <ChevronUp className="w-5 h-5 stroke-[3]" /> : <ChevronDown className="w-5 h-5 stroke-[3]" />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expanded Activity Timeline */}
+                      {isExpanded && (
+                        <div className="p-5 sm:p-6 border-t-2 border-slate-100 bg-white">
+                          <div className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <span>Detailed Activity Timeline for IP: {group.ip}</span>
+                            <span>Latest First ↓</span>
+                          </div>
+                          <div className="divide-y divide-slate-100">
+                            {group.logs.map((log) => (
+                              <div key={log._id || Math.random()} className="py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 px-3 rounded-xl transition-colors">
+                                <div className="flex items-start sm:items-center gap-3">
+                                  <span className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide shrink-0 border ${
+                                    log.action.includes('Apply') ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                    log.action.includes('Save') ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
+                                    'bg-purple-50 text-purple-800 border-purple-200'
+                                  }`}>
+                                    {log.action}
+                                  </span>
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 text-sm">
+                                      {log.jobTitle ? `${log.jobTitle} ${log.company ? `— ${log.company}` : ''}` : 'General Job Portal Navigation / Browsing'}
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-semibold flex items-center gap-2 mt-0.5">
+                                      <span>Visitor Email: <strong className="text-slate-800">{log.email || 'Anonymous / Guest'}</strong></span>
+                                      {log.details && <span>• {log.details}</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-xs font-bold text-slate-500 shrink-0 flex items-center gap-1.5 bg-slate-100/80 px-3 py-1 rounded-lg">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  {new Date(log.createdAt).toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        ) : (
+        /* Activity Table for Applied / Saved */
         <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
           <table className="w-full border-collapse">
             <thead>
@@ -641,13 +821,13 @@ const JobAdminPage = () => {
                           <span className="font-extrabold text-slate-900">{item.job?.title || 'Job Unavailable'}</span>
                           {item.job && (
                             <a 
-                              href={item.job?.applyUrl || (item.job?._id ? `/jobs/${item.job._id}` : '#')} 
+                              href={item.job?._id ? `${window.location.origin}/jobs?jobId=${item.job._id}` : '/jobs'} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded text-[11px] font-black border border-indigo-200 shrink-0 transition-colors"
-                              title="Open Job URL"
+                              title="Open Job on Our Platform Portal"
                             >
-                              <span>Open URL</span>
+                              <span>Open Portal URL</span>
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
@@ -665,15 +845,15 @@ const JobAdminPage = () => {
                       </td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1 rounded-lg text-xs font-black ${
-                          item.action.includes('Applied') 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          interactionType === 'applied' 
+                            ? 'bg-blue-50 text-blue-800 border border-blue-200' 
+                            : 'bg-purple-50 text-purple-800 border border-purple-200'
                         }`}>
-                          {item.action}
+                          {interactionType === 'applied' ? 'Applied / Clicked URL' : 'Saved Job'}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-xs text-slate-500 font-bold">
-                        {item.date ? new Date(item.date).toLocaleString() : 'Just now'}
+                        {item.createdAt || item.appliedAt || item.savedAt ? new Date(item.createdAt || item.appliedAt || item.savedAt).toLocaleString() : 'N/A'}
                       </td>
                     </tr>
                   ))
@@ -681,6 +861,7 @@ const JobAdminPage = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Student Plans & Subscriptions Management Dashboard */}
@@ -1374,6 +1555,105 @@ const JobAdminPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Job Info Details Modal */}
+      {selectedJobDetails && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-4 border-slate-200 mb-6">
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl font-black text-xl">
+                  ℹ️
+                </span>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">{selectedJobDetails.title}</h3>
+                  <p className="text-sm font-semibold text-slate-500">{selectedJobDetails.company} • {selectedJobDetails.location}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedJobDetails(null)}
+                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm font-medium text-slate-700">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Plan Tier</span>
+                  <span className={`px-2.5 py-0.5 rounded text-xs font-black inline-block ${
+                    selectedJobDetails.planType === 'Premium' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {selectedJobDetails.planType === 'Premium' ? '👑 Premium (199 Plan)' : '🟢 Basic (Free)'}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Employment Type</span>
+                  <span className="font-extrabold text-slate-900">{selectedJobDetails.jobType || selectedJobDetails.employmentType || 'Full-time'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Salary / Stipend</span>
+                  <span className="font-black text-emerald-700 text-base">{selectedJobDetails.salary || 'Not Specified'}</span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Source</span>
+                  <span className="font-extrabold text-indigo-700">{selectedJobDetails.source || 'Admin / Excel Import'}</span>
+                </div>
+              </div>
+
+              {selectedJobDetails.applyUrl && (
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">External Apply Link</span>
+                  <a 
+                    href={selectedJobDetails.applyUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-indigo-600 hover:text-indigo-800 font-black underline break-all inline-flex items-center gap-1 text-xs"
+                  >
+                    {selectedJobDetails.applyUrl} <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </a>
+                </div>
+              )}
+
+              {selectedJobDetails.applyEmail && (
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Recruiter Email</span>
+                  <a href={`mailto:${selectedJobDetails.applyEmail}`} className="text-indigo-600 hover:text-indigo-800 font-bold text-xs underline">
+                    {selectedJobDetails.applyEmail}
+                  </a>
+                </div>
+              )}
+
+              {selectedJobDetails.description && (
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Job Description / Requirements</span>
+                  <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+                    {selectedJobDetails.description}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-400 flex items-center justify-between font-mono">
+                <span>Database ID: {selectedJobDetails._id}</span>
+                <span>Status: {selectedJobDetails.isActive ? '✅ Active' : '⏸️ Hidden'}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setSelectedJobDetails(null)}
+                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm rounded-xl transition-colors shadow-lg"
+              >
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
       )}

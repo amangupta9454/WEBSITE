@@ -39,6 +39,13 @@ const Jobs = () => {
 
   useEffect(() => {
     fetchUserStatus();
+    // Record visitor audit activity for Admin tracking
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    const email = localStorage.getItem('studentEmail') || localStorage.getItem('userEmail') || '';
+    axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
+      action: 'Visited Job Portal',
+      email: email || undefined
+    }, token ? { headers: { Authorization: `Bearer ${token}` } } : {}).catch(() => {});
   }, []);
 
   const fetchUserStatus = async () => {
