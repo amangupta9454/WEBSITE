@@ -377,71 +377,76 @@ const Jobs = () => {
                 </form>
               </div>
 
-              {/* Job Portal Membership & Token Dashboard */}
-              <div className="bg-gradient-to-b from-slate-900 to-slate-800 text-white rounded-3xl p-6 md:p-7 w-full lg:w-96 shrink-0 shadow-2xl relative overflow-hidden border border-slate-700">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
-
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Your Membership</span>
-                    {userStatus.isFreeMode ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 text-slate-950 shadow-md">
-                        <Sparkles className="w-3.5 h-3.5 fill-current text-amber-600" /> 🎉 1st Month Free Promo
-                      </span>
-                    ) : userStatus.isPremium ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-md">
-                        <Crown className="w-3.5 h-3.5 fill-current" /> Premium VIP Plan
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        🟢 Basic Free Plan
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Wallet Balance</span>
-                    <div className="inline-flex items-center gap-1 text-xl font-black text-amber-300">
-                      <Coins className="w-5 h-5 fill-current text-amber-400" />
-                      {userStatus.tokens}
+              {/* Job Portal Membership & Token Dashboard (Light Theme) */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 w-full lg:w-[390px] shrink-0 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="font-extrabold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h3>
+                    <div className="bg-indigo-50 text-indigo-700 px-3.5 py-1.5 rounded-xl font-black text-base md:text-lg border border-indigo-100 flex items-center gap-1 shadow-xs">
+                      <span>{userStatus.tokens}</span>{' '}
+                      <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-indigo-600">Tokens</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 mb-5 space-y-2.5">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-slate-300 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Basic Free Jobs:</span>
-                    <span className="text-emerald-400 font-bold">Unlocked</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-slate-300 flex items-center gap-1.5">
-                      {userStatus.isPremium ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Lock className="w-4 h-4 text-amber-400" />} 
-                      Premium VIP Roles:
-                    </span>
-                    <span className={userStatus.isPremium ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                      {userStatus.isPremium ? 'Unlocked' : 'Locked (10 Daily)'}
-                    </span>
-                  </div>
-                  {userStatus.isFreeMode ? (
-                    <div className="text-[11px] bg-amber-500/20 text-amber-300 rounded-xl p-2.5 text-center font-extrabold border border-amber-500/30 space-y-1">
-                      <div>🎁 Promo Offer: VIP Premium jobs are currently FREE for all students!</div>
-                      {userStatus.freeModeExpires && (
-                        <div className="text-[10px] text-amber-200 font-bold">
-                          🗓️ Free Promo valid until <b>{new Date(userStatus.freeModeExpires).toLocaleDateString()}</b> (Auto-switches to Token pricing after 30 days)
-                        </div>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between text-xs md:text-sm items-center">
+                      <span className="text-slate-600 font-medium">Basic Free Jobs:</span>
+                      <span className="text-slate-800 font-extrabold">2 Daily (Unlocked)</span>
+                    </div>
+                    <div className="flex justify-between text-xs md:text-sm items-center">
+                      <span className="text-slate-600 font-medium">Premium VIP Roles:</span>
+                      {userStatus.isFreeMode || userStatus.isPremium ? (
+                        <span className="text-slate-800 font-extrabold">10 Daily (Unlocked)</span>
+                      ) : (
+                        <span className="text-amber-800 font-extrabold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg text-xs">Locked (10 Daily)</span>
                       )}
                     </div>
-                  ) : userStatus.isPremium && userStatus.expiresAt && (
-                    <div className="text-[11px] text-slate-400 text-center pt-2 border-t border-slate-700">
-                      Valid until: <span className="text-white font-bold">{new Date(userStatus.expiresAt).toLocaleDateString()}</span>
+                    <div className="flex justify-between text-xs md:text-sm items-center">
+                      <span className="text-slate-600 font-medium">Email & Apply Links:</span>
+                      {userStatus.isFreeMode ? (
+                        <span className="text-emerald-700 font-black bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg text-xs">FREE PROMO</span>
+                      ) : userStatus.isPremium ? (
+                        <span className="text-indigo-700 font-black bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-lg text-xs">VIP ACCESS</span>
+                      ) : (
+                        <span className="text-slate-600 font-extrabold">Token Subscription</span>
+                      )}
+                    </div>
+                    <div className="w-full h-px bg-slate-100 my-3" />
+                    <div className="flex justify-between text-xs md:text-sm items-center">
+                      <span className="text-slate-600 font-medium">Current Status:</span>
+                      <span className="text-slate-900 font-black">
+                        {userStatus.isFreeMode ? '🎉 1st Month Free' : userStatus.isPremium ? '👑 Premium Active' : '🟢 Basic Member'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {userStatus.isFreeMode && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-slate-700 text-xs font-medium mb-6 space-y-1.5">
+                      <div className="font-extrabold text-amber-900 flex items-center gap-1.5 text-xs">
+                        <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
+                        <span>VIP Roles Currently Free!</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
+                        {userStatus.freeModeExpires ? (
+                          <>Promo valid until <b className="text-slate-900">{new Date(userStatus.freeModeExpires).toLocaleDateString()}</b> before auto-switching to Token pricing.</>
+                        ) : (
+                          <>1st Month Free Promo is currently active for all students!</>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {!userStatus.isFreeMode && userStatus.isPremium && userStatus.expiresAt && (
+                    <div className="text-xs text-slate-500 font-semibold mb-5 text-right">
+                      Plan valid until: <span className="text-slate-800 font-black">{new Date(userStatus.expiresAt).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3 mt-auto">
                   {!userStatus.isPremium && !userStatus.isFreeMode && (
                     <button
                       onClick={handlePurchasePremium}
-                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-900 font-black text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-900 font-black text-sm transition-all shadow-md shadow-amber-500/15 flex items-center justify-center gap-2"
                     >
                       <Zap className="w-4 h-4 fill-current text-slate-900" />
                       Upgrade Premium ({userStatus.premiumPrice || 199} Tokens / 3 Mo)
@@ -449,10 +454,9 @@ const Jobs = () => {
                   )}
                   <button
                     onClick={() => setIsBuyModalOpen(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs transition-colors border border-indigo-500/50 shadow-md flex items-center justify-center gap-1.5"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all text-sm shadow-lg shadow-indigo-600/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                   >
-                    <Coins className="w-4 h-4 text-indigo-300" />
-                    + Recharge Tokens (₹1 = 1 Token & Bonus Packs)
+                    Purchase More Tokens
                   </button>
                 </div>
               </div>

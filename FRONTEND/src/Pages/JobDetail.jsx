@@ -276,7 +276,7 @@ const JobDetail = () => {
                       if (job.applyUrl) {
                         window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
                       } else if (job.applyEmail) {
-                        window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)} via Code-A-Nova`;
+                        window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
                       } else {
                         toast.error('Application link is not currently specified.');
                       }
@@ -351,7 +351,7 @@ const JobDetail = () => {
                   <button
                     onClick={() => {
                       if (!isApplied) toggleApplyJob();
-                      window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)} via Code-A-Nova`;
+                      window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
                     }}
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border-2 border-indigo-200 px-6 py-3.5 rounded-2xl font-extrabold shadow-sm transition-all text-sm cursor-pointer"
                   >

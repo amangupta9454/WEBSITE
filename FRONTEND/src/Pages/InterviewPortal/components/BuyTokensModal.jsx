@@ -58,7 +58,7 @@ export default function BuyTokensModal({ isOpen, onClose, onSelectPackage }) {
             </div>
 
             {/* Tab Switcher */}
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6 relative z-10 shrink-0 border border-slate-200/60 max-w-lg mx-auto w-full">
+            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-2 relative z-10 shrink-0 border border-slate-200/60 max-w-lg mx-auto w-full">
               <button
                 type="button"
                 onClick={() => setActiveTab('packs')}
@@ -81,51 +81,51 @@ export default function BuyTokensModal({ isOpen, onClose, onSelectPackage }) {
               </button>
             </div>
 
-            <div className="overflow-y-auto px-1 pb-2 flex-1 relative z-10">
+            <div className="overflow-y-auto px-2 pt-6 pb-3 flex-1 relative z-10">
               {activeTab === 'packs' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-1">
                   {bonusPackages.map((pkg) => (
                     <div 
                       key={pkg.id} 
                       onClick={() => onSelectPackage(pkg)}
-                      className={`relative p-5 rounded-3xl border-2 cursor-pointer transition-all hover:-translate-y-1.5 flex flex-col justify-between ${
+                      className={`relative p-5 sm:p-6 rounded-3xl border-2 cursor-pointer transition-all hover:-translate-y-1.5 flex flex-col justify-between ${
                         pkg.recommended 
-                          ? 'border-indigo-600 bg-gradient-to-b from-indigo-50/80 to-white shadow-xl shadow-indigo-500/10 ring-2 ring-indigo-600/10' 
-                          : 'border-slate-200/80 bg-white hover:border-indigo-300 hover:shadow-lg'
+                          ? 'border-indigo-600 bg-indigo-50/30 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-600/20' 
+                          : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-lg'
                       }`}
                     >
                       {pkg.recommended && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-wider py-1 px-3 rounded-full shadow-md whitespace-nowrap">
+                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest py-1 px-4 rounded-full shadow-md whitespace-nowrap z-20 border border-white/20">
                           Most Popular
                         </div>
                       )}
                       <div>
-                        <div className="mt-1 inline-block bg-emerald-100/80 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-lg border border-emerald-200/50 mb-3">
+                        <div className="mt-1 inline-block bg-emerald-100/90 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-lg border border-emerald-300/60 mb-3.5 shadow-xs">
                           {pkg.bonus}
                         </div>
                         <h3 className="text-xl font-black text-slate-900 mb-1">
                           {pkg.title}
                         </h3>
-                        <div className="text-2xl font-black text-indigo-600 mb-2 flex items-baseline gap-1">
+                        <div className="text-2xl font-black text-indigo-600 mb-2.5 flex items-baseline gap-1">
                           ₹{pkg.price}
-                          <span className="text-xs text-slate-400 font-medium">INR</span>
+                          <span className="text-xs text-slate-400 font-bold">INR</span>
                         </div>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                        <p className="text-xs text-slate-500 leading-relaxed mb-6 font-medium">
                           {pkg.desc}
                         </p>
                       </div>
 
-                      <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+                      <div className="mt-auto pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-slate-700">
                         <span className="flex items-center gap-1 text-emerald-600">
                           <Check size={14} className="stroke-[3]" /> Instant Access
                         </span>
-                        <span className="text-indigo-600 font-extrabold group-hover:underline">Select &rarr;</span>
+                        <span className="text-indigo-600 font-black group-hover:underline">Select &rarr;</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <form onSubmit={handleCustomSubmit} className="max-w-md mx-auto bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80 text-center space-y-5 shadow-inner">
+                <form onSubmit={handleCustomSubmit} className="max-w-md mx-auto mt-2 bg-slate-50/90 rounded-3xl p-6 border border-slate-200 text-center space-y-5 shadow-inner">
                   <div>
                     <h3 className="text-lg font-black text-slate-800 mb-1">Enter Custom Amount</h3>
                     <p className="text-xs text-slate-500 font-medium">
