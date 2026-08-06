@@ -3,52 +3,85 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import JobCard from '../Components/JobCard';
-import { Search, MapPin, Filter, Briefcase, Bookmark } from 'lucide-react';
+import BuyTokensModal from './InterviewPortal/components/BuyTokensModal';
+import { Search, MapPin, Filter, Briefcase, Bookmark, Sparkles, Coins, Lock, Zap, CheckCircle2, Crown, ShieldAlert } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+
+const loadScript = (src) => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [savedJobs, setSavedJobs] = useState([]);
+  const [appliedJobs, setAppliedJobs] = useState([]);
   const [savedJobObjects, setSavedJobObjects] = useState([]);
   const [showSaved, setShowSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
-  // Filters
+  // Filters and Plans
   const [role, setRole] = useState('');
   const [location, setLocation] = useState('');
   const [remote, setRemote] = useState(false);
+  const [activePlanTab, setActivePlanTab] = useState('All'); // 'All' | 'Basic' | 'Premium'
+
+  // Membership & Token State
+  const [userStatus, setUserStatus] = useState({ isPremium: false, isFreeMode: false, freeModeExpires: null, premiumPrice: 199, tokens: 0, expiresAt: null });
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchJobs();
+    fetchUserStatus();
+  }, []);
 
-    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
-    if (token) {
-      const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
-      axios.post(
-        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/track-activity`,
-        { featureName: "Job Portal Applied", referralCode: activeRef },
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).catch(() => {});
+  const fetchUserStatus = async () => {
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) return;
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/user-status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setUserStatus({
+          isPremium: res.data.isPremium,
+          isFreeMode: res.data.isFreeMode || false,
+          freeModeExpires: res.data.freeModeExpires || null,
+          premiumPrice: res.data.premiumPrice || 199,
+          tokens: res.data.tokens,
+          expiresAt: res.data.expiresAt
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching user status:', err);
     }
-  }, [page, role, location, remote]);
+  };
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
       const queryParams = new URLSearchParams({
         page,
         limit: 12,
         ...(role && { role }),
         ...(location && { location }),
-        ...(remote && { remote: 'true' })
+        ...(remote && { remote: 'true' }),
+        ...(activePlanTab !== 'All' && { planType: activePlanTab })
       });
 
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs?${queryParams}`);
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs?${queryParams}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.data.success) {
         setJobs(res.data.data);
-        setTotalPages(res.data.pagination.pages);
+        setTotalPages(res.data.pagination?.pages || 1);
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
@@ -75,18 +108,163 @@ const Jobs = () => {
     }
   };
 
+  const fetchAppliedJobs = async () => {
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) return;
+
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/applied`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setAppliedJobs(res.data.data.map(aj => aj.job._id));
+      }
+    } catch (error) {
+      console.error('Failed to fetch applied jobs:', error);
+    }
+  };
+
   useEffect(() => {
     fetchJobs();
-  }, [page]);
+    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
+    if (token) {
+      const activeRef = localStorage.getItem('referralCode') || localStorage.getItem('referredByCode') || sessionStorage.getItem('referralCode');
+      axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/student/track-activity`,
+        { featureName: "Job Portal Viewed", referralCode: activeRef },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).catch(() => {});
+    }
+  }, [page, role, location, remote, activePlanTab]);
 
   useEffect(() => {
     fetchSavedJobs();
+    fetchAppliedJobs();
   }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
     fetchJobs();
+  };
+
+  const handlePurchasePremium = async () => {
+    if (userStatus.isFreeMode) {
+      toast.success("🎉 Good news! Free Promo Mode is active right now. All Premium jobs are completely FREE for all students!");
+      return;
+    }
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      toast.error('Please log in first to upgrade to Premium!');
+      return;
+    }
+    const requiredTokens = userStatus.premiumPrice || 199;
+    if (userStatus.tokens < requiredTokens) {
+      toast.error(`You have ${userStatus.tokens} tokens. You need ${requiredTokens} tokens to upgrade! Opening recharge store...`);
+      setIsBuyModalOpen(true);
+      return;
+    }
+    if (!window.confirm(`Upgrade to Job Portal Premium for 3 months using ${requiredTokens} Tokens?`)) return;
+
+    try {
+      const toastId = toast.loading('Upgrading to Premium...');
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/purchase-premium`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.dismiss(toastId);
+      if (res.data.success) {
+        toast.success(res.data.message || '🎉 Upgraded to Premium Plan!');
+        setUserStatus({
+          isPremium: res.data.isPremium,
+          isFreeMode: res.data.isFreeMode || false,
+          premiumPrice: res.data.premiumPrice || requiredTokens,
+          tokens: res.data.tokens,
+          expiresAt: res.data.expiresAt
+        });
+        fetchJobs(); // Re-fetch to display unlocked apply links!
+      }
+    } catch (err) {
+      if (err.response?.data?.code === 'INSUFFICIENT_TOKENS') {
+        toast.error(err.response.data.message);
+        setIsBuyModalOpen(true);
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to upgrade to Premium');
+      }
+    }
+  };
+
+  const handleBuyPackage = async (pkg) => {
+    setIsBuyModalOpen(false);
+    const token = localStorage.getItem('interviewToken') || localStorage.getItem('studentToken');
+    if (!token) {
+      toast.error('Please login to purchase tokens');
+      return;
+    }
+
+    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!res) {
+      toast.error("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
+
+    try {
+      const toastId = toast.loading("Initializing payment...");
+      const orderRes = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-payment/create-order`,
+        { packageId: pkg.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (!orderRes.data.success) {
+        toast.dismiss(toastId);
+        toast.error(orderRes.data.message || "Failed to create order");
+        return;
+      }
+
+      toast.dismiss(toastId);
+      const order = orderRes.data.order;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Code-A-Nova",
+        description: `Purchase ${pkg.title || 'Tokens'}`,
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/interview-payment/verify`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                packageId: pkg.id
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (verifyRes.data.success) {
+              toast.success("✅ Payment Successful! Tokens credited.");
+              setUserStatus(prev => ({ ...prev, tokens: verifyRes.data.credits || (prev.tokens + pkg.price) }));
+              fetchUserStatus();
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("Error verifying payment");
+          }
+        },
+        theme: { color: "#4F46E5" }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error(error);
+      toast.error("Payment initiation failed");
+    }
   };
 
   const toggleSaveJob = async (jobId) => {
@@ -122,6 +300,30 @@ const Jobs = () => {
     }
   };
 
+  const toggleApplyJob = async (jobId) => {
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      toast.error('Please login first to record application status');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/apply/${jobId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.isApplied) {
+        setAppliedJobs(prev => [...prev, jobId]);
+        toast.success('✅ Marked as Applied in your profile!');
+      } else {
+        setAppliedJobs(prev => prev.filter(id => id !== jobId));
+        toast.success('Removed from applied list');
+      }
+    } catch (error) {
+      console.error('Failed to toggle apply job:', error);
+      toast.error('Operation failed');
+    }
+  };
+
   const filteredSavedJobs = React.useMemo(() => {
     return savedJobObjects.filter(job => {
       if (!job) return false;
@@ -142,85 +344,116 @@ const Jobs = () => {
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[100px] -ml-64 -mb-64 pointer-events-none"></div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-              <div className="max-w-2xl">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
+              <div className="max-w-2xl flex-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest mb-6">
-                  <Briefcase className="w-4 h-4" /> Code-A-Nova Jobs
+                  <Briefcase className="w-4 h-4" /> Code-A-Nova Job Portal
                 </div>
                 <h1 className="font-black mb-4 leading-none md:leading-tight text-slate-900">
-                  <span className="block md:inline text-2xl sm:text-4xl md:text-5xl">Find Your Next</span>
+                  <span className="block md:inline text-3xl sm:text-4xl md:text-5xl">Discover Daily</span>
                   <span className="hidden md:inline"> </span>
-                  <span className="block md:inline text-4xl sm:text-5xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 -mt-1 md:mt-0">
-                    Tech Job
+                  <span className="block md:inline text-4xl sm:text-5xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 -mt-1 md:mt-0">
+                    Tech Careers
                   </span>
                 </h1>
-                <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                  Browse the latest job openings, updated daily. Filter by role, location, and apply directly to top tech companies around the world.
+                <p className="text-slate-600 text-base md:text-lg mb-8 leading-relaxed">
+                  Access curated tech openings uploaded daily. Basic free plan provides 2 daily roles, while our VIP Premium tier grants exclusive un-copyable email & apply access to 10 daily premium opportunities!
                 </p>
 
-                <div className="flex flex-wrap gap-4 mb-8">
-                  <div className="flex items-center gap-2 bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-                    <Search className="w-5 h-5 text-emerald-600" />
-                    <span className="text-sm font-bold text-emerald-800">Smart Search</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-amber-50 rounded-xl p-3 border border-amber-100">
-                    <MapPin className="w-5 h-5 text-amber-600" />
-                    <span className="text-sm font-bold text-amber-800">Remote Options</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-blue-50 rounded-xl p-3 border border-blue-100">
-                    <Briefcase className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-bold text-blue-800">Verified Roles</span>
-                  </div>
-                </div>
-
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-xl">
-                  <div className="flex-1 flex items-center bg-white rounded-xl px-4 py-3 border border-slate-200 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                  <div className="flex-1 flex items-center bg-white rounded-2xl px-4 py-3 border-2 border-slate-200 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
                     <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
                     <input 
                       type="text" 
-                      placeholder="Job title, keywords..." 
-                      className="w-full bg-transparent outline-none text-slate-700 placeholder-slate-400 font-medium text-sm"
+                      placeholder="Search by job title, skill, or company..." 
+                      className="w-full bg-transparent outline-none text-slate-800 placeholder-slate-400 font-bold text-sm"
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                     />
                   </div>
-                  <button type="submit" className="bg-gradient-to-r from-brand-purple to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-brand-purple/20 flex items-center justify-center shrink-0">
-                    Search Jobs
+                  <button type="submit" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black px-7 py-3 rounded-2xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center shrink-0 text-sm">
+                    Search Jobs &rarr;
                   </button>
                 </form>
               </div>
 
-              {/* Job Stats Card */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 w-full md:w-80 shrink-0 shadow-xl shadow-slate-200/50">
-                <div className="flex items-center justify-between mb-3 md:mb-4">
-                  <h3 className="font-bold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Dashboard</h3>
-                  <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 md:px-3 md:py-1 rounded-lg font-black text-base md:text-lg border border-indigo-100">
-                    {savedJobs.length} <span className="text-[9px] md:text-[10px] font-bold uppercase">Saved</span>
+              {/* Job Portal Membership & Token Dashboard */}
+              <div className="bg-gradient-to-b from-slate-900 to-slate-800 text-white rounded-3xl p-6 md:p-7 w-full lg:w-96 shrink-0 shadow-2xl relative overflow-hidden border border-slate-700">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Your Membership</span>
+                    {userStatus.isFreeMode ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 text-slate-950 shadow-md">
+                        <Sparkles className="w-3.5 h-3.5 fill-current text-amber-600" /> 🎉 1st Month Free Promo
+                      </span>
+                    ) : userStatus.isPremium ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-md">
+                        <Crown className="w-3.5 h-3.5 fill-current" /> Premium VIP Plan
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        🟢 Basic Free Plan
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Wallet Balance</span>
+                    <div className="inline-flex items-center gap-1 text-xl font-black text-amber-300">
+                      <Coins className="w-5 h-5 fill-current text-amber-400" />
+                      {userStatus.tokens}
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-                  <div className="flex justify-between text-xs md:text-sm items-center">
-                    <span className="text-slate-600 font-medium">Remote Roles:</span>
-                    <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 md:px-2 rounded text-[10px] md:text-xs">AVAILABLE</span>
+                <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 mb-5 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-300 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Basic Free Jobs:</span>
+                    <span className="text-emerald-400 font-bold">Unlocked</span>
                   </div>
-                  <div className="flex justify-between text-xs md:text-sm items-center">
-                    <span className="text-slate-600 font-medium">Daily Updates:</span>
-                    <span className="text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 md:px-2 rounded text-[10px] md:text-xs">ACTIVE</span>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-300 flex items-center gap-1.5">
+                      {userStatus.isPremium ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Lock className="w-4 h-4 text-amber-400" />} 
+                      Premium VIP Roles:
+                    </span>
+                    <span className={userStatus.isPremium ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                      {userStatus.isPremium ? 'Unlocked' : 'Locked (10 Daily)'}
+                    </span>
                   </div>
-                  <div className="w-full h-px bg-slate-100 my-2"></div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                      <MapPin className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                      <input 
-                        type="text" 
-                        placeholder="Location filter..." 
-                        className="w-full bg-transparent outline-none text-slate-700 placeholder-slate-400 font-medium text-xs"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                      />
+                  {userStatus.isFreeMode ? (
+                    <div className="text-[11px] bg-amber-500/20 text-amber-300 rounded-xl p-2.5 text-center font-extrabold border border-amber-500/30 space-y-1">
+                      <div>🎁 Promo Offer: VIP Premium jobs are currently FREE for all students!</div>
+                      {userStatus.freeModeExpires && (
+                        <div className="text-[10px] text-amber-200 font-bold">
+                          🗓️ Free Promo valid until <b>{new Date(userStatus.freeModeExpires).toLocaleDateString()}</b> (Auto-switches to Token pricing after 30 days)
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  ) : userStatus.isPremium && userStatus.expiresAt && (
+                    <div className="text-[11px] text-slate-400 text-center pt-2 border-t border-slate-700">
+                      Valid until: <span className="text-white font-bold">{new Date(userStatus.expiresAt).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2.5">
+                  {!userStatus.isPremium && !userStatus.isFreeMode && (
+                    <button
+                      onClick={handlePurchasePremium}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-900 font-black text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-4 h-4 fill-current text-slate-900" />
+                      Upgrade Premium ({userStatus.premiumPrice || 199} Tokens / 3 Mo)
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsBuyModalOpen(true)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs transition-colors border border-indigo-500/50 shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <Coins className="w-4 h-4 text-indigo-300" />
+                    + Recharge Tokens (₹1 = 1 Token & Bonus Packs)
+                  </button>
                 </div>
               </div>
             </div>
@@ -229,41 +462,55 @@ const Jobs = () => {
 
         {/* Content Section */}
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-10 mt-4">
-            <h2 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-              {showSaved ? (
-                <><Bookmark className="w-7 h-7 text-indigo-600 fill-indigo-100" /> Saved Jobs</>
-              ) : (
-                <><Briefcase className="w-7 h-7 text-indigo-600" /> Latest Openings</>
-              )}
-            </h2>
+          
+          {/* Category Tabs & Controls */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 mt-6">
+            <div className="flex bg-slate-200/70 p-1.5 rounded-2xl w-full sm:w-auto border border-slate-300/50 shadow-inner">
+              <button
+                onClick={() => { setActivePlanTab('All'); setShowSaved(false); setPage(1); }}
+                className={`flex-1 sm:flex-initial px-5 py-2 rounded-xl font-extrabold text-xs sm:text-sm transition-all ${
+                  activePlanTab === 'All' && !showSaved ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🌟 All Opportunities
+              </button>
+              <button
+                onClick={() => { setActivePlanTab('Basic'); setShowSaved(false); setPage(1); }}
+                className={`flex-1 sm:flex-initial px-5 py-2 rounded-xl font-extrabold text-xs sm:text-sm transition-all ${
+                  activePlanTab === 'Basic' && !showSaved ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🟢 Basic (Free Roles)
+              </button>
+              <button
+                onClick={() => { setActivePlanTab('Premium'); setShowSaved(false); setPage(1); }}
+                className={`flex-1 sm:flex-initial px-5 py-2 rounded-xl font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
+                  activePlanTab === 'Premium' && !showSaved ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                👑 Premium VIP
+              </button>
+            </div>
             
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
               <button 
                 onClick={() => setShowSaved(!showSaved)} 
-                className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl font-bold text-sm md:text-base border border-indigo-100 hover:bg-indigo-100 transition-colors shadow-sm"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-sm border transition-all ${
+                  showSaved ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 shadow-xs'
+                }`}
               >
-                {showSaved ? (
-                  <><Briefcase className="w-4 h-4 md:w-5 md:h-5" /><span className="hidden sm:inline">Latest Openings</span></>
-                ) : (
-                  <><Bookmark className="w-4 h-4 md:w-5 md:h-5" /><span className="hidden sm:inline">Saved Jobs</span></>
-                )}
+                <Bookmark className={`w-4 h-4 ${showSaved ? 'fill-current' : ''}`} />
+                Saved Jobs ({savedJobs.length})
               </button>
               
-              <label className="flex items-center gap-3 cursor-pointer select-none bg-white px-4 py-2 md:px-5 md:py-2.5 rounded-2xl border border-slate-200 shadow-sm hover:shadow hover:border-indigo-200 transition-all group">
-                <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only"
-                    checked={remote}
-                    onChange={(e) => setRemote(e.target.checked)}
-                  />
-                  <div className={`block w-11 h-6 md:w-12 md:h-7 rounded-full transition-colors duration-300 ease-in-out ${remote ? 'bg-indigo-600' : 'bg-slate-200 group-hover:bg-slate-300'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 md:w-5 md:h-5 rounded-full transition-transform duration-300 ease-in-out shadow-sm ${remote ? 'translate-x-5 md:translate-x-5' : 'translate-x-0'}`}></div>
-                </div>
-                <span className={`font-bold text-sm md:text-base transition-colors duration-300 ${remote ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'}`}>
-                  Remote Only
-                </span>
+              <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 transition-all text-sm font-bold text-slate-700">
+                <input 
+                  type="checkbox" 
+                  checked={remote}
+                  onChange={(e) => setRemote(e.target.checked)}
+                  className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 w-4 h-4"
+                />
+                Remote Only
               </label>
             </div>
           </div>
@@ -271,7 +518,7 @@ const Jobs = () => {
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl h-72 animate-pulse p-6 border border-slate-100">
+                <div key={i} className="bg-white rounded-3xl h-72 animate-pulse p-6 border border-slate-100">
                    <div className="w-2/3 h-6 bg-slate-200 rounded mb-2"></div>
                    <div className="w-1/3 h-4 bg-slate-200 rounded mb-6"></div>
                    <div className="flex gap-2 mb-6">
@@ -295,6 +542,8 @@ const Jobs = () => {
                     job={job} 
                     isSaved={true}
                     onSave={toggleSaveJob}
+                    isApplied={appliedJobs.includes(job._id)}
+                    onToggleApply={toggleApplyJob}
                   />
                 ))}
               </div>
@@ -306,8 +555,8 @@ const Jobs = () => {
                 <h3 className="text-2xl font-bold text-slate-900 mb-2">No saved jobs found</h3>
                 <p className="text-slate-500 mb-8">
                   {savedJobs.length > 0 
-                    ? "We couldn't find any saved jobs matching your current search filters. Try adjusting your filters." 
-                    : "You haven't bookmarked any jobs. Browse the job board and save opportunities you're interested in."}
+                    ? "We couldn't find any saved jobs matching your current search filters." 
+                    : "You haven't bookmarked any jobs yet. Browse the opportunities and bookmark roles!"}
                 </p>
                 <button 
                   onClick={() => setShowSaved(false)}
@@ -326,6 +575,8 @@ const Jobs = () => {
                     job={job} 
                     isSaved={savedJobs.includes(job._id)}
                     onSave={toggleSaveJob}
+                    isApplied={appliedJobs.includes(job._id)}
+                    onToggleApply={toggleApplyJob}
                   />
                 ))}
               </div>
@@ -336,17 +587,17 @@ const Jobs = () => {
                   <button 
                     disabled={page === 1}
                     onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-4 py-2 border border-slate-200 rounded-lg font-medium disabled:opacity-50 hover:bg-slate-50"
+                    className="px-4 py-2 border border-slate-200 rounded-xl font-bold disabled:opacity-50 hover:bg-slate-50 text-sm"
                   >
                     Previous
                   </button>
-                  <span className="text-slate-600 font-medium px-4">
+                  <span className="text-slate-600 font-extrabold px-4 text-sm">
                     Page {page} of {totalPages}
                   </span>
                   <button 
                     disabled={page === totalPages}
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    className="px-4 py-2 border border-slate-200 rounded-lg font-medium disabled:opacity-50 hover:bg-slate-50"
+                    className="px-4 py-2 border border-slate-200 rounded-xl font-bold disabled:opacity-50 hover:bg-slate-50 text-sm"
                   >
                     Next
                   </button>
@@ -354,24 +605,30 @@ const Jobs = () => {
               )}
             </>
           ) : (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm mt-8">
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm mt-8 max-w-lg mx-auto">
               <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Filter className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">No jobs found</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">No opportunities found</h3>
               <p className="text-slate-500 max-w-md mx-auto mb-6">
-                We couldn't find any jobs matching your current search filters. Try adjusting your search or checking back later.
+                No job postings match your current filters or tab selection. Check back soon for daily uploads!
               </p>
               <button 
-                onClick={() => { setRole(''); setLocation(''); setRemote(false); setPage(1); fetchJobs(); }}
+                onClick={() => { setRole(''); setLocation(''); setRemote(false); setActivePlanTab('All'); setPage(1); fetchJobs(); }}
                 className="bg-indigo-50 text-indigo-700 font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors"
               >
-                Clear Filters
+                Reset Filters
               </button>
             </div>
           )}
         </div>
       </div>
+
+      <BuyTokensModal 
+        isOpen={isBuyModalOpen} 
+        onClose={() => setIsBuyModalOpen(false)} 
+        onSelectPackage={handleBuyPackage} 
+      />
     </MainLayout>
   );
 };

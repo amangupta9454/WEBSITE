@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema(
     interviewAccessOverride: { type: Boolean, default: false },
     resumeAccessOverride: { type: Boolean, default: false },
     interviewUnlimitedExpiresAt: { type: Date },
+    jobPortalPremium: { type: Boolean, default: false },
+    jobPortalPremiumExpires: { type: Date },
     interviewPendingOrders: [
       {
         orderId: { type: String },

@@ -41,6 +41,14 @@ const jobSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  applyEmail: {
+    type: String
+  },
+  planType: {
+    type: String, // 'Basic' or 'Premium'
+    enum: ['Basic', 'Premium'],
+    default: 'Basic'
+  },
   source: {
     type: String,
     default: 'RapidAPI'

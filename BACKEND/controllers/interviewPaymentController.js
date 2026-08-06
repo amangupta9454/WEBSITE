@@ -7,15 +7,46 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
 
-const amountMap = { '50_tokens': 199, '100_tokens': 299, '200_tokens': 499, 'unlimited': 999 };
+const getPackageDetails = (packageId, customAmountBody = null) => {
+  const staticMap = {
+    'pack_199': { amount: 199, tokens: 219, description: '199 Tokens + 20 Free Bonus Coins' },
+    'pack_499': { amount: 499, tokens: 549, description: '499 Tokens + 50 Free Bonus Coins' },
+    'pack_999': { amount: 999, tokens: 1099, description: '999 Tokens + 100 Free Bonus Coins' },
+    // Legacy mapping:
+    '50_tokens': { amount: 199, tokens: 50, description: '50 Tokens Package' },
+    '100_tokens': { amount: 299, tokens: 100, description: '100 Tokens Package' },
+    '200_tokens': { amount: 499, tokens: 200, description: '200 Tokens Package' },
+    'unlimited': { amount: 999, tokens: 0, unlimited: true, description: 'Unlimited Interviews (30 Days)' }
+  };
+
+  if (staticMap[packageId]) {
+    return staticMap[packageId];
+  }
+
+  if (packageId && typeof packageId === 'string' && packageId.startsWith('custom_')) {
+    const parsed = parseInt(packageId.replace('custom_', ''), 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      return { amount: parsed, tokens: parsed, description: `${parsed} Tokens (Custom Recharge at ₹1 = 1 Token)` };
+    }
+  } else if (packageId === 'custom' && customAmountBody) {
+    const parsed = parseInt(customAmountBody, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      return { amount: parsed, tokens: parsed, description: `${parsed} Tokens (Custom Recharge at ₹1 = 1 Token)`, effectiveId: `custom_${parsed}` };
+    }
+  }
+
+  return null;
+};
 
 exports.createOrder = async (req, res) => {
   try {
-    const { packageId } = req.body;
-    const amount = amountMap[packageId];
-    if (!amount) {
-      return res.status(400).json({ success: false, message: 'Invalid package selected' });
+    const { packageId, customAmount } = req.body;
+    const pkg = getPackageDetails(packageId, customAmount);
+    if (!pkg) {
+      return res.status(400).json({ success: false, message: 'Invalid package or custom token amount selected' });
     }
+    const amount = pkg.amount;
+    const storedPackageId = pkg.effectiveId || packageId;
 
     const options = {
       amount: amount * 100, // paise
@@ -32,7 +63,7 @@ exports.createOrder = async (req, res) => {
     const userId = req.user.id || req.user.unifiedUserId;
     await User.findByIdAndUpdate(userId, {
       $push: {
-        interviewPendingOrders: { orderId: order.id, packageId, amount }
+        interviewPendingOrders: { orderId: order.id, packageId: storedPackageId, amount }
       }
     });
 
@@ -70,20 +101,29 @@ exports.verifyPayment = async (req, res) => {
       return res.status(200).json({ success: true, message: 'Payment already processed successfully', credits: user.interviewCredits, isUnlimited: user.interviewIsUnlimited });
     }
 
-    // Remove from pending
+    const pendingOrder = user.interviewPendingOrders[pendingOrderIndex];
+    const actualPackageId = pendingOrder.packageId || packageId;
     user.interviewPendingOrders.splice(pendingOrderIndex, 1);
 
-    if (packageId === 'unlimited') {
+    const pkg = getPackageDetails(actualPackageId) || { amount: pendingOrder.amount || 0, tokens: pendingOrder.amount || 0, description: `Purchased ${pendingOrder.amount || 0} Tokens` };
+
+    if (pkg.unlimited) {
       user.interviewIsUnlimited = true;
       user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
     } else {
-      const tokensMap = { '50_tokens': 50, '100_tokens': 100, '200_tokens': 200 };
-      user.interviewCredits += (tokensMap[packageId] || 0);
+      user.interviewCredits = (user.interviewCredits || 0) + (pkg.tokens || 0);
+      user.tokenHistory = user.tokenHistory || [];
+      user.tokenHistory.push({
+        type: 'PURCHASE',
+        amount: pkg.tokens || 0,
+        reason: pkg.description || `Purchased ${pkg.tokens || 0} Tokens`,
+        date: new Date()
+      });
     }
 
     user.interviewPayments.push({
-      packageId,
-      amount: amountMap[packageId] || 0,
+      packageId: actualPackageId,
+      amount: pkg.amount || pendingOrder.amount || 0,
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
       paidAt: new Date(),
@@ -128,13 +168,20 @@ exports.webhookHandler = async (req, res) => {
         const packageId = pendingOrder.packageId;
 
         user.interviewPendingOrders.splice(pendingOrderIndex, 1);
+        const pkg = getPackageDetails(packageId) || { amount: pendingOrder.amount || 0, tokens: pendingOrder.amount || 0, description: `Purchased ${pendingOrder.amount || 0} Tokens` };
 
-        if (packageId === 'unlimited') {
+        if (pkg.unlimited) {
           user.interviewIsUnlimited = true;
           user.interviewUnlimitedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
         } else {
-          const tokensMap = { '50_tokens': 50, '100_tokens': 100, '200_tokens': 200 };
-          user.interviewCredits += (tokensMap[packageId] || 0);
+          user.interviewCredits = (user.interviewCredits || 0) + (pkg.tokens || 0);
+          user.tokenHistory = user.tokenHistory || [];
+          user.tokenHistory.push({
+            type: 'PURCHASE',
+            amount: pkg.tokens || 0,
+            reason: pkg.description || `Purchased ${pkg.tokens || 0} Tokens via Webhook`,
+            date: new Date()
+          });
         }
 
         user.interviewPayments.push({

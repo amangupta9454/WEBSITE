@@ -49,6 +49,8 @@ const {
   fixMergedAccounts,
   getJobPortalSetting,
   toggleJobPortalSetting,
+  toggleJobPortalFreeMode,
+  updateJobPortalPrice,
 } = require("../controllers/adminController");
 const { assignV2Projects, saveV2GlobalTask, getV2GlobalTasks, deleteV2GlobalTask } = require("../controllers/adminControllerV2");
 const { getAllUsers } = require("../controllers/adminUsersController");
@@ -188,6 +190,8 @@ router.get("/settings/leaderboard", getLeaderboardSetting);
 router.post("/settings/leaderboard", auth, verifyAdmin, toggleLeaderboardSetting);
 router.get("/settings/job-portal", getJobPortalSetting);
 router.post("/settings/job-portal", auth, verifyAdmin, toggleJobPortalSetting);
+router.post("/settings/job-portal/free-mode", auth, verifyAdmin, toggleJobPortalFreeMode);
+router.put("/settings/job-portal/price", auth, verifyAdmin, updateJobPortalPrice);
 router.get("/job-settings", getJobPortalSetting);
 
 // Submissions

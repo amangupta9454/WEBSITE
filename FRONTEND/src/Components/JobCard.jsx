@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, DollarSign, Briefcase, ExternalLink, Bookmark, Building } from 'lucide-react';
 
-const JobCard = ({ job, onSave, isSaved }) => {
+const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
   return (
     <Link 
       to={`/jobs/${job._id}`}
@@ -12,6 +12,22 @@ const JobCard = ({ job, onSave, isSaved }) => {
       
       <div className="flex justify-between items-start mb-5 relative z-10">
         <div className="pr-4">
+          <div className="mb-2 flex items-center gap-2">
+            {job.planType === 'Premium' ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300">
+                👑 Premium Exclusive
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                🟢 Basic Free Role
+              </span>
+            )}
+            {isApplied && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                ✅ Applied
+              </span>
+            )}
+          </div>
           <h3 className="text-lg md:text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors mb-1 line-clamp-2">
             {job.title}
           </h3>
@@ -47,34 +63,62 @@ const JobCard = ({ job, onSave, isSaved }) => {
         {job.description || "No description provided. Click to view more details about this role."}
       </p>
 
-      <div className="flex items-center justify-between gap-3 mt-auto pt-5 border-t border-slate-100 relative z-10">
-        <a 
-          href={job.applyUrl} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-          className="flex-1 inline-flex justify-center items-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20"
-        >
-          Apply Now
-          <ExternalLink className="w-4 h-4" />
-        </a>
+      <div className="flex items-center justify-between gap-2 mt-auto pt-5 border-t border-slate-100 relative z-10">
+        {job.isLocked ? (
+          <span 
+            className="flex-1 inline-flex justify-center items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 px-3 py-3 rounded-xl font-black hover:from-amber-300 hover:to-yellow-300 transition-all shadow-md shadow-amber-500/10 text-xs sm:text-sm"
+          >
+            🔒 Unlock to Apply
+          </span>
+        ) : (
+          <a 
+            href={job.applyUrl || (job.applyEmail ? `mailto:${job.applyEmail}` : '#')} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onToggleApply && !isApplied) {
+                onToggleApply(job._id);
+              }
+            }}
+            className="flex-1 inline-flex justify-center items-center gap-2 bg-indigo-600 text-white px-3 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20 text-xs sm:text-sm"
+          >
+            {job.applyEmail && !job.applyUrl ? '📧 Email Recruiter' : 'Apply Now'}
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
         <button 
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onSave(job._id);
           }}
-          className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all ${
+          className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl border-2 transition-all ${
             isSaved 
               ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
               : 'bg-white border-slate-200 text-slate-400 hover:border-rose-200 hover:text-rose-400'
           }`}
-          title={isSaved ? "Saved" : "Save Job"}
+          title={isSaved ? "Saved Bookmark" : "Bookmark Job"}
         >
           <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
         </button>
+        {onToggleApply && (
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleApply(job._id);
+            }}
+            className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl border-2 transition-all text-sm sm:text-base font-black ${
+              isApplied 
+                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-sm' 
+                : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-700'
+            }`}
+            title={isApplied ? "Unmark Applied" : "Mark as Applied"}
+          >
+            {isApplied ? "✅" : "☑️"}
+          </button>
+        )}
       </div>
       
       <div className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">

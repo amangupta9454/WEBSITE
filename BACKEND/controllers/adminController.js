@@ -658,13 +658,32 @@ const markProjectExported = async (req, res) => {
 
 const getJobPortalSetting = async (req, res) => {
   try {
-    let setting = await Settings.findOne({ key: "jobPortalEnabled" });
-    if (!setting) {
-      setting = await Settings.create({ key: "jobPortalEnabled", value: true });
+    let enabledSetting = await Settings.findOne({ key: "jobPortalEnabled" });
+    if (!enabledSetting) {
+      enabledSetting = await Settings.create({ key: "jobPortalEnabled", value: true });
     }
-    res.status(200).json({ jobPortalEnabled: setting.value });
+
+    let freeModeSetting = await Settings.findOne({ key: "jobPortalFreeMode" });
+    if (!freeModeSetting) {
+      freeModeSetting = await Settings.create({ key: "jobPortalFreeMode", value: true });
+    }
+
+    let priceSetting = await Settings.findOne({ key: "jobPortalPremiumPrice" });
+    if (!priceSetting) {
+      priceSetting = await Settings.create({ key: "jobPortalPremiumPrice", value: 199 });
+    }
+
+    let freeModeExpiresSetting = await Settings.findOne({ key: "jobPortalFreeModeExpires" });
+    const freeModeExpires = freeModeExpiresSetting ? freeModeExpiresSetting.value : null;
+
+    res.status(200).json({
+      jobPortalEnabled: enabledSetting.value,
+      jobPortalFreeMode: freeModeSetting.value === true,
+      jobPortalFreeModeExpires: freeModeExpires,
+      jobPortalPremiumPrice: Number(priceSetting.value) || 199
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -684,6 +703,81 @@ const toggleJobPortalSetting = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+const toggleJobPortalFreeMode = async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "jobPortalFreeMode" });
+    if (!setting) {
+      setting = new Settings({ key: "jobPortalFreeMode", value: true });
+    }
+
+    setting.value = !setting.value;
+    await setting.save();
+
+    let freeModeExpires = null;
+    let extensionMsg = "";
+
+    if (setting.value === true) {
+      // Set expiration to 30 days from now
+      freeModeExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      await Settings.findOneAndUpdate(
+        { key: "jobPortalFreeModeExpires" },
+        { key: "jobPortalFreeModeExpires", value: freeModeExpires },
+        { upsert: true }
+      );
+
+      // Protect existing Premium users: extend active subscriptions by +30 days so tokens aren't wasted
+      const activeUsers = await User.find({ jobPortalPremium: true, jobPortalPremiumExpires: { $gt: new Date() } });
+      let modifiedCount = 0;
+      for (const u of activeUsers) {
+        if (u.jobPortalPremiumExpires) {
+          u.jobPortalPremiumExpires = new Date(new Date(u.jobPortalPremiumExpires).getTime() + 30 * 24 * 60 * 60 * 1000);
+          await u.save();
+          modifiedCount++;
+        }
+      }
+      if (modifiedCount > 0) {
+        extensionMsg = ` Protected ${modifiedCount} existing Premium subscriber(s) by extending their plan by +30 days!`;
+      }
+    } else {
+      await Settings.deleteOne({ key: "jobPortalFreeModeExpires" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Free Promo Mode is now ${setting.value ? `ON for 30 days!${extensionMsg}` : "OFF (Reverted to Paid Token subscription mode)"}`,
+      jobPortalFreeMode: setting.value,
+      jobPortalFreeModeExpires: freeModeExpires,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+const updateJobPortalPrice = async (req, res) => {
+  try {
+    const { price } = req.body;
+    if (!price || isNaN(price) || Number(price) <= 0) {
+      return res.status(400).json({ success: false, message: "Please provide a valid token price greater than 0" });
+    }
+
+    let setting = await Settings.findOne({ key: "jobPortalPremiumPrice" });
+    if (!setting) {
+      setting = new Settings({ key: "jobPortalPremiumPrice", value: Number(price) });
+    } else {
+      setting.value = Number(price);
+    }
+    await setting.save();
+
+    res.status(200).json({
+      success: true,
+      message: `3-Month Premium Plan price successfully updated to ${setting.value} Tokens!`,
+      jobPortalPremiumPrice: setting.value,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
@@ -2146,6 +2240,8 @@ module.exports = {
   toggleLeaderboardSetting,
   getJobPortalSetting,
   toggleJobPortalSetting,
+  toggleJobPortalFreeMode,
+  updateJobPortalPrice,
   setStartDate,
   updateBatch,
   updateInternshipType,
