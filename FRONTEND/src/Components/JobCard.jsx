@@ -60,14 +60,16 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
     >
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-2xl -mr-10 -mt-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
       
+      {/* "New" Ribbon Stamp */}
+      {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
+        <div className="absolute top-4 -left-9 w-32 -rotate-45 bg-gradient-to-r from-rose-500 to-red-500 text-white font-black text-[10px] py-1 text-center uppercase tracking-widest shadow-lg z-20 pointer-events-none">
+          NEW
+        </div>
+      )}
+      
       <div className="flex justify-between items-start mb-5 relative z-10">
         <div className="pr-4">
           <div className="mb-2 flex items-center gap-2 flex-wrap">
-            {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-600 border border-rose-200 animate-pulse shadow-sm">
-                🚀 NEW
-              </span>
-            )}
             {job.planType === 'Premium' ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300">
                 👑 Premium Exclusive

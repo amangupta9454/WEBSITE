@@ -532,7 +532,12 @@ const JobAdminPage = () => {
                 jobs.map(job => (
                   <tr key={job._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="p-4">
-                      <div className="font-semibold text-slate-900">{job.title}</div>
+                      <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                        {job.title}
+                        {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
+                          <span className="bg-rose-100 text-rose-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">New</span>
+                        )}
+                      </div>
                       <div className="text-sm text-slate-500">{job.company}</div>
                     </td>
                     <td className="p-4">
