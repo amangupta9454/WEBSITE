@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const { ImapFlow } = require('imapflow');
+const MailComposer = require('nodemailer/lib/mail-composer');
 const { mailConfig, defaultSender } = require('../config/mailConfig');
 const emailLogger = require('./emailLogger');
 
@@ -37,6 +39,43 @@ class MailService {
       });
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  /**
+   * Appends the sent email to the Hostinger IMAP Sent folder.
+   * @param {Buffer} rawMessage - The raw RFC822 formatted email message
+   */
+  async saveToSentFolder(rawMessage) {
+    let client = null;
+    try {
+      client = new ImapFlow({
+        host: 'imap.hostinger.com',
+        port: 993,
+        secure: true,
+        auth: {
+          user: mailConfig.auth.user,
+          pass: mailConfig.auth.pass,
+        },
+        logger: false, // Set to true for debugging
+      });
+
+      await client.connect();
+      
+      // Append the raw message buffer to the Sent folder
+      // Hostinger usually maps Sent to "Sent" folder
+      await client.append('Sent', rawMessage, ['\\Seen']);
+      console.log('[MailService] ✔️ Email successfully appended to Sent folder via IMAP.');
+    } catch (error) {
+      console.error('[MailService] ⚠️ Failed to append email to Sent folder (non-blocking):', error.message);
+    } finally {
+      if (client) {
+        try {
+          await client.logout();
+        } catch (logoutError) {
+          console.error('[MailService] ⚠️ Error logging out of IMAP:', logoutError.message);
+        }
+      }
     }
   }
 
@@ -116,6 +155,20 @@ class MailService {
       console.log("Rejected:", info.rejected);
       console.log("SMTP Response:", info.response || "250 OK");
       console.log("==========================================");
+
+      // Save to IMAP Sent Folder asynchronously
+      try {
+        // We use MailComposer to generate the exact raw MIME message based on our mailOptions
+        // Adding the Message-Id from info ensures the exact ID sent is saved
+        const saveOptions = { ...mailOptions, messageId: info.messageId };
+        const mail = new MailComposer(saveOptions);
+        const rawMessage = await mail.compile().build();
+        
+        // Fire and forget appending to avoid blocking the API response
+        this.saveToSentFolder(rawMessage);
+      } catch (imapErr) {
+        console.error("[MailService] ⚠️ IMAP message generation failed (non-blocking exception):", imapErr.message);
+      }
 
       // Fix 1 & 2: Automatic logging after successful SMTP transaction; failure MUST NOT block delivery
       emailLogger.logEmail({
