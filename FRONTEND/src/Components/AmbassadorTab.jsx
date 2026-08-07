@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import {
   GraduationCap,
@@ -106,14 +106,32 @@ const AmbassadorTab = () => {
     setTimeout(() => setCopiedFeature(null), 2000);
   };
 
-  const filteredConversions = stats?.conversions?.filter((u) => {
+  const uniqueConversions = useMemo(() => {
+    if (!stats?.conversions) return [];
+    const map = new Map();
+    stats.conversions.forEach(c => {
+      const key = c.email || c._id;
+      if (map.has(key)) {
+        const existing = map.get(key);
+        const feat = c.appliedFeatures;
+        if (feat && !existing.appliedItems.includes(feat)) {
+          existing.appliedItems.push(feat);
+        }
+      } else {
+        map.set(key, { ...c, appliedItems: c.appliedItems ? [...c.appliedItems] : (c.appliedFeatures ? [c.appliedFeatures] : []) });
+      }
+    });
+    return Array.from(map.values());
+  }, [stats?.conversions]);
+
+  const filteredConversions = uniqueConversions.filter((u) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
       u.name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
       u.mobile?.toLowerCase().includes(q) ||
-      u.appliedFeatures?.toLowerCase().includes(q)
+      (u.appliedItems && u.appliedItems.join(", ").toLowerCase().includes(q))
     );
   }) || [];
 
@@ -454,6 +472,66 @@ const AmbassadorTab = () => {
           </table>
         </div>
       </div>
+
+      {/* Existing Account Holders (Not Counted) */}
+      {stats?.existingAccountAttempts && stats.existingAccountAttempts.length > 0 && (
+        <div className="bg-amber-50/50 p-4 sm:p-6 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-amber-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                Existing Account Holders (Not Counted)
+              </h3>
+              <p className="text-xs text-amber-800/80 mt-0.5">
+                These students ALREADY had an account prior to clicking your link. They are excluded from your signup metrics.
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto border border-amber-100 rounded-xl">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-amber-100/50 border-b border-amber-200 text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+                  <th className="py-3 px-4">Student Name & Email</th>
+                  <th className="py-3 px-4">Phone Number</th>
+                  <th className="py-3 px-4">Attempt Date</th>
+                  <th className="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100">
+                {stats.existingAccountAttempts.map((user) => (
+                  <tr key={user._id} className="hover:bg-amber-50 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">{user.name}</div>
+                      <div className="text-slate-500 text-[11px] flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-slate-400" /> {user.email}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono font-medium text-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        {user.mobile || "N/A"}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      {user.attemptedAt ? new Date(user.attemptedAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="bg-amber-200 text-amber-900 border border-amber-300 px-2 py-0.5 rounded font-semibold text-[11px]">
+                        Existing Account
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
