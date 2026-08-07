@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
   Share2,
@@ -36,6 +36,9 @@ const ReferralAdmin = () => {
   const [stats, setStats] = useState({ totalCodes: 0, totalClicks: 0, totalUses: 0 });
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [dateFilter, setDateFilter] = useState("All Time");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   
   const [ambassadorDashboardEnabled, setAmbassadorDashboardEnabled] = useState(true);
 
@@ -358,6 +361,50 @@ const ReferralAdmin = () => {
 
   const activeAmbassadorsCount = ambassadors.filter((a) => a.isActive !== false).length;
 
+  const processedAmbassadors = useMemo(() => {
+    let list = ambassadors.map((amb) => {
+      let filteredReferredUsers = amb.referredUsers || [];
+      if (dateFilter !== "All Time") {
+        const now = new Date();
+        const pastDate = new Date();
+        let filterActive = true;
+
+        if (dateFilter === "This Week") {
+          pastDate.setDate(now.getDate() - 7);
+        } else if (dateFilter === "This Month") {
+          pastDate.setDate(now.getDate() - 30);
+        } else if (dateFilter === "Custom Range") {
+          if (customStartDate && customEndDate) {
+            const start = new Date(customStartDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(customEndDate);
+            end.setHours(23, 59, 59, 999);
+            filteredReferredUsers = filteredReferredUsers.filter((u) => {
+              const registeredAt = new Date(u.registeredAt);
+              return registeredAt >= start && registeredAt <= end;
+            });
+          }
+          filterActive = false; // already filtered or missing dates
+        }
+
+        if (filterActive) {
+          filteredReferredUsers = filteredReferredUsers.filter((u) => {
+            const registeredAt = new Date(u.registeredAt);
+            return registeredAt >= pastDate && registeredAt <= now;
+          });
+        }
+      }
+      return {
+        ...amb,
+        filteredReferredUsers,
+        displayUsesCount: filteredReferredUsers.length,
+      };
+    });
+
+    list.sort((a, b) => b.displayUsesCount - a.displayUsesCount);
+    return list;
+  }, [ambassadors, dateFilter, customStartDate, customEndDate]);
+
   return (
     <div className="space-y-8">
       {/* Header & Metrics */}
@@ -545,10 +592,39 @@ const ReferralAdmin = () => {
 
           {/* Ambassador List Table */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden space-y-4">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900">Campus Ambassadors Directory</h3>
                 <p className="text-xs text-slate-500 mt-0.5">List of designated ambassadors, total clicks, conversions, and student lists.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                {dateFilter === "Custom Range" && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <span className="text-slate-500 font-medium text-sm">to</span>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                  </div>
+                )}
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  <option value="All Time">All Time (Total Signups)</option>
+                  <option value="This Week">This Week (Last 7 Days)</option>
+                  <option value="This Month">This Month (Last 30 Days)</option>
+                  <option value="Custom Range">Custom Date Range</option>
+                </select>
               </div>
             </div>
 
@@ -566,14 +642,14 @@ const ReferralAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {ambassadors.length === 0 ? (
+                  {processedAmbassadors.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-slate-400 italic">
                         No Campus Ambassadors assigned yet. Use the form above to designate a student as an Ambassador!
                       </td>
                     </tr>
                   ) : (
-                    ambassadors.map((amb) => {
+                    processedAmbassadors.map((amb) => {
                       const isExpanded = expandedAmbassador === amb._id;
                       const fullUrl = getReferralUrl(amb.ambassadorCode, "General");
 
@@ -641,7 +717,7 @@ const ReferralAdmin = () => {
 
                             <td className="py-3.5 px-4">
                               <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                                {amb.usesCount} Signups
+                                {amb.displayUsesCount} Signups
                               </span>
                             </td>
 
@@ -651,7 +727,7 @@ const ReferralAdmin = () => {
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-all"
                               >
                                 <Users className="w-3.5 h-3.5" />
-                                View Users ({amb.referredUsers?.length || 0})
+                                View Users ({amb.filteredReferredUsers?.length || 0})
                                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                               </button>
 
@@ -673,9 +749,9 @@ const ReferralAdmin = () => {
                                 <div className="space-y-3">
                                   <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">
                                     <UserCheck className="w-4 h-4 text-purple-600" />
-                                    Users Referred by {amb.name} ({amb.referredUsers?.length || 0})
+                                    Users Referred by {amb.name} ({amb.filteredReferredUsers?.length || 0})
                                   </h4>
-                                  {amb.referredUsers && amb.referredUsers.length > 0 ? (
+                                  {amb.filteredReferredUsers && amb.filteredReferredUsers.length > 0 ? (
                                     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                                       <table className="w-full text-left text-[11px]">
                                         <thead>
@@ -687,7 +763,7 @@ const ReferralAdmin = () => {
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
-                                          {amb.referredUsers.map((u) => (
+                                          {amb.filteredReferredUsers.map((u) => (
                                             <tr key={u._id} className="hover:bg-slate-50">
                                               <td className="py-2 px-3 font-semibold text-slate-900">
                                                 {u.name}
