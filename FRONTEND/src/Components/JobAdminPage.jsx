@@ -25,6 +25,11 @@ const JobAdminPage = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [creatingJob, setCreatingJob] = useState(false);
+  const [jobsPage, setJobsPage] = useState(1);
+  const [studentsPage, setStudentsPage] = useState(1);
+  const [interactionsPage, setInteractionsPage] = useState(1);
+  const [auditPage, setAuditPage] = useState(1);
+  const itemsPerPage = 15;
 
   const groupedAuditLogs = useMemo(() => {
     const map = {};
@@ -177,6 +182,8 @@ const JobAdminPage = () => {
 
   const handleTabChange = (type) => {
     setInteractionType(type);
+    setInteractionsPage(1);
+    setAuditPage(1);
     if (type === 'audit') {
       fetchAuditLogs();
     } else {
@@ -529,7 +536,7 @@ const JobAdminPage = () => {
                   </td>
                 </tr>
               ) : (
-                jobs.map(job => (
+                jobs.slice((jobsPage - 1) * itemsPerPage, jobsPage * itemsPerPage).map(job => (
                   <tr key={job._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="p-4">
                       <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
@@ -593,6 +600,15 @@ const JobAdminPage = () => {
               )}
             </tbody>
           </table>
+          {jobs.length > itemsPerPage && (
+            <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50 text-sm">
+              <span className="text-slate-500 font-semibold">Page {jobsPage} of {Math.ceil(jobs.length / itemsPerPage) || 1}</span>
+              <div className="flex gap-2">
+                <button disabled={jobsPage === 1} onClick={() => setJobsPage(p => p - 1)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-slate-700 shadow-sm">Previous</button>
+                <button disabled={jobsPage * itemsPerPage >= jobs.length} onClick={() => setJobsPage(p => p + 1)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-slate-700 shadow-sm">Next</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -674,6 +690,7 @@ const JobAdminPage = () => {
                   const jobMatch = group.logs.some(l => (l.jobTitle || '').toLowerCase().includes(q) || (l.company || '').toLowerCase().includes(q) || (l.action || '').toLowerCase().includes(q));
                   return ipMatch || emailMatch || jobMatch;
                 })
+                .slice((auditPage - 1) * itemsPerPage, auditPage * itemsPerPage)
                 .map((group) => {
                   const isExpanded = expandedIps[group.ip];
                   return (
@@ -762,6 +779,12 @@ const JobAdminPage = () => {
                   );
                 })
             )}
+            <div className="flex justify-end pt-2">
+              <div className="flex gap-2">
+                <button disabled={auditPage === 1} onClick={() => setAuditPage(p => p - 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-slate-700 shadow-sm">Previous</button>
+                <button onClick={() => setAuditPage(p => p + 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 font-bold text-slate-700 shadow-sm">Next</button>
+              </div>
+            </div>
           </div>
         ) : (
         /* Activity Table for Applied / Saved */
@@ -812,6 +835,7 @@ const JobAdminPage = () => {
                     const jComp = rec.job?.company?.toLowerCase() || '';
                     return uName.includes(q) || uEmail.includes(q) || uPhone.includes(q) || jTitle.includes(q) || jComp.includes(q);
                   })
+                  .slice((interactionsPage - 1) * itemsPerPage, interactionsPage * itemsPerPage)
                   .map((item) => (
                     <tr key={item._id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-4 px-6">
@@ -865,6 +889,12 @@ const JobAdminPage = () => {
               )}
             </tbody>
           </table>
+          <div className="flex justify-end p-4 border-t border-slate-100 bg-slate-50">
+            <div className="flex gap-2">
+              <button disabled={interactionsPage === 1} onClick={() => setInteractionsPage(p => p - 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-slate-700 shadow-sm">Previous</button>
+              <button onClick={() => setInteractionsPage(p => p + 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 font-bold text-slate-700 shadow-sm">Next</button>
+            </div>
+          </div>
         </div>
         )}
       </div>
@@ -964,6 +994,7 @@ const JobAdminPage = () => {
                     const q = studentSearch.toLowerCase();
                     return (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || (s.phone || '').toString().includes(q);
                   })
+                  .slice((studentsPage - 1) * itemsPerPage, studentsPage * itemsPerPage)
                   .map((user) => (
                     <tr key={user._id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-4 px-6">
@@ -1017,6 +1048,12 @@ const JobAdminPage = () => {
               )}
             </tbody>
           </table>
+          <div className="flex justify-end p-4 border-t border-slate-100 bg-slate-50">
+            <div className="flex gap-2">
+              <button disabled={studentsPage === 1} onClick={() => setStudentsPage(p => p - 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 font-bold text-slate-700 shadow-sm">Previous</button>
+              <button onClick={() => setStudentsPage(p => p + 1)} className="px-4 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 font-bold text-slate-700 shadow-sm">Next</button>
+            </div>
+          </div>
         </div>
       </div>
 

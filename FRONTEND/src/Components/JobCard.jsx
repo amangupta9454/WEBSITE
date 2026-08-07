@@ -67,18 +67,9 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         </div>
       )}
       
-      <div className="flex justify-between items-start mb-5 relative z-10">
+      <div className="flex justify-between items-start mb-5 relative z-10 pt-2">
         <div className="pr-4">
           <div className="mb-2 flex items-center gap-2 flex-wrap">
-            {job.planType === 'Premium' ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300">
-                👑 Premium Exclusive
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                🟢 Basic Free Role
-              </span>
-            )}
             {isApplied && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
                 ✅ Applied
@@ -99,9 +90,20 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
           </p>
         </div>
         
-        {/* Placeholder Logo */}
-        <div className="w-14 h-14 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl flex items-center justify-center text-indigo-500 font-black text-2xl border border-indigo-100 shrink-0 shadow-sm group-hover:scale-110 transition-transform">
-          {job.company.charAt(0)}
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          {job.planType === 'Premium' ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300">
+              👑 Premium Exclusive
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+              🟢 Basic Free Role
+            </span>
+          )}
+          {/* Placeholder Logo */}
+          <div className="w-14 h-14 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl flex items-center justify-center text-indigo-500 font-black text-2xl border border-indigo-100 shadow-sm group-hover:scale-110 transition-transform">
+            {job.company.charAt(0)}
+          </div>
         </div>
       </div>
       
