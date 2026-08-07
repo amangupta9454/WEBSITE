@@ -113,7 +113,7 @@ exports.getAllJobs = async (req, res) => {
     }
     
     const jobs = await Job.find(query)
-      .sort({ postedAt: -1 })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
       

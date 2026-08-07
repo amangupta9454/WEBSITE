@@ -62,7 +62,12 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
       
       <div className="flex justify-between items-start mb-5 relative z-10">
         <div className="pr-4">
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex items-center gap-2 flex-wrap">
+            {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-600 border border-rose-200 animate-pulse shadow-sm">
+                🚀 NEW
+              </span>
+            )}
             {job.planType === 'Premium' ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300">
                 👑 Premium Exclusive
@@ -81,9 +86,14 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
           <h3 className="text-lg md:text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors mb-1 line-clamp-2">
             {job.title}
           </h3>
-          <p className="text-slate-500 font-medium flex items-center gap-1.5 text-sm">
+          <p className="text-slate-500 font-medium flex items-center gap-1.5 text-sm flex-wrap">
             <Building className="w-4 h-4 text-slate-400" />
             {job.company}
+            {job.createdAt && (
+              <span className="text-xs text-slate-400 ml-auto border-l border-slate-200 pl-2">
+                Uploaded: {new Date(job.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            )}
           </p>
         </div>
         
