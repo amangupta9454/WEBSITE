@@ -58,8 +58,21 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
       to={`/jobs/${job._id}`}
       className="bg-white rounded-[20px] shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 relative group flex flex-col h-full"
     >
+      {/* Top floating NEW Badge */}
+      {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest shadow-md border-2 border-white relative">
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-100"></span>
+            </span>
+            ✨ NEW
+          </span>
+        </div>
+      )}
+
       {/* Top row: Company Info & Plan Badge */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-3 pt-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-xl border border-indigo-100 shrink-0">
             {job.company.charAt(0).toUpperCase()}
@@ -85,19 +98,10 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         )}
       </div>
 
-      {/* Title & NEW Tag */}
+      {/* Title */}
       <div className="mb-4">
         <h3 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-tight">
           {job.title}
-          {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
-            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest align-middle shadow-sm relative -translate-y-[2px]">
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-100"></span>
-              </span>
-              ✨ NEW
-            </span>
-          )}
         </h3>
       </div>
 
