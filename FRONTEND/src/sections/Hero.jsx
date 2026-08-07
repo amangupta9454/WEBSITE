@@ -29,9 +29,9 @@ const Hero = () => {
               variants={fadeUp}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm mb-8"
             >
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-sm text-gray-600 font-bold tracking-wide uppercase">
-                Launch Your Tech Career
+                Premium Business Solutions
               </span>
             </motion.div>
 
@@ -39,19 +39,19 @@ const Hero = () => {
               variants={fadeUp}
               className="text-5xl md:text-7xl lg:text-[5rem] font-black leading-[1.05] mb-6 tracking-tight text-gray-900"
             >
-              Unlock Premium{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                Internships
+              Build a{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                Website
               </span>{" "}
-              & <br className="hidden md:block" />
-              Mentorship.
+              That <br className="hidden md:block" />
+              Grows Your Business.
             </motion.h1>
 
             <motion.p
               variants={fadeUp}
               className="text-lg md:text-xl text-gray-500 mb-10 max-w-xl leading-relaxed font-medium"
             >
-              Fast-track your career with exclusive opportunities, verified startups, and industry-leading resources. Build your resume, ace mock interviews, and land your dream role.
+              Websites instantly increase customer trust. Whether you own a restaurant, a clinic, or a retail shop, a modern digital presence turns visitors into paying customers.
             </motion.p>
 
             <motion.div
@@ -59,19 +59,16 @@ const Hero = () => {
               className="flex flex-col sm:flex-row gap-4"
             >
               <button
-                onClick={() => {
-                  sessionStorage.setItem('redirectAfterLogin', '/jobs');
-                  navigate("/student-login");
-                }}
+                onClick={() => navigate("/contact")}
                 className="px-8 py-4 bg-gray-900 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-xl shadow-gray-900/20 hover:-translate-y-0.5"
               >
-                Explore Jobs <ArrowRight size={18} />
+                Build My Work <ArrowRight size={18} />
               </button>
               <button
-                onClick={() => navigate("/internship")}
+                onClick={() => navigate("/industries")}
                 className="px-8 py-4 bg-white text-gray-900 border border-gray-200 rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
               >
-                Mentorship Programs
+                Industries
               </button>
             </motion.div>
           </motion.div>
@@ -94,19 +91,19 @@ const Hero = () => {
                 <div className="w-3 h-3 rounded-full bg-yellow-400" />
                 <div className="w-3 h-3 rounded-full bg-green-400" />
                 <div className="ml-4 text-xs text-gray-400 font-bold flex-1 text-center pr-12 tracking-wider">
-                  STUDENT_PORTAL_DASHBOARD
+                  RESTAURANT_ORDERS_DASHBOARD
                 </div>
               </div>
               <div className="p-8">
                 <div className="flex justify-between items-end mb-8">
                   <div>
                     <p className="text-gray-400 text-sm font-bold mb-1 uppercase tracking-wider">
-                      Applications Sent
+                      Online Sales
                     </p>
-                    <h3 className="text-5xl font-black text-gray-900">42</h3>
+                    <h3 className="text-5xl font-black text-gray-900">$124k</h3>
                   </div>
                   <div className="flex items-center gap-1 text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full text-sm font-bold">
-                    <ArrowRight size={14} className="-rotate-45" /> High Activity
+                    <ArrowRight size={14} className="-rotate-45" /> +24%
                   </div>
                 </div>
 
@@ -118,7 +115,7 @@ const Hero = () => {
                       className="w-full bg-gray-50 rounded-t-md relative group"
                     >
                       <div
-                        className={`absolute bottom-0 w-full rounded-t-md transition-all duration-500 ${i === 5 ? "bg-indigo-600 shadow-lg shadow-indigo-500/30" : "bg-gray-200 group-hover:bg-purple-300"}`}
+                        className={`absolute bottom-0 w-full rounded-t-md transition-all duration-500 ${i === 5 ? "bg-blue-600 shadow-lg shadow-blue-500/30" : "bg-gray-200 group-hover:bg-purple-300"}`}
                         style={{ height: `${h}%` }}
                       />
                     </div>
@@ -131,16 +128,16 @@ const Hero = () => {
                       className="text-purple-600 mb-3 group-hover:scale-110 transition-transform"
                       size={24}
                     />
-                    <p className="text-gray-900 font-bold">Interviews</p>
-                    <p className="text-sm text-gray-500">3 Scheduled</p>
+                    <p className="text-gray-900 font-bold">Menu Views</p>
+                    <p className="text-sm text-gray-500">12k+ today</p>
                   </div>
-                  <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:border-indigo-200 transition-colors group">
+                  <div className="flex-1 bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors group">
                     <BarChart3
-                      className="text-indigo-600 mb-3 group-hover:scale-110 transition-transform"
+                      className="text-blue-600 mb-3 group-hover:scale-110 transition-transform"
                       size={24}
                     />
-                    <p className="text-gray-900 font-bold">Profile Views</p>
-                    <p className="text-sm text-gray-500">Top 5%</p>
+                    <p className="text-gray-900 font-bold">Bookings</p>
+                    <p className="text-sm text-gray-500">Fully Booked</p>
                   </div>
                 </div>
               </div>
@@ -152,15 +149,15 @@ const Hero = () => {
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
               className="absolute bottom-10 -left-10 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-4 z-20"
             >
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 font-bold text-xl">
-                👑
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xl">
+                🚀
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900">
-                  Premium Exclusive
+                  Business Scaled
                 </p>
                 <p className="text-xs font-medium text-emerald-500">
-                  Unlocked Features
+                  Growth Unlocked
                 </p>
               </div>
             </motion.div>

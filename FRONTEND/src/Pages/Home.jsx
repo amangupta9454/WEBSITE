@@ -4,9 +4,15 @@ import MainLayout from '../layouts/MainLayout';
 import Hero from '../sections/Hero';
 import Stats from '../sections/Stats';
 import RecentJobs from '../sections/RecentJobs';
+import ServicesOverview from '../sections/ServicesOverview';
 import MockInterviewCTA from '../sections/MockInterviewCTA';
 import ResumeBuilderCTA from '../sections/ResumeBuilderCTA';
 import JobPortalCTA from '../sections/JobPortalCTA';
+import ProblemSolution from '../sections/ProblemSolution';
+import IndustriesServed from '../sections/IndustriesServed';
+import PortfolioPreview from '../sections/PortfolioPreview';
+import WhyWebsite from '../sections/WhyWebsite';
+import Process from '../sections/Process';
 import Testimonials from '../sections/Testimonials';
 import CTA, { InternshipCTA } from '../sections/CTA';
 
@@ -30,10 +36,17 @@ const Home = () => {
       <Hero />
       <Stats />
       {showJobPortal && <RecentJobs />}
+      <ProblemSolution />
+      <ServicesOverview />
       <MockInterviewCTA />
       <ResumeBuilderCTA />
       {showJobPortal && <JobPortalCTA />}
+      <IndustriesServed />
+      <PortfolioPreview />
+      <WhyWebsite />
+      <Process />
       <Testimonials />
+      <CTA />
       <InternshipCTA />
     </MainLayout>
   );
