@@ -56,124 +56,122 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
   return (
     <Link 
       to={`/jobs/${job._id}`}
-      className="bg-white rounded-[24px] shadow-sm border border-slate-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group flex flex-col h-full overflow-hidden block"
+      className="bg-white rounded-[20px] shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 relative group flex flex-col h-full"
     >
-      {/* "New" Ribbon Stamp */}
-      {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
-        <div className="absolute -top-1 -left-1 overflow-hidden w-28 h-28 rounded-tl-[24px] z-20 pointer-events-none">
-          <div className="absolute top-6 -left-8 w-36 -rotate-45 bg-[#ff2a4d] text-white font-bold text-[11px] py-1 text-center tracking-widest shadow-sm">
-            NEW
+      {/* Top row: Company Info & Plan Badge */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-xl border border-indigo-100 shrink-0">
+            {job.company.charAt(0).toUpperCase()}
           </div>
-        </div>
-      )}
-      
-      <div className="flex justify-between items-start mb-4 relative z-10 pt-4">
-        <div className="pr-2 flex-1">
-          <h3 className="text-[22px] leading-tight font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2 line-clamp-2">
-            {job.title}
-          </h3>
-          
-          <div className="flex flex-col gap-1.5 mt-2">
-            <div className="text-slate-500 font-medium flex items-center gap-2 text-[15px]">
-              <Building className="w-4 h-4 text-slate-400" />
-              {job.company}
-            </div>
+          <div>
+            <div className="text-sm font-bold text-slate-700 leading-none mb-1.5">{job.company}</div>
             {job.createdAt && (
-              <div className="text-sm text-slate-400 flex items-center gap-2 ml-2">
-                <div className="w-[1px] h-4 bg-slate-200"></div>
-                Uploaded: {new Date(job.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+              <div className="text-[11px] font-semibold text-slate-400">
+                {new Date(job.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               </div>
             )}
           </div>
         </div>
         
-        <div className="flex flex-col items-end gap-3 shrink-0 ml-4">
-          {job.planType === 'Premium' ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-[#ffbc00] text-amber-950 shadow-sm">
-              👑 Premium Exclusive
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-emerald-100 text-emerald-800">
-              🟢 Basic Free Role
+        {job.planType === 'Premium' ? (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 shadow-sm border border-amber-300 uppercase tracking-wide">
+            👑 Premium
+          </span>
+        ) : (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wide">
+            🟢 Basic
+          </span>
+        )}
+      </div>
+
+      {/* Title & NEW Tag */}
+      <div className="mb-4">
+        <h3 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-tight">
+          {job.title}
+          {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
+            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest align-middle shadow-sm relative -translate-y-[2px]">
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-100"></span>
+              </span>
+              ✨ NEW
             </span>
           )}
-          {/* Placeholder Logo */}
-          <div className="w-16 h-16 bg-[#f0f3ff] rounded-[18px] flex items-center justify-center text-[#5536ff] font-bold text-3xl shrink-0 group-hover:scale-105 transition-transform border border-[#e0e7ff]">
-            {job.company.charAt(0).toUpperCase()}
-          </div>
-        </div>
+        </h3>
       </div>
-      
-      <div className="flex flex-wrap gap-2.5 mb-5 relative z-10 mt-1">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-600 rounded-xl text-sm font-semibold border border-slate-200">
-          <MapPin className="w-4 h-4" />
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg text-[11px] font-bold border border-slate-200">
+          <MapPin className="w-3 h-3" />
           {job.location}
         </span>
         {job.isRemote && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-600 rounded-xl text-sm font-semibold border border-slate-200">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-100">
             Remote
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#fffaf0] text-[#c27803] rounded-xl text-sm font-semibold border border-[#ffedd5]">
-          <DollarSign className="w-4 h-4" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-bold border border-amber-100">
+          <DollarSign className="w-3 h-3" />
           {job.salary || 'Not disclosed'}
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f0f3ff] text-[#4f46e5] rounded-xl text-sm font-semibold border border-[#e0e7ff]">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[11px] font-bold border border-indigo-100">
           💼 {job.jobType || 'Full-time'}
         </span>
       </div>
 
-      <p className="text-[15px] text-slate-500 line-clamp-2 mb-6 relative z-10 flex-grow leading-relaxed">
+      {/* Description */}
+      <p className="text-[13px] text-slate-500 line-clamp-2 mb-5 flex-grow font-medium">
         {job.description || "No description provided. Click to view more details about this role."}
       </p>
 
-      <div className="w-full h-[1px] bg-slate-100 mb-5 relative z-10"></div>
-
-      <div className="flex items-center justify-between gap-3 relative z-10">
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-100 relative z-10">
         {job.isLocked ? (
           <button 
             type="button"
             onClick={(e) => checkLoginAndExecute(e, () => navigate(`/jobs/${job._id}`), 'Unlock Premium')}
-            className="flex-1 inline-flex justify-center items-center gap-2 bg-[#ffbc00] text-amber-950 px-4 py-3.5 rounded-2xl font-bold hover:bg-[#eab308] transition-colors shadow-sm text-[15px]"
+            className="flex-1 inline-flex justify-center items-center gap-1.5 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 px-3 py-2.5 rounded-xl font-bold hover:from-amber-300 hover:to-yellow-300 transition-all text-sm shadow-sm"
           >
-            🔒 Unlock to Apply
+            🔒 Unlock 
           </button>
         ) : (
           <button 
             type="button"
             onClick={handleApplyClick}
-            className="flex-1 inline-flex justify-center items-center gap-2 bg-[#5536ff] text-white px-4 py-3.5 rounded-2xl font-bold hover:bg-[#4328e0] transition-colors shadow-sm text-[15px]"
+            className="flex-1 inline-flex justify-center items-center gap-1.5 bg-indigo-600 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/20 text-sm"
           >
-            {job.applyEmail && !job.applyUrl ? '📧 Email Recruiter' : 'Apply Now'}
-            <ExternalLink className="w-4 h-4" />
+            {job.applyEmail && !job.applyUrl ? '📧 Email' : 'Apply Now'}
+            <ExternalLink className="w-3.5 h-3.5" />
           </button>
         )}
         
         <button 
           type="button"
           onClick={(e) => checkLoginAndExecute(e, () => onSave(job._id), 'Bookmark Job')}
-          className={`w-[52px] h-[52px] flex shrink-0 items-center justify-center rounded-[16px] border-2 transition-all ${
+          className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
             isSaved 
               ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
               : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
           }`}
           title={isSaved ? "Saved Bookmark" : "Bookmark Job"}
         >
-          <Bookmark className={`w-[22px] h-[22px] ${isSaved ? 'fill-current' : ''}`} />
+          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
         </button>
         
         {onToggleApply && (
           <button 
             type="button"
             onClick={(e) => checkLoginAndExecute(e, () => onToggleApply(job._id), 'Record Application')}
-            className={`w-[52px] h-[52px] flex shrink-0 items-center justify-center rounded-[16px] border-2 transition-all ${
+            className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
               isApplied 
-                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-sm' 
-                : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-700'
+                ? 'bg-emerald-100 border-emerald-400 text-emerald-600 shadow-sm' 
+                : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
             }`}
             title={isApplied ? "Unmark Applied" : "Mark as Applied"}
           >
-            <CheckSquare className={`w-[22px] h-[22px] ${isApplied ? 'fill-current' : 'fill-slate-500 stroke-white'}`} />
+            <CheckSquare className={`w-4 h-4 ${isApplied ? 'fill-current' : ''}`} />
           </button>
         )}
       </div>
