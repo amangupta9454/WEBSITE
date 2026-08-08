@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import html2canvas from 'html2canvas';
 import logo from '../assets/logo.png';
+import founderSign from '../assets/founder-sign.png';
 import jsPDF from 'jspdf';
 
 const useTransparentWhiteLogo = (src) => {
@@ -272,8 +273,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             {/* Left side: Code-A-Nova Signature */}
             <div style={{ textAlign: 'center', width: '200px' }}>
               <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
-                 {/* Placeholder for Code-A-Nova founder signature until provided */}
-                 <span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '32px', color: '#1e3a8a' }}>Himanshu Gupta</span>
+                 <img src={founderSign} alt="Himanshu Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
               <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Himanshu Gupta</p>
