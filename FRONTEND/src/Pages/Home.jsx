@@ -3,7 +3,6 @@ import axios from 'axios';
 import MainLayout from '../layouts/MainLayout';
 import Hero from '../sections/Hero';
 import Stats from '../sections/Stats';
-import RecentJobs from '../sections/RecentJobs';
 import ServicesOverview from '../sections/ServicesOverview';
 import MockInterviewCTA from '../sections/MockInterviewCTA';
 import ResumeBuilderCTA from '../sections/ResumeBuilderCTA';
@@ -35,7 +34,6 @@ const Home = () => {
     <MainLayout>
       <Hero />
       <Stats />
-      {showJobPortal && <RecentJobs />}
       <ProblemSolution />
       <ServicesOverview />
       <MockInterviewCTA />
