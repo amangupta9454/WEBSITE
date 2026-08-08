@@ -277,13 +277,22 @@ const QuizUsersAdmin = () => {
     });
     
     let sentCount = 0;
+    let quizDate = "N/A";
+    let sponsorName = "N/A";
+
     applicants.forEach(app => {
       const qz = app.quizzes?.find(q => q.quizName === quizName);
       if (qz?.certificateSent) sentCount++;
+      if (qz?.quizDate) quizDate = qz.quizDate;
+      if (qz?.sponsorName) sponsorName = qz.sponsorName;
+      if (!qz && app.quizDate) quizDate = app.quizDate;
+      if (!qz && app.sponsorName) sponsorName = app.sponsorName;
     });
 
     return {
       quizName,
+      quizDate,
+      sponsorName,
       totalParticipants: applicants.length,
       sentCount,
       pendingCount: applicants.length - sentCount
@@ -293,6 +302,18 @@ const QuizUsersAdmin = () => {
   const totalResumes = quizApplicants.filter(
     app => app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A'
   ).length;
+
+  const activeQuizCardData = quizFilter !== "All Quizzes" ? quizCardsData.find(q => q.quizName === quizFilter) : null;
+  const winners = quizFilter !== "All Quizzes" ? filteredApplicants.filter(app => {
+    const qz = app.quizzes?.find(q => q.quizName === quizFilter) || app;
+    const resultStr = qz.result?.toLowerCase() || "";
+    return resultStr.includes('1st') || resultStr.includes('2nd') || resultStr.includes('3rd') || resultStr.includes('first') || resultStr.includes('second') || resultStr.includes('third');
+  }).sort((a, b) => {
+    const aRes = (a.quizzes?.find(q => q.quizName === quizFilter) || a).result?.toLowerCase() || "";
+    const bRes = (b.quizzes?.find(q => q.quizName === quizFilter) || b).result?.toLowerCase() || "";
+    const rank = (str) => str.includes('1st') || str.includes('first') ? 1 : str.includes('2nd') || str.includes('second') ? 2 : 3;
+    return rank(aRes) - rank(bRes);
+  }) : [];
 
   if (loading) {
     return (
@@ -341,7 +362,41 @@ const QuizUsersAdmin = () => {
 
       {/* Quizzes Overview OR Table View */}
       {quizFilter === "All Quizzes" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
+          {/* Global Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Candidates</span>
+                <div className="text-3xl font-black text-slate-900 mt-1">{quizApplicants.length}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quizzes Active</span>
+                <div className="text-3xl font-black text-indigo-600 mt-1">{uniqueQuizzes}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                <Award className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumes Attached</span>
+                <div className="text-3xl font-black text-emerald-600 mt-1">{totalResumes}</div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <FileText className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quizCardsData.map((quiz, idx) => (
             <div 
               key={idx} 
@@ -360,7 +415,18 @@ const QuizUsersAdmin = () => {
                 </div>
               </div>
               
-              <h3 className="text-lg font-bold text-slate-900 mb-4 line-clamp-2">{quiz.quizName}</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">{quiz.quizName}</h3>
+              
+              <div className="flex flex-col gap-1 mb-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" /> 
+                  {quiz.quizDate !== "N/A" ? quiz.quizDate : "Date Not Set"}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                  {quiz.sponsorName !== "N/A" ? quiz.sponsorName : "Code-A-Nova"}
+                </span>
+              </div>
               
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                 <div className="bg-emerald-50 rounded-xl p-3">
@@ -381,64 +447,81 @@ const QuizUsersAdmin = () => {
           )}
         </div>
       ) : (
-        <>
-          {/* Top Metrics Cards - Only shown in Table View */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Candidates</span>
-            <div className="text-3xl font-black text-slate-900 mt-1">{quizApplicants.length}</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quizzes Active</span>
-            <div className="text-3xl font-black text-indigo-600 mt-1">{uniqueQuizzes}</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-            <Award className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumes Attached</span>
-            <div className="text-3xl font-black text-emerald-600 mt-1">{totalResumes}</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-            <FileText className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* Toolbar & Search */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs font-semibold text-slate-500 min-w-max">
-          Showing <strong className="text-slate-900">{filteredApplicants.length}</strong> of {quizApplicants.length} applicants
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          {/* Quiz Filter */}
-          <div className="relative min-w-[200px]">
-            <select
-              value={quizFilter}
-              onChange={(e) => setQuizFilter(e.target.value)}
-              className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+        <div className="space-y-6">
+          {/* Specific Quiz Detail Header & Back Button */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <button 
+              onClick={() => setQuizFilter("All Quizzes")}
+              className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors mb-4"
             >
-              <option value="All Quizzes">All Quizzes</option>
-              {uniqueQuizzesList.map((qName, idx) => (
-                <option key={idx} value={qName}>{qName}</option>
-              ))}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              Back to All Quizzes
+            </button>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">{activeQuizCardData?.quizName}</h2>
+                <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 font-medium">
+                  <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-slate-400"/> {activeQuizCardData?.quizDate !== "N/A" ? activeQuizCardData?.quizDate : "Date Not Set"}</span>
+                  <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-slate-400"/> {activeQuizCardData?.sponsorName !== "N/A" ? activeQuizCardData?.sponsorName : "Code-A-Nova"}</span>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-indigo-50 px-4 py-2 rounded-xl text-center">
+                  <div className="text-xl font-black text-indigo-700">{activeQuizCardData?.totalParticipants || 0}</div>
+                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Candidates</div>
+                </div>
+                <div className="bg-emerald-50 px-4 py-2 rounded-xl text-center">
+                  <div className="text-xl font-black text-emerald-700">{activeQuizCardData?.sentCount || 0}</div>
+                  <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Emails Sent</div>
+                </div>
+                <div className="bg-amber-50 px-4 py-2 rounded-xl text-center">
+                  <div className="text-xl font-black text-amber-700">{activeQuizCardData?.pendingCount || 0}</div>
+                  <div className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Pending</div>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Winners Podium */}
+          {winners.length > 0 && (
+            <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 shadow-lg border border-indigo-800/50">
+              <h3 className="text-lg font-black text-white flex items-center gap-2 mb-6">
+                <Award className="w-5 h-5 text-amber-400" />
+                Top Rankers
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {winners.slice(0, 3).map((winner, idx) => {
+                  const qz = winner.quizzes?.find(q => q.quizName === quizFilter) || winner;
+                  const res = qz.result?.toLowerCase() || "";
+                  const isFirst = res.includes('1st') || res.includes('first');
+                  const isSecond = res.includes('2nd') || res.includes('second');
+                  
+                  return (
+                    <div key={idx} className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border-2 ${
+                        isFirst ? 'bg-amber-100 text-amber-700 border-amber-300' :
+                        isSecond ? 'bg-slate-200 text-slate-700 border-slate-300' :
+                        'bg-orange-100 text-orange-800 border-orange-300'
+                      }`}>
+                        {isFirst ? '1st' : isSecond ? '2nd' : '3rd'}
+                      </div>
+                      <div>
+                        <div className="text-white font-bold text-sm line-clamp-1">{winner.name}</div>
+                        <div className="text-indigo-200 text-xs font-medium mt-0.5">Score: {qz.score}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-xs font-semibold text-slate-500 min-w-max">
+          Showing <strong className="text-slate-900">{filteredApplicants.length}</strong> applicants
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
