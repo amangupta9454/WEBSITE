@@ -15,6 +15,7 @@ const quizSchema = new mongoose.Schema(
     sponsorLogo: { type: String, default: "" },
     sponsorSignature: { type: String, default: "" },
     quizDate: { type: String, default: "" },
+    certificateSent: { type: Boolean, default: false },
     importedAt: { type: Date, default: Date.now }
   },
   { _id: true }

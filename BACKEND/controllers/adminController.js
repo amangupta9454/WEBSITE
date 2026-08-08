@@ -2254,7 +2254,7 @@ const importQuizUsers = async (req, res) => {
 
 const sendQuizCertificate = async (req, res) => {
   try {
-    const { email, name, quizName, result, certificateImage } = req.body;
+    const { email, name, quizName, result, certificateImage, customMessage } = req.body;
     if (!email || !certificateImage) {
       return res.status(400).json({ success: false, message: "Email and certificate image are required" });
     }
@@ -2270,6 +2270,40 @@ const sendQuizCertificate = async (req, res) => {
     const isWinner = result && result.match(/1st|2nd|3rd|winner/i);
     const dashboardLink = "https://codeanova.com/login"; // Replace with your actual dashboard link if different
     
+    let messageBody = "";
+    if (customMessage) {
+      let formattedMsg = customMessage.replace(/{{name}}/g, name || "Participant");
+      formattedMsg = formattedMsg.replace(/\n/g, "<br>");
+      messageBody = `
+        <p style="font-size: 16px; line-height: 1.5;">${formattedMsg}</p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${dashboardLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Dashboard</a>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5;">
+          Your official certificate is attached to this email. You can download and share it with your network!
+        </p>
+      `;
+    } else {
+      messageBody = `
+        <p style="font-size: 16px; line-height: 1.5;">
+          Thank you for participating in the <strong>${quizName || "Assessment"}</strong>. 
+          ${isWinner 
+            ? `You achieved an outstanding position: <strong>${result}</strong>! We are thrilled to present you with this Certificate of Excellence in recognition of your hard work and dedication.`
+            : `We are thrilled to present you with this Certificate of Participation in recognition of your efforts.`
+          }
+        </p>
+        <p style="font-size: 16px; line-height: 1.5;">
+          Your certificate is now uploaded and available on your dashboard. You can access it anytime using the link below:
+        </p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${dashboardLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Dashboard</a>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5;">
+          We have also attached your official certificate to this email for your convenience. You can download and share it with your network!
+        </p>
+      `;
+    }
+
     const htmlTemplate = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
         <div style="background-color: ${isWinner ? '#f59e0b' : '#4f46e5'}; padding: 20px; text-align: center;">
@@ -2277,22 +2311,7 @@ const sendQuizCertificate = async (req, res) => {
         </div>
         <div style="padding: 20px;">
           <p style="font-size: 16px;">Dear <strong>${name || "Participant"}</strong>,</p>
-          <p style="font-size: 16px; line-height: 1.5;">
-            Thank you for participating in the <strong>${quizName || "Assessment"}</strong>. 
-            ${isWinner 
-              ? `You achieved an outstanding position: <strong>${result}</strong>! We are thrilled to present you with this Certificate of Excellence in recognition of your hard work and dedication.`
-              : `We are thrilled to present you with this Certificate of Participation in recognition of your efforts.`
-            }
-          </p>
-          <p style="font-size: 16px; line-height: 1.5;">
-            Your certificate is now uploaded and available on your dashboard. You can access it anytime using the link below:
-          </p>
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="${dashboardLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Dashboard</a>
-          </div>
-          <p style="font-size: 16px; line-height: 1.5;">
-            We have also attached your official certificate to this email for your convenience. You can download and share it with your network!
-          </p>
+          ${messageBody}
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
             <p style="font-size: 14px; color: #666; margin: 0;">Best regards,</p>
             <p style="font-size: 14px; color: #333; font-weight: bold; margin: 5px 0 0 0;">Code-A-Nova Team</p>
@@ -2318,6 +2337,10 @@ const sendQuizCertificate = async (req, res) => {
     });
 
     if (emailResult.success) {
+      await QuizApplicant.updateOne(
+        { email, "quizzes.quizName": quizName },
+        { $set: { "quizzes.$.certificateSent": true } }
+      );
       res.json({ success: true, message: "Certificate sent successfully" });
     } else {
       res.status(500).json({ success: false, message: "Failed to send email" });

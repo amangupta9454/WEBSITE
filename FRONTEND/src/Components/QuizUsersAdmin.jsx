@@ -40,6 +40,13 @@ const QuizUsersAdmin = () => {
   const [certData, setCertData] = useState(null);
   const [isSendingBulk, setIsSendingBulk] = useState(false);
   const [sendingProgress, setSendingProgress] = useState({ current: 0, total: 0 });
+  
+  // Custom Email Modal states
+  const [showCustomEmailModal, setShowCustomEmailModal] = useState(false);
+  const [customMessage, setCustomMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState(null); // 'single' or 'bulk'
+  const [pendingSingleData, setPendingSingleData] = useState(null);
+  
   const certRef = useRef(null);
 
   useEffect(() => {
@@ -115,7 +122,34 @@ const QuizUsersAdmin = () => {
     }, 500);
   };
 
-  const handleSendSingle = async (applicant, quiz) => {
+  const handleSendSingleClick = (app, quiz) => {
+    setPendingAction('single');
+    setPendingSingleData({ applicant: app, quiz });
+    setShowCustomEmailModal(true);
+  };
+
+  const handleBulkSendClick = () => {
+    if (selectedIds.size === 0) return;
+    setPendingAction('bulk');
+    setShowCustomEmailModal(true);
+  };
+
+  const executeSend = async () => {
+    setShowCustomEmailModal(false);
+    if (pendingAction === 'single') {
+      await executeSendSingle(pendingSingleData.applicant, pendingSingleData.quiz);
+    } else if (pendingAction === 'bulk') {
+      await executeBulkSend();
+    }
+    // reset states
+    setPendingAction(null);
+    setPendingSingleData(null);
+    setCustomMessage("");
+    // Re-fetch applicants to get updated certificateSent status
+    fetchQuizApplicants();
+  };
+
+  const executeSendSingle = async (applicant, quiz) => {
     try {
       toast.info(`Generating certificate for ${applicant.name}...`);
       setCertData({ applicant, quizData: quiz });
@@ -135,7 +169,8 @@ const QuizUsersAdmin = () => {
           name: applicant.name,
           quizName: quiz.quizName,
           result: quiz.result,
-          certificateImage: base64
+          certificateImage: base64,
+          customMessage: customMessage
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -149,7 +184,7 @@ const QuizUsersAdmin = () => {
     }
   };
 
-  const handleBulkSend = async () => {
+  const executeBulkSend = async () => {
     if (selectedIds.size === 0) return;
     
     setIsSendingBulk(true);
@@ -187,7 +222,8 @@ const QuizUsersAdmin = () => {
             name: applicant.name,
             quizName: quiz.quizName,
             result: quiz.result,
-            certificateImage: base64
+            certificateImage: base64,
+            customMessage: customMessage
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -235,6 +271,25 @@ const QuizUsersAdmin = () => {
   ).sort();
   const uniqueQuizzes = uniqueQuizzesList.length;
 
+  const quizCardsData = uniqueQuizzesList.map(quizName => {
+    const applicants = quizApplicants.filter(app => {
+      return app.quizzes?.some(q => q.quizName === quizName) || app.quizName === quizName;
+    });
+    
+    let sentCount = 0;
+    applicants.forEach(app => {
+      const qz = app.quizzes?.find(q => q.quizName === quizName);
+      if (qz?.certificateSent) sentCount++;
+    });
+
+    return {
+      quizName,
+      totalParticipants: applicants.length,
+      sentCount,
+      pendingCount: applicants.length - sentCount
+    };
+  });
+
   const totalResumes = quizApplicants.filter(
     app => app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A'
   ).length;
@@ -264,9 +319,9 @@ const QuizUsersAdmin = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {selectedIds.size > 0 && (
+          {selectedIds.size > 0 && quizFilter !== "All Quizzes" && (
             <button
-              onClick={handleBulkSend}
+              onClick={handleBulkSendClick}
               disabled={isSendingBulk}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md disabled:opacity-70"
             >
@@ -284,7 +339,50 @@ const QuizUsersAdmin = () => {
         </div>
       </div>
 
-      {/* Top Metrics Cards */}
+      {/* Quizzes Overview OR Table View */}
+      {quizFilter === "All Quizzes" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {quizCardsData.map((quiz, idx) => (
+            <div 
+              key={idx} 
+              onClick={() => setQuizFilter(quiz.quizName)}
+              className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:border-indigo-300"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                    <Users className="w-3.5 h-3.5" />
+                    {quiz.totalParticipants} Participants
+                  </span>
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-bold text-slate-900 mb-4 line-clamp-2">{quiz.quizName}</h3>
+              
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                <div className="bg-emerald-50 rounded-xl p-3">
+                  <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Cert Sent</div>
+                  <div className="text-xl font-black text-emerald-700">{quiz.sentCount}</div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-3">
+                  <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Pending</div>
+                  <div className="text-xl font-black text-amber-700">{quiz.pendingCount}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {quizCardsData.length === 0 && (
+            <div className="col-span-full py-12 text-center text-slate-500">
+              No quizzes found.
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Top Metrics Cards - Only shown in Table View */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
@@ -484,6 +582,12 @@ const QuizUsersAdmin = () => {
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Registered
                             </span>
                           )}
+
+                          {targetQuiz.certificateSent && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200/80 px-2 py-0.5 rounded-full mt-1">
+                              <CheckCircle2 className="w-3 h-3 text-green-600" /> Email Sent
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -518,9 +622,13 @@ const QuizUsersAdmin = () => {
                           
                           {/* Send Cert */}
                           <button
-                            onClick={() => handleSendSingle(app, targetQuiz)}
-                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-100 transition-colors"
-                            title="Send Certificate to Email"
+                            onClick={() => handleSendSingleClick(app, targetQuiz)}
+                            className={`p-1.5 rounded-xl border transition-colors ${
+                              targetQuiz.certificateSent 
+                                ? "text-green-600 bg-green-50 hover:bg-green-100 border-green-200" 
+                                : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-100"
+                            }`}
+                            title={targetQuiz.certificateSent ? "Send Again" : "Send Certificate to Email"}
                           >
                             <Send className="w-4 h-4" />
                           </button>
@@ -741,12 +849,68 @@ const QuizUsersAdmin = () => {
         </div>
       )}
 
+      {/* CUSTOM EMAIL MODAL */}
+      {showCustomEmailModal && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
+              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-indigo-600" />
+                Customize Email
+              </h3>
+              <button onClick={() => setShowCustomEmailModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto pr-2 space-y-4 text-sm text-slate-600">
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                <p className="font-bold text-indigo-800 text-xs uppercase tracking-wider mb-1">Tips</p>
+                <ul className="list-disc list-inside space-y-1 text-indigo-700">
+                  <li>Use <code className="font-bold bg-white px-1 py-0.5 rounded">{"{{name}}"}</code> to insert the candidate's name dynamically.</li>
+                  <li>If left empty, a generic default email will be sent.</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Custom Email Body (Optional)</label>
+                <textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder="Dear {{name}},\n\nCongratulations on completing the quiz!"
+                  className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 mt-4 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowCustomEmailModal(false)}
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeSend}
+                className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+              >
+                <Send className="w-4 h-4" />
+                Confirm & Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden Certificate Generator */}
       <QuizCertificate 
         ref={certRef} 
         applicant={certData?.applicant} 
         quizData={certData?.quizData} 
       />
+      </>
+      )}
+
     </div>
   );
 };
