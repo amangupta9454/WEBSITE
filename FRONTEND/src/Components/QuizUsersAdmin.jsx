@@ -40,6 +40,7 @@ const QuizUsersAdmin = () => {
   const [certData, setCertData] = useState(null);
   const [isSendingBulk, setIsSendingBulk] = useState(false);
   const [sendingProgress, setSendingProgress] = useState({ current: 0, total: 0 });
+  const [issueDate, setIssueDate] = useState("");
   
   // Custom Email Modal states
   const [showCustomEmailModal, setShowCustomEmailModal] = useState(false);
@@ -152,7 +153,7 @@ const QuizUsersAdmin = () => {
   const executeSendSingle = async (applicant, quiz) => {
     try {
       toast.info(`Generating certificate for ${applicant.name}...`);
-      setCertData({ applicant, quizData: quiz });
+      setCertData({ applicant, quizData: quiz, issueDateOverride: issueDate });
       
       // Wait for React to render the hidden certificate
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -209,7 +210,7 @@ const QuizUsersAdmin = () => {
       setSendingProgress({ current: i + 1, total: selectedIds.size });
       
       try {
-        setCertData({ applicant, quizData: quiz });
+        setCertData({ applicant, quizData: quiz, issueDateOverride: issueDate });
         await new Promise(resolve => setTimeout(resolve, 800)); // give it time to render images/canvas
         
         const base64 = await certRef.current.getBase64();
@@ -993,6 +994,17 @@ const QuizUsersAdmin = () => {
                   className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-inner"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Date of Issue (Optional)</label>
+                <input
+                  type="date"
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-inner"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">If left empty, the quiz date or today's date will be used.</p>
+              </div>
             </div>
 
             <div className="pt-6 mt-4 border-t border-slate-100 flex gap-3">
@@ -1019,6 +1031,7 @@ const QuizUsersAdmin = () => {
         ref={certRef} 
         applicant={certData?.applicant} 
         quizData={certData?.quizData} 
+        issueDateOverride={certData?.issueDateOverride}
       />
       </div>
       )}

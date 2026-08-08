@@ -39,7 +39,7 @@ const useTransparentWhiteLogo = (src) => {
   return dataUrl;
 };
 
-const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
+const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, ref) => {
   const cardRef = useRef(null);
   const logoSrc = useTransparentWhiteLogo("/LOGO.png");
 
@@ -139,11 +139,13 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
     day: 'numeric'
   }) : null;
 
-  const issueDate = parsedQuizDate || new Date(quizData?.importedAt || new Date()).toLocaleDateString('en-US', {
+  const issueDate = issueDateOverride ? new Date(issueDateOverride).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  }) : (parsedQuizDate || new Date(quizData?.importedAt || new Date()).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  });
+  }));
   const idCode = quizData?.registrationId || applicant?.registrationId || applicant?._id || "N/A";
 
   return (
@@ -279,7 +281,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             </div>
 
             {/* Middle: Details */}
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', transform: 'translateY(15px)' }}>
                <div>
                   <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Date Issued</p>
                   <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>{issueDate}</p>
