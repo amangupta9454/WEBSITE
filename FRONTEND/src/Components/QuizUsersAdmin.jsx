@@ -870,8 +870,10 @@ const QuizUsersAdmin = () => {
                     <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-600 font-bold">
                       <th className="p-3">Quiz Name</th>
                       <th className="p-3">Registration ID</th>
-                      <th className="p-3">Score / Marks</th>
-                      <th className="p-3">Result / Status</th>
+                      <th className="p-3">Rank / Status</th>
+                      <th className="p-3">Obtained Marks</th>
+                      <th className="p-3">Total Marks</th>
+                      <th className="p-3">Percentage</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -887,9 +889,6 @@ const QuizUsersAdmin = () => {
                       <tr key={idx} className="hover:bg-slate-50/50">
                         <td className="p-3 font-semibold text-slate-900">{qz.quizName}</td>
                         <td className="p-3 font-mono text-slate-600">{qz.registrationId || "N/A"}</td>
-                        <td className="p-3 font-bold text-slate-800">
-                          {qz.score || "N/A"} {qz.totalScore && qz.totalScore !== "N/A" ? `/ ${qz.totalScore}` : ""}
-                        </td>
                         <td className="p-3">
                           <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                             qz.result?.toLowerCase().includes("pass") || qz.result?.toLowerCase().includes("qual")
@@ -900,6 +899,15 @@ const QuizUsersAdmin = () => {
                           }`}>
                             {qz.result || "N/A"}
                           </span>
+                        </td>
+                        <td className="p-3 font-bold text-slate-800">
+                          {qz.score !== "N/A" ? qz.score : (qz.effectiveScore !== "N/A" ? qz.effectiveScore : "N/A")}
+                        </td>
+                        <td className="p-3 font-bold text-slate-800">
+                          {qz.totalScore || "N/A"}
+                        </td>
+                        <td className="p-3 font-bold text-slate-800">
+                          {qz.percentage !== "N/A" ? (qz.percentage.toString().includes('%') ? qz.percentage : `${qz.percentage}%`) : "N/A"}
                         </td>
                       </tr>
                     ))}
