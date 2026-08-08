@@ -2048,6 +2048,8 @@ const importQuizUsers = async (req, res) => {
     }
 
     let importedCount = 0;
+    const seenEmails = new Set();
+    const seenRegistrationIds = new Set();
 
     for (const rawRow of data) {
       // Normalize keys: lowercase and remove special characters/spaces
@@ -2058,18 +2060,25 @@ const importQuizUsers = async (req, res) => {
       }
 
       const email = (row.candidatesemail || row.email || "").toString().trim().toLowerCase();
-      const registrationId = (row.registrationid || row.id || "").toString().trim();
+      const registrationId = (row.registrationid || row.regnid || row.id || "").toString().trim();
       
       if (!email && !registrationId) continue;
 
-      const name = (row.candidatesname || row.name || "").toString().trim();
+      // Skip duplicate entries within the same excel file
+      if (email && seenEmails.has(email)) continue;
+      if (registrationId && seenRegistrationIds.has(registrationId)) continue;
+
+      if (email) seenEmails.add(email);
+      if (registrationId) seenRegistrationIds.add(registrationId);
+
+      const name = (row.candidatesname || row.name || "Unknown User").toString().trim();
       const mobile = (row.candidatesmobile || row.mobile || "").toString().trim();
       const gender = (row.candidatesgender || row.gender || "").toString().trim();
       const location = (row.candidateslocation || row.location || "").toString().trim();
       const userType = (row.usertype || "").toString().trim();
       const domain = (row.domain || "").toString().trim();
-      const course = (row.course || "").toString().trim();
-      const specialization = (row.specialization || "").toString().trim();
+      const course = (row.course || row.coursestream || "").toString().trim();
+      const specialization = (row.specialization || row.coursespecialization || "").toString().trim();
       const courseDuration = (row.courseduration || "").toString().trim();
       const yearOfGraduation = (row.yearofgraduation || "").toString().trim();
       const organisation = (row.candidatesorganisation || row.organisation || "").toString().trim();
@@ -2082,13 +2091,13 @@ const importQuizUsers = async (req, res) => {
       const resumeUrl = (row.resume || "").toString().trim();
 
       // Result and score detection
-      const score = (row.score || row.marks || row.obtainedmarks || "").toString().trim() || "N/A";
+      const score = (row.score || row.marks || row.obtainedmarks || row.effectivescoreoutof240 || "").toString().trim() || "N/A";
       const totalScore = (row.totalscore || row.maxmarks || row.total || "").toString().trim() || "N/A";
-      const result = (row.result || row.status || row.qualificationstatus || row.remarks || "").toString().trim() || "N/A";
+      const result = (row.result || row.rank || row.status || row.qualificationstatus || row.remarks || "").toString().trim() || "N/A";
       const percentage = (row.percentage || row.percentagescore || row.percentile || "").toString().trim() || "N/A";
-      const effectiveScore = (row.effectivescore || "").toString().trim() || "N/A";
-      const totalQuestions = (row.totalnoofquestions || row.totalquestions || row.questions || "").toString().trim() || "N/A";
-      const attemptedQuestions = (row.noofquestionattempted || row.attemptedquestions || row.attempted || "").toString().trim() || "N/A";
+      const effectiveScore = (row.effectivescore || row.effectivescoreoutof240 || "").toString().trim() || "N/A";
+      const totalQuestions = (row.totalnoofquestions || row.totalquestions || row.questions || row.numberofquestionsassigned || "").toString().trim() || "N/A";
+      const attemptedQuestions = (row.noofquestionattempted || row.attemptedquestions || row.attempted || row.numberofquestionsattempted || "").toString().trim() || "N/A";
 
       const currentQuizName = quizName.trim();
       
