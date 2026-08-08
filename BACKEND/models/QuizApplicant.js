@@ -8,6 +8,12 @@ const quizSchema = new mongoose.Schema(
     totalScore: { type: String, default: "N/A" },
     result: { type: String, default: "N/A" },
     percentage: { type: String, default: "N/A" },
+    effectiveScore: { type: String, default: "N/A" },
+    totalQuestions: { type: String, default: "N/A" },
+    attemptedQuestions: { type: String, default: "N/A" },
+    sponsorName: { type: String, default: "" },
+    sponsorLogo: { type: String, default: "" },
+    sponsorSignature: { type: String, default: "" },
     importedAt: { type: Date, default: Date.now }
   },
   { _id: true }
@@ -34,6 +40,12 @@ const quizApplicantSchema = new mongoose.Schema(
     totalScore: { type: String, default: "N/A" },
     result: { type: String, default: "N/A" },
     percentage: { type: String, default: "N/A" },
+    effectiveScore: { type: String, default: "N/A" },
+    totalQuestions: { type: String, default: "N/A" },
+    attemptedQuestions: { type: String, default: "N/A" },
+    sponsorName: { type: String, default: "" },
+    sponsorLogo: { type: String, default: "" },
+    sponsorSignature: { type: String, default: "" },
     quizzes: [quizSchema]
   },
   { timestamps: true }

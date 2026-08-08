@@ -1999,19 +1999,53 @@ const QuizApplicant = require("../models/QuizApplicant");
 
 const importQuizUsers = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+    if (!req.files || !req.files['excelFile']) {
+      return res.status(400).json({ success: false, message: "No excel file uploaded" });
     }
 
-    const { quizName } = req.body;
+    const { quizName, sponsorName } = req.body;
     if (!quizName) {
       return res.status(400).json({ success: false, message: "Quiz Name is required" });
     }
 
     const xlsx = require("xlsx");
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const workbook = xlsx.read(req.files['excelFile'][0].buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    // Handle Image Uploads
+    const streamifier = require("streamifier");
+    const cloudinary = require("cloudinary").v2;
+    
+    let sponsorLogoUrl = "";
+    if (req.files['sponsorLogo'] && req.files['sponsorLogo'][0]) {
+      const uploadPromise = new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: "auto", folder: "quiz_sponsors" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        streamifier.createReadStream(req.files['sponsorLogo'][0].buffer).pipe(stream);
+      });
+      sponsorLogoUrl = await uploadPromise;
+    }
+
+    let sponsorSignatureUrl = "";
+    if (req.files['sponsorSignature'] && req.files['sponsorSignature'][0]) {
+      const uploadPromise = new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: "auto", folder: "quiz_sponsors" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        streamifier.createReadStream(req.files['sponsorSignature'][0].buffer).pipe(stream);
+      });
+      sponsorSignatureUrl = await uploadPromise;
+    }
 
     let importedCount = 0;
 
@@ -2024,11 +2058,12 @@ const importQuizUsers = async (req, res) => {
       }
 
       const email = (row.candidatesemail || row.email || "").toString().trim().toLowerCase();
-      if (!email) continue;
+      const registrationId = (row.registrationid || row.id || "").toString().trim();
+      
+      if (!email && !registrationId) continue;
 
       const name = (row.candidatesname || row.name || "").toString().trim();
       const mobile = (row.candidatesmobile || row.mobile || "").toString().trim();
-      const registrationId = (row.registrationid || "").toString().trim();
       const gender = (row.candidatesgender || row.gender || "").toString().trim();
       const location = (row.candidateslocation || row.location || "").toString().trim();
       const userType = (row.usertype || "").toString().trim();
@@ -2044,9 +2079,13 @@ const importQuizUsers = async (req, res) => {
       const score = (row.score || row.marks || row.obtainedmarks || "").toString().trim() || "N/A";
       const totalScore = (row.totalscore || row.maxmarks || row.total || "").toString().trim() || "N/A";
       const result = (row.result || row.status || row.qualificationstatus || row.remarks || "").toString().trim() || "N/A";
-      const percentage = (row.percentage || row.percentile || "").toString().trim() || "N/A";
+      const percentage = (row.percentage || row.percentagescore || row.percentile || "").toString().trim() || "N/A";
+      const effectiveScore = (row.effectivescore || "").toString().trim() || "N/A";
+      const totalQuestions = (row.totalnoofquestions || row.totalquestions || row.questions || "").toString().trim() || "N/A";
+      const attemptedQuestions = (row.noofquestionattempted || row.attemptedquestions || row.attempted || "").toString().trim() || "N/A";
 
       const currentQuizName = quizName.trim();
+      
       const quizItem = {
         quizName: currentQuizName,
         registrationId,
@@ -2054,11 +2093,23 @@ const importQuizUsers = async (req, res) => {
         totalScore,
         result,
         percentage,
+        effectiveScore,
+        totalQuestions,
+        attemptedQuestions,
+        sponsorName: sponsorName ? sponsorName.trim() : "",
+        sponsorLogo: sponsorLogoUrl,
+        sponsorSignature: sponsorSignatureUrl,
         importedAt: new Date()
       };
 
-      // Check if user with this email already exists
-      let existingApplicant = await QuizApplicant.findOne({ email });
+      // Check if user with this email or registrationId already exists
+      let existingApplicant = null;
+      if (email) {
+        existingApplicant = await QuizApplicant.findOne({ email });
+      }
+      if (!existingApplicant && registrationId) {
+        existingApplicant = await QuizApplicant.findOne({ registrationId });
+      }
 
       if (existingApplicant) {
         if (name && name !== "Unknown User") existingApplicant.name = name;
@@ -2087,6 +2138,12 @@ const importQuizUsers = async (req, res) => {
             totalScore: existingApplicant.totalScore || "N/A",
             result: existingApplicant.result || "N/A",
             percentage: existingApplicant.percentage || "N/A",
+            effectiveScore: existingApplicant.effectiveScore || "N/A",
+            totalQuestions: existingApplicant.totalQuestions || "N/A",
+            attemptedQuestions: existingApplicant.attemptedQuestions || "N/A",
+            sponsorName: existingApplicant.sponsorName || "",
+            sponsorLogo: existingApplicant.sponsorLogo || "",
+            sponsorSignature: existingApplicant.sponsorSignature || "",
             importedAt: existingApplicant.createdAt || new Date()
           });
         }
@@ -2101,6 +2158,12 @@ const importQuizUsers = async (req, res) => {
           if (totalScore !== "N/A") existingApplicant.quizzes[existingQuizIdx].totalScore = totalScore;
           if (result !== "N/A") existingApplicant.quizzes[existingQuizIdx].result = result;
           if (percentage !== "N/A") existingApplicant.quizzes[existingQuizIdx].percentage = percentage;
+          if (effectiveScore !== "N/A") existingApplicant.quizzes[existingQuizIdx].effectiveScore = effectiveScore;
+          if (totalQuestions !== "N/A") existingApplicant.quizzes[existingQuizIdx].totalQuestions = totalQuestions;
+          if (attemptedQuestions !== "N/A") existingApplicant.quizzes[existingQuizIdx].attemptedQuestions = attemptedQuestions;
+          if (sponsorName) existingApplicant.quizzes[existingQuizIdx].sponsorName = sponsorName.trim();
+          if (sponsorLogoUrl) existingApplicant.quizzes[existingQuizIdx].sponsorLogo = sponsorLogoUrl;
+          if (sponsorSignatureUrl) existingApplicant.quizzes[existingQuizIdx].sponsorSignature = sponsorSignatureUrl;
         } else {
           existingApplicant.quizzes.push(quizItem);
         }
@@ -2111,9 +2174,19 @@ const importQuizUsers = async (req, res) => {
         if (totalScore !== "N/A") existingApplicant.totalScore = totalScore;
         if (result !== "N/A") existingApplicant.result = result;
         if (percentage !== "N/A") existingApplicant.percentage = percentage;
+        if (effectiveScore !== "N/A") existingApplicant.effectiveScore = effectiveScore;
+        if (totalQuestions !== "N/A") existingApplicant.totalQuestions = totalQuestions;
+        if (attemptedQuestions !== "N/A") existingApplicant.attemptedQuestions = attemptedQuestions;
+        if (sponsorName) existingApplicant.sponsorName = sponsorName.trim();
+        if (sponsorLogoUrl) existingApplicant.sponsorLogo = sponsorLogoUrl;
+        if (sponsorSignatureUrl) existingApplicant.sponsorSignature = sponsorSignatureUrl;
 
         await existingApplicant.save();
       } else {
+        if (!email) {
+          // Require email for new users
+          continue;
+        }
         const newApplicant = new QuizApplicant({
           quizName: currentQuizName,
           registrationId,
@@ -2134,6 +2207,12 @@ const importQuizUsers = async (req, res) => {
           totalScore,
           result,
           percentage,
+          effectiveScore,
+          totalQuestions,
+          attemptedQuestions,
+          sponsorName: sponsorName ? sponsorName.trim() : "",
+          sponsorLogo: sponsorLogoUrl,
+          sponsorSignature: sponsorSignatureUrl,
           quizzes: [quizItem]
         });
 
@@ -2147,6 +2226,82 @@ const importQuizUsers = async (req, res) => {
   } catch (error) {
     console.error("[Admin] Error importing quiz users:", error);
     res.status(500).json({ success: false, message: "Server error during quiz user import." });
+  }
+};
+
+const sendQuizCertificate = async (req, res) => {
+  try {
+    const { email, name, quizName, result, certificateImage } = req.body;
+    if (!email || !certificateImage) {
+      return res.status(400).json({ success: false, message: "Email and certificate image are required" });
+    }
+
+    // Determine how to attach the base64 image
+    // Data URL format: data:image/jpeg;base64,/9j/4AAQSkZJRg...
+    let base64Data = certificateImage;
+    if (certificateImage.includes("base64,")) {
+      base64Data = certificateImage.split("base64,")[1];
+    }
+    const mailService = require("../services/mailService");
+    
+    const isWinner = result && result.match(/1st|2nd|3rd|winner/i);
+    const dashboardLink = "https://codeanova.com/login"; // Replace with your actual dashboard link if different
+    
+    const htmlTemplate = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+        <div style="background-color: ${isWinner ? '#f59e0b' : '#4f46e5'}; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Congratulations!</h1>
+        </div>
+        <div style="padding: 20px;">
+          <p style="font-size: 16px;">Dear <strong>${name || "Participant"}</strong>,</p>
+          <p style="font-size: 16px; line-height: 1.5;">
+            Thank you for participating in the <strong>${quizName || "Assessment"}</strong>. 
+            ${isWinner 
+              ? `You achieved an outstanding position: <strong>${result}</strong>! We are thrilled to present you with this Certificate of Excellence in recognition of your hard work and dedication.`
+              : `We are thrilled to present you with this Certificate of Participation in recognition of your efforts.`
+            }
+          </p>
+          <p style="font-size: 16px; line-height: 1.5;">
+            Your certificate is now uploaded and available on your dashboard. You can access it anytime using the link below:
+          </p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${dashboardLink}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Dashboard</a>
+          </div>
+          <p style="font-size: 16px; line-height: 1.5;">
+            We have also attached your official certificate to this email for your convenience. You can download and share it with your network!
+          </p>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+            <p style="font-size: 14px; color: #666; margin: 0;">Best regards,</p>
+            <p style="font-size: 14px; color: #333; font-weight: bold; margin: 5px 0 0 0;">Code-A-Nova Team</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const emailResult = await mailService.sendEmail({
+      to: email,
+      subject: isWinner ? `Congratulations! You secured ${result} in ${quizName}` : `Your Certificate for ${quizName} - Code-A-Nova`,
+      html: htmlTemplate,
+      recipientName: name,
+      campaign: "Quiz Certificate",
+      source: "Admin Panel",
+      attachments: [
+        {
+          filename: `Certificate_${(name || "Participant").replace(/\\s+/g, "_")}.jpg`,
+          content: base64Data,
+          encoding: "base64"
+        }
+      ]
+    });
+
+    if (emailResult.success) {
+      res.json({ success: true, message: "Certificate sent successfully" });
+    } else {
+      res.status(500).json({ success: false, message: "Failed to send email" });
+    }
+  } catch (error) {
+    console.error("[Admin] Error sending certificate:", error);
+    res.status(500).json({ success: false, message: "Server error sending certificate" });
   }
 };
 
@@ -2233,6 +2388,7 @@ module.exports = {
   manualAcceptAssignment,
   importInterns,
   importQuizUsers,
+  sendQuizCertificate,
   getQuizApplicants,
   deleteQuizApplicant,
   deleteApplication,

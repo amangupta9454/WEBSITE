@@ -112,10 +112,11 @@ router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
 router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
 // Bulk Import & Quiz Routes
-const { importInterns, importQuizUsers, getQuizApplicants, deleteQuizApplicant, deleteApplication, bulkDeleteApplications } = require("../controllers/adminController");
+const { importInterns, importQuizUsers, sendQuizCertificate, getQuizApplicants, deleteQuizApplicant, deleteApplication, bulkDeleteApplications } = require("../controllers/adminController");
 router.post("/import-interns", auth, verifyAdmin, upload.single("excelFile"), importInterns);
-router.post("/import-quiz-users", auth, verifyAdmin, upload.single("excelFile"), importQuizUsers);
+router.post("/import-quiz-users", auth, verifyAdmin, upload.fields([{ name: "excelFile", maxCount: 1 }, { name: "sponsorLogo", maxCount: 1 }, { name: "sponsorSignature", maxCount: 1 }]), importQuizUsers);
 router.get("/quiz-applicants", auth, verifyAdmin, getQuizApplicants);
+router.post("/quiz-applicants/send-certificate", auth, verifyAdmin, sendQuizCertificate);
 router.delete("/quiz-applicants/:id", auth, verifyAdmin, deleteQuizApplicant);
 router.delete("/applications/:id", auth, verifyAdmin, deleteApplication);
 router.post("/applications/bulk-delete", auth, verifyAdmin, bulkDeleteApplications);

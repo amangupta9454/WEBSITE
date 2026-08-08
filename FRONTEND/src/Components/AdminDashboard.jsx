@@ -49,6 +49,9 @@ import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
 import AdminResumeView from "./AdminResumeView";
 import JobAdminPage from "./JobAdminPage";
+import UserProfileModal from "./UserProfileModal";
+import FeatureBannerConfig from "./FeatureBannerConfig";
+import ImportQuizModal from "./ImportQuizModal";
 import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
 import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
@@ -98,7 +101,8 @@ const AdminDashboard = () => {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
   const [importingInterns, setImportingInterns] = useState(false);
-  const [importingQuiz, setImportingQuiz] = useState(false);
+  const [showImportQuizModal, setShowImportQuizModal] = useState(false);
+  const [showFeatureBannerConfig, setShowFeatureBannerConfig] = useState(false);
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -473,18 +477,9 @@ const AdminDashboard = () => {
 
     const isIntern = type === 'interns';
     
-    if (type === 'quiz') {
-      const quizName = window.prompt("Enter the name of the Quiz you are importing users for:");
-      if (!quizName) {
-        e.target.value = "";
-        return;
-      }
-      formData.append("quizName", quizName);
-    }
-
-    const endpoint = isIntern ? "/api/admin/import-interns" : "/api/admin/import-quiz-users";
+    const endpoint = "/api/admin/import-interns";
     
-    isIntern ? setImportingInterns(true) : setImportingQuiz(true);
+    setImportingInterns(true);
     
     try {
       const res = await axios.post(
@@ -503,7 +498,7 @@ const AdminDashboard = () => {
       toast.error(`Failed to import ${type}`);
       console.error(err);
     } finally {
-      isIntern ? setImportingInterns(false) : setImportingQuiz(false);
+      setImportingInterns(false);
       e.target.value = "";
     }
   };
@@ -2674,23 +2669,13 @@ const AdminDashboard = () => {
                         disabled={importingInterns}
                       />
                     </label>
-                    <label
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${importingQuiz ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" : "border-slate-300 bg-slate-50/50 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 hover:bg-emerald-500/10"}`}
+                    <button
+                      onClick={() => setShowImportQuizModal(true)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 border-slate-300 bg-slate-50/50 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 hover:bg-emerald-500/10`}
                     >
-                      {importingQuiz ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <UploadCloud className="w-4 h-4" />
-                      )}
+                      <UploadCloud className="w-4 h-4" />
                       <span>Import Quiz Users</span>
-                      <input
-                        type="file"
-                        accept=".xlsx, .csv"
-                        onChange={(e) => handleBulkImport(e, 'quiz')}
-                        className="hidden"
-                        disabled={importingQuiz}
-                      />
-                    </label>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -3878,6 +3863,19 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      <FeatureBannerConfig
+        isOpen={showFeatureBannerConfig}
+        onClose={() => setShowFeatureBannerConfig(false)}
+      />
+
+      <ImportQuizModal
+        isOpen={showImportQuizModal}
+        onClose={() => setShowImportQuizModal(false)}
+        onSuccess={() => {
+          // Additional logic if needed when quiz users are imported
+        }}
+      />
 
       <ToastContainer
         theme="dark"

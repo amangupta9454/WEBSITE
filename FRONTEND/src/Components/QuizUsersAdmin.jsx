@@ -20,8 +20,11 @@ import {
   CheckCircle2,
   Sparkles,
   Users,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Send
 } from 'lucide-react';
+import QuizCertificate from './QuizCertificate';
 
 const QuizUsersAdmin = () => {
   const [quizApplicants, setQuizApplicants] = useState([]);
@@ -30,6 +33,13 @@ const QuizUsersAdmin = () => {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [applicantToDelete, setApplicantToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Certificate & Bulk Actions State
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [certData, setCertData] = useState(null);
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
+  const [sendingProgress, setSendingProgress] = useState({ current: 0, total: 0 });
+  const certRef = useRef(null);
 
   useEffect(() => {
     fetchQuizApplicants();
@@ -74,6 +84,120 @@ const QuizUsersAdmin = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = new Set(filteredApplicants.map(a => a._id));
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleDownloadSingle = (applicant, quiz) => {
+    setCertData({ applicant, quizData: quiz });
+    setTimeout(() => {
+      if (certRef.current) {
+        certRef.current.triggerDownload();
+      }
+    }, 500);
+  };
+
+  const handleSendSingle = async (applicant, quiz) => {
+    try {
+      toast.info(`Generating certificate for ${applicant.name}...`);
+      setCertData({ applicant, quizData: quiz });
+      
+      // Wait for React to render the hidden certificate
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const base64 = await certRef.current.getBase64();
+      if (!base64) throw new Error("Failed to generate certificate image");
+
+      toast.info(`Sending email to ${applicant.email}...`);
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/send-certificate`,
+        {
+          email: applicant.email,
+          name: applicant.name,
+          quizName: quiz.quizName,
+          result: quiz.result,
+          certificateImage: base64
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data.success) {
+        toast.success(`Certificate sent to ${applicant.email}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to send certificate');
+    }
+  };
+
+  const handleBulkSend = async () => {
+    if (selectedIds.size === 0) return;
+    
+    setIsSendingBulk(true);
+    setSendingProgress({ current: 0, total: selectedIds.size });
+    
+    let successCount = 0;
+    let failCount = 0;
+    const token = localStorage.getItem('adminToken');
+    
+    const selectedArray = Array.from(selectedIds);
+    for (let i = 0; i < selectedArray.length; i++) {
+      const id = selectedArray[i];
+      const applicant = quizApplicants.find(a => a._id === id);
+      if (!applicant) continue;
+      
+      const quiz = applicant.quizzes && applicant.quizzes.length > 0 
+        ? applicant.quizzes[0] 
+        : { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result };
+        
+      setSendingProgress({ current: i + 1, total: selectedIds.size });
+      
+      try {
+        setCertData({ applicant, quizData: quiz });
+        await new Promise(resolve => setTimeout(resolve, 800)); // give it time to render images/canvas
+        
+        const base64 = await certRef.current.getBase64();
+        if (!base64) throw new Error("Failed to generate base64");
+        
+        await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/send-certificate`,
+          {
+            email: applicant.email,
+            name: applicant.name,
+            quizName: quiz.quizName,
+            result: quiz.result,
+            certificateImage: base64
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        successCount++;
+      } catch (err) {
+        console.error(`Failed for ${applicant.email}:`, err);
+        failCount++;
+      }
+    }
+    
+    setIsSendingBulk(false);
+    toast.success(`Bulk send complete: ${successCount} sent, ${failCount} failed.`);
+    setSelectedIds(new Set()); // clear selection
   };
 
   const filteredApplicants = quizApplicants.filter(app => {
@@ -129,7 +253,17 @@ const QuizUsersAdmin = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkSend}
+              disabled={isSendingBulk}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md disabled:opacity-70"
+            >
+              {isSendingBulk ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isSendingBulk ? `Sending (${sendingProgress.current}/${sendingProgress.total})...` : `Send Certificates (${selectedIds.size})`}
+            </button>
+          )}
           <button
             onClick={fetchQuizApplicants}
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
@@ -205,7 +339,15 @@ const QuizUsersAdmin = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="px-6 py-4">Candidate Info</th>
+                <th className="px-4 py-4 w-10">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                    checked={filteredApplicants.length > 0 && selectedIds.size === filteredApplicants.length}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th className="px-2 py-4">Candidate Info</th>
                 <th className="px-6 py-4">Quiz Enrolled</th>
                 <th className="px-6 py-4">Status & Score</th>
                 <th className="px-6 py-4">Domain & College</th>
@@ -223,9 +365,17 @@ const QuizUsersAdmin = () => {
                   const firstQuiz = quizList[0];
 
                   return (
-                    <tr key={app._id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={app._id} className={`hover:bg-slate-50/70 transition-colors ${selectedIds.has(app._id) ? 'bg-indigo-50/30' : ''}`}>
+                      <td className="px-4 py-4">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                          checked={selectedIds.has(app._id)}
+                          onChange={() => handleSelectRow(app._id)}
+                        />
+                      </td>
                       {/* Candidate Avatar & Name */}
-                      <td className="px-6 py-4">
+                      <td className="px-2 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">
                             {app.name?.charAt(0)?.toUpperCase() || "Q"}
@@ -324,14 +474,32 @@ const QuizUsersAdmin = () => {
 
                       {/* Action Buttons */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {/* Download Cert */}
+                          <button
+                            onClick={() => handleDownloadSingle(app, firstQuiz)}
+                            className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-100 transition-colors"
+                            title="Download Certificate"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Send Cert */}
+                          <button
+                            onClick={() => handleSendSingle(app, firstQuiz)}
+                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-100 transition-colors"
+                            title="Send Certificate to Email"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+
                           {/* View Details Button */}
                           <button
                             onClick={() => setSelectedApplicant(app)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all border border-indigo-100"
+                            className="p-1.5 text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
                             title="View Full Details"
                           >
-                            <Eye className="w-3.5 h-3.5" /> Details
+                            <Eye className="w-4 h-4" />
                           </button>
 
                           {/* Resume Link */}
@@ -362,7 +530,7 @@ const QuizUsersAdmin = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                         <Search className="w-6 h-6 text-slate-400" />
@@ -551,6 +719,13 @@ const QuizUsersAdmin = () => {
           </div>
         </div>
       )}
+
+      {/* Hidden Certificate Generator */}
+      <QuizCertificate 
+        ref={certRef} 
+        applicant={certData?.applicant} 
+        quizData={certData?.quizData} 
+      />
     </div>
   );
 };
