@@ -180,7 +180,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
         <div style={{ position: 'relative', zIndex: 10, padding: '25px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '10px', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-20px', alignItems: 'flex-start' }}>
             <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
@@ -264,7 +264,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             justifyContent: 'space-between', 
             width: '100%', 
             marginTop: '15px',
-            marginBottom: '15px',
+            marginBottom: '45px',
             alignItems: 'flex-end'
           }}>
             {/* Left side: Code-A-Nova Signature */}
