@@ -49,8 +49,7 @@ import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
 import AdminResumeView from "./AdminResumeView";
 import JobAdminPage from "./JobAdminPage";
-import UserProfileModal from "./UserProfileModal";
-import FeatureBannerConfig from "./FeatureBannerConfig";
+
 import ImportQuizModal from "./ImportQuizModal";
 import AllUsersAdmin from "./AllUsersAdmin";
 import ReferralAdmin from "./ReferralAdmin";
@@ -102,7 +101,7 @@ const AdminDashboard = () => {
   const [syncingRefunds, setSyncingRefunds] = useState(false);
   const [importingInterns, setImportingInterns] = useState(false);
   const [showImportQuizModal, setShowImportQuizModal] = useState(false);
-  const [showFeatureBannerConfig, setShowFeatureBannerConfig] = useState(false);
+
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -3864,10 +3863,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <FeatureBannerConfig
-        isOpen={showFeatureBannerConfig}
-        onClose={() => setShowFeatureBannerConfig(false)}
-      />
+
 
       <ImportQuizModal
         isOpen={showImportQuizModal}
