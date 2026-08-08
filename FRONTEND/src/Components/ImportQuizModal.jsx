@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { X, UploadCloud, Loader2, Download } from 'lucide-react';
@@ -6,13 +6,39 @@ import * as XLSX from 'xlsx';
 
 const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [existingQuizzes, setExistingQuizzes] = useState([]);
   const [formData, setFormData] = useState({
     quizName: '',
+    quizDate: '',
     sponsorName: '',
     excelFile: null,
     sponsorLogo: null,
     sponsorSignature: null
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchQuizzes = async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const names = new Set();
+          res.data.applicants.forEach(app => {
+            if (app.quizName) names.add(app.quizName);
+            if (app.quizzes) {
+              app.quizzes.forEach(q => names.add(q.quizName));
+            }
+          });
+          setExistingQuizzes(Array.from(names));
+        } catch (err) {
+          console.error("Failed to fetch existing quizzes", err);
+        }
+      };
+      fetchQuizzes();
+    }
+  }, [isOpen]);
 
   const handleFileChange = (e, field) => {
     const file = e.target.files[0];
@@ -23,10 +49,26 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
 
   const downloadSampleExcel = () => {
     const data = [{
-      "Name": "John Doe",
-      "Email": "john@example.com",
-      "Mobile": "1234567890",
       "Registration ID": "REG123",
+      "Candidate's Name": "John Doe",
+      "Candidate's Email": "john@example.com",
+      "Candidate's Mobile": "1234567890",
+      "Candidate's Gender": "Male",
+      "Candidate's Location": "Delhi",
+      "User type": "Student",
+      "Domain": "Engineering",
+      "Course": "B.Tech",
+      "Specialization": "Computer Science",
+      "Course Type": "Full Time",
+      "Course Duration": "4 Years",
+      "Year of Graduation": "2026",
+      "Candidate's Organisation": "XYZ College",
+      "Designation": "Student",
+      "Registration Time": "2026-08-01 10:00:00",
+      "Differently Abled": "No",
+      "Reg. Status": "Completed",
+      "Ref Code": "REF001",
+      "Resume": "https://link-to-resume.com",
       "Score": "85",
       "Total Score": "100",
       "Result": "1st",
@@ -51,6 +93,7 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
     setLoading(true);
     const data = new FormData();
     data.append('quizName', formData.quizName);
+    if (formData.quizDate) data.append('quizDate', formData.quizDate);
     if (formData.sponsorName) data.append('sponsorName', formData.sponsorName);
     data.append('excelFile', formData.excelFile);
     if (formData.sponsorLogo) data.append('sponsorLogo', formData.sponsorLogo);
@@ -119,19 +162,42 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
                 Download Sample Excel
               </button>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Quiz Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Quiz Name *
+                </label>
+                <input
+                  type="text"
+                  list="quizNamesList"
+                  required
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  placeholder="Select or enter Quiz Name"
+                  value={formData.quizName}
+                  onChange={(e) => setFormData({ ...formData, quizName: e.target.value })}
+                />
+                <datalist id="quizNamesList">
+                  {existingQuizzes.map((name, idx) => (
+                    <option key={idx} value={name} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-slate-500 mt-1">Select an existing quiz to update it, or type a new name.</p>
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Quiz Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 bg-slate-50"
-                placeholder="e.g., Summer Coding Assessment 2026"
-                value={formData.quizName}
-                onChange={(e) => setFormData({...formData, quizName: e.target.value})}
-              />
+              {/* Quiz Date */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Quiz Date (Optional)
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  value={formData.quizDate}
+                  onChange={(e) => setFormData({ ...formData, quizDate: e.target.value })}
+                />
+                <p className="text-xs text-slate-500 mt-1">Will be displayed on the certificate.</p>
+              </div>
             </div>
 
             <div>

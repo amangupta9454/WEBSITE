@@ -1999,11 +1999,11 @@ const QuizApplicant = require("../models/QuizApplicant");
 
 const importQuizUsers = async (req, res) => {
   try {
-    if (!req.files || !req.files['excelFile']) {
-      return res.status(400).json({ success: false, message: "No excel file uploaded" });
+    if (!req.files || !req.files.excelFile) {
+      return res.status(400).json({ success: false, message: "Excel file is required" });
     }
 
-    const { quizName, sponsorName } = req.body;
+    const { quizName, quizDate, sponsorName } = req.body;
     if (!quizName) {
       return res.status(400).json({ success: false, message: "Quiz Name is required" });
     }
@@ -2073,6 +2073,12 @@ const importQuizUsers = async (req, res) => {
       const courseDuration = (row.courseduration || "").toString().trim();
       const yearOfGraduation = (row.yearofgraduation || "").toString().trim();
       const organisation = (row.candidatesorganisation || row.organisation || "").toString().trim();
+      const courseType = (row.coursetype || "").toString().trim();
+      const designation = (row.designation || "").toString().trim();
+      const registrationTime = (row.registrationtime || "").toString().trim();
+      const differentlyAbled = (row.differentlyabled || "").toString().trim();
+      const regStatus = (row.regstatus || row.registrationstatus || "").toString().trim();
+      const refCode = (row.refcode || row.referralcode || "").toString().trim();
       const resumeUrl = (row.resume || "").toString().trim();
 
       // Result and score detection
@@ -2099,6 +2105,7 @@ const importQuizUsers = async (req, res) => {
         sponsorName: sponsorName ? sponsorName.trim() : "",
         sponsorLogo: sponsorLogoUrl,
         sponsorSignature: sponsorSignatureUrl,
+        quizDate: quizDate ? quizDate.trim() : "",
         importedAt: new Date()
       };
 
@@ -2123,6 +2130,12 @@ const importQuizUsers = async (req, res) => {
         if (courseDuration) existingApplicant.courseDuration = courseDuration;
         if (yearOfGraduation) existingApplicant.yearOfGraduation = yearOfGraduation;
         if (organisation) existingApplicant.organisation = organisation;
+        if (courseType) existingApplicant.courseType = courseType;
+        if (designation) existingApplicant.designation = designation;
+        if (registrationTime) existingApplicant.registrationTime = registrationTime;
+        if (differentlyAbled) existingApplicant.differentlyAbled = differentlyAbled;
+        if (regStatus) existingApplicant.regStatus = regStatus;
+        if (refCode) existingApplicant.refCode = refCode;
         if (resumeUrl) existingApplicant.resumeUrl = resumeUrl;
 
         if (!existingApplicant.quizzes || !Array.isArray(existingApplicant.quizzes)) {
@@ -2144,6 +2157,7 @@ const importQuizUsers = async (req, res) => {
             sponsorName: existingApplicant.sponsorName || "",
             sponsorLogo: existingApplicant.sponsorLogo || "",
             sponsorSignature: existingApplicant.sponsorSignature || "",
+            quizDate: existingApplicant.quizDate || "",
             importedAt: existingApplicant.createdAt || new Date()
           });
         }
@@ -2164,6 +2178,7 @@ const importQuizUsers = async (req, res) => {
           if (sponsorName) existingApplicant.quizzes[existingQuizIdx].sponsorName = sponsorName.trim();
           if (sponsorLogoUrl) existingApplicant.quizzes[existingQuizIdx].sponsorLogo = sponsorLogoUrl;
           if (sponsorSignatureUrl) existingApplicant.quizzes[existingQuizIdx].sponsorSignature = sponsorSignatureUrl;
+          if (quizDate) existingApplicant.quizzes[existingQuizIdx].quizDate = quizDate.trim();
         } else {
           existingApplicant.quizzes.push(quizItem);
         }
@@ -2180,6 +2195,7 @@ const importQuizUsers = async (req, res) => {
         if (sponsorName) existingApplicant.sponsorName = sponsorName.trim();
         if (sponsorLogoUrl) existingApplicant.sponsorLogo = sponsorLogoUrl;
         if (sponsorSignatureUrl) existingApplicant.sponsorSignature = sponsorSignatureUrl;
+        if (quizDate) existingApplicant.quizDate = quizDate.trim();
 
         await existingApplicant.save();
       } else {
@@ -2202,6 +2218,12 @@ const importQuizUsers = async (req, res) => {
           courseDuration,
           yearOfGraduation,
           organisation,
+          courseType,
+          designation,
+          registrationTime,
+          differentlyAbled,
+          regStatus,
+          refCode,
           resumeUrl,
           score,
           totalScore,
@@ -2213,6 +2235,7 @@ const importQuizUsers = async (req, res) => {
           sponsorName: sponsorName ? sponsorName.trim() : "",
           sponsorLogo: sponsorLogoUrl,
           sponsorSignature: sponsorSignatureUrl,
+          quizDate: quizDate ? quizDate.trim() : "",
           quizzes: [quizItem]
         });
 

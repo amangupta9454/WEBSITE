@@ -14,6 +14,7 @@ const quizSchema = new mongoose.Schema(
     sponsorName: { type: String, default: "" },
     sponsorLogo: { type: String, default: "" },
     sponsorSignature: { type: String, default: "" },
+    quizDate: { type: String, default: "" },
     importedAt: { type: Date, default: Date.now }
   },
   { _id: true }
@@ -35,6 +36,12 @@ const quizApplicantSchema = new mongoose.Schema(
     courseDuration: { type: String },
     yearOfGraduation: { type: String },
     organisation: { type: String },
+    courseType: { type: String },
+    designation: { type: String },
+    registrationTime: { type: String },
+    differentlyAbled: { type: String },
+    regStatus: { type: String },
+    refCode: { type: String },
     resumeUrl: { type: String },
     score: { type: String, default: "N/A" },
     totalScore: { type: String, default: "N/A" },

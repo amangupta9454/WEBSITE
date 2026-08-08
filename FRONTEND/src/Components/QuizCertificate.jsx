@@ -131,7 +131,14 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
   const sponsorLogoUrl = quizData?.sponsorLogo || "";
   const sponsorSignatureUrl = quizData?.sponsorSignature || "";
 
-  const issueDate = new Date(quizData?.importedAt || new Date()).toLocaleDateString('en-US', {
+  const quizDateStr = quizData?.quizDate;
+  const parsedQuizDate = quizDateStr ? new Date(quizDateStr).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : null;
+
+  const issueDate = parsedQuizDate || new Date(quizData?.importedAt || new Date()).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -212,9 +219,15 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             for successfully completing the assessment:
           </p>
 
-          <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#1f2937', margin: '0 0 20px 0' }}>
+          <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 5px 0' : '0 0 20px 0' }}>
             {quizName}
           </h3>
+
+          {parsedQuizDate && (
+            <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px 0', fontWeight: 600 }}>
+              Held on {parsedQuizDate}
+            </p>
+          )}
 
           <div style={{ display: 'flex', gap: '30px', marginBottom: 'auto' }}>
             {result !== "N/A" && isWinner && (
