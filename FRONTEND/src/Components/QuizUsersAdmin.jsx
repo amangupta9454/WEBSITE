@@ -446,6 +446,7 @@ const QuizUsersAdmin = () => {
             </div>
           )}
         </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Specific Quiz Detail Header & Back Button */}
