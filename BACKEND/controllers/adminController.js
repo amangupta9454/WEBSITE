@@ -2268,13 +2268,10 @@ const sendQuizCertificate = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email and certificate image are required" });
     }
 
-    // Determine how to attach the base64 image
-    // Data URL format: data:image/jpeg;base64,/9j/4AAQSkZJRg...
     let base64Data = certificateImage;
     if (certificateImage.includes("base64,")) {
       base64Data = certificateImage.split("base64,")[1];
     }
-    const mailService = require("../services/mailService");
     
     const isWinner = result && result.match(/1st|2nd|3rd|winner/i);
     const dashboardLink = "https://codeanova.com/login"; // Replace with your actual dashboard link if different
@@ -2329,13 +2326,11 @@ const sendQuizCertificate = async (req, res) => {
       </div>
     `;
 
-    const emailResult = await mailService.sendEmail({
+    const mailOptions = {
+      from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: isWinner ? `Congratulations! You secured ${result} in ${quizName}` : `Your Certificate for ${quizName} - Code-A-Nova`,
       html: htmlTemplate,
-      recipientName: name,
-      campaign: "Quiz Certificate",
-      source: "Admin Panel",
       attachments: [
         {
           filename: `Certificate_${(name || "Participant").replace(/\\s+/g, "_")}.jpg`,
@@ -2343,17 +2338,15 @@ const sendQuizCertificate = async (req, res) => {
           encoding: "base64"
         }
       ]
-    });
+    };
 
-    if (emailResult.success) {
-      await QuizApplicant.updateOne(
-        { email, "quizzes.quizName": quizName },
-        { $set: { "quizzes.$.certificateSent": true } }
-      );
-      res.json({ success: true, message: "Certificate sent successfully" });
-    } else {
-      res.status(500).json({ success: false, message: "Failed to send email" });
-    }
+    await transporter.sendMail(mailOptions);
+
+    await QuizApplicant.updateOne(
+      { email, "quizzes.quizName": quizName },
+      { $set: { "quizzes.$.certificateSent": true } }
+    );
+    res.json({ success: true, message: "Certificate sent successfully" });
   } catch (error) {
     console.error("[Admin] Error sending certificate:", error);
     res.status(500).json({ success: false, message: "Server error sending certificate" });

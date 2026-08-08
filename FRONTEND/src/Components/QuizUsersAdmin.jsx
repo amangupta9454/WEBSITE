@@ -560,11 +560,13 @@ const QuizUsersAdmin = () => {
                 </th>
                 <th className="px-2 py-4">Candidate Info</th>
                 {quizFilter === "All Quizzes" ? (
-                  <th className="px-6 py-4">Quiz Enrolled</th>
+                  <>
+                    <th className="px-6 py-4">Quiz Enrolled</th>
+                    <th className="px-6 py-4">Status & Score</th>
+                  </>
                 ) : (
                   <th className="px-6 py-4">Registration ID</th>
                 )}
-                <th className="px-6 py-4">Status & Score</th>
                 <th className="px-6 py-4">Domain & College</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -660,31 +662,6 @@ const QuizUsersAdmin = () => {
                         </td>
                       )}
 
-                      {/* Score & Status */}
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col items-start gap-1">
-                          {targetQuiz.score && targetQuiz.score !== "N/A" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-slate-900 text-white shadow-sm">
-                              Score: {targetQuiz.score} {targetQuiz.totalScore && targetQuiz.totalScore !== "N/A" ? `/ ${targetQuiz.totalScore}` : ""}
-                            </span>
-                          ) : null}
-
-                          {targetQuiz.result && targetQuiz.result !== "N/A" ? (
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              targetQuiz.result?.toLowerCase().includes("pass") || targetQuiz.result?.toLowerCase().includes("qual")
-                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                : "bg-indigo-100 text-indigo-800 border border-indigo-200"
-                            }`}>
-                              {targetQuiz.result}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Registered
-                            </span>
-                          )}
-
-                          {targetQuiz.certificateSent && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200/80 px-2 py-0.5 rounded-full mt-1">
                               <CheckCircle2 className="w-3 h-3 text-green-600" /> Email Sent
                             </span>
                           )}

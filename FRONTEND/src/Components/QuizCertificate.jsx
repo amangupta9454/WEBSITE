@@ -181,7 +181,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
           
           {/* Top logos container */}
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '10px', alignItems: 'flex-start' }}>
-            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '90px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
+            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
               <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '60px', maxWidth: '150px', objectFit: 'contain', objectPosition: 'right' }} crossOrigin="anonymous" />
@@ -207,9 +207,9 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             fontSize: '36px', 
             fontWeight: 800, 
             color: '#2563eb', // Blue-600
-            margin: '0 0 10px 0',
+            margin: '0 0 8px 0',
             borderBottom: '2px solid #bfdbfe',
-            paddingBottom: '5px',
+            paddingBottom: '12px',
             width: '80%',
             fontFamily: '"Playfair Display", serif'
           }}>
