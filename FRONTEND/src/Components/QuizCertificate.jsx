@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import html2canvas from 'html2canvas-pro';
+import html2canvas from 'html2canvas';
+import logo from '../assets/logo.png';
 import jsPDF from 'jspdf';
 
 const useTransparentWhiteLogo = (src) => {
@@ -153,17 +154,17 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
           width: '800px',
           height: '600px',
           backgroundColor: '#ffffff',
-          backgroundImage: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f3f4f6 100%)',
+          backgroundImage: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #eff6ff 100%)', // Light blue gradient
           position: 'relative',
           overflow: 'hidden',
           fontFamily: '"Inter", "Segoe UI", sans-serif',
-          border: '16px solid #1e1b4b', // deep indigo border
+          border: '16px solid #1e40af', // Blue border
           boxSizing: 'border-box'
         }}
       >
         {/* Decorative elements */}
-        <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderRadius: '50%' }}></div>
-        <div style={{ position: 'absolute', bottom: '-150px', right: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(124, 58, 237, 0.1)', borderRadius: '50%' }}></div>
+        <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%' }}></div>
+        <div style={{ position: 'absolute', bottom: '-150px', right: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%' }}></div>
         
         {/* Inner border */}
         <div style={{
@@ -176,82 +177,82 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
           zIndex: 1
         }}></div>
 
-        <div style={{ position: 'relative', zIndex: 10, padding: '40px 60px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '25px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '20px', alignItems: 'center' }}>
-            <img src="/LOGO.png" alt="Code-A-Nova Logo" style={{ height: '50px', objectFit: 'contain' }} crossOrigin="anonymous" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '10px', alignItems: 'center' }}>
+            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '70px', objectFit: 'contain' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '50px', maxWidth: '150px', objectFit: 'contain' }} crossOrigin="anonymous" />
+              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '60px', maxWidth: '150px', objectFit: 'contain' }} crossOrigin="anonymous" />
             )}
           </div>
 
           <h1 style={{ 
-            fontSize: '44px', 
+            fontSize: '38px', 
             fontWeight: 900, 
-            color: isWinner ? '#f59e0b' : '#111827', // Amber for winners, black for participants
-            margin: '0 0 10px 0',
+            color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
+            margin: '0 0 5px 0',
             letterSpacing: '-1px',
             textTransform: 'uppercase'
           }}>
             {certificateTitle}
           </h1>
 
-          <p style={{ fontSize: '18px', color: '#4b5563', margin: '0 0 20px 0', fontWeight: 500 }}>
+          <p style={{ fontSize: '16px', color: '#4b5563', margin: '0 0 10px 0', fontWeight: 500 }}>
             This is proudly presented to
           </p>
 
           <h2 style={{ 
-            fontSize: '42px', 
+            fontSize: '36px', 
             fontWeight: 800, 
-            color: '#4f46e5', // indigo-600
-            margin: '0 0 20px 0',
-            borderBottom: '2px solid #e5e7eb',
-            paddingBottom: '10px',
+            color: '#2563eb', // Blue-600
+            margin: '0 0 10px 0',
+            borderBottom: '2px solid #bfdbfe',
+            paddingBottom: '5px',
             width: '80%',
             fontFamily: '"Playfair Display", serif'
           }}>
             {name}
           </h2>
 
-          <p style={{ fontSize: '16px', color: '#4b5563', margin: '0 0 10px 0' }}>
+          <p style={{ fontSize: '14px', color: '#4b5563', margin: '0 0 5px 0' }}>
             for successfully completing the assessment:
           </p>
 
-          <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 5px 0' : '0 0 20px 0' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 2px 0' : '0 0 10px 0' }}>
             {quizName}
           </h3>
 
           {parsedQuizDate && (
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px 0', fontWeight: 600 }}>
+            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 10px 0', fontWeight: 600 }}>
               Held on {parsedQuizDate}
             </p>
           )}
 
-          <div style={{ display: 'flex', gap: '30px', marginBottom: 'auto' }}>
+          <div style={{ display: 'flex', gap: '20px', marginBottom: 'auto' }}>
             {result !== "N/A" && isWinner && (
-              <div style={{ padding: '8px 16px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
-                <div style={{ fontSize: '11px', color: '#d97706', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Position</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#92400e' }}>
+              <div style={{ padding: '6px 14px', backgroundColor: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                <div style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Position</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e3a8a' }}>
                   {result}
                 </div>
               </div>
             )}
 
             {(score || percentage) && (
-              <div style={{ padding: '8px 16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Score</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+              <div style={{ padding: '6px 14px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Score</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
                   {score && totalScore ? `${score} / ${totalScore}` : (score || `${percentage}`)}
                 </div>
               </div>
             )}
             
             {percentage && !score && (
-              <div style={{ padding: '8px 16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Percentage</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+              <div style={{ padding: '6px 14px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Percentage</div>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
                   {percentage}
                 </div>
               </div>
@@ -262,7 +263,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             display: 'flex', 
             justifyContent: 'space-between', 
             width: '100%', 
-            marginTop: '20px',
+            marginTop: '15px',
             alignItems: 'flex-end'
           }}>
             {/* Left side: Code-A-Nova Signature */}

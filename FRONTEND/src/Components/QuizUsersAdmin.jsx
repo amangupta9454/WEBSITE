@@ -30,6 +30,7 @@ const QuizUsersAdmin = () => {
   const [quizApplicants, setQuizApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [quizFilter, setQuizFilter] = useState("All Quizzes");
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [applicantToDelete, setApplicantToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -164,9 +165,11 @@ const QuizUsersAdmin = () => {
       const applicant = quizApplicants.find(a => a._id === id);
       if (!applicant) continue;
       
-      const quiz = applicant.quizzes && applicant.quizzes.length > 0 
-        ? applicant.quizzes[0] 
-        : { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result };
+      const quiz = (quizFilter !== "All Quizzes") 
+        ? (applicant.quizzes?.find(q => q.quizName === quizFilter) || { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result })
+        : (applicant.quizzes && applicant.quizzes.length > 0 
+            ? applicant.quizzes[0] 
+            : { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result });
         
       setSendingProgress({ current: i + 1, total: selectedIds.size });
       
@@ -203,7 +206,7 @@ const QuizUsersAdmin = () => {
   const filteredApplicants = quizApplicants.filter(app => {
     const q = searchQuery.toLowerCase();
     const quizNames = app.quizzes?.map(qz => qz.quizName?.toLowerCase()).join(" ") || "";
-    return (
+    const matchesSearch = (
       app.name?.toLowerCase().includes(q) ||
       app.email?.toLowerCase().includes(q) ||
       app.quizName?.toLowerCase().includes(q) ||
@@ -212,10 +215,16 @@ const QuizUsersAdmin = () => {
       app.organisation?.toLowerCase().includes(q) ||
       app.domain?.toLowerCase().includes(q)
     );
+
+    if (quizFilter !== "All Quizzes") {
+      const hasQuiz = app.quizzes?.some(qz => qz.quizName === quizFilter) || app.quizName === quizFilter;
+      return matchesSearch && hasQuiz;
+    }
+    return matchesSearch;
   });
 
   // Calculate quick metrics
-  const uniqueQuizzes = Array.from(
+  const uniqueQuizzesList = Array.from(
     new Set(
       quizApplicants.flatMap(app => 
         app.quizzes && app.quizzes.length > 0
@@ -223,7 +232,8 @@ const QuizUsersAdmin = () => {
           : [app.quizName]
       ).filter(Boolean)
     )
-  ).length;
+  ).sort();
+  const uniqueQuizzes = uniqueQuizzesList.length;
 
   const totalResumes = quizApplicants.filter(
     app => app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A'
@@ -309,9 +319,27 @@ const QuizUsersAdmin = () => {
 
       {/* Toolbar & Search */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs font-semibold text-slate-500">
+        <div className="text-xs font-semibold text-slate-500 min-w-max">
           Showing <strong className="text-slate-900">{filteredApplicants.length}</strong> of {quizApplicants.length} applicants
         </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* Quiz Filter */}
+          <div className="relative min-w-[200px]">
+            <select
+              value={quizFilter}
+              onChange={(e) => setQuizFilter(e.target.value)}
+              className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+            >
+              <option value="All Quizzes">All Quizzes</option>
+              {uniqueQuizzesList.map((qName, idx) => (
+                <option key={idx} value={qName}>{qName}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
 
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -330,6 +358,7 @@ const QuizUsersAdmin = () => {
               Clear
             </button>
           )}
+        </div>
         </div>
       </div>
 
@@ -362,7 +391,10 @@ const QuizUsersAdmin = () => {
                     : [{ quizName: app.quizName, registrationId: app.registrationId, score: app.score, result: app.result }];
 
                   const hasResume = app.resumeUrl && app.resumeUrl !== 'NA' && app.resumeUrl !== 'N/A';
-                  const firstQuiz = quizList[0];
+                  
+                  const targetQuiz = (quizFilter !== "All Quizzes")
+                    ? (app.quizzes?.find(q => q.quizName === quizFilter) || quizList[0])
+                    : quizList[0];
 
                   return (
                     <tr key={app._id} className={`hover:bg-slate-50/70 transition-colors ${selectedIds.has(app._id) ? 'bg-indigo-50/30' : ''}`}>
@@ -477,7 +509,7 @@ const QuizUsersAdmin = () => {
                         <div className="flex items-center justify-end gap-1.5 flex-wrap">
                           {/* Download Cert */}
                           <button
-                            onClick={() => handleDownloadSingle(app, firstQuiz)}
+                            onClick={() => handleDownloadSingle(app, targetQuiz)}
                             className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-100 transition-colors"
                             title="Download Certificate"
                           >
@@ -486,7 +518,7 @@ const QuizUsersAdmin = () => {
                           
                           {/* Send Cert */}
                           <button
-                            onClick={() => handleSendSingle(app, firstQuiz)}
+                            onClick={() => handleSendSingle(app, targetQuiz)}
                             className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-100 transition-colors"
                             title="Send Certificate to Email"
                           >
@@ -502,18 +534,7 @@ const QuizUsersAdmin = () => {
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Resume Link */}
-                          {hasResume && (
-                            <a
-                              href={app.resumeUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition-colors"
-                              title="Open Candidate Resume"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </a>
-                          )}
+
 
                           {/* Delete Button */}
                           <button
