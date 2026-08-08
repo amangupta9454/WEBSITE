@@ -991,7 +991,7 @@ const QuizUsersAdmin = () => {
         applicant={certData?.applicant} 
         quizData={certData?.quizData} 
       />
-      </>
+      </div>
       )}
 
     </div>
