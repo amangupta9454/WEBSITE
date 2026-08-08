@@ -465,19 +465,19 @@ const QuizUsersAdmin = () => {
                       {/* Score & Status */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col items-start gap-1">
-                          {firstQuiz.score && firstQuiz.score !== "N/A" ? (
+                          {targetQuiz.score && targetQuiz.score !== "N/A" ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black bg-slate-900 text-white shadow-sm">
-                              Score: {firstQuiz.score} {firstQuiz.totalScore && firstQuiz.totalScore !== "N/A" ? `/ ${firstQuiz.totalScore}` : ""}
+                              Score: {targetQuiz.score} {targetQuiz.totalScore && targetQuiz.totalScore !== "N/A" ? `/ ${targetQuiz.totalScore}` : ""}
                             </span>
                           ) : null}
 
-                          {firstQuiz.result && firstQuiz.result !== "N/A" ? (
+                          {targetQuiz.result && targetQuiz.result !== "N/A" ? (
                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              firstQuiz.result?.toLowerCase().includes("pass") || firstQuiz.result?.toLowerCase().includes("qual")
+                              targetQuiz.result?.toLowerCase().includes("pass") || targetQuiz.result?.toLowerCase().includes("qual")
                                 ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                 : "bg-indigo-100 text-indigo-800 border border-indigo-200"
                             }`}>
-                              {firstQuiz.result}
+                              {targetQuiz.result}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
