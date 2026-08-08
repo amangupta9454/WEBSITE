@@ -180,11 +180,11 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
         <div style={{ position: 'relative', zIndex: 10, padding: '25px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '10px', alignItems: 'center' }}>
-            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '70px', objectFit: 'contain' }} crossOrigin="anonymous" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '10px', alignItems: 'flex-start' }}>
+            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '90px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '60px', maxWidth: '150px', objectFit: 'contain' }} crossOrigin="anonymous" />
+              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '60px', maxWidth: '150px', objectFit: 'contain', objectPosition: 'right' }} crossOrigin="anonymous" />
             )}
           </div>
 
@@ -264,17 +264,18 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             justifyContent: 'space-between', 
             width: '100%', 
             marginTop: '15px',
+            marginBottom: '15px',
             alignItems: 'flex-end'
           }}>
             {/* Left side: Code-A-Nova Signature */}
             <div style={{ textAlign: 'center', width: '200px' }}>
-              <div style={{ height: '50px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+              <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
                  {/* Placeholder for Code-A-Nova founder signature until provided */}
-                 <span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '28px', color: '#1e3a8a' }}>Himanshu Gupta</span>
+                 <span style={{ fontFamily: '"Brush Script MT", cursive', fontSize: '32px', color: '#1e3a8a' }}>Himanshu Gupta</span>
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
-              <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>Himanshu Gupta</p>
-              <p style={{ fontSize: '10px', color: '#6b7280', margin: 0, fontWeight: 500 }}>Founder, Code-A-Nova</p>
+              <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Himanshu Gupta</p>
+              <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, fontWeight: 500 }}>Founder, Code-A-Nova</p>
             </div>
 
             {/* Middle: Details */}
@@ -296,19 +297,19 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
             <div style={{ textAlign: 'center', width: '200px' }}>
               {sponsorSignatureUrl ? (
                 <>
-                  <div style={{ height: '50px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+                  <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
                     <img src={sponsorSignatureUrl} alt="Sponsor Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
                   </div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>Authorized Signatory</p>
-                  {sponsorName && <p style={{ fontSize: '10px', color: '#6b7280', margin: 0, fontWeight: 500 }}>{sponsorName}</p>}
+                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Authorized Signatory</p>
+                  {sponsorName && <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, fontWeight: 500 }}>{sponsorName}</p>}
                 </>
               ) : (
                 <>
-                  <div style={{ height: '50px' }}></div>
+                  <div style={{ height: '60px' }}></div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: 'transparent', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '12px', color: 'transparent', margin: 0, fontWeight: 700 }}>.</p>
-                  <p style={{ fontSize: '10px', color: 'transparent', margin: 0, fontWeight: 500 }}>.</p>
+                  <p style={{ fontSize: '13px', color: 'transparent', margin: 0, fontWeight: 700 }}>.</p>
+                  <p style={{ fontSize: '11px', color: 'transparent', margin: 0, fontWeight: 500 }}>.</p>
                 </>
               )}
             </div>
