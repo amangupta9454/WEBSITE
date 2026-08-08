@@ -559,7 +559,11 @@ const QuizUsersAdmin = () => {
                   />
                 </th>
                 <th className="px-2 py-4">Candidate Info</th>
-                <th className="px-6 py-4">Quiz Enrolled</th>
+                {quizFilter === "All Quizzes" ? (
+                  <th className="px-6 py-4">Quiz Enrolled</th>
+                ) : (
+                  <th className="px-6 py-4">Registration ID</th>
+                )}
                 <th className="px-6 py-4">Status & Score</th>
                 <th className="px-6 py-4">Domain & College</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -618,31 +622,43 @@ const QuizUsersAdmin = () => {
                       </td>
 
                       {/* Quiz Details Pill & ID */}
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1.5 items-start">
-                          {quizList.slice(0, 2).map((q, idx) => (
-                            <div key={idx} className="flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[240px] truncate" title={q.quizName}>
-                                <Sparkles className="w-3 h-3 text-indigo-500 flex-shrink-0" />
-                                {q.quizName}
-                              </span>
-                              {q.registrationId && (
-                                <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                                  ID: {q.registrationId}
+                      {quizFilter === "All Quizzes" ? (
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            {quizList.slice(0, 2).map((q, idx) => (
+                              <div key={idx} className="flex items-center gap-2 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[240px] truncate" title={q.quizName}>
+                                  <Sparkles className="w-3 h-3 text-indigo-500 flex-shrink-0" />
+                                  {q.quizName}
                                 </span>
-                              )}
-                            </div>
-                          ))}
-                          {quizList.length > 2 && (
-                            <button 
-                              onClick={() => setSelectedApplicant(app)}
-                              className="text-xs text-indigo-600 font-bold hover:underline"
-                            >
-                              +{quizList.length - 2} more quiz registrations
-                            </button>
+                                {q.registrationId && (
+                                  <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                    ID: {q.registrationId}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {quizList.length > 2 && (
+                              <button 
+                                onClick={() => setSelectedApplicant(app)}
+                                className="text-xs text-indigo-600 font-bold hover:underline"
+                              >
+                                +{quizList.length - 2} more quizzes
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      ) : (
+                        <td className="px-6 py-4">
+                          {targetQuiz.registrationId ? (
+                            <span className="text-[12px] font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-md border border-slate-200">
+                              {targetQuiz.registrationId}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">N/A</span>
                           )}
-                        </div>
-                      </td>
+                        </td>
+                      )}
 
                       {/* Score & Status */}
                       <td className="px-6 py-4">
