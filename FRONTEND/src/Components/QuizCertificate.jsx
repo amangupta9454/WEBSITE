@@ -287,6 +287,9 @@ const QuizCertificate = forwardRef(({ applicant, quizData }, ref) => {
                   <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Certificate ID</p>
                   <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700, fontFamily: 'monospace' }}>{idCode}</p>
                </div>
+               <div>
+                  <p style={{ fontSize: '11px', color: '#1e40af', margin: '5px 0 0 0', fontWeight: 700 }}>www.code-a-nova.online</p>
+               </div>
             </div>
 
             {/* Right side: Sponsor Signature */}
