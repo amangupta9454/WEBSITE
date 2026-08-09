@@ -228,6 +228,7 @@ const QuizUsersAdmin = () => {
     
     let successCount = 0;
     let failCount = 0;
+    let skippedCount = 0;
     const token = localStorage.getItem('adminToken');
     
     const selectedArray = Array.from(selectedIds);
@@ -237,10 +238,16 @@ const QuizUsersAdmin = () => {
       if (!applicant) continue;
       
       const quiz = (quizFilter !== "All Quizzes") 
-        ? (applicant.quizzes?.find(q => q.quizName === quizFilter) || { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result })
+        ? (applicant.quizzes?.find(q => q.quizName === quizFilter) || { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result, certificateSent: applicant.certificateSent })
         : (applicant.quizzes && applicant.quizzes.length > 0 
             ? applicant.quizzes[0] 
-            : { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result });
+            : { quizName: applicant.quizName, registrationId: applicant.registrationId, score: applicant.score, result: applicant.result, certificateSent: applicant.certificateSent });
+        
+      if (quiz.certificateSent) {
+        skippedCount++;
+        setSendingProgress({ current: i + 1, total: selectedIds.size });
+        continue;
+      }
         
       setSendingProgress({ current: i + 1, total: selectedIds.size });
       
@@ -273,8 +280,9 @@ const QuizUsersAdmin = () => {
     }
     
     setIsSendingBulk(false);
-    toast.success(`Bulk send complete: ${successCount} sent, ${failCount} failed.`);
+    toast.success(`Bulk send complete: ${successCount} sent, ${skippedCount} skipped (already sent), ${failCount} failed.`);
     setSelectedIds(new Set()); // clear selection
+    fetchQuizApplicants(); // Refresh data to reflect sent status
   };
 
   const filteredApplicants = quizApplicants.filter(app => {
