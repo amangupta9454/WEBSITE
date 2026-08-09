@@ -5,6 +5,7 @@ const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
 const ProjectSubmission = require("../models/ProjectSubmission");
+const QuizSponsor = require("../models/QuizSponsor");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -2301,9 +2302,27 @@ const sendQuizCertificate = async (req, res) => {
       base64Data = certificateImage.split("base64,")[1];
     }
     
+    // Fetch sponsor details for LinkedIn tagging
+    const sponsor = await QuizSponsor.findOne({ quizName: quizName.trim() });
+    
     const isWinner = result && result.match(/1st|2nd|3rd|winner/i);
     const dashboardLink = "https://codeanova.com/login"; // Replace with your actual dashboard link if different
     
+    let linkedinShareHtml = `
+      <div style="background-color: #f0f8ff; border-radius: 8px; padding: 15px; margin: 25px 0; border-left: 4px solid #0077b5;">
+        <p style="font-size: 15px; font-weight: bold; color: #0f172a; margin-top: 0; margin-bottom: 8px;">Share your achievement on LinkedIn! 🚀</p>
+        <p style="font-size: 14px; color: #334155; margin-bottom: 12px; margin-top: 0;">
+          Don't forget to follow and tag us in your post to get officially featured & reposted!
+        </p>
+        <ul style="font-size: 14px; color: #334155; padding-left: 20px; margin-bottom: 0;">
+          <li style="margin-bottom: 5px;"><a href="https://www.linkedin.com/in/himanshu561hi/" style="color: #0077b5; text-decoration: none; font-weight: bold;">Himanshu Gupta</a></li>
+          <li style="margin-bottom: 5px;"><a href="https://www.linkedin.com/in/amangupta9454/" style="color: #0077b5; text-decoration: none; font-weight: bold;">Aman Gupta</a></li>
+          <li style="margin-bottom: 5px;"><a href="https://www.linkedin.com/company/code-a-nova/" style="color: #0077b5; text-decoration: none; font-weight: bold;">Code A Nova</a></li>
+          ${sponsor && sponsor.sponsorName && sponsor.sponsorLinkedIn ? `<li style="margin-bottom: 5px;"><a href="${sponsor.sponsorLinkedIn}" style="color: #0077b5; text-decoration: none; font-weight: bold;">${sponsor.sponsorName}</a> (Sponsor)</li>` : ""}
+        </ul>
+      </div>
+    `;
+
     let messageBody = "";
     if (customMessage) {
       let formattedMsg = customMessage.replace(/{{name}}/g, name || "Participant");
@@ -2316,6 +2335,7 @@ const sendQuizCertificate = async (req, res) => {
         <p style="font-size: 16px; line-height: 1.5;">
           Your official certificate is attached to this email. You can download and share it with your network!
         </p>
+        ${linkedinShareHtml}
       `;
     } else {
       messageBody = `
@@ -2335,6 +2355,7 @@ const sendQuizCertificate = async (req, res) => {
         <p style="font-size: 16px; line-height: 1.5;">
           We have also attached your official certificate to this email for your convenience. You can download and share it with your network!
         </p>
+        ${linkedinShareHtml}
       `;
     }
 
@@ -2468,7 +2489,8 @@ const getQuizSponsorDetails = async (req, res) => {
         success: true,
         sponsorDetails: {
           sponsorLogo: sponsor.sponsorLogo || "",
-          sponsorSignature: sponsor.sponsorSignature || ""
+          sponsorSignature: sponsor.sponsorSignature || "",
+          sponsorLinkedIn: sponsor.sponsorLinkedIn || ""
         }
       });
     }
@@ -2492,11 +2514,11 @@ const getQuizSponsorDetails = async (req, res) => {
   }
 };
 
-const QuizSponsor = require("../models/QuizSponsor");
+
 
 const updateQuizSponsor = async (req, res) => {
   try {
-    const { quizName, sponsorName, sponsorLogoUrl, sponsorSignatureUrl, sponsorSignatoryName, quizDate } = req.body;
+    const { quizName, sponsorName, sponsorLogoUrl, sponsorSignatureUrl, sponsorSignatoryName, quizDate, sponsorLinkedIn } = req.body;
     
     if (!quizName) {
       return res.status(400).json({ success: false, message: "Quiz Name is required" });
@@ -2510,6 +2532,7 @@ const updateQuizSponsor = async (req, res) => {
           sponsorName: sponsorName !== undefined ? sponsorName.trim() : "",
           sponsorSignatoryName: sponsorSignatoryName !== undefined ? sponsorSignatoryName.trim() : "",
           quizDate: quizDate !== undefined ? quizDate.trim() : "",
+          sponsorLinkedIn: sponsorLinkedIn !== undefined ? sponsorLinkedIn.trim() : "",
           ...(sponsorLogoUrl !== undefined && { sponsorLogo: sponsorLogoUrl }),
           ...(sponsorSignatureUrl !== undefined && { sponsorSignature: sponsorSignatureUrl })
         }

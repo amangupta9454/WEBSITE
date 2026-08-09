@@ -8,6 +8,7 @@ const quizSponsorSchema = new mongoose.Schema(
     quizDate: { type: String, default: "" },
     sponsorLogo: { type: String, default: "" },
     sponsorSignature: { type: String, default: "" },
+    sponsorLinkedIn: { type: String, default: "" },
   },
   { timestamps: true }
 );

@@ -3,10 +3,11 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { X, Upload, Calendar, Building2, Loader2, Info } from 'lucide-react';
 
-const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initialSponsorSignatoryName, initialQuizDate, onUpdateSuccess }) => {
+const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initialSponsorSignatoryName, initialQuizDate, initialSponsorLinkedIn, onUpdateSuccess }) => {
   const [sponsorName, setSponsorName] = useState(initialSponsorName || '');
   const [sponsorSignatoryName, setSponsorSignatoryName] = useState(initialSponsorSignatoryName || '');
   const [quizDate, setQuizDate] = useState(initialQuizDate || '');
+  const [sponsorLinkedIn, setSponsorLinkedIn] = useState(initialSponsorLinkedIn || '');
   const [sponsorLogoBase64, setSponsorLogoBase64] = useState("");
   const [sponsorSignatureBase64, setSponsorSignatureBase64] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -24,6 +25,27 @@ const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initi
       reader.readAsDataURL(file);
     }
   };
+
+  React.useEffect(() => {
+    if (isOpen && quizName) {
+      const fetchSponsorDetails = async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/sponsor/${encodeURIComponent(quizName)}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.data.success && res.data.sponsorDetails) {
+            if (res.data.sponsorDetails.sponsorLinkedIn) {
+              setSponsorLinkedIn(res.data.sponsorDetails.sponsorLinkedIn);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch sponsor details:", err);
+        }
+      };
+      fetchSponsorDetails();
+    }
+  }, [isOpen, quizName]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +65,7 @@ const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initi
       if (sponsorName !== undefined) payload.sponsorName = sponsorName;
       if (sponsorSignatoryName !== undefined) payload.sponsorSignatoryName = sponsorSignatoryName;
       if (quizDate !== undefined) payload.quizDate = quizDate;
+      if (sponsorLinkedIn !== undefined) payload.sponsorLinkedIn = sponsorLinkedIn;
       if (sponsorLogoBase64) payload.sponsorLogoUrl = sponsorLogoBase64;
       if (sponsorSignatureBase64) payload.sponsorSignatureUrl = sponsorSignatureBase64;
 
@@ -108,6 +131,21 @@ const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initi
                 placeholder="e.g., Google, Microsoft"
                 value={sponsorName}
                 onChange={(e) => setSponsorName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm"
+              />
+            </div>
+
+            {/* Sponsor LinkedIn */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-slate-400" />
+                Sponsor LinkedIn URL (Optional)
+              </label>
+              <input
+                type="url"
+                placeholder="https://www.linkedin.com/company/..."
+                value={sponsorLinkedIn}
+                onChange={(e) => setSponsorLinkedIn(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm"
               />
             </div>
