@@ -128,9 +128,24 @@ const QuizUsersAdmin = () => {
     setSelectedIds(newSelected);
   };
 
+  const fetchSponsorDetails = async (quizName) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/sponsor-details/${encodeURIComponent(quizName)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data.sponsorDetails || {};
+    } catch (err) {
+      console.error("Failed to fetch sponsor details:", err);
+      return {};
+    }
+  };
+
   const handleDownloadSingle = async (applicant, quiz) => {
     toast.info(`Preparing certificate for ${applicant.name}...`, { autoClose: 2000 });
-    setCertData({ applicant, quizData: quiz });
+    const sponsorDetails = await fetchSponsorDetails(quiz.quizName);
+    const fullQuizData = { ...quiz, ...sponsorDetails };
+    setCertData({ applicant, quizData: fullQuizData });
     
     // Wait for React to render the hidden certificate and show the toast before blocking the thread
     await new Promise(resolve => setTimeout(resolve, 800));
@@ -171,7 +186,9 @@ const QuizUsersAdmin = () => {
   const executeSendSingle = async (applicant, quiz) => {
     try {
       toast.info(`Generating certificate for ${applicant.name}...`);
-      setCertData({ applicant, quizData: quiz, issueDateOverride: issueDate });
+      const sponsorDetails = await fetchSponsorDetails(quiz.quizName);
+      const fullQuizData = { ...quiz, ...sponsorDetails };
+      setCertData({ applicant, quizData: fullQuizData, issueDateOverride: issueDate });
       
       // Wait for React to render the hidden certificate
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -228,7 +245,9 @@ const QuizUsersAdmin = () => {
       setSendingProgress({ current: i + 1, total: selectedIds.size });
       
       try {
-        setCertData({ applicant, quizData: quiz, issueDateOverride: issueDate });
+        const sponsorDetails = await fetchSponsorDetails(quiz.quizName);
+        const fullQuizData = { ...quiz, ...sponsorDetails };
+        setCertData({ applicant, quizData: fullQuizData, issueDateOverride: issueDate });
         await new Promise(resolve => setTimeout(resolve, 800)); // give it time to render images/canvas
         
         const base64 = await certRef.current.getBase64();
