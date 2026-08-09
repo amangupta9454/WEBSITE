@@ -94,14 +94,15 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
     cardRef.current.style.transform = 'none';
 
     const canvas = await html2canvas(cardRef.current, {
-      scale: 2,
+      scale: 3.5, // Ultra-high DPI (2800x2100 resolution for crystal crisp text & logos)
       useCORS: true,
       backgroundColor: '#ffffff',
       logging: false,
       width: 800,
       height: 600,
       windowWidth: 800,
-      windowHeight: 600
+      windowHeight: 600,
+      imageTimeout: 0
     });
 
     cardRef.current.style.transform = originalTransform;
@@ -113,17 +114,18 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
       const canvas = await generateCanvas();
       if (!canvas) return;
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgData = canvas.toDataURL("image/png", 1.0);
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
-        format: [800, 600]
+        format: [800, 600],
+        compress: true
       });
 
-      pdf.addImage(imgData, "JPEG", 0, 0, 800, 600, undefined, 'FAST');
+      pdf.addImage(imgData, "PNG", 0, 0, 800, 600, undefined, 'SLOW');
 
       const blob = pdf.output('blob');
-      const fileName = `Certificate_${(applicant?.name || "Participant").replace(/\\s+/g, '_')}_${(quizData?.quizName || "Quiz").replace(/\\s+/g, '_')}.pdf`;
+      const fileName = `Certificate_${(applicant?.name || "Participant").replace(/\s+/g, '_')}_${(quizData?.quizName || "Quiz").replace(/\s+/g, '_')}.pdf`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -145,14 +147,15 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
     try {
       const canvas = await generateCanvas();
       if (!canvas) return null;
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
-        format: [800, 600]
+        format: [800, 600],
+        compress: true
       });
 
-      pdf.addImage(imgData, "JPEG", 0, 0, 800, 600, undefined, 'FAST');
+      pdf.addImage(imgData, "JPEG", 0, 0, 800, 600, undefined, 'MEDIUM');
       return pdf.output('datauristring');
     } catch (err) {
       console.error("Error generating certificate PDF base64:", err);
