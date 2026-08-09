@@ -173,6 +173,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
   const sponsorName = quizData?.sponsorName || applicant?.sponsorName || "";
   const sponsorLogoUrl = quizData?.sponsorLogo || applicant?.sponsorLogo || "";
   const sponsorSignatureUrl = quizData?.sponsorSignature || applicant?.sponsorSignature || "";
+  const sponsorSignatoryName = quizData?.sponsorSignatoryName || applicant?.sponsorSignatoryName || "";
 
   const quizDateStr = quizData?.quizDate;
   const parsedQuizDate = quizDateStr ? new Date(quizDateStr).toLocaleDateString('en-US', {
@@ -340,8 +341,14 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                     <img src={sponsorSignatureUrl} alt="Sponsor Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} crossOrigin="anonymous" />
                   </div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Authorized Signatory</p>
-                  {sponsorName && <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, fontWeight: 500 }}>{sponsorName}</p>}
+                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>
+                    {sponsorSignatoryName || "Authorized Signatory"}
+                  </p>
+                  {sponsorName && (
+                    <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, fontWeight: 500 }}>
+                      {sponsorName}
+                    </p>
+                  )}
                 </>
               ) : (
                 <>

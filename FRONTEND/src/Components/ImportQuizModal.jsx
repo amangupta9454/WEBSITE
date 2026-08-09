@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { X, UploadCloud, Loader2, Download } from 'lucide-react';
+import { X, UploadCloud, Loader2, Download, Building2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [existingQuizzes, setExistingQuizzes] = useState([]);
+  const [sponsorSignatoryName, setSponsorSignatoryName] = useState('');
   const [formData, setFormData] = useState({
     quizName: '',
     quizDate: '',
@@ -95,6 +96,7 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
     data.append('quizName', formData.quizName);
     if (formData.quizDate) data.append('quizDate', formData.quizDate);
     if (formData.sponsorName) data.append('sponsorName', formData.sponsorName);
+    if (sponsorSignatoryName) data.append('sponsorSignatoryName', sponsorSignatoryName);
     data.append('excelFile', formData.excelFile);
     if (formData.sponsorLogo) data.append('sponsorLogo', formData.sponsorLogo);
     if (formData.sponsorSignature) data.append('sponsorSignature', formData.sponsorSignature);
@@ -183,6 +185,21 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
                   ))}
                 </datalist>
                 <p className="text-xs text-slate-500 mt-1">Select an existing quiz to update it, or type a new name.</p>
+              </div>
+
+              {/* Sponsor Signatory Name */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-400" />
+                  Signatory Name (Founder / Authorized Person)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., John Doe"
+                  value={sponsorSignatoryName}
+                  onChange={(e) => setSponsorSignatoryName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm"
+                />
               </div>
 
               {/* Quiz Date */}

@@ -14,6 +14,7 @@ const quizSchema = new mongoose.Schema(
     sponsorName: { type: String, default: "" },
     sponsorLogo: { type: String, default: "" },
     sponsorSignature: { type: String, default: "" },
+    sponsorSignatoryName: { type: String, default: "" },
     quizDate: { type: String, default: "" },
     certificateSent: { type: Boolean, default: false },
     importedAt: { type: Date, default: Date.now }
@@ -54,6 +55,7 @@ const quizApplicantSchema = new mongoose.Schema(
     sponsorName: { type: String, default: "" },
     sponsorLogo: { type: String, default: "" },
     sponsorSignature: { type: String, default: "" },
+    sponsorSignatoryName: { type: String, default: "" },
     quizzes: [quizSchema]
   },
   { timestamps: true }

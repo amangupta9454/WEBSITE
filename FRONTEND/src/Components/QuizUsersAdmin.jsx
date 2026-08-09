@@ -22,9 +22,11 @@ import {
   Users,
   RefreshCw,
   Download,
-  Send
+  Send,
+  Pencil
 } from 'lucide-react';
 import QuizCertificate from './QuizCertificate';
+import EditSponsorModal from './EditSponsorModal';
 
 const QuizUsersAdmin = () => {
   const [quizApplicants, setQuizApplicants] = useState([]);
@@ -47,6 +49,13 @@ const QuizUsersAdmin = () => {
   const [customMessage, setCustomMessage] = useState("");
   const [pendingAction, setPendingAction] = useState(null); // 'single' or 'bulk'
   const [pendingSingleData, setPendingSingleData] = useState(null);
+  
+  // Edit Sponsor Modal states
+  const [showEditSponsorModal, setShowEditSponsorModal] = useState(false);
+  const [editSponsorQuizName, setEditSponsorQuizName] = useState("");
+  const [editSponsorInitialName, setEditSponsorInitialName] = useState("");
+  const [editSponsorInitialSignatory, setEditSponsorInitialSignatory] = useState("");
+  const [editSponsorInitialDate, setEditSponsorInitialDate] = useState("");
   
   const certRef = useRef(null);
 
@@ -420,9 +429,23 @@ const QuizUsersAdmin = () => {
                 </div>
               </div>
               
-              <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">{quiz.quizName}</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 pr-8">{quiz.quizName}</h3>
               
-              <div className="flex flex-col gap-1 mb-4 text-xs text-slate-500">
+              <div className="flex flex-col gap-1 mb-4 text-xs text-slate-500 relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditSponsorQuizName(quiz.quizName);
+                    setEditSponsorInitialName(quiz.sponsorName !== "N/A" ? quiz.sponsorName : "");
+                    setEditSponsorInitialSignatory(quiz.sponsorSignatoryName || "");
+                    setEditSponsorInitialDate(quiz.quizDate !== "N/A" ? quiz.quizDate : "");
+                    setShowEditSponsorModal(true);
+                  }}
+                  className="absolute -top-8 right-0 p-1.5 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-400 rounded-lg transition-colors group/edit"
+                  title="Edit Sponsor Details"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" /> 
                   {quiz.quizDate !== "N/A" ? quiz.quizDate : "Date Not Set"}
@@ -1040,6 +1063,15 @@ const QuizUsersAdmin = () => {
       </div>
       )}
 
+      <EditSponsorModal 
+        isOpen={showEditSponsorModal}
+        onClose={() => setShowEditSponsorModal(false)}
+        quizName={editSponsorQuizName}
+        initialSponsorName={editSponsorInitialName}
+        initialSponsorSignatoryName={editSponsorInitialSignatory}
+        initialQuizDate={editSponsorInitialDate}
+        onUpdateSuccess={fetchQuizApplicants}
+      />
     </div>
   );
 };
