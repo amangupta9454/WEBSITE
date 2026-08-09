@@ -20,6 +20,8 @@ import Refund from "./Pages/Refund";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import MyResumes from "./Pages/MyResumes";
 import MyInterviews from "./Pages/MyInterviews";
+import StudentCertificatesPage from "./Pages/StudentCertificatesPage";
+import StudentQuizzesPage from "./Pages/StudentQuizzesPage";
 import MyProfile from "./Pages/MyProfile";
 import ResumeBuilder from "./Pages/ResumeBuilder/ResumeBuilder";
 import Jobs from "./Pages/Jobs";
@@ -143,6 +145,8 @@ function App() {
             <Route path="/project-submission" element={<Project />} />
             <Route path="/my-resumes" element={<ProtectedRoute><MyResumes /></ProtectedRoute>} />
             <Route path="/my-interviews" element={<ProtectedRoute><MyInterviews /></ProtectedRoute>} />
+            <Route path="/my-certificates" element={<ProtectedRoute><StudentCertificatesPage /></ProtectedRoute>} />
+            <Route path="/my-quizzes" element={<ProtectedRoute><StudentQuizzesPage /></ProtectedRoute>} />
             <Route path="/verify" element={<Verify />} />
           </Route>
         </Routes>

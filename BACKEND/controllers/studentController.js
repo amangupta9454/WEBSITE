@@ -5,6 +5,8 @@ const ProjectSubmission = require("../models/ProjectSubmission");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
+const QuizApplicant = require("../models/QuizApplicant");
+const Certificate = require("../models/Certificate");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 const { queueWhatsAppMessage } = require('../utils/whatsappClient');
 
@@ -705,6 +707,188 @@ const updateProjectLink = async (req, res) => {
   }
 };
 
+const getMyCertificates = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const studentId = req.user.studentId;
+
+    let certificates = [];
+
+    // 1. Fetch Quiz Certificates for this user's email
+    if (userEmail) {
+      const emailRegex = new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i");
+      const quizApplicants = await QuizApplicant.find({ email: emailRegex }).lean();
+
+      for (const app of quizApplicants) {
+        // Check root fields if quizName exists
+        if (app.quizName) {
+          certificates.push({
+            id: app.registrationId || String(app._id),
+            certificateId: app.registrationId || String(app._id),
+            title: app.quizName,
+            quizName: app.quizName,
+            recipientName: app.name,
+            email: app.email,
+            issueDate: app.quizDate || app.createdAt,
+            score: app.score || "N/A",
+            totalScore: app.totalScore || "N/A",
+            result: app.result || "N/A",
+            percentage: app.percentage || "N/A",
+            effectiveScore: app.effectiveScore || "N/A",
+            sponsorName: app.sponsorName || "",
+            sponsorLogo: app.sponsorLogo || "",
+            sponsorSignature: app.sponsorSignature || "",
+            sponsorSignatoryName: app.sponsorSignatoryName || "",
+            type: "Quiz Certificate",
+            category: "Quiz & Assessment",
+            status: "VERIFIED & ISSUED"
+          });
+        }
+
+        // Check subdocument quizzes array
+        if (Array.isArray(app.quizzes)) {
+          for (const q of app.quizzes) {
+            if (q.quizName && !certificates.some(c => c.quizName === q.quizName && (c.id === q.registrationId || c.certificateId === q.registrationId))) {
+              certificates.push({
+                id: q.registrationId || String(q._id),
+                certificateId: q.registrationId || String(q._id),
+                title: q.quizName,
+                quizName: q.quizName,
+                recipientName: app.name,
+                email: app.email,
+                issueDate: q.quizDate || q.importedAt || app.createdAt,
+                score: q.score || "N/A",
+                totalScore: q.totalScore || "N/A",
+                result: q.result || "N/A",
+                percentage: q.percentage || "N/A",
+                effectiveScore: q.effectiveScore || "N/A",
+                sponsorName: q.sponsorName || app.sponsorName || "",
+                sponsorLogo: q.sponsorLogo || app.sponsorLogo || "",
+                sponsorSignature: q.sponsorSignature || app.sponsorSignature || "",
+                sponsorSignatoryName: q.sponsorSignatoryName || app.sponsorSignatoryName || "",
+                type: "Quiz Certificate",
+                category: "Quiz & Assessment",
+                status: "VERIFIED & ISSUED"
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Fetch Internship/Domain Certificates from Certificate collection
+    if (studentId || req.user.name) {
+      const query = [];
+      if (studentId) query.push({ studentId });
+      if (req.user.name) query.push({ studentName: new RegExp(`^${req.user.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") });
+      
+      const domainCerts = await Certificate.find({ $or: query }).lean();
+      for (const dc of domainCerts) {
+        if (!certificates.some(c => c.certificateId === dc.certificateNumber)) {
+          certificates.push({
+            id: dc.certificateNumber,
+            certificateId: dc.certificateNumber,
+            title: `${dc.domain} Internship Certificate`,
+            quizName: `${dc.domain} Internship`,
+            recipientName: dc.studentName,
+            issueDate: dc.endDate,
+            startDate: dc.startDate,
+            endDate: dc.endDate,
+            duration: dc.duration,
+            type: "Internship Certificate",
+            category: "Internship Program",
+            status: "VERIFIED & ISSUED"
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, certificates });
+  } catch (error) {
+    console.error("[Backend] Error fetching student certificates:", error);
+    res.status(500).json({ message: "Server error fetching certificates" });
+  }
+};
+
+const getMyQuizzes = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    // 1. Fetch completed past quizzes for this user
+    let pastQuizzes = [];
+    if (userEmail) {
+      const emailRegex = new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i");
+      const quizApplicants = await QuizApplicant.find({ email: emailRegex }).lean();
+
+      for (const app of quizApplicants) {
+        if (app.quizName) {
+          pastQuizzes.push({
+            id: app.registrationId || String(app._id),
+            quizName: app.quizName,
+            registrationId: app.registrationId || "",
+            quizDate: app.quizDate || app.createdAt,
+            score: app.score || "N/A",
+            totalScore: app.totalScore || "N/A",
+            result: app.result || "N/A",
+            percentage: app.percentage || "N/A",
+            effectiveScore: app.effectiveScore || "N/A",
+            totalQuestions: app.totalQuestions || "N/A",
+            attemptedQuestions: app.attemptedQuestions || "N/A",
+            sponsorName: app.sponsorName || "",
+            sponsorLogo: app.sponsorLogo || "",
+            sponsorSignature: app.sponsorSignature || "",
+            sponsorSignatoryName: app.sponsorSignatoryName || "",
+            name: app.name,
+            email: app.email,
+            hasCertificate: true,
+            status: "COMPLETED"
+          });
+        }
+
+        if (Array.isArray(app.quizzes)) {
+          for (const q of app.quizzes) {
+            if (q.quizName && !pastQuizzes.some(pq => pq.quizName === q.quizName)) {
+              pastQuizzes.push({
+                id: q.registrationId || String(q._id),
+                quizName: q.quizName,
+                registrationId: q.registrationId || "",
+                quizDate: q.quizDate || q.importedAt || app.createdAt,
+                score: q.score || "N/A",
+                totalScore: q.totalScore || "N/A",
+                result: q.result || "N/A",
+                percentage: q.percentage || "N/A",
+                effectiveScore: q.effectiveScore || "N/A",
+                totalQuestions: q.totalQuestions || "N/A",
+                attemptedQuestions: q.attemptedQuestions || "N/A",
+                sponsorName: q.sponsorName || app.sponsorName || "",
+                sponsorLogo: q.sponsorLogo || app.sponsorLogo || "",
+                sponsorSignature: q.sponsorSignature || app.sponsorSignature || "",
+                sponsorSignatoryName: q.sponsorSignatoryName || app.sponsorSignatoryName || "",
+                name: app.name,
+                email: app.email,
+                hasCertificate: true,
+                status: "COMPLETED"
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Fetch live/active quizzes (currently none active unless created)
+    const liveQuizzes = [];
+
+    res.json({
+      success: true,
+      liveQuizzes,
+      pastQuizzes
+    });
+  } catch (error) {
+    console.error("[Backend] Error fetching student quizzes:", error);
+    res.status(500).json({ message: "Server error fetching quizzes" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
@@ -715,5 +899,7 @@ module.exports = {
   getRegistrationStatus,
   joinWaitlist,
   getPublicLeaderboard,
-  updateProjectLink
+  updateProjectLink,
+  getMyCertificates,
+  getMyQuizzes
 };

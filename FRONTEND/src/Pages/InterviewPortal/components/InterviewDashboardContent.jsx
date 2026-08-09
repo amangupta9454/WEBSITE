@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw, GraduationCap } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw, GraduationCap, Award, Trophy } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
@@ -702,7 +702,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Feature Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         
         {/* AI Resume Builder Card */}
         {hasPermission(userRoles, "ai_resume") && resumeEnabled && (
@@ -762,9 +762,39 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
               <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
             <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
-            <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Take quizzes, coding tests and track certifications.</p>
+            <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Take quizzes & coding tests.</p>
           </div>
         )}
+
+        {/* Certificates Card */}
+        <div 
+          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-amber-200 shadow-sm shadow-amber-100 hover:-translate-y-1 hover:shadow-md hover:shadow-amber-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+          onClick={() => navigate('/my-certificates')}
+        >
+          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-amber-600">
+            <Award className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+            <Award className="w-4 h-4 sm:w-6 sm:h-6" />
+          </div>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Certificates</h3>
+          <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Earned credentials & badges.</p>
+        </div>
+
+        {/* Quizzes / Competitions Card */}
+        <div 
+          className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-purple-200 shadow-sm shadow-purple-100 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
+          onClick={() => navigate('/my-quizzes')}
+        >
+          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-purple-600">
+            <Trophy className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-purple-100 text-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+            <Trophy className="w-4 h-4 sm:w-6 sm:h-6" />
+          </div>
+          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Quizzes</h3>
+          <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Live quizzes & past scores.</p>
+        </div>
 
       </div>
 

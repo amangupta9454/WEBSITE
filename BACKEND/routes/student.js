@@ -1,11 +1,13 @@
 const express = require('express');
-const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink } = require('../controllers/studentController');
+const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink, getMyCertificates, getMyQuizzes } = require('../controllers/studentController');
 const authMiddleware = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 
 const router = express.Router();
 
 router.get('/dashboard', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin', 'recruiter', 'mentor'), getDashboardInfo);
+router.get('/my-certificates', authMiddleware, getMyCertificates);
+router.get('/my-quizzes', authMiddleware, getMyQuizzes);
 router.post('/profile', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin', 'recruiter', 'mentor'), updateProfile);
 router.post('/mark-alert', authMiddleware, requireRole('student', 'intern', 'campus_ambassador', 'admin'), markAlertRead);
 router.post('/submit-repo', authMiddleware, requireRole('intern', 'admin'), submitProjectRepo);
