@@ -114,13 +114,17 @@ const QuizUsersAdmin = () => {
     setSelectedIds(newSelected);
   };
 
-  const handleDownloadSingle = (applicant, quiz) => {
+  const handleDownloadSingle = async (applicant, quiz) => {
+    toast.info(`Preparing certificate for ${applicant.name}...`, { autoClose: 2000 });
     setCertData({ applicant, quizData: quiz });
-    setTimeout(() => {
-      if (certRef.current) {
-        certRef.current.triggerDownload();
-      }
-    }, 500);
+    
+    // Wait for React to render the hidden certificate and show the toast before blocking the thread
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    if (certRef.current) {
+      await certRef.current.triggerDownload();
+      toast.success("Certificate downloaded successfully!");
+    }
   };
 
   const handleSendSingleClick = (app, quiz) => {
