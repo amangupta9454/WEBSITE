@@ -2477,6 +2477,8 @@ const getQuizSponsorDetails = async (req, res) => {
   }
 };
 
+const QuizSponsor = require("../models/QuizSponsor");
+
 const updateQuizSponsor = async (req, res) => {
   try {
     const { quizName, sponsorName, sponsorLogoUrl, sponsorSignatureUrl, sponsorSignatoryName, quizDate } = req.body;
@@ -2485,26 +2487,51 @@ const updateQuizSponsor = async (req, res) => {
       return res.status(400).json({ success: false, message: "Quiz Name is required" });
     }
 
+    // 1. Update QuizSponsor Document (only stores one copy of the huge base64 images per quiz)
+    await QuizSponsor.updateOne(
+      { quizName: quizName.trim() },
+      {
+        $set: {
+          sponsorName: sponsorName !== undefined ? sponsorName.trim() : "",
+          sponsorSignatoryName: sponsorSignatoryName !== undefined ? sponsorSignatoryName.trim() : "",
+          quizDate: quizDate !== undefined ? quizDate.trim() : "",
+          ...(sponsorLogoUrl !== undefined && { sponsorLogo: sponsorLogoUrl }),
+          ...(sponsorSignatureUrl !== undefined && { sponsorSignature: sponsorSignatureUrl })
+        }
+      },
+      { upsert: true }
+    );
+
+    // 2. Update all QuizApplicants with text fields and UNSET the base64 fields to free up MongoDB space
     const updateFields = {};
-    if (sponsorName !== undefined) updateFields['quizzes.$[elem].sponsorName'] = sponsorName.trim();
-    if (sponsorLogoUrl !== undefined) updateFields['quizzes.$[elem].sponsorLogo'] = sponsorLogoUrl;
-    if (sponsorSignatureUrl !== undefined) updateFields['quizzes.$[elem].sponsorSignature'] = sponsorSignatureUrl;
-    if (sponsorSignatoryName !== undefined) updateFields['quizzes.$[elem].sponsorSignatoryName'] = sponsorSignatoryName.trim();
-    if (quizDate !== undefined) updateFields['quizzes.$[elem].quizDate'] = quizDate.trim();
+    if (sponsorName !== undefined) {
+      updateFields['quizzes.$[elem].sponsorName'] = sponsorName.trim();
+      updateFields['sponsorName'] = sponsorName.trim();
+    }
+    if (sponsorSignatoryName !== undefined) {
+      updateFields['quizzes.$[elem].sponsorSignatoryName'] = sponsorSignatoryName.trim();
+      updateFields['sponsorSignatoryName'] = sponsorSignatoryName.trim();
+    }
+    if (quizDate !== undefined) {
+      updateFields['quizzes.$[elem].quizDate'] = quizDate.trim();
+      updateFields['quizDate'] = quizDate.trim();
+    }
 
-    if (sponsorName !== undefined) updateFields['sponsorName'] = sponsorName.trim();
-    if (sponsorLogoUrl !== undefined) updateFields['sponsorLogo'] = sponsorLogoUrl;
-    if (sponsorSignatureUrl !== undefined) updateFields['sponsorSignature'] = sponsorSignatureUrl;
-    if (sponsorSignatoryName !== undefined) updateFields['sponsorSignatoryName'] = sponsorSignatoryName.trim();
-    if (quizDate !== undefined) updateFields['quizDate'] = quizDate.trim();
+    const unsetFields = { 
+      'quizzes.$[elem].sponsorLogo': "", 
+      'quizzes.$[elem].sponsorSignature': "",
+      'sponsorLogo': "",
+      'sponsorSignature': ""
+    };
 
-    if (Object.keys(updateFields).length === 0) {
-      return res.status(400).json({ success: false, message: "No valid fields to update" });
+    const updatePayload = { $unset: unsetFields };
+    if (Object.keys(updateFields).length > 0) {
+      updatePayload.$set = updateFields;
     }
 
     const result = await QuizApplicant.updateMany(
       { "quizzes.quizName": quizName.trim() },
-      { $set: updateFields },
+      updatePayload,
       { arrayFilters: [{ "elem.quizName": quizName.trim() }] }
     );
 

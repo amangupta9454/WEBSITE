@@ -22,6 +22,7 @@ try {
 
 const registerRoutes = require("./routes/register");
 const adminRoutes = require("./routes/admin");
+const auth = require("./middleware/auth");
 const verifyRoutes = require("./routes/verify");
 const projectRoutes = require("./routes/project");
 const authRoutes = require("./routes/auth");
@@ -158,7 +159,7 @@ app.use("/api/email", mailRoutes);
 app.use("/api/email", emailLogRoutes);
 app.use("/api/interview-config", interviewConfigRoutes);
 // ── Assessment Module ─────────────────────────────────────────────────────────
-app.use("/api/admin/assessment", adminAssessmentRoutes);
+app.use("/api/admin/assessment", auth, adminAssessmentRoutes);
 app.use("/api/assessment",       studentAssessmentRoutes);
 app.use("/api/public/assessment",publicAssessmentRoutes);
 
