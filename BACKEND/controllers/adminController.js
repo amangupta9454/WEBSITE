@@ -2384,9 +2384,10 @@ const sendQuizCertificate = async (req, res) => {
       html: htmlTemplate,
       attachments: [
         {
-          filename: `Certificate_${(name || "Participant").replace(/\\s+/g, "_")}.jpg`,
+          filename: `Certificate_${(name || "Participant").replace(/\s+/g, "_")}.pdf`,
           content: base64Data,
-          encoding: "base64"
+          encoding: "base64",
+          contentType: "application/pdf"
         }
       ]
     };
