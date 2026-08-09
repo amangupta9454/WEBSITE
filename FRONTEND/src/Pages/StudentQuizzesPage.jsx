@@ -67,7 +67,7 @@ const StudentQuizzesPage = () => {
         {/* Top Action Bar */}
         <div className="flex items-center justify-between">
           <button 
-            onClick={() => navigate('/my-interviews')}
+            onClick={() => navigate('/dashboard')}
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
