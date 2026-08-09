@@ -249,10 +249,10 @@ const StudentQuizzesPage = () => {
                   <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <button
                       onClick={() => setSelectedQuiz(quiz)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm"
+                      className="px-3.5 py-2.5 inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>View Details</span>
+                      <span>Details</span>
                     </button>
 
                     {quiz.hasCertificate && (
@@ -261,11 +261,11 @@ const StudentQuizzesPage = () => {
                           setSelectedQuiz(quiz);
                           setShowCertificateModal(true);
                         }}
-                        className="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition-all shadow-sm shadow-amber-200"
-                        title="View Certificate"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition-all shadow-md shadow-amber-200"
+                        title="Download Certificate"
                       >
                         <Award className="w-4 h-4" />
-                        <span>Certificate</span>
+                        <span>Download Certificate</span>
                       </button>
                     )}
                   </div>
