@@ -203,7 +203,6 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
           position: 'relative',
           overflow: 'hidden',
           fontFamily: '"Inter", "Segoe UI", sans-serif',
-          border: '16px solid #1e40af', // Blue border
           boxSizing: 'border-box'
         }}
       >
