@@ -15,10 +15,12 @@ const nodemailer = require("nodemailer");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: process.env.SMTP_PORT || 465,
+  secure: true,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD,
+    user: process.env.SMTP_USER || process.env.EMAIL_USER,
+    pass: process.env.SMTP_PASS || process.env.EMAIL_APP_PASSWORD,
   },
 });
 
@@ -2376,7 +2378,7 @@ const sendQuizCertificate = async (req, res) => {
     `;
 
     const mailOptions = {
-      from: `"Code-A-Nova" <${process.env.EMAIL_USER}>`,
+      from: `"Code-A-Nova" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: email,
       subject: isWinner ? `Congratulations! You secured ${result} in ${quizName}` : `Your Certificate for ${quizName} - Code-A-Nova`,
       html: htmlTemplate,
