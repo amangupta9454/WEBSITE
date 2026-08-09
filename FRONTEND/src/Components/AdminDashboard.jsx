@@ -100,7 +100,7 @@ const AdminDashboard = () => {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
   const [importingInterns, setImportingInterns] = useState(false);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
+
 
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -3853,14 +3853,6 @@ const AdminDashboard = () => {
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      <NotificationModal 
-        isOpen={showNotificationModal}
-        onClose={() => setShowNotificationModal(false)}
-      />
-
       <ToastContainer
         theme="dark"
         position="top-right"
