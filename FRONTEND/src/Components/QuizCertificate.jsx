@@ -355,7 +355,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
               ) : (
                 <>
                   <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
-                    <img src={processedAmanSign} alt="Aman Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(36px) scale(1.5)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
+                    <img src={processedAmanSign} alt="Aman Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(10px) scale(1.5)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
                   </div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
                   <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Aman Gupta</p>
