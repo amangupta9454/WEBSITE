@@ -337,7 +337,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                     <img src={sponsorSignatureUrl} alt="Sponsor Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(15px)' }} crossOrigin="anonymous" />
                   </div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight 700 }}>
+                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>
                     {sponsorSignatoryName || "Authorized Signatory"}
                   </p>
                   {sponsorName && (
