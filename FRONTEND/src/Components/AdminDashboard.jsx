@@ -100,7 +100,7 @@ const AdminDashboard = () => {
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const [syncingRefunds, setSyncingRefunds] = useState(false);
   const [importingInterns, setImportingInterns] = useState(false);
-  const [showImportQuizModal, setShowImportQuizModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -2642,12 +2642,12 @@ const AdminDashboard = () => {
 
               <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-slate-900 font-semibold text-sm">
-                      Bulk Intern/Quiz Import
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-indigo-500" /> Bulk Import
                     </h3>
-                    <p className="text-slate-500 text-xs mt-0.5">
-                      Upload Excel/CSV file to import historical interns or quiz users.
+                    <p className="text-xs text-slate-500 mt-1">
+                      Upload Excel/CSV file to import historical interns.
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -2668,13 +2668,6 @@ const AdminDashboard = () => {
                         disabled={importingInterns}
                       />
                     </label>
-                    <button
-                      onClick={() => setShowImportQuizModal(true)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 border-slate-300 bg-slate-50/50 text-slate-700 hover:border-emerald-500/50 hover:text-emerald-600 hover:bg-emerald-500/10`}
-                    >
-                      <UploadCloud className="w-4 h-4" />
-                      <span>Import Quiz Users</span>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -3863,14 +3856,9 @@ const AdminDashboard = () => {
         </div>
       )}
 
-
-
-      <ImportQuizModal
-        isOpen={showImportQuizModal}
-        onClose={() => setShowImportQuizModal(false)}
-        onSuccess={() => {
-          // Additional logic if needed when quiz users are imported
-        }}
+      <NotificationModal 
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
       />
 
       <ToastContainer

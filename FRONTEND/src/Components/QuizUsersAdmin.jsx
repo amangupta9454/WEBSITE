@@ -23,10 +23,12 @@ import {
   RefreshCw,
   Download,
   Send,
-  Pencil
+  Pencil,
+  UploadCloud
 } from 'lucide-react';
 import QuizCertificate from './QuizCertificate';
 import EditSponsorModal from './EditSponsorModal';
+import ImportQuizModal from './ImportQuizModal';
 
 const QuizUsersAdmin = () => {
   const [quizApplicants, setQuizApplicants] = useState([]);
@@ -56,6 +58,9 @@ const QuizUsersAdmin = () => {
   const [editSponsorInitialName, setEditSponsorInitialName] = useState("");
   const [editSponsorInitialSignatory, setEditSponsorInitialSignatory] = useState("");
   const [editSponsorInitialDate, setEditSponsorInitialDate] = useState("");
+  
+  // Import Quiz Modal
+  const [showImportQuizModal, setShowImportQuizModal] = useState(false);
   
   const certRef = useRef(null);
 
@@ -364,6 +369,13 @@ const QuizUsersAdmin = () => {
               {isSendingBulk ? `Sending (${sendingProgress.current}/${sendingProgress.total})...` : `Send Certificates (${selectedIds.size})`}
             </button>
           )}
+          <button
+            onClick={() => setShowImportQuizModal(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-slate-50/50 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-600 text-slate-700 text-sm font-semibold rounded-xl transition-all"
+          >
+            <UploadCloud className="w-4 h-4" />
+            Import Quiz Users
+          </button>
           <button
             onClick={fetchQuizApplicants}
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
@@ -1071,6 +1083,12 @@ const QuizUsersAdmin = () => {
         initialSponsorSignatoryName={editSponsorInitialSignatory}
         initialQuizDate={editSponsorInitialDate}
         onUpdateSuccess={fetchQuizApplicants}
+      />
+
+      <ImportQuizModal
+        isOpen={showImportQuizModal}
+        onClose={() => setShowImportQuizModal(false)}
+        onSuccess={fetchQuizApplicants}
       />
     </div>
   );

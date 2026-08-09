@@ -11,10 +11,7 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     quizName: '',
     quizDate: '',
-    sponsorName: '',
-    excelFile: null,
-    sponsorLogo: null,
-    sponsorSignature: null
+    excelFile: null
   });
 
   useEffect(() => {
@@ -95,11 +92,7 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
     const data = new FormData();
     data.append('quizName', formData.quizName);
     if (formData.quizDate) data.append('quizDate', formData.quizDate);
-    if (formData.sponsorName) data.append('sponsorName', formData.sponsorName);
-    if (sponsorSignatoryName) data.append('sponsorSignatoryName', sponsorSignatoryName);
     data.append('excelFile', formData.excelFile);
-    if (formData.sponsorLogo) data.append('sponsorLogo', formData.sponsorLogo);
-    if (formData.sponsorSignature) data.append('sponsorSignature', formData.sponsorSignature);
 
     try {
       const token = localStorage.getItem('adminToken');
@@ -187,20 +180,7 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
                 <p className="text-xs text-slate-500 mt-1">Select an existing quiz to update it, or type a new name.</p>
               </div>
 
-              {/* Sponsor Signatory Name */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-slate-400" />
-                  Signatory Name (Founder / Authorized Person)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., John Doe"
-                  value={sponsorSignatoryName}
-                  onChange={(e) => setSponsorSignatoryName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm"
-                />
-              </div>
+
 
               {/* Quiz Date */}
               <div>
@@ -228,48 +208,6 @@ const ImportQuizModal = ({ isOpen, onClose, onSuccess }) => {
                 className="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                 onChange={(e) => handleFileChange(e, 'excelFile')}
               />
-            </div>
-
-            <hr className="border-slate-100 my-4" />
-            <h3 className="text-sm font-bold text-slate-800">Certificate Customization (Optional)</h3>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Sponsor / Partner Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-700 bg-slate-50"
-                placeholder="e.g., Google Developer Groups"
-                value={formData.sponsorName}
-                onChange={(e) => setFormData({...formData, sponsorName: e.target.value})}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Sponsor Logo (Image)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                  onChange={(e) => handleFileChange(e, 'sponsorLogo')}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Sponsor Signature (Image)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                  onChange={(e) => handleFileChange(e, 'sponsorSignature')}
-                />
-              </div>
             </div>
 
             {/* Footer */}
