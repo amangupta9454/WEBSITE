@@ -286,18 +286,6 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                 Awarded {result} Position
               </p>
             )}
-
-            {(score || percentage) && !isWinner && (
-              <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
-                Score: <span style={{ color: '#111827', fontWeight: 800 }}>{score && totalScore ? `${score} / ${totalScore}` : (score || `${percentage}`)}</span>
-              </p>
-            )}
-            
-            {percentage && !score && !isWinner && (
-              <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
-                Percentage: <span style={{ color: '#111827', fontWeight: 800 }}>{percentage}</span>
-              </p>
-            )}
           </div>
 
           <div style={{
