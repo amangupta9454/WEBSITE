@@ -2459,6 +2459,21 @@ const bulkDeleteApplications = async (req, res) => {
 const getQuizSponsorDetails = async (req, res) => {
   try {
     const { quizName } = req.params;
+    
+    // First try to find it in the dedicated QuizSponsor collection (new optimized way)
+    const sponsor = await QuizSponsor.findOne({ quizName: quizName.trim() });
+    
+    if (sponsor) {
+      return res.json({
+        success: true,
+        sponsorDetails: {
+          sponsorLogo: sponsor.sponsorLogo || "",
+          sponsorSignature: sponsor.sponsorSignature || ""
+        }
+      });
+    }
+
+    // Fallback: Check if it's still in QuizApplicant (legacy way, in case migration missed some)
     const applicant = await QuizApplicant.findOne({ "quizzes.quizName": quizName }, { "quizzes.$": 1, sponsorLogo: 1, sponsorSignature: 1 });
     if (!applicant) {
       return res.json({ success: true, sponsorDetails: { sponsorLogo: "", sponsorSignature: "" } });
