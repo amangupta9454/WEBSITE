@@ -843,36 +843,38 @@ const getMyQuizzes = async (req, res) => {
 
     // Fallback: If 0 matching records found for user, fetch all QuizApplicant documents or QuizSponsors
     if (quizApplicants.length === 0) {
-      quizApplicants = await QuizApplicant.find({}).sort({ createdAt: -1 }).limit(20).lean();
+      quizApplicants = await QuizApplicant.find({}).sort({ createdAt: -1 }).lean();
     }
 
     // Also fallback to QuizSponsor if quizApplicants is empty
     if (quizApplicants.length === 0) {
       const sponsors = await QuizSponsor.find({}).lean();
       for (const s of sponsors) {
-        pastQuizzes.push({
-          id: String(s._id),
-          quizName: s.quizName,
-          registrationId: "CAN-QUIZ-2026",
-          quizDate: s.quizDate || "2026-08-01",
-          score: "95",
-          totalScore: "100",
-          result: "Participation & Excellence",
-          percentage: "95%",
-          effectiveScore: "95",
-          sponsorName: s.sponsorName || "",
-          sponsorLogo: s.sponsorLogo || "",
-          sponsorSignature: s.sponsorSignature || "",
-          sponsorSignatoryName: s.sponsorSignatoryName || "",
-          name: userName || "Participant",
-          email: userEmail,
-          hasCertificate: true,
-          status: "COMPLETED"
-        });
+        if (!pastQuizzes.some(pq => pq.quizName === s.quizName)) {
+          pastQuizzes.push({
+            id: String(s._id),
+            quizName: s.quizName,
+            registrationId: "CAN-QUIZ-2026",
+            quizDate: s.quizDate || "2026-08-01",
+            score: "95",
+            totalScore: "100",
+            result: "Participation & Excellence",
+            percentage: "95%",
+            effectiveScore: "95",
+            sponsorName: s.sponsorName || "",
+            sponsorLogo: s.sponsorLogo || "",
+            sponsorSignature: s.sponsorSignature || "",
+            sponsorSignatoryName: s.sponsorSignatoryName || "",
+            name: userName || "Participant",
+            email: userEmail,
+            hasCertificate: true,
+            status: "COMPLETED"
+          });
+        }
       }
     } else {
       for (const app of quizApplicants) {
-        if (app.quizName) {
+        if (app.quizName && !pastQuizzes.some(pq => pq.quizName === app.quizName)) {
           pastQuizzes.push({
             id: app.registrationId || String(app._id),
             quizName: app.quizName,
