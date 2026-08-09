@@ -2003,7 +2003,7 @@ const importQuizUsers = async (req, res) => {
       return res.status(400).json({ success: false, message: "Excel file is required" });
     }
 
-    const { quizName, quizDate, sponsorName } = req.body;
+    const { quizName, quizDate, sponsorName, sponsorSignatoryName } = req.body;
     if (!quizName) {
       return res.status(400).json({ success: false, message: "Quiz Name is required" });
     }
