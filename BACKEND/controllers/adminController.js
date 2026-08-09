@@ -2254,6 +2254,30 @@ const importQuizUsers = async (req, res) => {
       importedCount++;
     }
 
+    if (sponsorName || sponsorLogoUrl || sponsorSignatureUrl || quizDate) {
+      const updateFields = {};
+      if (sponsorName) updateFields['quizzes.$[elem].sponsorName'] = sponsorName.trim();
+      if (sponsorLogoUrl) updateFields['quizzes.$[elem].sponsorLogo'] = sponsorLogoUrl;
+      if (sponsorSignatureUrl) updateFields['quizzes.$[elem].sponsorSignature'] = sponsorSignatureUrl;
+      if (quizDate) updateFields['quizzes.$[elem].quizDate'] = quizDate.trim();
+
+      // Also update top-level fields
+      if (sponsorName) updateFields['sponsorName'] = sponsorName.trim();
+      if (sponsorLogoUrl) updateFields['sponsorLogo'] = sponsorLogoUrl;
+      if (sponsorSignatureUrl) updateFields['sponsorSignature'] = sponsorSignatureUrl;
+      if (quizDate) updateFields['quizDate'] = quizDate.trim();
+
+      try {
+        await QuizApplicant.updateMany(
+          { "quizzes.quizName": quizName.trim() },
+          { $set: updateFields },
+          { arrayFilters: [{ "elem.quizName": quizName.trim() }] }
+        );
+      } catch (err) {
+        console.error("[Admin] Error updating all students with sponsor data:", err);
+      }
+    }
+
     res.json({ success: true, message: `Successfully processed and imported ${importedCount} quiz entries.` });
   } catch (error) {
     console.error("[Admin] Error importing quiz users:", error);
