@@ -145,10 +145,17 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
     try {
       const canvas = await generateCanvas();
       if (!canvas) return null;
-      // return as jpeg data URL
-      return canvas.toDataURL("image/jpeg", 0.9);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [800, 600]
+      });
+
+      pdf.addImage(imgData, "JPEG", 0, 0, 800, 600, undefined, 'FAST');
+      return pdf.output('datauristring');
     } catch (err) {
-      console.error("Error generating certificate base64:", err);
+      console.error("Error generating certificate PDF base64:", err);
       return null;
     }
   };
@@ -214,73 +221,87 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
           <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, padding: '25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '16px 50px 25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-30px', alignItems: 'center' }}>
-            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left', transform: 'translateY(-10px)' }} crossOrigin="anonymous" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-35px', alignItems: 'center' }}>
+            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '130px', objectFit: 'contain', objectPosition: 'left', transform: 'translateY(-12px)' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '80px', maxWidth: '160px', objectFit: 'contain', objectPosition: 'right', transform: 'translateY(-10px)' }} crossOrigin="anonymous" />
+              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '75px', maxWidth: '150px', objectFit: 'contain', objectPosition: 'right', transform: 'translateY(-12px)' }} crossOrigin="anonymous" />
             )}
           </div>
 
           <h1 style={{
-            fontSize: '38px',
+            fontSize: '34px',
             fontWeight: 900,
             color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
-            margin: '0 0 5px 0',
+            margin: '-10px 0 2px 0',
             letterSpacing: '-1px',
             textTransform: 'uppercase'
           }}>
             {certificateTitle}
           </h1>
 
-          <p style={{ fontSize: '16px', color: '#4b5563', margin: '0 0 2px 0', fontWeight: 500 }}>
+          <p style={{ fontSize: '15px', color: '#4b5563', margin: '0 0 2px 0', fontWeight: 500 }}>
             This is proudly presented to
           </p>
 
           <h2 style={{
-            fontSize: '36px',
+            fontSize: '32px',
             fontWeight: 800,
             color: '#2563eb', // Blue-600
-            margin: '0 0 8px 0',
+            margin: '0 0 6px 0',
             borderBottom: '2px solid #bfdbfe',
-            paddingBottom: '12px',
+            paddingBottom: '8px',
             width: '80%',
             fontFamily: '"Playfair Display", serif'
           }}>
             {name}
           </h2>
 
-          <p style={{ fontSize: '14px', color: '#4b5563', margin: '0 0 5px 0' }}>
+          <p style={{ fontSize: '13px', color: '#4b5563', margin: '0 0 2px 0' }}>
             for successfully completing the assessment:
           </p>
 
-          <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 2px 0' : '0 0 10px 0' }}>
+          <h3 style={{ fontSize: '19px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 1px 0' : '0 0 4px 0' }}>
             {quizName}
           </h3>
 
           {parsedQuizDate && (
-            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 10px 0', fontWeight: 600 }}>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0', fontWeight: 600 }}>
               Held on {parsedQuizDate}
             </p>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'auto' }}>
+          {/* Appreciating lines */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', margin: '2px 0 0 0', maxWidth: '640px' }}>
             {result !== "N/A" && isWinner && (
-              <p style={{ fontSize: '18px', color: '#1e40af', margin: 0, fontWeight: 700, fontStyle: 'italic' }}>
+              <p style={{ fontSize: '16px', color: '#1e40af', margin: 0, fontWeight: 700, fontStyle: 'italic' }}>
                 Awarded {result} Position
               </p>
             )}
+            <p style={{
+              fontSize: '12px',
+              color: '#4b5563',
+              margin: 0,
+              fontStyle: 'italic',
+              lineHeight: 1.35,
+              fontWeight: 500,
+              textAlign: 'center'
+            }}>
+              {isWinner 
+                ? "In recognition of exceptional technical proficiency, outstanding performance, and exemplary problem-solving skills demonstrated throughout the assessment."
+                : "In appreciation of active participation, valuable effort, and dedicated commitment towards technical excellence and continuous learning."}
+            </p>
           </div>
 
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             width: '100%',
-            marginTop: '15px',
-            marginBottom: '45px',
+            marginTop: 'auto',
+            marginBottom: '40px',
             alignItems: 'flex-end'
           }}>
             {/* Left side: Code-A-Nova Signature */}
@@ -316,7 +337,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                     <img src={sponsorSignatureUrl} alt="Sponsor Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(15px)' }} crossOrigin="anonymous" />
                   </div>
                   <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>
+                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight 700 }}>
                     {sponsorSignatoryName || "Authorized Signatory"}
                   </p>
                   {sponsorName && (
