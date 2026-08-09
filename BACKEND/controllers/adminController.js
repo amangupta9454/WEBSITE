@@ -2383,7 +2383,9 @@ const sendQuizCertificate = async (req, res) => {
 
 const getQuizApplicants = async (req, res) => {
   try {
-    const applicants = await QuizApplicant.find().sort({ _id: -1 });
+    const applicants = await QuizApplicant.find()
+      .select('-sponsorLogo -sponsorSignature -quizzes.sponsorLogo -quizzes.sponsorSignature')
+      .sort({ _id: -1 });
     res.json({ success: true, applicants });
   } catch (error) {
     console.error("[Admin] Error fetching quiz applicants:", error);
@@ -2454,6 +2456,26 @@ const bulkDeleteApplications = async (req, res) => {
 };
 
 
+const getQuizSponsorDetails = async (req, res) => {
+  try {
+    const { quizName } = req.params;
+    const applicant = await QuizApplicant.findOne({ "quizzes.quizName": quizName }, { "quizzes.$": 1, sponsorLogo: 1, sponsorSignature: 1 });
+    if (!applicant) {
+      return res.json({ success: true, sponsorDetails: { sponsorLogo: "", sponsorSignature: "" } });
+    }
+    const qz = applicant.quizzes && applicant.quizzes.length > 0 ? applicant.quizzes[0] : applicant;
+    res.json({
+      success: true,
+      sponsorDetails: {
+        sponsorLogo: qz.sponsorLogo || applicant.sponsorLogo || "",
+        sponsorSignature: qz.sponsorSignature || applicant.sponsorSignature || ""
+      }
+    });
+  } catch (error) {
+    console.error("[Admin] Error fetching sponsor details:", error);
+    res.status(500).json({ success: false, message: "Server error fetching sponsor details" });
+  }
+};
 
 const updateQuizSponsor = async (req, res) => {
   try {
@@ -2510,6 +2532,7 @@ module.exports = {
   importQuizUsers,
   sendQuizCertificate,
   getQuizApplicants,
+  getQuizSponsorDetails,
   deleteQuizApplicant,
   deleteApplication,
   bulkDeleteApplications,
