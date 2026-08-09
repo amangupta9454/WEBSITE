@@ -224,7 +224,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
           <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, padding: '16px 50px 25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '8px 50px 25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
           <div style={{ 
@@ -233,7 +233,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             alignItems: 'center', 
             gap: '40px', 
             width: '100%', 
-            marginBottom: '-15px' 
+            marginBottom: '-30px' 
           }}>
             <img 
               src={logo} 
@@ -241,7 +241,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
               style={{ 
                 height: '135px', 
                 objectFit: 'contain', 
-                transform: 'translateY(-6px)' 
+                transform: 'translateY(-16px)' 
               }} 
               crossOrigin="anonymous" 
             />
@@ -254,7 +254,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                   height: '85px', 
                   maxWidth: '180px', 
                   objectFit: 'contain', 
-                  transform: 'translateY(-6px)' 
+                  transform: 'translateY(-16px)' 
                 }} 
                 crossOrigin="anonymous" 
               />
@@ -265,7 +265,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             fontSize: '34px',
             fontWeight: 900,
             color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
-            margin: '6px 0 6px 0',
+            margin: '-4px 0 4px 0',
             letterSpacing: '-1px',
             textTransform: 'uppercase'
           }}>
