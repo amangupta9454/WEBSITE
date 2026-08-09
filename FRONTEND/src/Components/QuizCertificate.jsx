@@ -224,11 +224,38 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
         <div style={{ position: 'relative', zIndex: 10, padding: '16px 50px 25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-35px', alignItems: 'center' }}>
-            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '130px', objectFit: 'contain', objectPosition: 'left', transform: 'translateY(-12px)' }} crossOrigin="anonymous" />
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: sponsorLogoUrl ? 'space-between' : 'center', 
+            width: '100%', 
+            marginBottom: '-35px', 
+            alignItems: 'center' 
+          }}>
+            <img 
+              src={logo} 
+              alt="Code-A-Nova Logo" 
+              style={{ 
+                height: '130px', 
+                objectFit: 'contain', 
+                objectPosition: sponsorLogoUrl ? 'left' : 'center', 
+                transform: 'translateY(-12px)' 
+              }} 
+              crossOrigin="anonymous" 
+            />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '75px', maxWidth: '150px', objectFit: 'contain', objectPosition: 'right', transform: 'translateY(-12px)' }} crossOrigin="anonymous" />
+              <img 
+                src={sponsorLogoUrl} 
+                alt="Sponsor Logo" 
+                style={{ 
+                  height: '75px', 
+                  maxWidth: '150px', 
+                  objectFit: 'contain', 
+                  objectPosition: 'right', 
+                  transform: 'translateY(-12px)' 
+                }} 
+                crossOrigin="anonymous" 
+              />
             )}
           </div>
 
