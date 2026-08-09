@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } f
 import html2canvas from 'html2canvas';
 import logo from '../assets/logo.png';
 import founderSign from '../assets/founder-sign.png';
+import amanSign from '../assets/aman-sign.png';
+import msmeLogo from '../assets/msme-logo.png';
 import jsPDF from 'jspdf';
 
 const useTransparentWhiteLogo = (src) => {
@@ -40,9 +42,48 @@ const useTransparentWhiteLogo = (src) => {
   return dataUrl;
 };
 
+const useTransparentSignature = (src) => {
+  const [dataUrl, setDataUrl] = useState(src);
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = src;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        // Make grey/white background transparent
+        if (r > 130 && g > 130 && b > 130) {
+          data[i + 3] = 0;
+        } else {
+          // Make the signature ink dark blue
+          data[i] = 15;
+          data[i + 1] = 23;
+          data[i + 2] = 42;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      setDataUrl(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => setDataUrl(src);
+  }, [src]);
+
+  return dataUrl;
+};
+
 const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, ref) => {
   const cardRef = useRef(null);
   const logoSrc = useTransparentWhiteLogo("/LOGO.png");
+  const processedAmanSign = useTransparentSignature(amanSign);
 
   const generateCanvas = async () => {
     if (!cardRef.current) return null;
@@ -169,6 +210,11 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
         <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%' }}></div>
         <div style={{ position: 'absolute', bottom: '-150px', right: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%' }}></div>
         
+        {/* MSME Watermark */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.05, zIndex: 0, pointerEvents: 'none' }}>
+           <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
+        </div>
+        
         {/* Inner border */}
         <div style={{
           position: 'absolute',
@@ -202,7 +248,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             {certificateTitle}
           </h1>
 
-          <p style={{ fontSize: '16px', color: '#4b5563', margin: '0 0 10px 0', fontWeight: 500 }}>
+          <p style={{ fontSize: '16px', color: '#4b5563', margin: '0 0 2px 0', fontWeight: 500 }}>
             This is proudly presented to
           </p>
 
@@ -295,7 +341,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                </div>
             </div>
 
-            {/* Right side: Sponsor Signature */}
+            {/* Right side: Sponsor Signature / Co-Founder */}
             <div style={{ textAlign: 'center', width: '200px' }}>
               {sponsorSignatureUrl ? (
                 <>
@@ -308,10 +354,12 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                 </>
               ) : (
                 <>
-                  <div style={{ height: '60px' }}></div>
-                  <div style={{ width: '100%', height: '1px', backgroundColor: 'transparent', margin: '0 auto 4px auto' }}></div>
-                  <p style={{ fontSize: '13px', color: 'transparent', margin: 0, fontWeight: 700 }}>.</p>
-                  <p style={{ fontSize: '11px', color: 'transparent', margin: 0, fontWeight: 500 }}>.</p>
+                  <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+                    <img src={processedAmanSign} alt="Aman Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(36px) scale(1.5)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
+                  </div>
+                  <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
+                  <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Aman Gupta</p>
+                  <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, fontWeight: 500 }}>Co-Founder, Code-A-Nova</p>
                 </>
               )}
             </div>
