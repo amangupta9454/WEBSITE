@@ -327,7 +327,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             </div>
 
             {/* Middle: Details */}
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', transform: 'translateY(15px)' }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', transform: 'translateY(30px)' }}>
                <div>
                   <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Date Issued</p>
                   <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>{issueDate}</p>
