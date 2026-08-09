@@ -684,4 +684,29 @@ router.post("/ambassador-group-url", auth, verifyAdmin, async (req, res) => {
   }
 });
 
+// Assessment Feature Toggle
+router.get("/assessment-settings", async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: "assessmentEnabled" });
+    res.json({ success: true, enabled: setting ? setting.value : true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post("/assessment-settings/toggle", auth, verifyAdmin, async (req, res) => {
+  try {
+    let setting = await Settings.findOne({ key: "assessmentEnabled" });
+    if (!setting) {
+      setting = await Settings.create({ key: "assessmentEnabled", value: false });
+    } else {
+      setting.value = !setting.value;
+      await setting.save();
+    }
+    res.json({ success: true, enabled: setting.value });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
