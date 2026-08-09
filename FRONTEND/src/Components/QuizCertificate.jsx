@@ -4,6 +4,7 @@ import logo from '../assets/logo.png';
 import founderSign from '../assets/founder-sign.png';
 import amanSign from '../assets/aman-sign.png';
 import msmeLogo from '../assets/msme-logo.png';
+import certificateBg from '../assets/certificate-bg.png';
 import jsPDF from 'jspdf';
 
 const useTransparentWhiteLogo = (src) => {
@@ -199,34 +200,21 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
           width: '800px',
           height: '600px',
           backgroundColor: '#ffffff',
-          backgroundImage: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #eff6ff 100%)', // Light blue gradient
+          backgroundImage: `url(${certificateBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           position: 'relative',
           overflow: 'hidden',
           fontFamily: '"Inter", "Segoe UI", sans-serif',
           boxSizing: 'border-box'
         }}
       >
-        {/* Decorative elements */}
-        <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%' }}></div>
-        <div style={{ position: 'absolute', bottom: '-150px', right: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%' }}></div>
-
         {/* MSME Watermark */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.05, zIndex: 0, pointerEvents: 'none' }}>
           <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
         </div>
 
-        {/* Inner border */}
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          right: '10px',
-          bottom: '10px',
-          border: '2px solid #e5e7eb',
-          zIndex: 1
-        }}></div>
-
-        <div style={{ position: 'relative', zIndex: 10, padding: '15px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '25px 50px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-30px', alignItems: 'center' }}>
