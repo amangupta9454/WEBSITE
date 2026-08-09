@@ -96,6 +96,12 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
         console.error("Error parsing assessment settings:", err);
       }
     }
+    // Check backend for master enable/disable toggle
+    axios.get(`${backendUrl}/api/admin/assessment-settings`).then((res) => {
+      if (res.data && res.data.success) {
+        setGlobalSettings((prev) => ({ ...prev, assessmentModuleEnabled: res.data.enabled }));
+      }
+    }).catch(() => {});
     fetchWorkspaceData();
   }, []);
 
