@@ -262,14 +262,14 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             fontSize: '34px',
             fontWeight: 900,
             color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
-            margin: '-10px 0 2px 0',
+            margin: '-10px 0 4px 0',
             letterSpacing: '-1px',
             textTransform: 'uppercase'
           }}>
             {certificateTitle}
           </h1>
 
-          <p style={{ fontSize: '15px', color: '#4b5563', margin: '0 0 2px 0', fontWeight: 500 }}>
+          <p style={{ fontSize: '15px', color: '#4b5563', margin: '2px 0 4px 0', fontWeight: 500 }}>
             This is proudly presented to
           </p>
 
@@ -277,7 +277,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             fontSize: '32px',
             fontWeight: 800,
             color: '#2563eb', // Blue-600
-            margin: '0 0 6px 0',
+            margin: '2px 0 8px 0',
             borderBottom: '2px solid #bfdbfe',
             paddingBottom: '8px',
             width: '80%',
@@ -286,24 +286,24 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             {name}
           </h2>
 
-          <p style={{ fontSize: '13px', color: '#4b5563', margin: '0 0 2px 0' }}>
+          <p style={{ fontSize: '13px', color: '#4b5563', margin: '4px 0 6px 0' }}>
             for successfully completing the assessment:
           </p>
 
-          <h3 style={{ fontSize: '19px', fontWeight: 700, color: '#1f2937', margin: parsedQuizDate ? '0 0 1px 0' : '0 0 4px 0' }}>
+          <h3 style={{ fontSize: '19px', fontWeight: 700, color: '#1f2937', margin: '0 0 4px 0' }}>
             {quizName}
           </h3>
 
           {parsedQuizDate && (
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0', fontWeight: 600 }}>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 8px 0', fontWeight: 600 }}>
               Held on {parsedQuizDate}
             </p>
           )}
 
           {/* Appreciating lines */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', margin: '2px 0 0 0', maxWidth: '640px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', margin: '6px 0 0 0', maxWidth: '640px' }}>
             {result !== "N/A" && isWinner && (
-              <p style={{ fontSize: '16px', color: '#1e40af', margin: 0, fontWeight: 700, fontStyle: 'italic' }}>
+              <p style={{ fontSize: '16px', color: '#1e40af', margin: '0 0 2px 0', fontWeight: 700, fontStyle: 'italic' }}>
                 Awarded {result} Position
               </p>
             )}
@@ -312,7 +312,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
               color: '#4b5563',
               margin: 0,
               fontStyle: 'italic',
-              lineHeight: 1.35,
+              lineHeight: 1.4,
               fontWeight: 500,
               textAlign: 'center'
             }}>
