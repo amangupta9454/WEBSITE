@@ -710,9 +710,24 @@ const updateProjectLink = async (req, res) => {
 
 const getMyCertificates = async (req, res) => {
   try {
-    const userEmail = req.user?.email || "";
-    const userName = req.user?.name || "";
-    const studentId = req.user?.studentId || "";
+    let userEmail = req.user?.email || "";
+    let userName = req.user?.name || "";
+    let studentId = req.user?.studentId || "";
+
+    if (!userEmail || !userName) {
+      const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId;
+      if (userId) {
+        const User = require('../models/User'); // Ensure User model is required
+        const dbUser = await User.findById(userId).lean();
+        if (dbUser) {
+          userEmail = userEmail || dbUser.email || "";
+          userName = userName || dbUser.name || "";
+          if (!studentId && dbUser.internships && dbUser.internships.length > 0) {
+             studentId = dbUser.internships[0].studentId || "";
+          }
+        }
+      }
+    }
 
     let certificates = [];
 
@@ -824,8 +839,20 @@ const getMyCertificates = async (req, res) => {
 
 const getMyQuizzes = async (req, res) => {
   try {
-    const userEmail = req.user?.email || "";
-    const userName = req.user?.name || "";
+    let userEmail = req.user?.email || "";
+    let userName = req.user?.name || "";
+
+    if (!userEmail || !userName) {
+      const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId;
+      if (userId) {
+        const User = require('../models/User'); // Ensure User model is required
+        const dbUser = await User.findById(userId).lean();
+        if (dbUser) {
+          userEmail = userEmail || dbUser.email || "";
+          userName = userName || dbUser.name || "";
+        }
+      }
+    }
 
     let pastQuizzes = [];
 
