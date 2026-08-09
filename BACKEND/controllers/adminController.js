@@ -2383,7 +2383,7 @@ const sendQuizCertificate = async (req, res) => {
 
 const getQuizApplicants = async (req, res) => {
   try {
-    const applicants = await QuizApplicant.find().sort({ updatedAt: -1, createdAt: -1 });
+    const applicants = await QuizApplicant.find().sort({ _id: -1 });
     res.json({ success: true, applicants });
   } catch (error) {
     console.error("[Admin] Error fetching quiz applicants:", error);
