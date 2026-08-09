@@ -230,15 +230,15 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             alignItems: 'center', 
             gap: '40px', 
             width: '100%', 
-            marginBottom: '-35px' 
+            marginBottom: '-15px' 
           }}>
             <img 
               src={logo} 
               alt="Code-A-Nova Logo" 
               style={{ 
-                height: '115px', 
+                height: '135px', 
                 objectFit: 'contain', 
-                transform: 'translateY(-10px)' 
+                transform: 'translateY(-6px)' 
               }} 
               crossOrigin="anonymous" 
             />
@@ -248,10 +248,10 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
                 src={sponsorLogoUrl} 
                 alt="Sponsor Logo" 
                 style={{ 
-                  height: '70px', 
-                  maxWidth: '160px', 
+                  height: '85px', 
+                  maxWidth: '180px', 
                   objectFit: 'contain', 
-                  transform: 'translateY(-10px)' 
+                  transform: 'translateY(-6px)' 
                 }} 
                 crossOrigin="anonymous" 
               />
@@ -262,7 +262,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             fontSize: '34px',
             fontWeight: 900,
             color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
-            margin: '-10px 0 4px 0',
+            margin: '6px 0 6px 0',
             letterSpacing: '-1px',
             textTransform: 'uppercase'
           }}>
