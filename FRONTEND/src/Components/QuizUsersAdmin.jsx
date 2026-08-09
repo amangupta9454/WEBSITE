@@ -283,9 +283,14 @@ const QuizUsersAdmin = () => {
         apiPromises.push(apiPromise);
         sentInCurrentBatch++;
         
-        if (sentInCurrentBatch >= 50 && i < selectedArray.length - 1) {
-          toast.info("SMTP Limit Safety: Pausing for 5 minutes before sending the next batch...");
-          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        // Wait ~4.2s to make it exactly 5 seconds per email (since we waited 800ms for canvas)
+        if (i < selectedArray.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 4200));
+        }
+        
+        if (sentInCurrentBatch >= 100 && i < selectedArray.length - 1) {
+          toast.info("SMTP Limit Safety: Pausing for 10 minutes before sending the next batch...");
+          await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000));
           sentInCurrentBatch = 0;
         }
       } catch (err) {
