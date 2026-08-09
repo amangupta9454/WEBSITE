@@ -13,6 +13,7 @@ const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 const nodemailer = require("nodemailer");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
+const mailService = require("../services/mailService");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -2389,10 +2390,16 @@ const sendQuizCertificate = async (req, res) => {
           encoding: "base64",
           contentType: "application/pdf"
         }
-      ]
+      ],
+      campaign: "Quiz Certificates",
+      source: "Admin Portal",
+      recipientName: name
     };
 
-    await transporter.sendMail(mailOptions);
+    const sendResult = await mailService.sendEmail(mailOptions);
+    if (!sendResult.success) {
+      throw new Error(sendResult.error || "Failed to send email via MailService");
+    }
 
     await QuizApplicant.updateOne(
       { email, "quizzes.quizName": quizName },
