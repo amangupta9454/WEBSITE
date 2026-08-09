@@ -2453,63 +2453,7 @@ const bulkDeleteApplications = async (req, res) => {
   }
 };
 
-const importQuizUsers = async (req, res) => {
-  try {
-    const { quizData, quizName, sponsorName, sponsorLogoUrl, sponsorSignatureUrl, sponsorSignatoryName, quizDate } = req.body;
-    
-    if (!quizData || !quizName) {
-      return res.status(400).json({ success: false, message: "Quiz Name is required" });
-    }
 
-    const updateFields = {};
-    if (sponsorName !== undefined) updateFields['quizzes.$[elem].sponsorName'] = sponsorName.trim();
-    if (sponsorLogoUrl !== undefined) updateFields['quizzes.$[elem].sponsorLogo'] = sponsorLogoUrl;
-    if (sponsorSignatureUrl !== undefined) updateFields['quizzes.$[elem].sponsorSignature'] = sponsorSignatureUrl;
-    if (sponsorSignatoryName !== undefined) updateFields['quizzes.$[elem].sponsorSignatoryName'] = sponsorSignatoryName.trim();
-    if (quizDate !== undefined) updateFields['quizzes.$[elem].quizDate'] = quizDate.trim();
-
-    // Also update top-level fields
-    if (sponsorName !== undefined) updateFields['sponsorName'] = sponsorName.trim();
-    if (sponsorLogoUrl !== undefined) updateFields['sponsorLogo'] = sponsorLogoUrl;
-    if (sponsorSignatureUrl !== undefined) updateFields['sponsorSignature'] = sponsorSignatureUrl;
-    if (sponsorSignatoryName !== undefined) updateFields['sponsorSignatoryName'] = sponsorSignatoryName.trim();
-    if (quizDate !== undefined) updateFields['quizDate'] = quizDate.trim();
-
-    let importedCount = 0;
-
-    for (const data of quizData) {
-      const { email, name, score, result } = data;
-      if (!email) continue;
-
-      await QuizApplicant.updateOne(
-        { email },
-        { 
-          $setOnInsert: { email, name: name.trim() },
-          $push: { quizzes: { quizName: quizName.trim(), score, result, ...updateFields } }
-        },
-        { upsert: true }
-      );
-      importedCount++;
-    }
-
-    if (sponsorName !== undefined || sponsorLogoUrl !== undefined || sponsorSignatureUrl !== undefined || sponsorSignatoryName !== undefined || quizDate !== undefined) {
-      try {
-        await QuizApplicant.updateMany(
-          { "quizzes.quizName": quizName.trim() },
-          { $set: updateFields },
-          { arrayFilters: [{ "elem.quizName": quizName.trim() }] }
-        );
-      } catch (err) {
-        console.error("[Admin] Error updating all students with sponsor data:", err);
-      }
-    }
-
-    res.json({ success: true, message: `Successfully processed and imported ${importedCount} quiz entries.` });
-  } catch (error) {
-    console.error("[Admin] Error importing quiz users:", error);
-    res.status(500).json({ success: false, message: "Server error during quiz user import." });
-  }
-};
 
 const updateQuizSponsor = async (req, res) => {
   try {
