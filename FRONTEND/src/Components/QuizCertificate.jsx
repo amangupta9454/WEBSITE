@@ -87,11 +87,11 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
 
   const generateCanvas = async () => {
     if (!cardRef.current) return null;
-    
+
     // Temporarily remove scaling if any
     const originalTransform = cardRef.current.style.transform;
     cardRef.current.style.transform = 'none';
-    
+
     const canvas = await html2canvas(cardRef.current, {
       scale: 2,
       useCORS: true,
@@ -102,7 +102,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
       windowWidth: 800,
       windowHeight: 600
     });
-    
+
     cardRef.current.style.transform = originalTransform;
     return canvas;
   };
@@ -118,9 +118,9 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
         unit: "px",
         format: [800, 600]
       });
-      
+
       pdf.addImage(imgData, "JPEG", 0, 0, 800, 600, undefined, 'FAST');
-      
+
       const blob = pdf.output('blob');
       const fileName = `Certificate_${(applicant?.name || "Participant").replace(/\\s+/g, '_')}_${(quizData?.quizName || "Quiz").replace(/\\s+/g, '_')}.pdf`;
 
@@ -163,16 +163,16 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
   const totalScore = quizData?.totalScore !== "N/A" ? quizData?.totalScore : null;
   const percentage = quizData?.percentage !== "N/A" ? quizData?.percentage : null;
   const result = quizData?.result || "N/A";
-  
+
   let isWinner = false;
   if (result.match(/1st|2nd|3rd|winner/i)) {
     isWinner = true;
   }
-  
+
   const certificateTitle = isWinner ? "Certificate of Excellence" : "Certificate of Participation";
-  const sponsorName = quizData?.sponsorName || "";
-  const sponsorLogoUrl = quizData?.sponsorLogo || "";
-  const sponsorSignatureUrl = quizData?.sponsorSignature || "";
+  const sponsorName = quizData?.sponsorName || applicant?.sponsorName || "";
+  const sponsorLogoUrl = quizData?.sponsorLogo || applicant?.sponsorLogo || "";
+  const sponsorSignatureUrl = quizData?.sponsorSignature || applicant?.sponsorSignature || "";
 
   const quizDateStr = quizData?.quizDate;
   const parsedQuizDate = quizDateStr ? new Date(quizDateStr).toLocaleDateString('en-US', {
@@ -192,7 +192,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
 
   return (
     <div style={{ position: 'fixed', top: '0', left: '0', opacity: 0, zIndex: -9999, pointerEvents: 'none' }}>
-      <div 
+      <div
         ref={cardRef}
         style={{
           width: '800px',
@@ -209,12 +209,12 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
         {/* Decorative elements */}
         <div style={{ position: 'absolute', top: '-150px', left: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '50%' }}></div>
         <div style={{ position: 'absolute', bottom: '-150px', right: '-150px', width: '300px', height: '300px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%' }}></div>
-        
+
         {/* MSME Watermark */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.05, zIndex: 0, pointerEvents: 'none' }}>
-           <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
+          <img src={msmeLogo} alt="MSME Logo Watermark" style={{ width: '400px', objectFit: 'contain' }} crossOrigin="anonymous" />
         </div>
-        
+
         {/* Inner border */}
         <div style={{
           position: 'absolute',
@@ -226,20 +226,20 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
           zIndex: 1
         }}></div>
 
-        <div style={{ position: 'relative', zIndex: 10, padding: '25px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 10, padding: '15px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-20px', alignItems: 'center' }}>
-            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-30px', alignItems: 'center' }}>
+            <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left', transform: 'translateY(-10px)' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '80px', maxWidth: '160px', objectFit: 'contain', objectPosition: 'right' }} crossOrigin="anonymous" />
+              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '80px', maxWidth: '160px', objectFit: 'contain', objectPosition: 'right', transform: 'translateY(-10px)' }} crossOrigin="anonymous" />
             )}
           </div>
 
-          <h1 style={{ 
-            fontSize: '38px', 
-            fontWeight: 900, 
+          <h1 style={{
+            fontSize: '38px',
+            fontWeight: 900,
             color: isWinner ? '#1e40af' : '#1e3a8a', // Blue shades
             margin: '0 0 5px 0',
             letterSpacing: '-1px',
@@ -252,9 +252,9 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             This is proudly presented to
           </p>
 
-          <h2 style={{ 
-            fontSize: '36px', 
-            fontWeight: 800, 
+          <h2 style={{
+            fontSize: '36px',
+            fontWeight: 800,
             color: '#2563eb', // Blue-600
             margin: '0 0 8px 0',
             borderBottom: '2px solid #bfdbfe',
@@ -286,23 +286,23 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
               </p>
             )}
 
-            {(score || percentage) && (
+            {(score || percentage) && !isWinner && (
               <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
                 Score: <span style={{ color: '#111827', fontWeight: 800 }}>{score && totalScore ? `${score} / ${totalScore}` : (score || `${percentage}`)}</span>
               </p>
             )}
             
-            {percentage && !score && (
+            {percentage && !score && !isWinner && (
               <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
                 Percentage: <span style={{ color: '#111827', fontWeight: 800 }}>{percentage}</span>
               </p>
             )}
           </div>
 
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            width: '100%', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
             marginTop: '15px',
             marginBottom: '45px',
             alignItems: 'flex-end'
@@ -310,7 +310,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             {/* Left side: Code-A-Nova Signature */}
             <div style={{ textAlign: 'center', width: '200px' }}>
               <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
-                 <img src={founderSign} alt="Himanshu Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(48px) scale(2.0)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
+                <img src={founderSign} alt="Himanshu Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(48px) scale(2.0)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
               <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Himanshu Gupta</p>
@@ -319,17 +319,17 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
 
             {/* Middle: Details */}
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', transform: 'translateY(30px)' }}>
-               <div>
-                  <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Date Issued</p>
-                  <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>{issueDate}</p>
-               </div>
-               <div>
-                  <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Certificate ID</p>
-                  <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700, fontFamily: 'monospace' }}>{idCode}</p>
-               </div>
-               <div>
-                  <p style={{ fontSize: '11px', color: '#1e40af', margin: '5px 0 0 0', fontWeight: 700 }}>www.code-a-nova.online</p>
-               </div>
+              <div>
+                <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Date Issued</p>
+                <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700 }}>{issueDate}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '10px', color: '#6b7280', margin: '0 0 2px 0', fontWeight: 600, textTransform: 'uppercase' }}>Certificate ID</p>
+                <p style={{ fontSize: '12px', color: '#111827', margin: 0, fontWeight: 700, fontFamily: 'monospace' }}>{idCode}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '11px', color: '#1e40af', margin: '2px 0 0 0', fontWeight: 700 }}>www.code-a-nova.online</p>
+              </div>
             </div>
 
             {/* Right side: Sponsor Signature / Co-Founder */}
