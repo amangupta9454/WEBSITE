@@ -229,11 +229,11 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
         <div style={{ position: 'relative', zIndex: 10, padding: '25px 40px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           
           {/* Top logos container */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-20px', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '-20px', alignItems: 'center' }}>
             <img src={logo} alt="Code-A-Nova Logo" style={{ height: '135px', objectFit: 'contain', objectPosition: 'left' }} crossOrigin="anonymous" />
             
             {sponsorLogoUrl && (
-              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '60px', maxWidth: '150px', objectFit: 'contain', objectPosition: 'right' }} crossOrigin="anonymous" />
+              <img src={sponsorLogoUrl} alt="Sponsor Logo" style={{ height: '80px', maxWidth: '160px', objectFit: 'contain', objectPosition: 'right' }} crossOrigin="anonymous" />
             )}
           </div>
 
@@ -279,32 +279,23 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             </p>
           )}
 
-          <div style={{ display: 'flex', gap: '20px', marginBottom: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'auto' }}>
             {result !== "N/A" && isWinner && (
-              <div style={{ padding: '6px 14px', backgroundColor: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
-                <div style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Position</div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e3a8a' }}>
-                  {result}
-                </div>
-              </div>
+              <p style={{ fontSize: '18px', color: '#1e40af', margin: 0, fontWeight: 700, fontStyle: 'italic' }}>
+                Awarded {result} Position
+              </p>
             )}
 
             {(score || percentage) && (
-              <div style={{ padding: '6px 14px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Score</div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-                  {score && totalScore ? `${score} / ${totalScore}` : (score || `${percentage}`)}
-                </div>
-              </div>
+              <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
+                Score: <span style={{ color: '#111827', fontWeight: 800 }}>{score && totalScore ? `${score} / ${totalScore}` : (score || `${percentage}`)}</span>
+              </p>
             )}
             
             {percentage && !score && (
-              <div style={{ padding: '6px 14px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>Percentage</div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-                  {percentage}
-                </div>
-              </div>
+              <p style={{ fontSize: '15px', color: '#4b5563', margin: 0, fontWeight: 500 }}>
+                Percentage: <span style={{ color: '#111827', fontWeight: 800 }}>{percentage}</span>
+              </p>
             )}
           </div>
 
