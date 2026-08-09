@@ -273,7 +273,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
             {/* Left side: Code-A-Nova Signature */}
             <div style={{ textAlign: 'center', width: '200px' }}>
               <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
-                 <img src={founderSign} alt="Himanshu Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'scale(2.25)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
+                 <img src={founderSign} alt="Himanshu Gupta Signature" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transform: 'translateY(16px) scale(2.25)', transformOrigin: 'bottom' }} crossOrigin="anonymous" />
               </div>
               <div style={{ width: '100%', height: '1px', backgroundColor: '#9ca3af', margin: '0 auto 4px auto' }}></div>
               <p style={{ fontSize: '13px', color: '#111827', margin: 0, fontWeight: 700 }}>Himanshu Gupta</p>
