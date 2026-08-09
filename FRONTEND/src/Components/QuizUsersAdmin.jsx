@@ -229,9 +229,11 @@ const QuizUsersAdmin = () => {
     let successCount = 0;
     let failCount = 0;
     let skippedCount = 0;
+    let sentInCurrentBatch = 0;
     const token = localStorage.getItem('adminToken');
     
     const selectedArray = Array.from(selectedIds);
+    const apiPromises = [];
     for (let i = 0; i < selectedArray.length; i++) {
       const id = selectedArray[i];
       const applicant = quizApplicants.find(a => a._id === id);
@@ -260,7 +262,7 @@ const QuizUsersAdmin = () => {
         const base64 = await certRef.current.getBase64();
         if (!base64) throw new Error("Failed to generate base64");
         
-        await axios.post(
+        const apiPromise = axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/send-certificate`,
           {
             email: applicant.email,
@@ -271,13 +273,29 @@ const QuizUsersAdmin = () => {
             customMessage: customMessage
           },
           { headers: { Authorization: `Bearer ${token}` } }
-        );
-        successCount++;
+        ).then(() => {
+          successCount++;
+        }).catch((err) => {
+          console.error(`Failed for ${applicant.email}:`, err);
+          failCount++;
+        });
+        
+        apiPromises.push(apiPromise);
+        sentInCurrentBatch++;
+        
+        if (sentInCurrentBatch >= 50 && i < selectedArray.length - 1) {
+          toast.info("SMTP Limit Safety: Pausing for 5 minutes before sending the next batch...");
+          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+          sentInCurrentBatch = 0;
+        }
       } catch (err) {
-        console.error(`Failed for ${applicant.email}:`, err);
+        console.error(`Failed base64 generation for ${applicant.email}:`, err);
         failCount++;
       }
     }
+    
+    // Wait for any remaining API calls to finish
+    await Promise.allSettled(apiPromises);
     
     setIsSendingBulk(false);
     toast.success(`Bulk send complete: ${successCount} sent, ${skippedCount} skipped (already sent), ${failCount} failed.`);
