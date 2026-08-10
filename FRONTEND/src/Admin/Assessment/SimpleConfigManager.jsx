@@ -56,7 +56,8 @@ export default function SimpleConfigManager() {
     setError("");
     try {
       const r = await axios.get(`${API}/api/admin/assessment/configs/${selectedSubcategory}`, { headers });
-      const c = r.data?.data;
+      const responseData = r.data?.data;
+      const c = responseData?.config || responseData;
       if (c) {
         setConfig(c);
         setForm({
@@ -382,10 +383,13 @@ export default function SimpleConfigManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {allConfigs.map(c => (
-                  <tr key={c._id} className="hover:bg-slate-50 transition-colors">
+                {allConfigs.map(item => {
+                  const c = item.config || item.effectiveConfig || item;
+                  const subName = item.subcategory?.name || subcategories.find(s => s._id === (c.subcategoryId?._id || c.subcategoryId))?.name || c.subcategoryId?.name || "—";
+                  return (
+                  <tr key={item._id || c._id || Math.random()} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-slate-800">
-                      {subcategories.find(s => s._id === (c.subcategoryId?._id || c.subcategoryId))?.name || c.subcategoryId?.name || "—"}
+                      {subName}
                     </td>
                     <td className="px-6 py-3 text-center text-slate-600">{c.totalQuestions || 20}</td>
                     <td className="px-6 py-3 text-center text-slate-600">{c.timeLimitMinutes || 30}</td>
@@ -396,12 +400,12 @@ export default function SimpleConfigManager() {
                       {c.questionTimerSeconds ? `${c.questionTimerSeconds}s` : "Off"}
                     </td>
                     <td className="px-6 py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-xs ${c.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                        {c.isActive ? "Active" : "Inactive"}
+                      <span className={`px-2 py-0.5 rounded-md font-bold text-xs ${c.isActive !== false ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                        {c.isActive !== false ? "Active" : "Inactive"}
                       </span>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
