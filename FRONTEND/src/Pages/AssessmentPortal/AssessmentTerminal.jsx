@@ -106,7 +106,7 @@ const AssessmentTerminal = () => {
         setRemainingSeconds(resumeRes.data.timer?.remainingSeconds || 1800);
 
         // Read per-question timer from config snapshot
-        const qTimer = resumeRes.data.configSnapshot?.questionTimerSeconds || 0;
+        const qTimer = resumeRes.data.configSnapshot?.questionTimerSeconds || 60;
         setQuestionTimerMax(qTimer);
         if (qTimer > 0) setQuestionTimer(qTimer);
 

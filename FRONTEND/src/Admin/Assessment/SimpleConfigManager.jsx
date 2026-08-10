@@ -225,7 +225,14 @@ export default function SimpleConfigManager() {
                     type="number"
                     min={5} max={100}
                     value={form.totalQuestions}
-                    onChange={e => setForm(p => ({ ...p, totalQuestions: e.target.value }))}
+                    onChange={e => {
+                      const t = parseInt(e.target.value) || 5;
+                      const easy = Math.floor(t * 0.3);
+                      const med = Math.floor(t * 0.4);
+                      const hard = Math.floor(t * 0.2);
+                      const exp = t - easy - med - hard;
+                      setForm(p => ({ ...p, totalQuestions: t, diffEasy: easy, diffMedium: med, diffHard: hard, diffExpert: exp }));
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                   <p className="text-xs text-slate-400">Min: 5 | Max: 100</p>

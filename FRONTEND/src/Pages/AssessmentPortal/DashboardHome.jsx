@@ -19,8 +19,7 @@ import {
  * Strictly uses backend API data; shows professional empty states if no activity or attempts exist.
  */
 const DashboardHome = ({ data, onNavigate, globalSettings }) => {
-  if (!data) return null;
-  const { progress = {}, activeSessions = [], recentActivity = [] } = data;
+  const { progress = {}, activeSessions = [], recentActivity = [] } = data || {};
 
   return (
     <div className="space-y-6 text-slate-800 animate-fade-in">
