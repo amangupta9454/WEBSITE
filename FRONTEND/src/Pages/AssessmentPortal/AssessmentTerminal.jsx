@@ -178,7 +178,18 @@ const AssessmentTerminal = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
-        toast.success("Assessment submitted successfully!");
+        toast.success("Assessment submitted successfully! Evaluating results...");
+        try {
+          await axios.post(`${backendUrl}/api/assessment/evaluate/${sessionId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // Also try generating certificate if they passed
+          await axios.post(`${backendUrl}/api/assessment/certificates/generate/${sessionId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (evalErr) {
+          console.warn("Auto-evaluation or certification deferred/failed:", evalErr);
+        }
         navigate("/dashboard/assessment/results");
       }
     } catch (err) {

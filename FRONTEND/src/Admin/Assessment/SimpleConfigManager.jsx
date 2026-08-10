@@ -17,6 +17,10 @@ export default function SimpleConfigManager() {
     questionTimerSeconds: 60,
     allowReview: true,
     allowPrevious: true,
+    diffEasy: 6,
+    diffMedium: 8,
+    diffHard: 4,
+    diffExpert: 2,
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -62,10 +66,14 @@ export default function SimpleConfigManager() {
           questionTimerSeconds: c.questionTimerSeconds ?? 60,
           allowReview: c.allowReview !== false,
           allowPrevious: c.allowPrevious !== false,
+          diffEasy: c.difficultyDistribution?.easy ?? 6,
+          diffMedium: c.difficultyDistribution?.medium ?? 8,
+          diffHard: c.difficultyDistribution?.hard ?? 4,
+          diffExpert: c.difficultyDistribution?.expert ?? 2,
         });
       } else {
         setConfig(null);
-        setForm({ totalQuestions: 20, timeLimitMinutes: 30, passingPercentage: 70, questionTimerSeconds: 60, allowReview: true, allowPrevious: true });
+        setForm({ totalQuestions: 20, timeLimitMinutes: 30, passingPercentage: 70, questionTimerSeconds: 60, allowReview: true, allowPrevious: true, diffEasy: 6, diffMedium: 8, diffHard: 4, diffExpert: 2 });
       }
     } catch {
       setConfig(null);
@@ -81,10 +89,10 @@ export default function SimpleConfigManager() {
     setError("");
     try {
       const totalQ = Number(form.totalQuestions);
-      const easy = Math.round(totalQ * 0.30);
-      const medium = Math.round(totalQ * 0.40);
-      const hard = Math.round(totalQ * 0.20);
-      const expert = totalQ - (easy + medium + hard);
+      const easy = Number(form.diffEasy);
+      const medium = Number(form.diffMedium);
+      const hard = Number(form.diffHard);
+      const expert = Number(form.diffExpert);
 
       await axios.put(`${API}/api/admin/assessment/configs/${selectedSubcategory}`, {
         totalQuestions: totalQ,
@@ -221,6 +229,34 @@ export default function SimpleConfigManager() {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                   <p className="text-xs text-slate-400">Min: 5 | Max: 100</p>
+                </div>
+
+                {/* Difficulty Distribution */}
+                <div className="col-span-1 sm:col-span-2 space-y-1.5 mb-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                    Difficulty Distribution <span className="normal-case font-medium text-slate-400">(Sum must equal Total Questions)</span>
+                  </label>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <span className="block text-[10px] font-bold text-emerald-600 mb-1">EASY</span>
+                      <input type="number" min="0" value={form.diffEasy} onChange={e => setForm(p => ({ ...p, diffEasy: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-blue-600 mb-1">MEDIUM</span>
+                      <input type="number" min="0" value={form.diffMedium} onChange={e => setForm(p => ({ ...p, diffMedium: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-orange-600 mb-1">HARD</span>
+                      <input type="number" min="0" value={form.diffHard} onChange={e => setForm(p => ({ ...p, diffHard: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-rose-600 mb-1">EXPERT</span>
+                      <input type="number" min="0" value={form.diffExpert} onChange={e => setForm(p => ({ ...p, diffExpert: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                    </div>
+                  </div>
+                  {Number(form.diffEasy) + Number(form.diffMedium) + Number(form.diffHard) + Number(form.diffExpert) !== Number(form.totalQuestions) && (
+                    <p className="text-xs text-rose-500 font-bold mt-1.5 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Warning: Distribution sum ({Number(form.diffEasy) + Number(form.diffMedium) + Number(form.diffHard) + Number(form.diffExpert)}) does not match Total Questions ({form.totalQuestions}).</p>
+                  )}
                 </div>
 
                 {/* Time Limit */}

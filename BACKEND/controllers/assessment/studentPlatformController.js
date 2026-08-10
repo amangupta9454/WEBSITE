@@ -9,7 +9,7 @@ const IntegrityUtil = require("../../services/assessment/utils/IntegrityUtil");
 class StudentPlatformController {
   /** Helper to resolve verified candidate identifier from JWT auth or fallback test context */
   static getCandidateIdentifier(req) {
-    return req.user?.email || req.query.candidateId || req.headers["x-candidate-email"] || "demo.student@code-a-nova.edu";
+    return req.user?.email || req.query.candidateId || req.headers["x-candidate-email"] || "candidate@portal.com";
   }
 
   /** Component 1 API: Dashboard Summary */

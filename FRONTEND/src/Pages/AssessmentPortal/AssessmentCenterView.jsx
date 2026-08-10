@@ -66,7 +66,11 @@ const AssessmentCenterView = ({ catalogData, onRefresh }) => {
         );
         setTimeout(() => {
           onRefresh?.();
-          navigate("/dashboard/assessment/attempt/active");
+          if (data.sessionId) {
+            navigate(`/assessment-terminal/${data.sessionId}`);
+          } else {
+            navigate("/dashboard/assessment/attempt/active");
+          }
         }, 800);
       } else {
         setAiStatus(null);
@@ -75,9 +79,9 @@ const AssessmentCenterView = ({ catalogData, onRefresh }) => {
     } catch (err) {
       setAiStatus(null);
       const errMsg = err.response?.data?.error || err.response?.data?.message || "Failed to start session.";
-      if (err.response?.status === 409) {
-        toast.error("You already have an active session! Go to 'Resume Assessment'.");
-        navigate("/dashboard/assessment/attempt/active");
+      if (err.response?.status === 409 && err.response?.data?.sessionId) {
+        toast.error("You already have an active session! Launching it now...");
+        navigate(`/assessment-terminal/${err.response.data.sessionId}`);
       } else {
         toast.error(errMsg);
       }

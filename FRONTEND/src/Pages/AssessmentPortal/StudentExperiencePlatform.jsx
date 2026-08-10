@@ -186,17 +186,12 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
     );
   }
 
-  // Navigation Items matching Part 10 requirements ("Assessment Hub, My Results, My Certificates, Resume Assessment")
+  // Navigation Items matching requirements ("Assessment Hub, Assessment Center, My Results, My Certificates")
   const navItems = [
     { id: "hub", label: "Assessment Hub", icon: LayoutDashboard, enabled: true },
     { id: "catalog", label: "Assessment Center", icon: Layers, enabled: globalSettings.studentAssessmentEnabled },
     { id: "results", label: "My Results", icon: FileText, enabled: true },
     { id: "certificates", label: "My Certificates", icon: Award, enabled: globalSettings.certificateDownloadEnabled },
-    { id: "resume", label: "Resume Assessment", icon: PlayCircle, enabled: globalSettings.resumeAssessmentEnabled },
-    { id: "timeline", label: "Activity Timeline", icon: Clock, enabled: true },
-    { id: "profile", label: "Profile & Analytics", icon: User, enabled: true },
-    { id: "search", label: "Search", icon: Search, enabled: true },
-    { id: "settings", label: "Settings", icon: Settings, enabled: true },
   ].filter(item => item.enabled !== false);
 
   return (
