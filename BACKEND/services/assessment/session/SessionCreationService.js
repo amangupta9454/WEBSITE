@@ -98,7 +98,7 @@ class SessionCreationService {
         timeLimitMinutes: timeLimitMinutes,
         assessmentType: "MCQ",
         totalQuestions: totalQuestions,
-        batchSize: 5, // Default batch delivery size (Component 4)
+        batchSize: totalQuestions, // Deliver all available questions in batch 1 to allow frontend polling
         allowReview: config.allowReview !== undefined ? config.allowReview : true,
         allowPrevious: config.allowPrevious !== undefined ? config.allowPrevious : true,
         questionTimerSeconds: config.questionTimerSeconds || 60, // 60-second per-question rule
@@ -116,46 +116,45 @@ class SessionCreationService {
       let dbQuestionsCount = 0;
 
       // If DB repository lacks enough questions, trigger automated real-time synthesis via AI engines
-      if (approvedQuestions.length < totalQuestions && options.simulatedAiFirst !== false) {
+      let deficit = totalQuestions - approvedQuestions.length;
+      if (deficit > 0 && options.simulatedAiFirst !== false) {
         try {
-          const deficit = totalQuestions - approvedQuestions.length;
-          const synthesisRes = await aiRuntimeEngine.execute({
-            subcategoryId,
-            categoryId,
-            dynamicVariables: { questionCount: Math.min(10, deficit + 3) },
-            options: { simulationOnly: true },
-          });
-
-          if (!synthesisRes.success) {
-            console.warn(`[SessionCreationService] AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}`);
-          }
-          let synthesizedItems = Array.isArray(synthesisRes?.parsedData) 
-            ? synthesisRes.parsedData 
-            : (synthesisRes?.parsedData?.questions || []);
-          if (synthesizedItems.length > 0) {
-            const normalized = synthesizedItems.map((q) => ({
-              ...q,
+          // If we have very few questions, block and generate a few so the session starts cleanly
+          const initialGenerateCount = Math.max(0, 5 - approvedQuestions.length);
+          if (initialGenerateCount > 0) {
+            const synthesisRes = await aiRuntimeEngine.execute({
               subcategoryId,
-              categoryId: categoryId || subcategoryId,
-              createdSource: "AI Generated",
-              status: "Approved",
-            }));
-            const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ" });
-            if (vetted.approvedQuestions && vetted.approvedQuestions.length > 0) {
-              await KnowledgeBaseManager.persistBatch(vetted.approvedQuestions, { actor: "Session_Creation_Engine" });
-              approvedQuestions = await AssessmentQuestion.find({
-                subcategoryId,
-                isDeleted: false,
-                status: { $in: ["Approved", "approved"] },
-              }).limit(totalQuestions * 2).lean();
+              categoryId,
+              dynamicVariables: { questionCount: initialGenerateCount },
+              options: { simulationOnly: true },
+            });
+            let synthesizedItems = Array.isArray(synthesisRes?.parsedData) 
+              ? synthesisRes.parsedData : (synthesisRes?.parsedData?.questions || []);
+            if (synthesizedItems.length > 0) {
+              const normalized = synthesizedItems.map((q) => ({
+                ...q, subcategoryId, categoryId: categoryId || subcategoryId, createdSource: "AI Generated", status: "Approved"
+              }));
+              const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ" });
+              if (vetted.approvedQuestions && vetted.approvedQuestions.length > 0) {
+                await KnowledgeBaseManager.persistBatch(vetted.approvedQuestions, { actor: "Session_Creation_Engine" });
+                approvedQuestions = await AssessmentQuestion.find({
+                  subcategoryId, isDeleted: false, status: { $in: ["Approved", "approved"] }
+                }).limit(totalQuestions * 2).lean();
+              }
             }
+          }
+          
+          deficit = totalQuestions - approvedQuestions.length;
+          // If still a deficit, we will generate the rest asynchronously
+          if (deficit > 0) {
+            this.generateRemainingQuestionsInBackground(sessionId, subcategoryId, categoryId, deficit, attemptNumber);
           }
         } catch (e) {
           console.warn("[SessionCreationService] AI On-Demand synthesis fallback to existing inventory:", e.message);
         }
       }
 
-      // Shuffle and select exact target count
+      // Shuffle and select exact target count (up to available)
       const shuffled = [...approvedQuestions].sort(() => 0.5 - Math.random());
       const selectedDocs = shuffled.slice(0, totalQuestions);
 
@@ -231,7 +230,7 @@ class SessionCreationService {
         expiresAt,
         lastHeartbeatAt: startedAt,
         connectionStatus: "Healthy",
-        totalQuestions: selectedDocs.length,
+        totalQuestions: totalQuestions, // Set to configured total, not just currently generated
         currentBatch: 1,
         currentQuestionIndex: 0,
         answers,
@@ -257,6 +256,110 @@ class SessionCreationService {
     } catch (err) {
       console.error("[SessionCreationService] Error during creation:", err.message);
       return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Generates the deficit questions asynchronously without blocking session creation.
+   * Modifies the live active AssessmentSession's questionSnapshot.
+   */
+  static async generateRemainingQuestionsInBackground(sessionId, subcategoryId, categoryId, deficit, attemptNumber) {
+    try {
+      console.log(`[SessionCreationService] 🚀 Starting background AI synthesis for ${deficit} remaining questions (Session: ${sessionId})`);
+      
+      const session = await AssessmentSession.findOne({ sessionId });
+      if (!session || session.isLocked) return;
+
+      const synthesisRes = await aiRuntimeEngine.execute({
+        subcategoryId,
+        categoryId,
+        dynamicVariables: { questionCount: deficit },
+        options: { simulationOnly: true },
+      });
+
+      if (!synthesisRes.success) {
+        console.warn(`[SessionCreationService Background] AI Synthesis failed: ${synthesisRes.error?.message || synthesisRes.status}`);
+        return;
+      }
+      
+      let synthesizedItems = Array.isArray(synthesisRes?.parsedData) 
+        ? synthesisRes.parsedData 
+        : (synthesisRes?.parsedData?.questions || []);
+        
+      if (synthesizedItems.length > 0) {
+        const normalized = synthesizedItems.map((q) => ({
+          ...q,
+          subcategoryId,
+          categoryId: categoryId || subcategoryId,
+          createdSource: "AI Generated",
+          status: "Approved",
+        }));
+        
+        const vetted = await questionIntelligenceEngine.analyzeAndValidate(normalized, { fallbackModality: "MCQ" });
+        if (vetted.approvedQuestions && vetted.approvedQuestions.length > 0) {
+          const inserted = await KnowledgeBaseManager.persistBatch(vetted.approvedQuestions, { actor: "Background_Streamer" });
+          
+          // Append to active session
+          const activeSession = await AssessmentSession.findOne({ sessionId });
+          if (activeSession && !activeSession.isLocked) {
+            let nextSequenceIndex = activeSession.questionSnapshot.length + 1;
+            
+            for (const doc of vetted.approvedQuestions) {
+              // Wait, vetted doesn't have _id until persisted. We must fetch the inserted docs or use `inserted`
+              // Let's query DB for the new ones since we just saved them. Or just trust `KnowledgeBaseManager.persistBatch` returns them.
+              // Assuming persistBatch saves and returns. Let's fetch them based on some property, or just assume they are the newest.
+              // A simpler way: fetch newly approved questions that aren't already in the snapshot.
+              const existingIds = activeSession.questionSnapshot.map(q => String(q.questionId));
+              const newDocs = await AssessmentQuestion.find({
+                subcategoryId,
+                _id: { $nin: existingIds },
+                isDeleted: false,
+                status: { $in: ["Approved", "approved"] },
+              }).limit(deficit).lean();
+
+              for (const newDoc of newDocs) {
+                activeSession.questionSnapshot.push({
+                  questionId: newDoc._id,
+                  knowledgeBaseId: newDoc.knowledgeBaseId || `KB-Q-${newDoc._id}`,
+                  versionNumber: newDoc.version || 1,
+                  fingerprint: newDoc.fingerprint || newDoc.hash || `HASH-${newDoc._id}`,
+                  sequenceOrder: nextSequenceIndex,
+                  source: "AI Generated",
+                  questionText: newDoc.questionText || newDoc.text,
+                  options: newDoc.options || [],
+                  difficulty: newDoc.difficulty || "medium",
+                  bloomLevel: newDoc.bloomLevel || "Apply",
+                  tags: newDoc.tags || [],
+                  correctIndex: newDoc.correctIndex !== undefined ? newDoc.correctIndex : (newDoc.correctOptionIndex !== undefined ? newDoc.correctOptionIndex : newDoc.correctOption),
+                  correctAnswer: newDoc.correctAnswer,
+                  explanation: newDoc.explanation,
+                });
+
+                activeSession.answers.push({
+                  questionId: newDoc._id,
+                  sequenceOrder: nextSequenceIndex,
+                  selectedIndex: null,
+                  selectedAnswer: null,
+                  isAnswered: false,
+                  isMarkedForReview: false,
+                  timeTakenSeconds: 0,
+                  lastUpdated: new Date(),
+                  isCorrect: false,
+                });
+                
+                nextSequenceIndex++;
+              }
+              
+              activeSession.aiQuestionsCount = (activeSession.aiQuestionsCount || 0) + newDocs.length;
+              await activeSession.save();
+              console.log(`[SessionCreationService] ✅ Appended ${newDocs.length} generated questions to Session: ${sessionId}`);
+              break; // processed
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[SessionCreationService] Background AI synthesis error:", e);
     }
   }
 }

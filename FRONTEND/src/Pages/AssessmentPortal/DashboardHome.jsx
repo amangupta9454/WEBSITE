@@ -114,53 +114,6 @@ const DashboardHome = ({ data, onNavigate, globalSettings }) => {
         </div>
       </div>
 
-      {/* Active Session Watchdog Preview */}
-      {globalSettings?.resumeAssessmentEnabled && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-2.5">
-              <PlayCircle className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-extrabold text-base text-slate-900">Active & Suspended Assessments</h3>
-            </div>
-            <button
-              onClick={() => onNavigate("resume")}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-            >
-              <span>View All</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {activeSessions.length === 0 ? (
-            <div className="p-8 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
-              <FolderOpen className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-              <p className="text-xs sm:text-sm font-bold text-slate-700">No active session to resume.</p>
-              <p className="text-[11px] text-slate-400 mt-1">When you launch an assessment and step out, your progress auto-saves here.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeSessions.map((s) => (
-                <div key={s._id || s.sessionId} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4 hover:border-indigo-300 transition-all">
-                  <div className="space-y-1 truncate">
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                      IN PROGRESS
-                    </span>
-                    <h4 className="font-bold text-sm text-slate-900 truncate">{s.title || "Domain Assessment Attempt"}</h4>
-                    <p className="text-xs text-slate-500 font-medium">Session ID: {s.sessionId || s._id}</p>
-                  </div>
-                  <button
-                    onClick={() => onNavigate("resume")}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shrink-0 transition-all shadow-xs"
-                  >
-                    Resume
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Chronological Recent Activity Feed */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">

@@ -23,7 +23,10 @@ const ResultCenterView = ({ results = [] }) => {
   const [selectedResult, setSelectedResult] = useState(null);
 
   const handleDownloadSummary = () => {
-    toast.success("📄 Generating printable Result Summary PDF from server archives...");
+    toast.success("📄 Preparing printable Result Summary PDF...");
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   return (

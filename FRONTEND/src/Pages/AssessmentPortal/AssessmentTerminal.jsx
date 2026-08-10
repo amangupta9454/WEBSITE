@@ -114,8 +114,8 @@ const AssessmentTerminal = () => {
         if (resumeRes.data.questionPalette) {
           const loadedAnswers = {};
           resumeRes.data.questionPalette.forEach(a => {
-            if (a.selectedOptionId || a.selectedIndex !== undefined) {
-              loadedAnswers[a.questionId] = a.selectedOptionId || `option_idx_${a.selectedIndex}`;
+            if (a.selectedIndex !== undefined && a.selectedIndex !== null) {
+              loadedAnswers[a.questionId] = { index: a.selectedIndex, text: a.selectedAnswer };
             }
           });
           setAnswers(loadedAnswers);
@@ -136,8 +136,28 @@ const AssessmentTerminal = () => {
     }
   };
 
-  const handleSelectOption = (questionId, optionId) => {
-    const updatedAnswers = { ...answers, [questionId]: optionId };
+  // Poll for background streamed questions
+  useEffect(() => {
+    if (!session || !session.totalQuestions || questions.length >= session.totalQuestions) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        const batchRes = await axios.get(`${backendUrl}/api/assessment/sessions/${sessionId}/batch/1`, { headers });
+        if (batchRes.data.success && batchRes.data.questions && batchRes.data.questions.length > questions.length) {
+          setQuestions(batchRes.data.questions);
+        }
+      } catch (e) {
+        console.warn("Polling questions failed", e);
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [session, questions.length, sessionId, backendUrl]);
+
+  const handleSelectOption = (questionId, optIdx, optText) => {
+    const updatedAnswers = { ...answers, [questionId]: { index: optIdx, text: optText } };
     setAnswers(updatedAnswers);
     triggerAutosave(updatedAnswers, currentIdx);
   };
@@ -147,7 +167,8 @@ const AssessmentTerminal = () => {
       const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
       const answersArray = Object.keys(currentAnswers).map(qId => ({
         questionId: qId,
-        selectedOptionId: currentAnswers[qId],
+        selectedIndex: currentAnswers[qId]?.index,
+        selectedAnswer: currentAnswers[qId]?.text,
         timeSpentSeconds: 0
       }));
       await axios.post(`${backendUrl}/api/assessment/sessions/${sessionId}/autosave`, {
@@ -266,7 +287,7 @@ const AssessmentTerminal = () => {
           </div>
           <div className="p-4 grid grid-cols-4 gap-2 overflow-y-auto">
             {questions.map((q, idx) => {
-              const isAnswered = !!answers[q._id || q.questionId];
+              const isAnswered = answers[q._id || q.questionId] && answers[q._id || q.questionId].index !== undefined;
               const isActive = currentIdx === idx;
               return (
                 <button
@@ -300,7 +321,8 @@ const AssessmentTerminal = () => {
                 {/* Question header + per-question timer */}
                 <div className="flex items-center justify-between">
                   <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-md uppercase tracking-wider">
-                    Question {currentIdx + 1} of {questions.length}
+                    Question {currentIdx + 1} of {session?.totalQuestions || questions.length}
+                    {questions.length < session?.totalQuestions && <span className="ml-2 animate-pulse text-indigo-500">(Generating more...)</span>}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
@@ -366,12 +388,12 @@ const AssessmentTerminal = () => {
                     const optId = opt._id || `opt_${optIdx}`;
                     const optText = typeof opt === 'string' ? opt : opt.text;
                     const qId = currentQ._id || currentQ.questionId;
-                    const isSelected = answers[qId] === optId || answers[qId] === `option_idx_${optIdx}`;
+                    const isSelected = answers[qId]?.index === optIdx;
 
                     return (
                       <button
                         key={optId}
-                        onClick={() => handleSelectOption(qId, optId)}
+                        onClick={() => handleSelectOption(qId, optIdx, optText)}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${
                           isSelected
                             ? "border-indigo-600 bg-indigo-50/50 shadow-sm"
