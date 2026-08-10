@@ -5,6 +5,8 @@ import { Settings2, Save, ChevronDown, CheckCircle2, AlertCircle, Loader2, Clock
 const API = import.meta.env.VITE_BACKEND_URL || "";
 
 export default function SimpleConfigManager() {
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [config, setConfig] = useState(null);
@@ -12,7 +14,7 @@ export default function SimpleConfigManager() {
     totalQuestions: 20,
     timeLimitMinutes: 30,
     passingPercentage: 70,
-    questionTimerSeconds: 7,
+    questionTimerSeconds: 60,
     allowReview: true,
     allowPrevious: true,
   });
@@ -26,8 +28,12 @@ export default function SimpleConfigManager() {
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
+    // Load categories list
+    axios.get(`${API}/api/admin/assessment/categories?limit=100`, { headers })
+      .then(r => setCategories(r.data?.data || []))
+      .catch(() => {});
     // Load subcategories list
-    axios.get(`${API}/api/admin/assessment/subcategories?limit=100`, { headers })
+    axios.get(`${API}/api/admin/assessment/subcategories?limit=500`, { headers })
       .then(r => setSubcategories(r.data?.data || []))
       .catch(() => {});
     // Load all configs for the summary table
@@ -53,13 +59,13 @@ export default function SimpleConfigManager() {
           totalQuestions: c.totalQuestions || 20,
           timeLimitMinutes: c.timeLimitMinutes || 30,
           passingPercentage: c.passingPercentage || 70,
-          questionTimerSeconds: c.questionTimerSeconds ?? 7,
+          questionTimerSeconds: c.questionTimerSeconds ?? 60,
           allowReview: c.allowReview !== false,
           allowPrevious: c.allowPrevious !== false,
         });
       } else {
         setConfig(null);
-        setForm({ totalQuestions: 20, timeLimitMinutes: 30, passingPercentage: 70, questionTimerSeconds: 7, allowReview: true, allowPrevious: true });
+        setForm({ totalQuestions: 20, timeLimitMinutes: 30, passingPercentage: 70, questionTimerSeconds: 60, allowReview: true, allowPrevious: true });
       }
     } catch {
       setConfig(null);
@@ -115,20 +121,40 @@ export default function SimpleConfigManager() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Subcategory Selector */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Subcategory</label>
-            <div className="relative">
-              <select
-                value={selectedSubcategory}
-                onChange={e => setSelectedSubcategory(e.target.value)}
-                className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 pr-8"
-              >
-                <option value="">-- Select Subcategory --</option>
-                {subcategories.map(s => (
-                  <option key={s._id} value={s._id}>{s.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Category</label>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={e => { setSelectedCategory(e.target.value); setSelectedSubcategory(""); }}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 pr-8"
+                >
+                  <option value="">-- Select Category --</option>
+                  {categories.map(c => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Subcategory</label>
+              <div className="relative">
+                <select
+                  value={selectedSubcategory}
+                  onChange={e => setSelectedSubcategory(e.target.value)}
+                  disabled={!selectedCategory}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 pr-8 disabled:opacity-50"
+                >
+                  <option value="">-- Select Subcategory --</option>
+                  {subcategories.filter(s => s.categoryId === selectedCategory || s.categoryId?._id === selectedCategory).map(s => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
 
@@ -139,7 +165,7 @@ export default function SimpleConfigManager() {
               { icon: HelpCircle, label: "Recommended Questions", value: "20" },
               { icon: Clock, label: "Recommended Time", value: "30 min" },
               { icon: Target, label: "Recommended Pass %", value: "70%" },
-              { icon: Timer, label: "Per-Question Timer", value: "7 sec" },
+              { icon: Timer, label: "Per-Question Timer", value: "60 sec" },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -238,7 +264,7 @@ export default function SimpleConfigManager() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-400">0 = disabled, 7s recommended</p>
+                  <p className="text-xs text-slate-400">0 = disabled, 60s recommended</p>
                 </div>
               </div>
 
