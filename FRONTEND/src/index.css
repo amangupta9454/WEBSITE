@@ -58,3 +58,25 @@
 .animate-spin-slow {
   animation: spin-slow 8s linear infinite;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-summary, #printable-summary * {
+    visibility: visible;
+  }
+  #printable-summary {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print-hide, .print-hide * {
+    display: none !important;
+  }
+}

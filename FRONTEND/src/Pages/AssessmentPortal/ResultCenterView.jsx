@@ -135,10 +135,10 @@ const ResultCenterView = ({ results = [] }) => {
       {/* Detailed Result Breakdown Modal - Light Theme */}
       {selectedResult && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-xl relative space-y-6 max-h-[90vh] overflow-y-auto text-slate-800">
+          <div id="printable-summary" className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-xl relative space-y-6 max-h-[90vh] overflow-y-auto text-slate-800">
             <button
               onClick={() => setSelectedResult(null)}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+              className="absolute top-6 right-6 p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors print-hide"
             >
               <X className="w-5 h-5" />
             </button>
@@ -183,7 +183,7 @@ const ResultCenterView = ({ results = [] }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 print-hide">
               <button
                 onClick={() => setSelectedResult(null)}
                 className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all"

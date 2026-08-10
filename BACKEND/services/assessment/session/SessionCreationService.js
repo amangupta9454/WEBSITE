@@ -158,6 +158,10 @@ class SessionCreationService {
       const shuffled = [...approvedQuestions].sort(() => 0.5 - Math.random());
       const selectedDocs = shuffled.slice(0, totalQuestions);
 
+      if (selectedDocs.length === 0) {
+        return { success: false, error: "No questions available for this domain. Cannot start assessment." };
+      }
+
       // Construct Question Snapshot and empty Answers framework
       const questionSnapshot = [];
       const questionIds = [];

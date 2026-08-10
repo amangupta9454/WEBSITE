@@ -281,7 +281,7 @@ Return ONLY a valid JSON array, no markdown:
               temperature: 0.7,
               max_tokens: 1500,
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("AI_TIMEOUT")), 7000)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("AI_TIMEOUT")), 15000)),
           ]);
 
           const rawText = aiRace.choices?.[0]?.message?.content || "";
@@ -319,7 +319,7 @@ Return ONLY a valid JSON array, no markdown:
               }
             }
             aiGenerated = true;
-            console.log(`[SmartSession] ✅ AI generated ${questions.length} questions for ${subName} (${difficulty}) in <7s`);
+            console.log(`[SmartSession] ✅ AI generated ${questions.length} questions for ${subName} (${difficulty}) in <15s`);
           }
         }
       }
