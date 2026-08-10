@@ -80,11 +80,18 @@ export default function SimpleConfigManager() {
     setSuccess("");
     setError("");
     try {
+      const totalQ = Number(form.totalQuestions);
+      const easy = Math.round(totalQ * 0.30);
+      const medium = Math.round(totalQ * 0.40);
+      const hard = Math.round(totalQ * 0.20);
+      const expert = totalQ - (easy + medium + hard);
+
       await axios.put(`${API}/api/admin/assessment/configs/${selectedSubcategory}`, {
-        totalQuestions: Number(form.totalQuestions),
+        totalQuestions: totalQ,
         timeLimitMinutes: Number(form.timeLimitMinutes),
         passingPercentage: Number(form.passingPercentage),
         questionTimerSeconds: Number(form.questionTimerSeconds),
+        difficultyDistribution: { easy, medium, hard, expert },
         allowReview: form.allowReview,
         allowPrevious: form.allowPrevious,
         isActive: true,
