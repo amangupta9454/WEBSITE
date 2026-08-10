@@ -16,6 +16,7 @@ const SYSTEM_DEFAULTS = {
   totalQuestions: 20,
   passingPercentage: 75,
   timeLimitMinutes: 20,
+  questionTimerSeconds: 60,
   difficultyDistribution: { easy: 6, medium: 8, hard: 4, expert: 2 },
   assessmentType: "MCQ",
   aiFirst: true,

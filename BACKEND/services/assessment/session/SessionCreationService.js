@@ -101,7 +101,7 @@ class SessionCreationService {
         batchSize: 5, // Default batch delivery size (Component 4)
         allowReview: config.allowReview !== undefined ? config.allowReview : true,
         allowPrevious: config.allowPrevious !== undefined ? config.allowPrevious : true,
-        questionTimerSeconds: config.questionTimerSeconds || 7, // 7-second per-question rule
+        questionTimerSeconds: config.questionTimerSeconds || 60, // 60-second per-question rule
       };
 
       // 3. Component 3: Question Snapshot (AI-First / DB Fallback immutable set generation)

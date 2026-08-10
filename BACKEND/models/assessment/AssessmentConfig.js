@@ -66,6 +66,7 @@ const assessmentConfigSchema = new mongoose.Schema(
     totalQuestions:         { type: Number, default: 20, min: 5, max: 200 },
     passingPercentage:      { type: Number, default: 75, min: 1, max: 100 }, // Refinement 1: default 75%
     timeLimitMinutes:       { type: Number, default: 20, min: 5, max: 180 },
+    questionTimerSeconds:   { type: Number, default: 60, min: 0 },
     difficultyDistribution: { type: difficultyDistributionSchema, default: () => ({}) },
 
     // Modality (Refinement 5: Cleaned Enums)
