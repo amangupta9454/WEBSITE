@@ -20,6 +20,7 @@ import SimpleQuestionGenerator from "./SimpleQuestionGenerator";
 import QuestionBankManager from "./QuestionBankManager";
 import SimpleConfigManager from "./SimpleConfigManager";
 import CredentialConsole from "./CredentialConsole";
+import CategoryWizard from "./CategoryWizard";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:5006";
 
@@ -137,13 +138,19 @@ const AssessmentDashboard = () => {
         {activeTab === "dashboard" && (
           <AssessmentOverview
             onNavigate={setActiveTab}
-            onLaunchWizard={() => setActiveTab("generate")}
+            onLaunchWizard={() => setActiveTab("wizard")}
           />
         )}
         {activeTab === "categories" && (
           <CategoryManager
             onSelectCategory={() => {}}
-            onLaunchWizard={() => setActiveTab("generate")}
+            onLaunchWizard={() => setActiveTab("wizard")}
+          />
+        )}
+        {activeTab === "wizard" && (
+          <CategoryWizard 
+            onComplete={() => setActiveTab("categories")}
+            onCancel={() => setActiveTab("categories")}
           />
         )}
         {activeTab === "subcategories" && <SubcategoryManager />}
