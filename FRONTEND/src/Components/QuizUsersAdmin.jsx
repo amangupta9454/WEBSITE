@@ -68,6 +68,20 @@ const QuizUsersAdmin = () => {
     fetchQuizApplicants();
   }, []);
 
+  // Prevent accidental tab close/refresh while sending bulk emails
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isSendingBulk) {
+        e.preventDefault();
+        e.returnValue = 'Certificate sending is in progress. If you close or refresh this tab, the remaining emails will NOT be sent. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isSendingBulk]);
+
   const fetchQuizApplicants = async () => {
     try {
       setLoading(true);
