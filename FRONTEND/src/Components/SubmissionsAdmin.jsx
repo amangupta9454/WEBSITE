@@ -334,7 +334,7 @@ const SubmissionsAdmin = () => {
                             {sub.projectName}
                           </td>
                           <td className="px-4 py-3 text-xs text-slate-500">
-                            {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('en-GB') : 'N/A'}
+                            {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">

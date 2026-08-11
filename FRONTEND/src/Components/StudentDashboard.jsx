@@ -516,7 +516,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
             </p>
             <p className="text-sm mt-1">
               Scheduled Start Date:{" "}
-              {startDate ? startDate.toLocaleDateString('en-GB') : "Pending"}
+              {startDate ? startDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Pending"}
             </p>
           </div>
         )}
@@ -924,7 +924,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
             </p>
             <p className="text-sm mt-1">
               Scheduled Start Date:{" "}
-              {startDate ? startDate.toLocaleDateString('en-GB') : "Pending"}
+              {startDate ? startDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Pending"}
             </p>
           </div>
         ) : projects.length === 0 ? (
@@ -1498,7 +1498,7 @@ const StudentDashboard = () => {
                     >
                       {data.internships.map(internship => (
                         <option key={internship._id} value={internship._id}>
-                          {internship.domain} • {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB') : "N/A"}
+                          {internship.domain} • {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A"}
                         </option>
                       ))}
                     </select>

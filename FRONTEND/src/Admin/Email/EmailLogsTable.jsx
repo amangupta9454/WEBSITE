@@ -298,7 +298,7 @@ export default function EmailLogsTable({ initialStatusFilter, onResendEmail, res
 
                       {/* Timestamp */}
                       <td className="py-3.5 px-4 whitespace-nowrap text-xs font-bold text-slate-600">
-                        <div>{new Date(log.createdAt).toLocaleDateString('en-GB')}</div>
+                        <div>{new Date(log.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
                         <div className="text-[11px] text-slate-400 font-normal">{new Date(log.createdAt).toLocaleTimeString()}</div>
                       </td>
 

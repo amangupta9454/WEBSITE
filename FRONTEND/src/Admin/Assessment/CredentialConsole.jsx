@@ -368,7 +368,7 @@ const CredentialConsole = () => {
                     </div>
                     <div className="flex items-center justify-between border-t border-slate-700/60 pt-2 text-[11px] text-slate-400">
                       <span>Score: <strong className="text-white font-black">{cert.snapshot?.percentage}%</strong></span>
-                      <span className="font-mono text-slate-500">{new Date(cert.createdAt).toLocaleDateString('en-GB')}</span>
+                      <span className="font-mono text-slate-500">{new Date(cert.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                     </div>
                   </div>
                 );
@@ -612,7 +612,7 @@ const CredentialConsole = () => {
                   <div className="w-full flex items-center justify-between border-t border-slate-200 mt-8 pt-4 text-left font-sans text-xs text-slate-600">
                     <div>
                       <div>Certificate ID: <strong className="text-[#4f46e5]">{selectedCert.certificateId}</strong> (V{selectedCert.version})</div>
-                      <div>Issued Date: <strong className="text-slate-800">{new Date(selectedCert.createdAt).toLocaleDateString('en-GB')}</strong></div>
+                      <div>Issued Date: <strong className="text-slate-800">{new Date(selectedCert.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</strong></div>
                       <div className="text-[10px] text-slate-500 font-mono mt-1">SHA-256: {selectedCert.hashes?.certificateHash?.slice(0, 32)}...</div>
                     </div>
                     <div className="flex items-center gap-3">

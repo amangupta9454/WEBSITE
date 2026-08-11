@@ -147,7 +147,7 @@ const DashboardHome = ({ data, onNavigate, globalSettings }) => {
                   </div>
                 </div>
                 <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                  {act.createdAt || act.timestamp ? new Date(act.createdAt || act.timestamp).toLocaleDateString('en-GB') : "Recent"}
+                  {act.createdAt || act.timestamp ? new Date(act.createdAt || act.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Recent"}
                 </span>
               </div>
             ))}

@@ -84,7 +84,7 @@ const ResultCenterView = ({ results = [] }) => {
                       <td className="py-4 px-4 text-slate-600 text-xs">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{r.completedAt ? new Date(r.completedAt).toLocaleDateString('en-GB') : "Recent"}</span>
+                          <span>{r.completedAt ? new Date(r.completedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Recent"}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4 text-center font-mono font-bold text-slate-800">

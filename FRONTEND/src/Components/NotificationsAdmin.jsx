@@ -122,7 +122,7 @@ const NotificationsAdmin = () => {
                 <div>
                   <p className="font-medium text-slate-800">{n.message}</p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Audience: <span className="font-semibold">{n.audience}</span> • Created: {new Date(n.createdAt).toLocaleDateString('en-GB')}
+                    Audience: <span className="font-semibold">{n.audience}</span> • Created: {new Date(n.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </p>
                 </div>
                 <button

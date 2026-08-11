@@ -432,7 +432,7 @@ const AllUsersAdmin = () => {
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-slate-600 pt-1">
                         <div>Score: <strong className="text-slate-900">{q.score || "N/A"}</strong></div>
                         <div>Result: <strong className="text-emerald-700">{q.result || "N/A"}</strong></div>
-                        <div>Imported: <strong className="text-slate-800">{q.importedAt ? new Date(q.importedAt).toLocaleDateString('en-GB') : "N/A"}</strong></div>
+                        <div>Imported: <strong className="text-slate-800">{q.importedAt ? new Date(q.importedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A"}</strong></div>
                       </div>
                     </div>
                   ))}
@@ -460,7 +460,7 @@ const AllUsersAdmin = () => {
                         <div>Duration: <strong className="text-slate-800">{app.duration}</strong></div>
                         <div>Batch: <strong className="text-slate-800">{app.batch || "N/A"}</strong></div>
                         <div>Payment Status: <strong className={app.hasPaid ? "text-emerald-600" : "text-amber-600"}>{app.hasPaid ? "Paid" : "Unpaid"}</strong></div>
-                        <div>Applied Date: <strong className="text-slate-800">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('en-GB') : "N/A"}</strong></div>
+                        <div>Applied Date: <strong className="text-slate-800">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A"}</strong></div>
                       </div>
                     </div>
                   ))}

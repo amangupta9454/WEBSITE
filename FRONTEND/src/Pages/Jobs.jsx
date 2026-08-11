@@ -445,7 +445,7 @@ const Jobs = () => {
                         <span>Admin Bonus Active!</span>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
-                        You've been granted VIP access by an admin! Valid until <b className="text-slate-900">{new Date(userStatus.adminBonusExpires).toLocaleDateString('en-GB')}</b>.
+                        You've been granted VIP access by an admin! Valid until <b className="text-slate-900">{new Date(userStatus.adminBonusExpires).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</b>.
                       </p>
                     </div>
                   )}
@@ -458,7 +458,7 @@ const Jobs = () => {
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
                         {userStatus.freeModeExpires ? (
-                          <>Promo valid until <b className="text-slate-900">{new Date(userStatus.freeModeExpires).toLocaleDateString('en-GB')}</b> before auto-switching to Token pricing.</>
+                          <>Promo valid until <b className="text-slate-900">{new Date(userStatus.freeModeExpires).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</b> before auto-switching to Token pricing.</>
                         ) : (
                           <>1st Month Free Promo is currently active for all students!</>
                         )}
@@ -467,7 +467,7 @@ const Jobs = () => {
                   )}
                   {!userStatus.isFreeMode && userStatus.isPremium && userStatus.expiresAt && (
                     <div className="text-xs text-slate-500 font-semibold mb-5 text-right">
-                      Plan valid until: <span className="text-slate-800 font-black">{new Date(userStatus.expiresAt).toLocaleDateString('en-GB')}</span>
+                      Plan valid until: <span className="text-slate-800 font-black">{new Date(userStatus.expiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                     </div>
                   )}
                 </div>
