@@ -713,9 +713,9 @@ const getMyCertificates = async (req, res) => {
     let userEmail = req.user?.email || "";
     let userName = req.user?.name || "";
     let studentId = req.user?.studentId || "";
+    const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId || "";
 
     if (!userEmail || !userName) {
-      const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId;
       if (userId) {
         const User = require('../models/User'); // Ensure User model is required
         const dbUser = await User.findById(userId).lean();
@@ -860,6 +860,42 @@ const getMyCertificates = async (req, res) => {
       }
     }
 
+    // 3. Fetch from AssessmentCertificate
+    try {
+      const AssessmentCertificate = require('../models/assessment/AssessmentCertificate');
+      const assessmentQuery = [];
+      if (userId) assessmentQuery.push({ candidateId: String(userId) });
+      if (userName) assessmentQuery.push({ candidateName: new RegExp(`^${userName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") });
+      
+      if (assessmentQuery.length > 0) {
+        const assessmentCerts = await AssessmentCertificate.find({ $or: assessmentQuery }).lean();
+        for (const ac of assessmentCerts) {
+          if (!certificates.some(c => c.certificateId === ac.certificateId)) {
+            certificates.push({
+              id: ac.certificateId,
+              certificateId: ac.certificateId,
+              title: ac.assessmentName || "Assessment Certificate",
+              quizName: ac.assessmentName || "Assessment",
+              recipientName: ac.candidateName || userName || "Participant",
+              email: userEmail,
+              issueDate: ac.issuedAt || ac.createdAt,
+              score: ac.score || "N/A",
+              totalScore: ac.maxScore || "N/A",
+              result: ac.result || "N/A",
+              percentage: ac.percentage ? `${ac.percentage}%` : "N/A",
+              effectiveScore: ac.score || "N/A",
+              sponsorName: "Code-A-Nova Assessments",
+              type: "Assessment Certificate",
+              category: ac.category || "Assessment",
+              status: "VERIFIED & ISSUED"
+            });
+          }
+        }
+      }
+    } catch(e) {
+      console.log("[Backend] AssessmentCertificate fetch error:", e);
+    }
+
     res.json({ success: true, certificates });
   } catch (error) {
     console.error("[Backend] Error fetching student certificates:", error);
@@ -871,9 +907,9 @@ const getMyQuizzes = async (req, res) => {
   try {
     let userEmail = req.user?.email || "";
     let userName = req.user?.name || "";
+    const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId || "";
 
     if (!userEmail || !userName) {
-      const userId = req.user?.unifiedUserId || req.user?.id || req.user?.userId;
       if (userId) {
         const User = require('../models/User'); // Ensure User model is required
         const dbUser = await User.findById(userId).lean();
@@ -886,6 +922,7 @@ const getMyQuizzes = async (req, res) => {
 
     let pastQuizzes = [];
 
+    // 1. Fetch from QuizApplicant
     let quizApplicants = [];
     if (userEmail || userName) {
       const queryArr = [];
@@ -898,91 +935,123 @@ const getMyQuizzes = async (req, res) => {
       quizApplicants = await QuizApplicant.find({ $or: queryArr }).lean();
     }
 
-    // Fallback: If 0 matching records found for user, fetch all QuizApplicant documents or QuizSponsors
+    // Fallback: If 0 matching records found for user, fetch all QuizApplicant documents
     if (quizApplicants.length === 0) {
       quizApplicants = await QuizApplicant.find({}).sort({ createdAt: -1 }).lean();
     }
 
-    // Also fallback to QuizSponsor if quizApplicants is empty
-    if (quizApplicants.length === 0) {
-      const sponsors = await QuizSponsor.find({}).lean();
-      for (const s of sponsors) {
-        if (!pastQuizzes.some(pq => pq.quizName === s.quizName)) {
-          pastQuizzes.push({
-            id: String(s._id),
-            quizName: s.quizName,
-            registrationId: "CAN-QUIZ-2026",
-            quizDate: s.quizDate || "2026-08-01",
-            score: "95",
-            totalScore: "100",
-            result: "Participation & Excellence",
-            percentage: "95%",
-            effectiveScore: "95",
-            sponsorName: s.sponsorName || "",
-            sponsorLogo: s.sponsorLogo || "",
-            sponsorSignature: s.sponsorSignature || "",
-            sponsorSignatoryName: s.sponsorSignatoryName || "",
-            name: userName || "Participant",
-            email: userEmail,
-            hasCertificate: true,
-            status: "COMPLETED"
-          });
-        }
+    for (const app of quizApplicants) {
+      if (app.quizName && !pastQuizzes.some(pq => pq.quizName === app.quizName)) {
+        pastQuizzes.push({
+          id: app.registrationId || String(app._id),
+          quizName: app.quizName,
+          registrationId: app.registrationId || "",
+          quizDate: app.quizDate || app.createdAt,
+          score: app.score || "N/A",
+          totalScore: app.totalScore || "N/A",
+          result: app.result || "N/A",
+          percentage: app.percentage || "N/A",
+          effectiveScore: app.effectiveScore || "N/A",
+          totalQuestions: app.totalQuestions || "N/A",
+          attemptedQuestions: app.attemptedQuestions || "N/A",
+          sponsorName: app.sponsorName || "",
+          sponsorLogo: app.sponsorLogo || "",
+          sponsorSignature: app.sponsorSignature || "",
+          sponsorSignatoryName: app.sponsorSignatoryName || "",
+          name: app.name || userName || "Participant",
+          email: app.email || userEmail,
+          hasCertificate: true,
+          status: "COMPLETED"
+        });
       }
-    } else {
-      for (const app of quizApplicants) {
-        if (app.quizName && !pastQuizzes.some(pq => pq.quizName === app.quizName)) {
-          pastQuizzes.push({
-            id: app.registrationId || String(app._id),
-            quizName: app.quizName,
-            registrationId: app.registrationId || "",
-            quizDate: app.quizDate || app.createdAt,
-            score: app.score || "N/A",
-            totalScore: app.totalScore || "N/A",
-            result: app.result || "N/A",
-            percentage: app.percentage || "N/A",
-            effectiveScore: app.effectiveScore || "N/A",
-            totalQuestions: app.totalQuestions || "N/A",
-            attemptedQuestions: app.attemptedQuestions || "N/A",
-            sponsorName: app.sponsorName || "",
-            sponsorLogo: app.sponsorLogo || "",
-            sponsorSignature: app.sponsorSignature || "",
-            sponsorSignatoryName: app.sponsorSignatoryName || "",
-            name: app.name || userName || "Participant",
-            email: app.email || userEmail,
-            hasCertificate: true,
-            status: "COMPLETED"
-          });
-        }
 
-        if (Array.isArray(app.quizzes)) {
-          for (const q of app.quizzes) {
-            if (q.quizName && !pastQuizzes.some(pq => pq.quizName === q.quizName)) {
-              pastQuizzes.push({
-                id: q.registrationId || String(q._id),
-                quizName: q.quizName,
-                registrationId: q.registrationId || "",
-                quizDate: q.quizDate || q.importedAt || app.createdAt,
-                score: q.score || "N/A",
-                totalScore: q.totalScore || "N/A",
-                result: q.result || "N/A",
-                percentage: q.percentage || "N/A",
-                effectiveScore: q.effectiveScore || "N/A",
-                totalQuestions: q.totalQuestions || "N/A",
-                attemptedQuestions: q.attemptedQuestions || "N/A",
-                sponsorName: q.sponsorName || app.sponsorName || "",
-                sponsorLogo: q.sponsorLogo || app.sponsorLogo || "",
-                sponsorSignature: q.sponsorSignature || app.sponsorSignature || "",
-                sponsorSignatoryName: q.sponsorSignatoryName || app.sponsorSignatoryName || "",
-                name: app.name || userName || "Participant",
-                email: app.email || userEmail,
-                hasCertificate: true,
-                status: "COMPLETED"
-              });
-            }
+      if (Array.isArray(app.quizzes)) {
+        for (const q of app.quizzes) {
+          if (q.quizName && !pastQuizzes.some(pq => pq.quizName === q.quizName)) {
+            pastQuizzes.push({
+              id: q.registrationId || String(q._id),
+              quizName: q.quizName,
+              registrationId: q.registrationId || "",
+              quizDate: q.quizDate || q.importedAt || app.createdAt,
+              score: q.score || "N/A",
+              totalScore: q.totalScore || "N/A",
+              result: q.result || "N/A",
+              percentage: q.percentage || "N/A",
+              effectiveScore: q.effectiveScore || "N/A",
+              totalQuestions: q.totalQuestions || "N/A",
+              attemptedQuestions: q.attemptedQuestions || "N/A",
+              sponsorName: q.sponsorName || app.sponsorName || "",
+              sponsorLogo: q.sponsorLogo || app.sponsorLogo || "",
+              sponsorSignature: q.sponsorSignature || app.sponsorSignature || "",
+              sponsorSignatoryName: q.sponsorSignatoryName || app.sponsorSignatoryName || "",
+              name: app.name || userName || "Participant",
+              email: app.email || userEmail,
+              hasCertificate: true,
+              status: "COMPLETED"
+            });
           }
         }
       }
+    }
+
+    // 2. Fetch from QuizSponsor (ALWAYS execute this so any new quizzes from admin panel show up)
+    const sponsors = await QuizSponsor.find({}).lean();
+    for (const s of sponsors) {
+      if (!pastQuizzes.some(pq => pq.quizName === s.quizName)) {
+        pastQuizzes.push({
+          id: String(s._id),
+          quizName: s.quizName,
+          registrationId: "CAN-QUIZ-2026",
+          quizDate: s.quizDate || s.createdAt || "2026-08-01",
+          score: "N/A",
+          totalScore: "N/A",
+          result: "N/A",
+          percentage: "N/A",
+          effectiveScore: "N/A",
+          sponsorName: s.sponsorName || "",
+          sponsorLogo: s.sponsorLogo || "",
+          sponsorSignature: s.sponsorSignature || "",
+          sponsorSignatoryName: s.sponsorSignatoryName || "",
+          name: userName || "Participant",
+          email: userEmail,
+          hasCertificate: true,
+          status: "COMPLETED"
+        });
+      }
+    }
+
+    // 3. Fetch from AssessmentCertificate
+    try {
+      const AssessmentCertificate = require('../models/assessment/AssessmentCertificate');
+      const assessmentQuery = [];
+      if (userId) assessmentQuery.push({ candidateId: String(userId) });
+      if (userName) assessmentQuery.push({ candidateName: new RegExp(`^${userName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") });
+      
+      if (assessmentQuery.length > 0) {
+        const assessmentCerts = await AssessmentCertificate.find({ $or: assessmentQuery }).lean();
+        for (const ac of assessmentCerts) {
+          if (!pastQuizzes.some(pq => pq.quizName === ac.assessmentName)) {
+            pastQuizzes.push({
+              id: ac.certificateId,
+              quizName: ac.assessmentName || "Assessment",
+              registrationId: ac.certificateId,
+              quizDate: ac.issuedAt || ac.createdAt,
+              score: ac.score || "N/A",
+              totalScore: ac.maxScore || "N/A",
+              result: ac.result || "N/A",
+              percentage: ac.percentage ? `${ac.percentage}%` : "N/A",
+              effectiveScore: ac.score || "N/A",
+              sponsorName: "Code-A-Nova Assessments",
+              name: ac.candidateName || userName || "Participant",
+              email: userEmail,
+              hasCertificate: true,
+              status: "COMPLETED"
+            });
+          }
+        }
+      }
+    } catch(e) {
+      console.log("[Backend] AssessmentCertificate fetch error:", e);
     }
 
     const liveQuizzes = [];
