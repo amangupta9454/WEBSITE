@@ -60,13 +60,14 @@
 }
 
 @media print {
-  body * {
+  body:has(#printable-summary) * {
     visibility: hidden;
   }
-  #printable-summary, #printable-summary * {
+  body:has(#printable-summary) #printable-summary, 
+  body:has(#printable-summary) #printable-summary * {
     visibility: visible;
   }
-  #printable-summary {
+  body:has(#printable-summary) #printable-summary {
     position: absolute;
     left: 0;
     top: 0;
