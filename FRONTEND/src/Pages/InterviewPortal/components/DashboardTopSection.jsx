@@ -201,7 +201,7 @@ export default function DashboardTopSection() {
               {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
                 <div className="flex items-center justify-between bg-white/70 p-2.5 sm:p-3 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
                   <p className="text-purple-800 text-xs sm:text-sm font-medium">
-                    Job Portal VIP Access valid until <b className="text-purple-900">{new Date(userData.jobPortalPremiumExpires).toLocaleDateString()}</b>.
+                    Job Portal VIP Access valid until <b className="text-purple-900">{new Date(userData.jobPortalPremiumExpires).toLocaleDateString('en-GB')}</b>.
                   </p>
                   <button onClick={() => navigate('/jobs')} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-colors shadow-sm ml-4">
                     View Jobs

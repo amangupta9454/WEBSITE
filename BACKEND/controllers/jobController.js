@@ -605,7 +605,7 @@ exports.getUserStatus = async (req, res) => {
       isFreeMode,
       freeModeExpires,
       premiumPrice,
-      expiresAt: isFreeMode ? (freeModeExpires ? new Date(freeModeExpires).toLocaleDateString() : 'Active Promo') : (user.jobPortalPremiumExpires || null),
+      expiresAt: isFreeMode ? (freeModeExpires ? new Date(freeModeExpires).toLocaleDateString('en-GB') : 'Active Promo') : (user.jobPortalPremiumExpires || null),
       tokens: user.interviewCredits || 0,
       adminBonusActive: !!user.jobPortalPremium,
       adminBonusExpires: user.jobPortalPremiumExpires || null
