@@ -219,11 +219,8 @@ router.post("/notifications", auth, verifyAdmin, createNotification);
 router.get("/notifications", auth, verifyAdmin, getAdminNotifications);
 router.delete("/notifications/:id", auth, verifyAdmin, deleteNotification);
 
-// Interview Admin Route
 const User = require("../models/User");
-const NewsletterSubscriber = require('../models/NewsletterSubscriber');
 const PreGrantedBonus = require('../models/PreGrantedBonus');
-const PDFDocument = require('pdfkit');
 const Settings = require("../models/Settings");
 
 // Get/toggle the interview feature flag

@@ -202,7 +202,7 @@ try {
   });
 } catch (bootError) {
   console.error("CRITICAL FATAL BOOT ERROR DURING INDEX.JS REQUIRE:", bootError.stack || bootError);
-  app.all("*", (req, res) => {
+  app.use((req, res) => {
     res.status(500).json({
       error: "STARTUP_INVOCATION_FAILED",
       message: bootError.message,
