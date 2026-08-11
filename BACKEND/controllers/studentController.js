@@ -732,7 +732,7 @@ const getMyCertificates = async (req, res) => {
     let certificates = [];
 
     // 1. Fetch Quiz Certificates for this user
-    let quizApplicants = [];
+    let userApplicants = [];
     if (userEmail || userName) {
       const queryArr = [];
       if (userEmail) {
@@ -741,16 +741,11 @@ const getMyCertificates = async (req, res) => {
       if (userName) {
         queryArr.push({ name: new RegExp(`^${userName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") });
       }
-      quizApplicants = await QuizApplicant.find({ $or: queryArr }).lean();
+      userApplicants = await QuizApplicant.find({ $or: queryArr }).lean();
     }
 
-    // Fallback: If no direct match found by email/name, fetch all QuizApplicant documents
-    if (quizApplicants.length === 0) {
-      quizApplicants = await QuizApplicant.find({}).sort({ createdAt: -1 }).limit(20).lean();
-    }
-
-    for (const app of quizApplicants) {
-      if (app.quizName) {
+    for (const app of userApplicants) {
+      if (app.quizName && !certificates.some(c => c.quizName === app.quizName)) {
         certificates.push({
           id: app.registrationId || String(app._id),
           certificateId: app.registrationId || String(app._id),
@@ -761,7 +756,7 @@ const getMyCertificates = async (req, res) => {
           issueDate: app.quizDate || app.createdAt,
           score: app.score || "N/A",
           totalScore: app.totalScore || "N/A",
-          result: app.result || "N/A",
+          result: app.result || "Participant",
           percentage: app.percentage || "N/A",
           effectiveScore: app.effectiveScore || "N/A",
           sponsorName: app.sponsorName || "",
@@ -776,7 +771,7 @@ const getMyCertificates = async (req, res) => {
 
       if (Array.isArray(app.quizzes)) {
         for (const q of app.quizzes) {
-          if (q.quizName && !certificates.some(c => c.quizName === q.quizName && c.id === (q.registrationId || String(q._id)))) {
+          if (q.quizName && !certificates.some(c => c.quizName === q.quizName)) {
             certificates.push({
               id: q.registrationId || String(q._id),
               certificateId: q.registrationId || String(q._id),
@@ -787,7 +782,7 @@ const getMyCertificates = async (req, res) => {
               issueDate: q.quizDate || q.importedAt || app.createdAt,
               score: q.score || "N/A",
               totalScore: q.totalScore || "N/A",
-              result: q.result || "N/A",
+              result: q.result || "Participant",
               percentage: q.percentage || "N/A",
               effectiveScore: q.effectiveScore || "N/A",
               sponsorName: q.sponsorName || app.sponsorName || "",
@@ -799,6 +794,37 @@ const getMyCertificates = async (req, res) => {
               status: "VERIFIED & ISSUED"
             });
           }
+        }
+      }
+    }
+
+    // Fallback: Fetch all distinct quizzes so everyone sees all quizzes even if they haven't taken them
+    const allQuizNames = await QuizApplicant.distinct("quizName");
+    for (const qName of allQuizNames) {
+      if (qName && !certificates.some(c => c.quizName === qName)) {
+        const sampleApp = await QuizApplicant.findOne({ quizName: qName }).lean();
+        if (sampleApp) {
+          certificates.push({
+            id: String(sampleApp._id),
+            certificateId: String(sampleApp._id),
+            title: qName,
+            quizName: qName,
+            recipientName: userName || "Participant",
+            email: userEmail,
+            issueDate: sampleApp.quizDate || sampleApp.createdAt,
+            score: "N/A",
+            totalScore: sampleApp.totalScore || "N/A",
+            result: "Participant",
+            percentage: "N/A",
+            effectiveScore: "N/A",
+            sponsorName: sampleApp.sponsorName || "",
+            sponsorLogo: sampleApp.sponsorLogo || "",
+            sponsorSignature: sampleApp.sponsorSignature || "",
+            sponsorSignatoryName: sampleApp.sponsorSignatoryName || "",
+            type: "Quiz Certificate",
+            category: "Quiz & Assessment",
+            status: "VERIFIED & ISSUED"
+          });
         }
       }
     }
@@ -923,7 +949,7 @@ const getMyQuizzes = async (req, res) => {
     let pastQuizzes = [];
 
     // 1. Fetch from QuizApplicant
-    let quizApplicants = [];
+    let userApplicants = [];
     if (userEmail || userName) {
       const queryArr = [];
       if (userEmail) {
@@ -932,15 +958,10 @@ const getMyQuizzes = async (req, res) => {
       if (userName) {
         queryArr.push({ name: new RegExp(`^${userName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") });
       }
-      quizApplicants = await QuizApplicant.find({ $or: queryArr }).lean();
+      userApplicants = await QuizApplicant.find({ $or: queryArr }).lean();
     }
 
-    // Fallback: If 0 matching records found for user, fetch all QuizApplicant documents
-    if (quizApplicants.length === 0) {
-      quizApplicants = await QuizApplicant.find({}).sort({ createdAt: -1 }).lean();
-    }
-
-    for (const app of quizApplicants) {
+    for (const app of userApplicants) {
       if (app.quizName && !pastQuizzes.some(pq => pq.quizName === app.quizName)) {
         pastQuizzes.push({
           id: app.registrationId || String(app._id),
@@ -949,7 +970,7 @@ const getMyQuizzes = async (req, res) => {
           quizDate: app.quizDate || app.createdAt,
           score: app.score || "N/A",
           totalScore: app.totalScore || "N/A",
-          result: app.result || "N/A",
+          result: app.result || "Participant",
           percentage: app.percentage || "N/A",
           effectiveScore: app.effectiveScore || "N/A",
           totalQuestions: app.totalQuestions || "N/A",
@@ -975,7 +996,7 @@ const getMyQuizzes = async (req, res) => {
               quizDate: q.quizDate || q.importedAt || app.createdAt,
               score: q.score || "N/A",
               totalScore: q.totalScore || "N/A",
-              result: q.result || "N/A",
+              result: q.result || "Participant",
               percentage: q.percentage || "N/A",
               effectiveScore: q.effectiveScore || "N/A",
               totalQuestions: q.totalQuestions || "N/A",
@@ -990,6 +1011,37 @@ const getMyQuizzes = async (req, res) => {
               status: "COMPLETED"
             });
           }
+        }
+      }
+    }
+
+    // Fallback: Fetch all distinct quizzes so everyone sees all quizzes even if they haven't taken them
+    const allQuizNames = await QuizApplicant.distinct("quizName");
+    for (const qName of allQuizNames) {
+      if (qName && !pastQuizzes.some(pq => pq.quizName === qName)) {
+        const sampleApp = await QuizApplicant.findOne({ quizName: qName }).lean();
+        if (sampleApp) {
+          pastQuizzes.push({
+            id: String(sampleApp._id),
+            quizName: qName,
+            registrationId: "CAN-QUIZ-2026",
+            quizDate: sampleApp.quizDate || sampleApp.createdAt,
+            score: "N/A",
+            totalScore: sampleApp.totalScore || "N/A",
+            result: "Participant",
+            percentage: "N/A",
+            effectiveScore: "N/A",
+            totalQuestions: sampleApp.totalQuestions || "N/A",
+            attemptedQuestions: "N/A",
+            sponsorName: sampleApp.sponsorName || "",
+            sponsorLogo: sampleApp.sponsorLogo || "",
+            sponsorSignature: sampleApp.sponsorSignature || "",
+            sponsorSignatoryName: sampleApp.sponsorSignatoryName || "",
+            name: userName || "Participant",
+            email: userEmail,
+            hasCertificate: true,
+            status: "COMPLETED"
+          });
         }
       }
     }
