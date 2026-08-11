@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Settings, Tag } from "lucide-react";
+import { Settings, Tag, Sparkles } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import BuyTokensModal from "./BuyTokensModal";
