@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Settings, Tag, Sparkles } from "lucide-react";
+import { Settings, Tag, Sparkles, X } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import BuyTokensModal from "./BuyTokensModal";
@@ -30,6 +30,9 @@ export default function DashboardTopSection() {
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeVisible, setWelcomeVisible] = useState(true);
+  const [isBonusBannerDismissed, setIsBonusBannerDismissed] = useState(() => {
+    return localStorage.getItem('dismissedAdminBonusBanner') === 'true';
+  });
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -168,35 +171,45 @@ export default function DashboardTopSection() {
     <div className="max-w-6xl mx-auto mb-4 sm:mb-8">
       
       {/* Admin Bonus Banners */}
-      {userData?.freeResumesGranted > 0 && (
-        <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 sm:p-5 shadow-sm flex items-start sm:items-center justify-between gap-4 animate-fade-in">
-          <div>
-            <h3 className="font-bold text-emerald-800 text-sm sm:text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4" /> Code-A-Nova Resume Bonus
-            </h3>
-            <p className="text-emerald-700 text-xs sm:text-sm mt-1 font-medium">
-              You've been granted <b>{userData.freeResumesGranted} free AI Resume builds</b> and <b>{userData.freeDownloadsPerResume} free PDF downloads</b> per resume!
-            </p>
-          </div>
-          <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm">
-            Use Now
+      {!isBonusBannerDismissed && ((userData?.freeResumesGranted > 0) || (userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date())) && (
+        <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 sm:p-5 shadow-sm relative animate-fade-in">
+          <button 
+            onClick={() => {
+              setIsBonusBannerDismissed(true);
+              localStorage.setItem('dismissedAdminBonusBanner', 'true');
+            }} 
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 text-purple-400 hover:text-purple-700 transition-colors bg-white/50 hover:bg-white rounded-full p-1"
+          >
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-        </div>
-      )}
-
-      {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
-        <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm flex items-start sm:items-center justify-between gap-4 animate-fade-in">
-          <div>
-            <h3 className="font-bold text-amber-800 text-sm sm:text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4" /> Job Portal Premium Active
+          
+          <div className="pr-6 sm:pr-8">
+            <h3 className="font-bold text-purple-800 text-sm sm:text-base flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" /> Admin Bonuses Active!
             </h3>
-            <p className="text-amber-700 text-xs sm:text-sm mt-1 font-medium">
-              Admin has granted you Job Portal VIP access. Valid until <b>{new Date(userData.jobPortalPremiumExpires).toLocaleDateString()}</b>.
-            </p>
+            <div className="flex flex-col gap-2 sm:gap-3">
+              {userData?.freeResumesGranted > 0 && (
+                <div className="flex items-center justify-between bg-white/70 p-2.5 sm:p-3 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
+                  <p className="text-purple-800 text-xs sm:text-sm font-medium">
+                    You have <b className="text-purple-900">{userData.freeResumesGranted} free AI Resume builds</b> & <b className="text-purple-900">{userData.freeDownloadsPerResume} PDF downloads</b> per resume.
+                  </p>
+                  <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-colors shadow-sm ml-4">
+                    Use Resumes
+                  </button>
+                </div>
+              )}
+              {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
+                <div className="flex items-center justify-between bg-white/70 p-2.5 sm:p-3 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
+                  <p className="text-purple-800 text-xs sm:text-sm font-medium">
+                    Job Portal VIP Access valid until <b className="text-purple-900">{new Date(userData.jobPortalPremiumExpires).toLocaleDateString()}</b>.
+                  </p>
+                  <button onClick={() => navigate('/jobs')} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-colors shadow-sm ml-4">
+                    View Jobs
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <button onClick={() => navigate('/jobs')} className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm">
-            View Jobs
-          </button>
         </div>
       )}
 
