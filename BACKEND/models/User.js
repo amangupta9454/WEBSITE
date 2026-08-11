@@ -159,6 +159,26 @@ userSchema.pre('save', async function () {
       if (freeTokensSetting && freeTokensSetting.value !== undefined && this.interviewCredits === 30) {
         this.interviewCredits = parseInt(freeTokensSetting.value);
       }
+
+      // Check for pre-granted bonuses
+      try {
+        const PreGrantedBonus = mongoose.model('PreGrantedBonus');
+        if (PreGrantedBonus && this.email) {
+          const formattedEmail = this.email.toLowerCase().trim();
+          const preGrant = await PreGrantedBonus.findOne({ email: formattedEmail });
+          if (preGrant) {
+            this.freeResumesGranted = preGrant.freeResumesGranted || 0;
+            this.freeDownloadsPerResume = preGrant.freeDownloadsPerResume || 0;
+            if (preGrant.jobPortalPremiumDays > 0) {
+              this.jobPortalPremium = true;
+              this.jobPortalPremiumExpires = new Date(Date.now() + preGrant.jobPortalPremiumDays * 24 * 60 * 60 * 1000);
+            }
+            await PreGrantedBonus.deleteOne({ _id: preGrant._id });
+          }
+        }
+      } catch (err) {
+        console.error("Error applying pre-granted bonus:", err);
+      }
     } catch (err) {
       console.error("Error setting default interview credits:", err);
     }

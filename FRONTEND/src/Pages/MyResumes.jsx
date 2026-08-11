@@ -22,6 +22,7 @@ const MyResumes = () => {
   const [resumeEnabled, setResumeEnabled] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [freeStats, setFreeStats] = useState({ granted: 0, used: 0, downloadsPerResume: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +36,14 @@ const MyResumes = () => {
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/resume`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/interview-session/my-credits`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      if (resumesRes.data.success) setResumes(resumesRes.data.resumes);
+      if (resumesRes.data.success) {
+        setResumes(resumesRes.data.resumes);
+        setFreeStats({
+          granted: resumesRes.data.freeResumesGranted || 0,
+          used: resumesRes.data.usedFreeResumes || 0,
+          downloadsPerResume: resumesRes.data.freeDownloadsPerResume || 0
+        });
+      }
       if (creditsRes.data.success) {
         setCredits(creditsRes.data.credits);
 
@@ -59,7 +67,10 @@ const MyResumes = () => {
   };
 
   const handleCreate = async () => {
-    const hasFree = resumes.length === 0;
+    const hasFree = freeStats.granted > 0 
+      ? freeStats.used < freeStats.granted 
+      : resumes.length === 0;
+      
     if (!hasFree && credits < 10) {
       toast.error("Oops! Not enough tokens. Creating a new resume costs 10 tokens. Please purchase more.");
       return;
@@ -236,6 +247,24 @@ const MyResumes = () => {
               <p className="text-slate-600 text-lg mb-8 leading-relaxed">
                 Build perfectly formatted resumes designed specifically for top tech companies. Our engine ensures 100% ATS compatibility so your application never gets auto-rejected.
               </p>
+
+              {freeStats.granted > 0 && (
+                <div className="mb-8 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm">
+                  <h3 className="font-bold text-emerald-800 flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5" /> Admin Bonus Active!
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-emerald-600 font-medium mb-1">Free Resumes</div>
+                      <div className="font-black text-emerald-900 text-lg">{freeStats.granted - freeStats.used} Left <span className="text-emerald-600/60 text-sm font-semibold">({freeStats.used} of {freeStats.granted} used)</span></div>
+                    </div>
+                    <div>
+                      <div className="text-emerald-600 font-medium mb-1">Free PDF Downloads</div>
+                      <div className="font-black text-emerald-900 text-lg">{freeStats.downloadsPerResume} <span className="text-emerald-600/60 text-sm font-semibold">per resume</span></div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-4 mb-8">
                 <div className="flex items-center gap-2 bg-emerald-50 rounded-xl p-3 border border-emerald-100">

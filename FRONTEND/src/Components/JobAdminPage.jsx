@@ -69,6 +69,12 @@ const JobAdminPage = () => {
   const [planForm, setPlanForm] = useState({ plan: 'basic', durationDays: 30 });
   const [updatingPlan, setUpdatingPlan] = useState(false);
 
+  // Pre-grant premium state
+  const [grantEmail, setGrantEmail] = useState('');
+  const [grantDays, setGrantDays] = useState(30);
+  const [grantLoading, setGrantLoading] = useState(false);
+  const [grantedUsers, setGrantedUsers] = useState([]);
+
   // Edit form state
   const [editForm, setEditForm] = useState({
     title: '',
@@ -143,6 +149,47 @@ const JobAdminPage = () => {
       toast.error(error.response?.data?.message || 'Error modifying plan');
     } finally {
       setUpdatingPlan(false);
+    }
+  };
+
+  const fetchGrantedUsers = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/job-settings/granted-users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setGrantedUsers([...(res.data.users || []), ...(res.data.preGranted || [])]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch granted users:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGrantedUsers();
+  }, []);
+
+  const handleGrantPremium = async (e) => {
+    e.preventDefault();
+    if (!grantEmail) return;
+    setGrantLoading(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/job-settings/grant-premium`, 
+        { email: grantEmail, premiumDays: grantDays }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(`Granted ${grantDays} premium days to ${grantEmail}!`);
+        setGrantEmail('');
+        fetchGrantedUsers();
+        fetchStudents();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to grant premium`);
+    } finally {
+      setGrantLoading(false);
     }
   };
 
@@ -951,6 +998,79 @@ const JobAdminPage = () => {
             onChange={(e) => setStudentSearch(e.target.value)}
             className="w-full sm:max-w-md px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
           />
+        </div>
+        
+        {/* Grant Job Portal Premium Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-start gap-4 mb-6">
+          <div className="flex items-center gap-3 w-full">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Grant Premium Access</h3>
+              <p className="text-xs text-slate-500">Provide specific users with Job Portal Premium for a custom duration.</p>
+            </div>
+          </div>
+          <form onSubmit={handleGrantPremium} className="flex flex-col sm:flex-row w-full items-end sm:items-center gap-3">
+            <div className="w-full sm:flex-1">
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">User Email</label>
+              <input 
+                type="email" 
+                required
+                value={grantEmail}
+                onChange={(e) => setGrantEmail(e.target.value)}
+                placeholder="user@example.com"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+              />
+            </div>
+            <div className="w-full sm:w-40">
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Premium Duration (Days)</label>
+              <input 
+                type="number" 
+                required
+                min="0"
+                value={grantDays}
+                onChange={(e) => setGrantDays(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+              />
+            </div>
+            <button 
+              type="submit"
+              disabled={grantLoading}
+              className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+            >
+              {grantLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Grant Premium
+            </button>
+          </form>
+
+          {grantedUsers.length > 0 && (
+            <div className="w-full mt-2">
+              <details className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="cursor-pointer font-bold text-sm text-slate-700 px-4 py-3 hover:bg-slate-100 transition-colors list-none flex justify-between items-center select-none">
+                  <span className="flex items-center gap-2"><Eye className="w-4 h-4 text-slate-400" /> View Granted Users ({grantedUsers.length})</span>
+                  <span className="text-slate-400 text-xs">Click to expand</span>
+                </summary>
+                <div className="px-4 py-2 text-sm divide-y divide-slate-200 max-h-64 overflow-y-auto bg-white border-t border-slate-200">
+                  {grantedUsers.map((u, i) => (
+                    <div key={i} className="py-3 flex justify-between items-center">
+                      <div>
+                        <div className="font-bold text-slate-800">{u.name}</div>
+                        <div className="text-xs text-slate-500 font-medium">{u.email}</div>
+                      </div>
+                      <div className="text-right text-xs">
+                        {u.pendingDays ? (
+                          <div className="font-bold text-amber-600">{u.pendingDays} Days Pending</div>
+                        ) : (
+                          <div className="font-bold text-emerald-600">Expires: {new Date(u.jobPortalPremiumExpires).toLocaleDateString()}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">

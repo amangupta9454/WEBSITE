@@ -221,7 +221,9 @@ router.delete("/notifications/:id", auth, verifyAdmin, deleteNotification);
 
 // Interview Admin Route
 const User = require("../models/User");
-const InterviewSession = require("../models/InterviewSession");
+const NewsletterSubscriber = require('../models/NewsletterSubscriber');
+const PreGrantedBonus = require('../models/PreGrantedBonus');
+const PDFDocument = require('pdfkit');
 const Settings = require("../models/Settings");
 
 // Get/toggle the interview feature flag
@@ -499,14 +501,64 @@ router.post("/resume-settings/grant-free", auth, verifyAdmin, async (req, res) =
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    
+    const formattedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: formattedEmail });
+    
+    if (user) {
+      user.freeResumesGranted = Number(freeResumes) || 0;
+      user.freeDownloadsPerResume = Number(freeDownloads) || 0;
+      await user.save();
+      return res.json({ success: true, message: "Free limits updated successfully for existing user" });
+    } else {
+      let preGrant = await PreGrantedBonus.findOne({ email: formattedEmail });
+      if (!preGrant) {
+        preGrant = new PreGrantedBonus({ email: formattedEmail });
+      }
+      preGrant.freeResumesGranted = Number(freeResumes) || 0;
+      preGrant.freeDownloadsPerResume = Number(freeDownloads) || 0;
+      await preGrant.save();
+      return res.json({ success: true, message: "User not found. Limits pre-granted for future registration." });
     }
-    user.freeResumesGranted = Number(freeResumes) || 0;
-    user.freeDownloadsPerResume = Number(freeDownloads) || 0;
-    await user.save();
-    res.json({ success: true, message: "Free limits updated successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post("/job-settings/grant-premium", auth, verifyAdmin, async (req, res) => {
+  try {
+    const { email, premiumDays } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    
+    const formattedEmail = email.toLowerCase().trim();
+    const days = Number(premiumDays) || 0;
+    
+    const user = await User.findOne({ email: formattedEmail });
+    
+    if (user) {
+      if (days > 0) {
+        user.jobPortalPremium = true;
+        const baseDate = (user.jobPortalPremiumExpires && new Date(user.jobPortalPremiumExpires) > new Date())
+          ? new Date(user.jobPortalPremiumExpires)
+          : new Date();
+        user.jobPortalPremiumExpires = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
+      } else {
+        user.jobPortalPremium = false;
+        user.jobPortalPremiumExpires = null;
+      }
+      await user.save();
+      return res.json({ success: true, message: "Job Portal Premium updated for existing user" });
+    } else {
+      let preGrant = await PreGrantedBonus.findOne({ email: formattedEmail });
+      if (!preGrant) {
+        preGrant = new PreGrantedBonus({ email: formattedEmail });
+      }
+      preGrant.jobPortalPremiumDays = days;
+      await preGrant.save();
+      return res.json({ success: true, message: "User not found. Job Premium pre-granted for future registration." });
+    }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -515,7 +567,33 @@ router.post("/resume-settings/grant-free", auth, verifyAdmin, async (req, res) =
 router.get("/resume-settings/granted-users", auth, verifyAdmin, async (req, res) => {
   try {
     const users = await User.find({ freeResumesGranted: { $gt: 0 } }).select('name email freeResumesGranted freeDownloadsPerResume');
-    res.json({ success: true, users });
+    const preGranted = await PreGrantedBonus.find({ freeResumesGranted: { $gt: 0 } }).select('email freeResumesGranted freeDownloadsPerResume');
+    
+    const formattedPreGranted = preGranted.map(p => ({
+      name: "Unregistered (Pending)",
+      email: p.email,
+      freeResumesGranted: p.freeResumesGranted,
+      freeDownloadsPerResume: p.freeDownloadsPerResume
+    }));
+    
+    res.json({ success: true, users: [...users, ...formattedPreGranted] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/job-settings/granted-users", auth, verifyAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ jobPortalPremium: true, jobPortalPremiumExpires: { $gt: new Date() } }).select('name email jobPortalPremiumExpires');
+    const preGranted = await PreGrantedBonus.find({ jobPortalPremiumDays: { $gt: 0 } }).select('email jobPortalPremiumDays');
+    
+    const formattedPreGranted = preGranted.map(p => ({
+      name: "Unregistered (Pending)",
+      email: p.email,
+      pendingDays: p.jobPortalPremiumDays
+    }));
+    
+    res.json({ success: true, users, preGranted: formattedPreGranted });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

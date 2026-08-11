@@ -34,7 +34,16 @@ const Jobs = () => {
   const [activePlanTab, setActivePlanTab] = useState('All'); // 'All' | 'Basic' | 'Premium'
 
   // Membership & Token State
-  const [userStatus, setUserStatus] = useState({ isPremium: false, isFreeMode: false, freeModeExpires: null, premiumPrice: 199, tokens: 0, expiresAt: null });
+  const [userStatus, setUserStatus] = useState({ 
+    isPremium: false, 
+    isFreeMode: false, 
+    freeModeExpires: null, 
+    premiumPrice: 199, 
+    tokens: 0, 
+    expiresAt: null,
+    adminBonusActive: false,
+    adminBonusExpires: null
+  });
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
 
   useEffect(() => {
@@ -62,7 +71,9 @@ const Jobs = () => {
           freeModeExpires: res.data.freeModeExpires || null,
           premiumPrice: res.data.premiumPrice || 199,
           tokens: res.data.tokens,
-          expiresAt: res.data.expiresAt
+          expiresAt: res.data.expiresAt,
+          adminBonusActive: res.data.adminBonusActive || false,
+          adminBonusExpires: res.data.adminBonusExpires || null
         });
       }
     } catch (err) {
@@ -427,7 +438,19 @@ const Jobs = () => {
                     </div>
                   </div>
 
-                  {userStatus.isFreeMode && (
+                  {userStatus.adminBonusActive && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-slate-700 text-xs font-medium mb-6 space-y-1.5">
+                      <div className="font-extrabold text-amber-900 flex items-center gap-1.5 text-xs">
+                        <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
+                        <span>Admin Bonus Active!</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
+                        You've been granted VIP access by an admin! Valid until <b className="text-slate-900">{new Date(userStatus.adminBonusExpires).toLocaleDateString()}</b>.
+                      </p>
+                    </div>
+                  )}
+
+                  {!userStatus.adminBonusActive && userStatus.isFreeMode && (
                     <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-slate-700 text-xs font-medium mb-6 space-y-1.5">
                       <div className="font-extrabold text-amber-900 flex items-center gap-1.5 text-xs">
                         <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />

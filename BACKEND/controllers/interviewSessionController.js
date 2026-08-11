@@ -589,7 +589,18 @@ exports.getUserCredits = async (req, res) => {
       interviewEnabled: interviewEnabled,
       resumeEnabled: resumeEnabled,
       role: isInternRole ? 'intern' : 'interview_user',
-      user: { name: user.name, email: user.email, profileImage: user.profileImage, mobile: user.mobile, interviewAccessOverride: !!user.interviewAccessOverride, resumeAccessOverride: !!user.resumeAccessOverride }
+      user: { 
+        name: user.name, 
+        email: user.email, 
+        profileImage: user.profileImage, 
+        mobile: user.mobile, 
+        interviewAccessOverride: !!user.interviewAccessOverride, 
+        resumeAccessOverride: !!user.resumeAccessOverride,
+        freeResumesGranted: user.freeResumesGranted || 0,
+        freeDownloadsPerResume: user.freeDownloadsPerResume || 0,
+        jobPortalPremium: !!user.jobPortalPremium,
+        jobPortalPremiumExpires: user.jobPortalPremiumExpires || null
+      }
     });
   } catch (error) {
     console.error('Error fetching credits:', error);

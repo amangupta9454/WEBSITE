@@ -606,7 +606,9 @@ exports.getUserStatus = async (req, res) => {
       freeModeExpires,
       premiumPrice,
       expiresAt: isFreeMode ? (freeModeExpires ? new Date(freeModeExpires).toLocaleDateString() : 'Active Promo') : (user.jobPortalPremiumExpires || null),
-      tokens: user.interviewCredits || 0
+      tokens: user.interviewCredits || 0,
+      adminBonusActive: !!user.jobPortalPremium,
+      adminBonusExpires: user.jobPortalPremiumExpires || null
     });
   } catch (error) {
     console.error('Error fetching user status for job portal:', error);

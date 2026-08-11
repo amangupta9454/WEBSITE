@@ -27,7 +27,16 @@ const deductTokens = async (user, amount, reason) => {
 exports.getAllResumes = async (req, res) => {
   try {
     const resumes = await Resume.find({ userId: req.user.id }).sort({ updatedAt: -1 });
-    res.json({ success: true, resumes });
+    const user = await User.findById(req.user.id).select('freeResumesGranted freeDownloadsPerResume');
+    const usedFreeResumes = resumes.filter(r => r.isFree).length;
+    
+    res.json({ 
+      success: true, 
+      resumes, 
+      freeResumesGranted: user?.freeResumesGranted || 0,
+      freeDownloadsPerResume: user?.freeDownloadsPerResume || 0,
+      usedFreeResumes
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server Error' });

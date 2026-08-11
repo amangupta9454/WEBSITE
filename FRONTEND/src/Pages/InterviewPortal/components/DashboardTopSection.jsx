@@ -166,6 +166,40 @@ export default function DashboardTopSection() {
 
   return (
     <div className="max-w-6xl mx-auto mb-4 sm:mb-8">
+      
+      {/* Admin Bonus Banners */}
+      {userData?.freeResumesGranted > 0 && (
+        <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 sm:p-5 shadow-sm flex items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div>
+            <h3 className="font-bold text-emerald-800 text-sm sm:text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Code-A-Nova Resume Bonus
+            </h3>
+            <p className="text-emerald-700 text-xs sm:text-sm mt-1 font-medium">
+              You've been granted <b>{userData.freeResumesGranted} free AI Resume builds</b> and <b>{userData.freeDownloadsPerResume} free PDF downloads</b> per resume!
+            </p>
+          </div>
+          <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm">
+            Use Now
+          </button>
+        </div>
+      )}
+
+      {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
+        <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 sm:p-5 shadow-sm flex items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div>
+            <h3 className="font-bold text-amber-800 text-sm sm:text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Job Portal Premium Active
+            </h3>
+            <p className="text-amber-700 text-xs sm:text-sm mt-1 font-medium">
+              Admin has granted you Job Portal VIP access. Valid until <b>{new Date(userData.jobPortalPremiumExpires).toLocaleDateString()}</b>.
+            </p>
+          </div>
+          <button onClick={() => navigate('/jobs')} className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm">
+            View Jobs
+          </button>
+        </div>
+      )}
+
       {/* Outer flex row — justify-end keeps profile card anchored right while it expands left */}
       <div className="flex justify-end relative items-stretch">
 
