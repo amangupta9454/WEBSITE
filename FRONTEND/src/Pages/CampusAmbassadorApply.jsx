@@ -6,18 +6,18 @@ import {
   Star,
   Gift,
   Send,
-  CheckCircle,
-  Loader2,
   BookOpen,
   Building2,
   Mail,
   Phone,
   User,
   MessageSquare,
+  CheckCircle,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import { AnimatedSubmitButton } from "../Components/AnimatedSubmitButton";
 
 const CampusAmbassadorApply = () => {
   const [formData, setFormData] = useState({
@@ -254,21 +254,24 @@ const CampusAmbassadorApply = () => {
                 </div>
               </div>
 
-              <button
+              <AnimatedSubmitButton
                 type="submit"
+                isLoading={loading}
                 disabled={loading}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md shadow-purple-200 transition-all flex items-center justify-center gap-2"
+                className="w-full h-12 mt-4"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" /> Submit Application
-                  </>
-                )}
-              </button>
+                <div className="flex h-full w-full items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md shadow-purple-200 transition-all">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" /> Submit Application
+                    </>
+                  )}
+                </div>
+              </AnimatedSubmitButton>
             </form>
           )}
         </div>

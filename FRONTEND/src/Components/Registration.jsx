@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader2, Send, Upload, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Trophy, FileCheck, Target, HeartHandshake, Loader2, Send, Upload, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedSubmitButton } from './AnimatedSubmitButton';
 
 const states = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Delhi',
@@ -375,13 +376,20 @@ const Registration = () => {
               </div>
             )}
 
-            <button 
+            <AnimatedSubmitButton 
               type="submit" 
+              isLoading={submitting}
               disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 mt-8"
+              className="w-full h-14 mt-8"
             >
-              {submitting ? <><Loader2 className="animate-spin" size={20} /> Submitting Application...</> : <><Send size={20} /> {paymentEnabled ? `Pay ₹${formData.duration.includes('3') ? '399' : (formData.duration ? '199' : '')} & ` : ''}Submit Application</>}
-            </button>
+              <div className="flex h-full w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50">
+                {submitting ? (
+                  <><Loader2 className="animate-spin" size={20} /> Submitting Application...</>
+                ) : (
+                  <><Send size={20} /> {paymentEnabled ? `Pay ₹${formData.duration.includes('3') ? '399' : (formData.duration ? '199' : '')} & ` : ''}Submit Application</>
+                )}
+              </div>
+            </AnimatedSubmitButton>
             
           </form>
           )}
