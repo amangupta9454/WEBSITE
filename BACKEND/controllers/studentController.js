@@ -803,6 +803,36 @@ const getMyCertificates = async (req, res) => {
       }
     }
 
+    // Fallback: If no certificates found, fetch from QuizSponsor so the admin can see their created quiz certificates
+    if (certificates.length === 0) {
+      const sponsors = await QuizSponsor.find({}).lean();
+      for (const s of sponsors) {
+        if (!certificates.some(c => c.quizName === s.quizName)) {
+          certificates.push({
+            id: String(s._id),
+            certificateId: String(s._id),
+            title: s.quizName,
+            quizName: s.quizName,
+            recipientName: userName || "Participant",
+            email: userEmail,
+            issueDate: s.quizDate || s.createdAt,
+            score: "N/A",
+            totalScore: "N/A",
+            result: "N/A",
+            percentage: "N/A",
+            effectiveScore: "N/A",
+            sponsorName: s.sponsorName || "",
+            sponsorLogo: s.sponsorLogo || "",
+            sponsorSignature: s.sponsorSignature || "",
+            sponsorSignatoryName: s.sponsorSignatoryName || "",
+            type: "Quiz Certificate",
+            category: "Quiz & Assessment",
+            status: "VERIFIED & ISSUED"
+          });
+        }
+      }
+    }
+
     // 2. Fetch Internship/Domain Certificates from Certificate collection
     if (studentId || userName) {
       const query = [];
