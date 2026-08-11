@@ -69,9 +69,10 @@ exports.createResume = async (req, res) => {
     // Check if user has a free resume left
     const existingResumes = await Resume.countDocuments({ userId: req.user.id, isFree: true });
     let isFree = false;
+    let allowedFreeResumes = Math.max(1, user.freeResumesGranted || 1);
 
-    if (existingResumes === 0) {
-      isFree = true; // First resume is free
+    if (existingResumes < allowedFreeResumes) {
+      isFree = true;
     } else {
       // Deduct 10 tokens
       const deducted = await deductTokens(user, RESUME_CREATE_COST, 'Created new premium resume');
@@ -155,9 +156,10 @@ exports.recordDownload = async (req, res) => {
 
     const currentDownloads = resume.downloadsUsed || 0;
     const newDownloads = currentDownloads + 1;
+    const allowedDownloads = Math.max(FREE_DOWNLOAD_LIMIT, user.freeDownloadsPerResume || FREE_DOWNLOAD_LIMIT);
 
     // Check if we have free downloads left for this resume
-    if (currentDownloads < FREE_DOWNLOAD_LIMIT) {
+    if (currentDownloads < allowedDownloads) {
       // Use targeted update to avoid schema conflict with legacy skills data format
       await Resume.updateOne(
         { _id: req.params.id },
@@ -244,9 +246,10 @@ exports.sendWhatsapp = async (req, res) => {
 
     const currentDownloads = resume.whatsappDownloadsUsed || 0;
     const newDownloads = currentDownloads + 1;
+    const allowedWhatsappDownloads = Math.max(3, user.freeDownloadsPerResume || 3);
 
     // Check if we have free whatsapp sends left for this resume (limit 3)
-    if (currentDownloads < 3) {
+    if (currentDownloads < allowedWhatsappDownloads) {
       await Resume.updateOne(
         { _id: req.params.id },
         { $set: { whatsappDownloadsUsed: newDownloads } }

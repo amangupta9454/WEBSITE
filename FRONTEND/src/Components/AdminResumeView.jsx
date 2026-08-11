@@ -26,6 +26,12 @@ const AdminResumeView = () => {
   const [whitelistEmail, setWhitelistEmail] = useState('');
   const [whitelistLoading, setWhitelistLoading] = useState(false);
   const [whitelistedUsers, setWhitelistedUsers] = useState([]);
+  
+  const [grantEmail, setGrantEmail] = useState('');
+  const [grantResumes, setGrantResumes] = useState(1);
+  const [grantDownloads, setGrantDownloads] = useState(3);
+  const [grantLoading, setGrantLoading] = useState(false);
+  const [grantedUsers, setGrantedUsers] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -34,16 +40,18 @@ const AdminResumeView = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const [analyticsRes, resumesRes, settingsRes, whitelistedRes] = await Promise.all([
+      const [analyticsRes, resumesRes, settingsRes, whitelistedRes, grantedRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume/analytics`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume/all`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/whitelisted-users`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/whitelisted-users`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings/granted-users`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (analyticsRes.data.success) setAnalytics(analyticsRes.data.analytics);
       if (resumesRes.data.success) setResumes(resumesRes.data.resumes);
       if (settingsRes.data.success) setResumeEnabled(settingsRes.data.enabled);
       if (whitelistedRes.data.success) setWhitelistedUsers(whitelistedRes.data.resume);
+      if (grantedRes.data.success) setGrantedUsers(grantedRes.data.users);
     } catch (err) {
       toast.error('Failed to load resume data');
     } finally {
@@ -88,6 +96,28 @@ const AdminResumeView = () => {
       toast.error(err.response?.data?.message || `Failed to ${overrideStatus ? 'grant' : 'revoke'} access`);
     } finally {
       setWhitelistLoading(false);
+    }
+  };
+
+  const handleGrantFree = async (e) => {
+    e.preventDefault();
+    if (!grantEmail) return;
+    setGrantLoading(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings/grant-free`, 
+        { email: grantEmail, freeResumes: grantResumes, freeDownloads: grantDownloads }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(`Granted ${grantResumes} free resumes to ${grantEmail}!`);
+        setGrantEmail('');
+        fetchData();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to grant free resumes`);
+    } finally {
+      setGrantLoading(false);
     }
   };
 
@@ -171,6 +201,87 @@ const AdminResumeView = () => {
                     >
                       Remove Access
                     </button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
+      </div>
+
+      {/* Grant Free Resumes */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col items-start gap-4">
+        <div className="flex items-center gap-3 w-full">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Coins className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Grant Free Resumes & Downloads</h3>
+            <p className="text-xs text-slate-500">Provide specific users with a set number of free resumes and downloads per resume.</p>
+          </div>
+        </div>
+        <form onSubmit={handleGrantFree} className="flex flex-col sm:flex-row w-full items-end sm:items-center gap-3">
+          <div className="w-full sm:flex-1">
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">User Email</label>
+            <input 
+              type="email" 
+              required
+              value={grantEmail}
+              onChange={(e) => setGrantEmail(e.target.value)}
+              placeholder="user@example.com"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+            />
+          </div>
+          <div className="w-full sm:w-32">
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">Free Resumes</label>
+            <input 
+              type="number" 
+              required
+              min="0"
+              value={grantResumes}
+              onChange={(e) => setGrantResumes(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+            />
+          </div>
+          <div className="w-full sm:w-40">
+            <label className="text-xs font-semibold text-slate-600 mb-1 block">Free Downloads (Per)</label>
+            <input 
+              type="number" 
+              required
+              min="0"
+              value={grantDownloads}
+              onChange={(e) => setGrantDownloads(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-medium" 
+            />
+          </div>
+          <button 
+            type="submit"
+            disabled={grantLoading}
+            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+          >
+            {grantLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            Apply
+          </button>
+        </form>
+
+        {grantedUsers.length > 0 && (
+          <div className="w-full mt-2">
+            <details className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+              <summary className="cursor-pointer font-bold text-sm text-slate-700 px-4 py-2 hover:bg-slate-100 transition-colors list-none flex justify-between items-center select-none">
+                <span>View Granted Users ({grantedUsers.length})</span>
+                <span className="text-slate-400 text-xs">Click to expand</span>
+              </summary>
+              <div className="px-4 py-2 text-sm divide-y divide-slate-200 max-h-48 overflow-y-auto bg-white border-t border-slate-200">
+                {grantedUsers.map(u => (
+                  <div key={u.email} className="py-2.5 flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-slate-800">{u.name}</div>
+                      <div className="text-xs text-slate-500 font-medium">{u.email}</div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="font-bold text-blue-700">{u.freeResumesGranted} Free Resumes</div>
+                      <div className="text-slate-500">{u.freeDownloadsPerResume} DLs/Resume</div>
+                    </div>
                   </div>
                 ))}
               </div>

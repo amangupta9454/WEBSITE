@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema(
     interviewUnlimitedExpiresAt: { type: Date },
     jobPortalPremium: { type: Boolean, default: false },
     jobPortalPremiumExpires: { type: Date },
+    freeResumesGranted: { type: Number, default: 0 },
+    freeDownloadsPerResume: { type: Number, default: 0 },
     interviewPendingOrders: [
       {
         orderId: { type: String },

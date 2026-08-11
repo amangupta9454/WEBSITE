@@ -493,6 +493,34 @@ router.post("/resume-settings/override-by-email", auth, verifyAdmin, async (req,
   }
 });
 
+router.post("/resume-settings/grant-free", auth, verifyAdmin, async (req, res) => {
+  try {
+    const { email, freeResumes, freeDownloads } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    user.freeResumesGranted = Number(freeResumes) || 0;
+    user.freeDownloadsPerResume = Number(freeDownloads) || 0;
+    await user.save();
+    res.json({ success: true, message: "Free limits updated successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/resume-settings/granted-users", auth, verifyAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ freeResumesGranted: { $gt: 0 } }).select('name email freeResumesGranted freeDownloadsPerResume');
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Banner Management ─────────────────────────────────────────────────────
 
 // Public: anyone can fetch banner settings (used by frontend FeatureBanner)
