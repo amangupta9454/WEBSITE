@@ -221,6 +221,7 @@ router.delete("/notifications/:id", auth, verifyAdmin, deleteNotification);
 
 const User = require("../models/User");
 const PreGrantedBonus = require('../models/PreGrantedBonus');
+const InterviewSession = require("../models/InterviewSession");
 const Settings = require("../models/Settings");
 
 // Get/toggle the interview feature flag
