@@ -172,38 +172,38 @@ export default function DashboardTopSection() {
       
       {/* Admin Bonus Banners */}
       {!isBonusBannerDismissed && ((userData?.freeResumesGranted > 0) || (userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date())) && (
-        <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 sm:p-5 shadow-sm relative animate-fade-in">
+        <div className="mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-3 sm:p-4 shadow-sm relative animate-fade-in">
           <button 
             onClick={() => {
               setIsBonusBannerDismissed(true);
               localStorage.setItem('dismissedAdminBonusBanner', 'true');
             }} 
-            className="absolute top-2 right-2 sm:top-3 sm:right-3 text-purple-400 hover:text-purple-700 transition-colors bg-white/50 hover:bg-white rounded-full p-1"
+            className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-purple-400 hover:text-purple-700 transition-colors bg-white/50 hover:bg-white rounded-full p-1"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-4 h-4" />
           </button>
           
-          <div className="pr-6 sm:pr-8">
-            <h3 className="font-bold text-purple-800 text-sm sm:text-base flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" /> Admin Bonuses Active!
+          <div className="pr-6">
+            <h3 className="font-bold text-purple-800 text-sm sm:text-base flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-4 h-4 text-purple-600" /> Admin Bonuses Active!
             </h3>
-            <div className="flex flex-col gap-2 sm:gap-3">
+            <div className="flex flex-col gap-1.5 sm:gap-2">
               {userData?.freeResumesGranted > 0 && (
-                <div className="flex items-center justify-between bg-white/70 p-2.5 sm:p-3 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
+                <div className="flex items-center justify-between bg-white/70 p-2 sm:p-2.5 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
                   <p className="text-purple-800 text-xs sm:text-sm font-medium">
                     You have <b className="text-purple-900">{userData.freeResumesGranted} free AI Resume builds</b> & <b className="text-purple-900">{userData.freeDownloadsPerResume} PDF downloads</b> per resume.
                   </p>
-                  <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-colors shadow-sm ml-4">
+                  <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-colors shadow-sm ml-4">
                     Use Resumes
                   </button>
                 </div>
               )}
               {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
-                <div className="flex items-center justify-between bg-white/70 p-2.5 sm:p-3 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
+                <div className="flex items-center justify-between bg-white/70 p-2 sm:p-2.5 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
                   <p className="text-purple-800 text-xs sm:text-sm font-medium">
                     Job Portal VIP Access valid until <b className="text-purple-900">{new Date(userData.jobPortalPremiumExpires).toLocaleDateString('en-GB')}</b>.
                   </p>
-                  <button onClick={() => navigate('/jobs')} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-colors shadow-sm ml-4">
+                  <button onClick={() => navigate('/jobs')} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-colors shadow-sm ml-4">
                     View Jobs
                   </button>
                 </div>
