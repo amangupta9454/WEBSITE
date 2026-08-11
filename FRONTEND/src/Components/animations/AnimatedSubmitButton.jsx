@@ -13,8 +13,8 @@ export function AnimatedSubmitButton({
     <div className={`relative rounded-md ${className}`}>
       {isLoading && (
         <BorderTrail
-          className='bg-gradient-to-l from-green-300 via-green-500 to-green-300 opacity-100'
-          size={120}
+          className='bg-gradient-to-l from-red-600 via-blue-600 to-purple-600 opacity-100 dark:from-red-500 dark:via-blue-500 dark:to-purple-500'
+          size={140}
           transition={{
             ease: [0, 0.5, 0.8, 0.5],
             duration: 2,
