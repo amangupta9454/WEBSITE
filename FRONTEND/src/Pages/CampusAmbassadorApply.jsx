@@ -17,7 +17,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
-import { AnimatedSubmitButton } from "../Components/AnimatedSubmitButton";
+import { AnimatedSubmitButton } from "../Components/animations/AnimatedSubmitButton";
 
 const CampusAmbassadorApply = () => {
   const [formData, setFormData] = useState({

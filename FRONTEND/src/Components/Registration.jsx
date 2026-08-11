@@ -4,7 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Trophy, FileCheck, Target, HeartHandshake, Loader2, Send, Upload, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AnimatedSubmitButton } from './AnimatedSubmitButton';
+import { AnimatedSubmitButton } from './animations/AnimatedSubmitButton';
 
 const states = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Delhi',
