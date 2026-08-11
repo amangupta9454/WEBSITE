@@ -349,7 +349,7 @@ const JobDetail = () => {
               </span>
               <span className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 text-slate-500 rounded-xl text-xs md:text-sm font-semibold border border-slate-200">
                 <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                Posted {new Date(job.postedAt || Date.now()).toLocaleDateString()}
+                Posted {new Date(job.postedAt || Date.now()).toLocaleDateString('en-GB')}
               </span>
             </div>
           </div>

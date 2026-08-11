@@ -516,7 +516,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
             </p>
             <p className="text-sm mt-1">
               Scheduled Start Date:{" "}
-              {startDate ? startDate.toLocaleDateString() : "Pending"}
+              {startDate ? startDate.toLocaleDateString('en-GB') : "Pending"}
             </p>
           </div>
         )}
@@ -924,7 +924,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
             </p>
             <p className="text-sm mt-1">
               Scheduled Start Date:{" "}
-              {startDate ? startDate.toLocaleDateString() : "Pending"}
+              {startDate ? startDate.toLocaleDateString('en-GB') : "Pending"}
             </p>
           </div>
         ) : projects.length === 0 ? (

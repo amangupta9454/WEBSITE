@@ -158,7 +158,7 @@ class StudentAnalytics {
     const growthTimeline = [...results]
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
       .map(r => ({
-        date: new Date(r.createdAt).toLocaleDateString(),
+        date: new Date(r.createdAt).toLocaleDateString('en-GB'),
         score: Math.round(r.scoreSummary.percentage),
         resultId: r.resultId,
         passed: r.passed

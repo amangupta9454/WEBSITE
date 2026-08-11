@@ -47,7 +47,7 @@ export default function ExecutiveSummaryCard({ data, session }) {
         </div>
         <div className="text-right hidden sm:block">
           <p className="text-slate-300 text-sm font-bold">{session?.jobTitle}</p>
-          <p className="text-slate-500 text-xs">{new Date(session?.createdAt).toLocaleDateString()}</p>
+          <p className="text-slate-500 text-xs">{new Date(session?.createdAt).toLocaleDateString('en-GB')}</p>
         </div>
       </div>
       
@@ -93,7 +93,7 @@ export default function ExecutiveSummaryCard({ data, session }) {
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
             <Calendar size={16} className="text-indigo-500" />
-            <span className="font-bold">{new Date(session?.createdAt).toLocaleDateString()}</span>
+            <span className="font-bold">{new Date(session?.createdAt).toLocaleDateString('en-GB')}</span>
           </div>
         </div>
       </div>

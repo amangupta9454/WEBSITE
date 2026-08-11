@@ -369,7 +369,7 @@ const MyInterviews = () => {
                 </h3>
                 <p className="text-slate-500 mb-4 md:mb-6 flex items-center gap-2 text-xs md:text-sm font-medium">
                   <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  {new Date(recentSession.createdAt).toLocaleDateString()}
+                  {new Date(recentSession.createdAt).toLocaleDateString('en-GB')}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -490,7 +490,7 @@ const MyInterviews = () => {
                       Date
                     </div>
                     <div className="text-xs md:text-sm font-black text-slate-800">
-                      {new Date(session.createdAt).toLocaleDateString()}
+                      {new Date(session.createdAt).toLocaleDateString('en-GB')}
                     </div>
                   </div>
 

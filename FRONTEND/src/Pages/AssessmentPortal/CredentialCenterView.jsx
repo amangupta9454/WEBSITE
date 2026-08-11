@@ -166,7 +166,7 @@ const CredentialCenterView = ({ credentials = [] }) => {
               </div>
               <div className="flex justify-between">
                 <span>Issuance Date:</span>
-                <span className="text-slate-900 font-bold">{selectedCert.issueDate ? new Date(selectedCert.issueDate).toLocaleDateString() : "Verified"}</span>
+                <span className="text-slate-900 font-bold">{selectedCert.issueDate ? new Date(selectedCert.issueDate).toLocaleDateString('en-GB') : "Verified"}</span>
               </div>
               <div className="flex justify-between">
                 <span>Public Gateway URL:</span>

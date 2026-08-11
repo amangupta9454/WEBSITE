@@ -1586,7 +1586,7 @@ const AdminDashboard = () => {
                     )}
                     {task.deadline && (
                       <Badge variant="slate">
-                        Due: {new Date(task.deadline).toLocaleDateString()}
+                        Due: {new Date(task.deadline).toLocaleDateString('en-GB')}
                       </Badge>
                     )}
                   </div>

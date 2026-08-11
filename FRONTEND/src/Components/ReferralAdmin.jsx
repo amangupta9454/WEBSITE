@@ -778,7 +778,7 @@ const ReferralAdmin = () => {
                                                 </span>
                                               </td>
                                               <td className="py-2 px-3 text-slate-500">
-                                                {u.registeredAt ? new Date(u.registeredAt).toLocaleDateString() : "N/A"}
+                                                {u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB') : "N/A"}
                                               </td>
                                             </tr>
                                           ))}
@@ -819,7 +819,7 @@ const ReferralAdmin = () => {
                                                   <div className="text-slate-500 font-normal">{ex.email}</div>
                                                 </td>
                                                 <td className="py-2 px-3 font-mono">{ex.mobile || "N/A"}</td>
-                                                <td className="py-2 px-3 text-slate-500">{ex.attemptedAt ? new Date(ex.attemptedAt).toLocaleDateString() : "N/A"}</td>
+                                                <td className="py-2 px-3 text-slate-500">{ex.attemptedAt ? new Date(ex.attemptedAt).toLocaleDateString('en-GB') : "N/A"}</td>
                                                 <td className="py-2 px-3">
                                                   <span className="bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">
                                                     Existing Account (Not Counted)

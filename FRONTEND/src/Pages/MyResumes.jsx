@@ -343,7 +343,7 @@ const MyResumes = () => {
                 </div>
                 <h3 className="text-xl md:text-3xl font-black text-slate-900 mb-1.5 md:mb-2">{recentResume.name}</h3>
                 <p className="text-slate-500 mb-4 md:mb-6 flex items-center gap-2 text-xs md:text-sm font-medium">
-                  <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" /> Updated {new Date(recentResume.updatedAt).toLocaleDateString()}
+                  <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" /> Updated {new Date(recentResume.updatedAt).toLocaleDateString('en-GB')}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -410,7 +410,7 @@ const MyResumes = () => {
 
                 <h3 className="text-lg md:text-xl font-bold text-slate-800 line-clamp-1 mb-1">{resume.name}</h3>
                 <p className="text-[10px] md:text-xs text-slate-400 font-medium mb-4 md:mb-6">
-                  Updated {new Date(resume.updatedAt).toLocaleDateString()}
+                  Updated {new Date(resume.updatedAt).toLocaleDateString('en-GB')}
                 </p>
 
                 <div className="mt-auto">

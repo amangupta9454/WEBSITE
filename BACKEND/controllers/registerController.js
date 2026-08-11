@@ -83,7 +83,7 @@ const registerInternship = async (req, res) => {
       // Restriction: 15 days
       if (daysSinceLast < 15) {
         return res.status(429).json({
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString('en-GB')}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
 
@@ -283,7 +283,7 @@ const createRegistrationOrder = async (req, res) => {
 
       if (daysSinceLast < 15) {
         return res.status(429).json({
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString('en-GB')}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
 
@@ -371,7 +371,7 @@ const verifyRegistrationPayment = async (req, res) => {
 
       if (daysSinceLast < 15) {
         return res.status(429).json({
-          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString()}). Days remaining: ${15 - daysSinceLast}`,
+          message: `You can reapply after 15 days from your last application (${new Date(lastApp.appliedAt).toLocaleDateString('en-GB')}). Days remaining: ${15 - daysSinceLast}`,
         });
       }
     }

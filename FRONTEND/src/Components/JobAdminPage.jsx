@@ -475,7 +475,7 @@ const JobAdminPage = () => {
             </p>
             {jobPortalFreeMode && freeModeExpires && (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-200/60 border border-amber-400 text-amber-950 text-xs font-black mb-4">
-                <span>🗓️ Valid until {new Date(freeModeExpires).toLocaleDateString()} (Auto-reverts to Paid Mode in 30 days)</span>
+                <span>🗓️ Valid until {new Date(freeModeExpires).toLocaleDateString('en-GB')} (Auto-reverts to Paid Mode in 30 days)</span>
               </div>
             )}
             {jobPortalFreeMode && !freeModeExpires && (
@@ -1062,7 +1062,7 @@ const JobAdminPage = () => {
                         {u.pendingDays ? (
                           <div className="font-bold text-amber-600">{u.pendingDays} Days Pending</div>
                         ) : (
-                          <div className="font-bold text-emerald-600">Expires: {new Date(u.jobPortalPremiumExpires).toLocaleDateString()}</div>
+                          <div className="font-bold text-emerald-600">Expires: {new Date(u.jobPortalPremiumExpires).toLocaleDateString('en-GB')}</div>
                         )}
                       </div>
                     </div>
@@ -1143,7 +1143,7 @@ const JobAdminPage = () => {
                       <td className="py-4 px-6 text-xs font-bold text-slate-600">
                         {user.isPremium && user.expiresAt ? (
                           <span className="text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
-                            🗓️ {new Date(user.expiresAt).toLocaleDateString()}
+                            🗓️ {new Date(user.expiresAt).toLocaleDateString('en-GB')}
                           </span>
                         ) : (
                           <span className="text-slate-400">Free Lifeway</span>
