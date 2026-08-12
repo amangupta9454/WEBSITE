@@ -213,12 +213,12 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
           <div className="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 items-start md:items-end">
             {internship.startDate && (
               <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
-                Start Date: {new Date(internship.startDate).toLocaleDateString("en-IN")}
+                Start Date: {new Date(internship.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
               </span>
             )}
             {internship.endDate && (
               <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-red-50 text-red-700 border-red-200 shadow-sm leading-none flex items-center">
-                End Date: {new Date(internship.endDate).toLocaleDateString("en-IN")}
+                End Date: {new Date(internship.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
               </span>
             )}
             <span
@@ -758,12 +758,12 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           <div className="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 items-start md:items-end">
             {internship.startDate && (
               <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
-                Start Date: {new Date(internship.startDate).toLocaleDateString("en-IN")}
+                Start Date: {new Date(internship.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
               </span>
             )}
             {internship.endDate && (
               <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-red-50 text-red-700 border-red-200 shadow-sm leading-none flex items-center">
-                End Date: {new Date(internship.endDate).toLocaleDateString("en-IN")}
+                End Date: {new Date(internship.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
               </span>
             )}
             <span

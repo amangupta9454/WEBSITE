@@ -175,7 +175,7 @@ const PublicVerification = ({ initialCertificateId = null }) => {
                 <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
                   <span className="text-slate-400 font-semibold uppercase text-[11px]">Issue Timestamp:</span>
                   <span className="font-bold text-slate-800">
-                    {result.data.issueDate ? new Date(result.data.issueDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A"}
+                    {result.data.issueDate ? new Date(result.data.issueDate).toLocaleDateString('en-GB', { year: "numeric", month: "long", day: "numeric" }) : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2.5">

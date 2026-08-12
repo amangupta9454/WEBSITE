@@ -161,7 +161,7 @@ const CertificateVerification = () => {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-slate-500 font-semibold">Issuance Timestamp:</span>
                   <span className="font-bold text-slate-800">
-                    {result.certificate.issueDate ? new Date(result.certificate.issueDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A"}
+                    {result.certificate.issueDate ? new Date(result.certificate.issueDate).toLocaleDateString('en-GB', { year: "numeric", month: "long", day: "numeric" }) : "N/A"}
                   </span>
                 </div>
               </div>

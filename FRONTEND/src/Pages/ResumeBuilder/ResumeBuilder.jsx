@@ -112,6 +112,8 @@ const ResumeBuilder = () => {
   );
 
   const triggerPrint = useReactToPrint({
+    copyStyles: true,
+    pageStyle: "@page { size: A4 portrait; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }",
     contentRef: downloadRef,
     documentTitle: resume?.name || 'Resume',
     onAfterPrint: () => setDownloading(false),
@@ -340,16 +342,7 @@ const ResumeBuilder = () => {
       <Footer />
 
       {/* Hidden print container - positioned off-screen so react-to-print can access the DOM */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '210mm',
-          zIndex: -9999
-        }}
-      >
+      <div className="hidden">
         <div ref={downloadRef} style={{ width: '210mm', minHeight: '297mm', background: 'white' }}>
           <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
         </div>

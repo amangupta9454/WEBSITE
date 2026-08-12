@@ -520,10 +520,10 @@ const AdminDashboard = () => {
         Mobile: app.mobile,
         AppliedAt: new Date(app.appliedAt).toLocaleString("en-IN"),
         StartDate: app.startDate
-          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          ? new Date(app.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         EndDate: app.endDate
-          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          ? new Date(app.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         TotalSubmissions: app.submissions ? app.submissions.length : 0,
       }));
@@ -574,10 +574,10 @@ const AdminDashboard = () => {
         "Mobile Number": app.mobile,
         "Internship Type": app.internshipType || "Normal Intern",
         "Internship Start Date": app.startDate
-          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          ? new Date(app.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         "End Date": app.endDate
-          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          ? new Date(app.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         "Duration": app.duration || "N/A",
         "Offer Letter Status": app.offerLetterStatus || "Pending",
@@ -642,10 +642,10 @@ const AdminDashboard = () => {
         "Project Submitted": app.submissions ? app.submissions.length : 0,
         "Mobile Number": app.mobile,
         "Internship Start Date": app.startDate
-          ? new Date(app.startDate).toLocaleDateString("en-IN")
+          ? new Date(app.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         "End Date": app.endDate
-          ? new Date(app.endDate).toLocaleDateString("en-IN")
+          ? new Date(app.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
           : "N/A",
         "Project Submission Duration": app.duration || targetDurationStr,
       }));
@@ -1256,7 +1256,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-slate-500 mb-1">Applied At</p>
                 <p className="text-slate-700">
-                  {new Date(app.appliedAt).toLocaleDateString("en-IN")}
+                  {new Date(app.appliedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                 </p>
               </div>
             </div>
@@ -1295,10 +1295,10 @@ const AdminDashboard = () => {
                 {app.startDate ? (
                   <div>
                     <p className="text-xs text-green-600">
-                      {new Date(app.startDate).toLocaleDateString("en-IN")}
+                      {new Date(app.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {new Date(app.endDate).toLocaleDateString("en-IN")}
+                      {new Date(app.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                   </div>
                 ) : (
@@ -1442,7 +1442,7 @@ const AdminDashboard = () => {
                     <p className="text-slate-500">Start</p>
                     <p className="text-slate-700">
                       {app.startDate
-                        ? new Date(app.startDate).toLocaleDateString("en-IN")
+                        ? new Date(app.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
                         : "N/A"}
                     </p>
                   </div>
@@ -1450,7 +1450,7 @@ const AdminDashboard = () => {
                     <p className="text-slate-500">End</p>
                     <p className="text-slate-700">
                       {app.endDate
-                        ? new Date(app.endDate).toLocaleDateString("en-IN")
+                        ? new Date(app.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
                         : "N/A"}
                     </p>
                   </div>
@@ -2911,12 +2911,12 @@ const AdminDashboard = () => {
                                         <p className="text-xs text-green-600 whitespace-nowrap">
                                           {new Date(
                                             app.startDate,
-                                          ).toLocaleDateString("en-IN")}
+                                          ).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                         </p>
                                         <p className="text-xs text-slate-500 whitespace-nowrap">
                                           {new Date(
                                             app.endDate,
-                                          ).toLocaleDateString("en-IN")}
+                                          ).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                         </p>
                                       </div>
                                     ) : (
@@ -3072,7 +3072,7 @@ const AdminDashboard = () => {
                                       <span className="text-slate-700 text-xs whitespace-nowrap">
                                         {new Date(
                                           app.startDate,
-                                        ).toLocaleDateString("en-IN")}
+                                        ).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                       </span>
                                     ) : (
                                       <div className="min-w-[150px] flex items-center gap-1">
@@ -3110,7 +3110,7 @@ const AdminDashboard = () => {
                                     {app.endDate
                                       ? new Date(
                                           app.endDate,
-                                        ).toLocaleDateString("en-IN")
+                                        ).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
                                       : "—"}
                                   </td>
                                   <td className="py-3.5 px-4 text-slate-500 text-sm">

@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState } from "react";
 import {
   FileText,
@@ -21,6 +22,30 @@ import toast from "react-hot-toast";
  */
 const ResultCenterView = ({ results = [] }) => {
   const [selectedResult, setSelectedResult] = useState(null);
+  const [sessionDetails, setSessionDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  
+  const handleViewDetails = async (r) => {
+    setSelectedResult(r);
+    setSessionDetails(null);
+    setLoadingDetails(true);
+    try {
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token") || "";
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.get(`${backendUrl}/api/assessment/sessions/${r.sessionId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.data && res.data.success) {
+        setSessionDetails(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load session details", err);
+      toast.error("Could not load full assessment details.");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   const handleDownloadSummary = () => {
     toast.success("📄 Preparing printable Result Summary PDF...");
@@ -107,7 +132,7 @@ const ResultCenterView = ({ results = [] }) => {
                       </td>
                       <td className="py-4 px-6 text-right space-x-2 whitespace-nowrap">
                         <button
-                          onClick={() => setSelectedResult(r)}
+                          onClick={() => handleViewDetails(r)}
                           className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 inline-flex items-center gap-1.5 transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5 text-indigo-600" />
@@ -169,6 +194,7 @@ const ResultCenterView = ({ results = [] }) => {
               </div>
             </div>
 
+            
             <div className="space-y-2.5">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Evaluation Audit Trail</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -182,6 +208,45 @@ const ResultCenterView = ({ results = [] }) => {
                 <span className="font-mono text-[11px] text-slate-500">SECURE-SEAL-OK</span>
               </div>
             </div>
+
+            {/* Questions Breakdown */}
+            {loadingDetails ? (
+              <div className="text-center py-6 text-slate-500 text-sm font-medium animate-pulse">
+                Loading detailed evaluation...
+              </div>
+            ) : sessionDetails && sessionDetails.questionSnapshot ? (
+              <div className="space-y-4 mt-6 border-t border-slate-100 pt-6">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Question Breakdown</h3>
+                <div className="space-y-3">
+                  {sessionDetails.questionSnapshot.map((q, idx) => {
+                    const ans = sessionDetails.answers?.find(a => a.sequenceOrder === q.sequenceOrder);
+                    const isCorrect = ans && Number(ans.selectedIndex) === q.correctIndex;
+                    return (
+                      <div key={idx} className={`p-4 rounded-xl border ${isCorrect ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100'}`}>
+                        <div className="text-sm font-semibold text-slate-800 mb-2">Q{idx + 1}. {q.questionText}</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="font-bold text-slate-500 block mb-0.5 text-[10px] uppercase">Your Answer</span>
+                            <span className={`font-medium ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              {ans && ans.selectedIndex !== null && q.options[ans.selectedIndex] ? q.options[ans.selectedIndex].text : "Skipped / Unanswered"}
+                            </span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="font-bold text-slate-500 block mb-0.5 text-[10px] uppercase">Correct Answer</span>
+                            <span className="font-medium text-emerald-700">
+                              {q.options[q.correctIndex]?.text || "Unknown"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-slate-400 text-xs">No detailed breakdown available for this attempt.</div>
+            )}
+
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 print-hide">
               <button

@@ -207,7 +207,7 @@ const PublicVerificationPage = () => {
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Issue Date & Version</span>
                     <span className="text-xs font-extrabold text-slate-300 font-mono mt-1 block">
-                      {new Date(result.issueDate || Date.now()).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} ({result.version})
+                      {new Date(result.issueDate || Date.now()).toLocaleDateString('en-GB', { year: "numeric", month: "long", day: "numeric" })} ({result.version})
                     </span>
                   </div>
                 </div>

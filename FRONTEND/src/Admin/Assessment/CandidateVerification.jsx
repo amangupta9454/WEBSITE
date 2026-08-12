@@ -156,7 +156,7 @@ const CandidateVerification = () => {
                         <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">{cert.certificateId}</td>
                         <td className="py-3.5 px-4 font-black text-slate-800">{cert.assessmentTitle}</td>
                         <td className="py-3.5 px-4 text-slate-500">
-                          {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+                          {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('en-GB', { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
                         </td>
                         <td className="py-3.5 px-4 text-center font-bold text-slate-600">{cert.version}</td>
                         <td className="py-3.5 px-4 text-center">
@@ -200,7 +200,7 @@ const CandidateVerification = () => {
                         </td>
                         <td className="py-3.5 px-4 text-slate-500 font-mono">{item.subcategoryId || "Core Tech Domain"}</td>
                         <td className="py-3.5 px-4 text-slate-500">
-                          {item.completionDate ? new Date(item.completionDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+                          {item.completionDate ? new Date(item.completionDate).toLocaleDateString('en-GB', { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-black border border-indigo-200">
