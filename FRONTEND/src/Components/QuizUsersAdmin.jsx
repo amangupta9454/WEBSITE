@@ -39,6 +39,12 @@ const QuizUsersAdmin = () => {
   const [applicantToDelete, setApplicantToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  // Delete Quiz State
+  const [quizToDelete, setQuizToDelete] = useState(null);
+  const [deleteOtp, setDeleteOtp] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [deleteQuizStep, setDeleteQuizStep] = useState(1);
+  
   // Certificate & Bulk Actions State
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [certData, setCertData] = useState(null);
@@ -95,6 +101,58 @@ const QuizUsersAdmin = () => {
       toast.error('Failed to fetch quiz applicants');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendQuizOtp = async () => {
+    if (!quizToDelete) return;
+    try {
+      setIsSendingOtp(true);
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/quizzes/${encodeURIComponent(quizToDelete)}/send-otp`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(`OTP sent to admin email`);
+        setDeleteQuizStep(2);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleDeleteQuiz = async () => {
+    if (!quizToDelete || !deleteOtp) return;
+    try {
+      setIsDeleting(true);
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/quizzes/${encodeURIComponent(quizToDelete)}`,
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          data: { otp: deleteOtp }
+        }
+      );
+      if (res.data.success) {
+        toast.success(res.data.message || 'Quiz deleted successfully');
+        fetchQuizApplicants(); // Refresh list to remove deleted data
+        setQuizToDelete(null);
+        setDeleteOtp("");
+        setDeleteQuizStep(1);
+        if (quizFilter === quizToDelete) {
+          setQuizFilter("All Quizzes");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to delete quiz');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -508,20 +566,32 @@ const QuizUsersAdmin = () => {
               <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 pr-8">{quiz.quizName}</h3>
               
               <div className="flex flex-col gap-1 mb-4 text-xs text-slate-500 relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditSponsorQuizName(quiz.quizName);
-                    setEditSponsorInitialName(quiz.sponsorName !== "N/A" ? quiz.sponsorName : "");
-                    setEditSponsorInitialSignatory(quiz.sponsorSignatoryName || "");
-                    setEditSponsorInitialDate(quiz.quizDate !== "N/A" ? quiz.quizDate : "");
-                    setShowEditSponsorModal(true);
-                  }}
-                  className="absolute -top-8 right-0 p-1.5 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-400 rounded-lg transition-colors group/edit"
-                  title="Edit Sponsor Details"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
+                <div className="absolute -top-8 right-0 flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditSponsorQuizName(quiz.quizName);
+                      setEditSponsorInitialName(quiz.sponsorName !== "N/A" ? quiz.sponsorName : "");
+                      setEditSponsorInitialSignatory(quiz.sponsorSignatoryName || "");
+                      setEditSponsorInitialDate(quiz.quizDate !== "N/A" ? quiz.quizDate : "");
+                      setShowEditSponsorModal(true);
+                    }}
+                    className="p-1.5 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-400 rounded-lg transition-colors"
+                    title="Edit Sponsor Details"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuizToDelete(quiz.quizName);
+                    }}
+                    className="p-1.5 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-400 rounded-lg transition-colors"
+                    title="Delete Quiz"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" /> 
                   {quiz.quizDate !== "N/A" ? quiz.quizDate : "Date Not Set"}
@@ -1061,6 +1131,81 @@ const QuizUsersAdmin = () => {
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Applicant"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE QUIZ MODAL */}
+      {quizToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            
+            {deleteQuizStep === 1 ? (
+              <>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-slate-900">Delete Entire Quiz?</h3>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Are you sure you want to delete <strong className="text-slate-800">{quizToDelete}</strong>? 
+                    <br/><br/>
+                    <span className="text-red-500 font-medium">This will delete the Quiz Sponsor and remove the quiz from ALL participants. This action cannot be undone.</span>
+                  </p>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setQuizToDelete(null); setDeleteQuizStep(1); }}
+                    disabled={isSendingOtp}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendQuizOtp}
+                    disabled={isSendingOtp}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/25"
+                  >
+                    {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send OTP to Delete"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-slate-900">Verify Deletion</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    An OTP has been sent to <strong>himanshu561hi@gmail.com</strong>.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <input
+                    type="text"
+                    value={deleteOtp}
+                    onChange={(e) => setDeleteOtp(e.target.value)}
+                    placeholder="Enter 6-digit OTP"
+                    className="w-full text-center px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-slate-900 font-bold tracking-widest text-lg"
+                    maxLength={6}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setQuizToDelete(null); setDeleteQuizStep(1); setDeleteOtp(""); }}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteQuiz}
+                    disabled={isDeleting || deleteOtp.length < 6}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-500/25"
+                  >
+                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm Delete"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -6,6 +6,7 @@ const NormalTask = require("../models/NormalTask");
 const Notification = require("../models/Notification");
 const ProjectSubmission = require("../models/ProjectSubmission");
 const QuizSponsor = require("../models/QuizSponsor");
+const Otp = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const XLSX = require("xlsx");
@@ -2594,6 +2595,86 @@ const updateQuizSponsor = async (req, res) => {
   }
 };
 
+const sendDeleteQuizOtp = async (req, res) => {
+  try {
+    const adminEmail = "himanshu561hi@gmail.com";
+    const quizName = req.params.quizName;
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete existing OTP for this email if any
+    await Otp.deleteMany({ phone: adminEmail });
+
+    const otpEntry = new Otp({
+      phone: adminEmail,
+      otp: otp,
+    });
+    await otpEntry.save();
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: adminEmail,
+      subject: `Code-A-Nova: Confirm Quiz Deletion (${quizName})`,
+      text: `Hello Admin,
+
+An attempt was made to delete the quiz "${quizName}" and all its participants. 
+Your verification OTP is: ${otp}
+
+This OTP is valid for 10 minutes. If you did not request this, please ignore this email.
+
+Best regards,
+Code-A-Nova Team`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: `OTP sent successfully to ${adminEmail}` });
+  } catch (error) {
+    console.error("[Admin] Error sending delete quiz OTP:", error);
+    res.status(500).json({ success: false, message: "Failed to send OTP email" });
+  }
+};
+
+const deleteQuiz = async (req, res) => {
+  try {
+    const { quizName } = req.params;
+    const { otp } = req.body;
+    const adminEmail = "himanshu561hi@gmail.com";
+
+    // 1. Verify OTP
+    const otpRecord = await Otp.findOne({ phone: adminEmail }).sort({ createdAt: -1 });
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: "OTP expired or not found. Please request a new one." });
+    }
+    if (otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
+    }
+
+    // 2. Delete Quiz Sponsor
+    await QuizSponsor.findOneAndDelete({ quizName: quizName.trim() });
+
+    // 3. Remove quiz from all applicants' quizzes array
+    await QuizApplicant.updateMany(
+      { "quizzes.quizName": quizName.trim() },
+      { $pull: { quizzes: { quizName: quizName.trim() } } }
+    );
+
+    // 4. Delete applicants who no longer have any quizzes and whose root quizName matches (legacy cleanup)
+    // We safely delete those who have empty quizzes array OR who only ever took this quiz.
+    await QuizApplicant.deleteMany({
+      quizName: quizName.trim(),
+      quizzes: { $size: 0 }
+    });
+
+    // Clean up OTP
+    await Otp.deleteMany({ phone: adminEmail });
+
+    res.json({ success: true, message: `Successfully deleted quiz '${quizName}' and removed it from all participants.` });
+  } catch (error) {
+    console.error("[Admin] Error deleting quiz:", error);
+    res.status(500).json({ success: false, message: "Server error while deleting quiz" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -2609,6 +2690,8 @@ module.exports = {
   getQuizApplicants,
   getQuizSponsorDetails,
   deleteQuizApplicant,
+  sendDeleteQuizOtp,
+  deleteQuiz,
   deleteApplication,
   bulkDeleteApplications,
   toggleLeaderboardSetting,
