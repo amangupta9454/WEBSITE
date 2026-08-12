@@ -121,7 +121,7 @@ router.post("/quiz-applicants/send-certificate", auth, verifyAdmin, sendQuizCert
 router.post("/quiz-applicants/update-sponsor", auth, verifyAdmin, updateQuizSponsor);
 router.delete("/quiz-applicants/:id", auth, verifyAdmin, deleteQuizApplicant);
 router.post("/quizzes/:quizName/send-otp", auth, verifyAdmin, sendDeleteQuizOtp);
-router.delete("/quizzes/:quizName", auth, verifyAdmin, deleteQuiz);
+router.post("/quizzes/:quizName/delete", auth, verifyAdmin, deleteQuiz);
 router.delete("/applications/:id", auth, verifyAdmin, deleteApplication);
 router.post("/applications/bulk-delete", auth, verifyAdmin, bulkDeleteApplications);
 

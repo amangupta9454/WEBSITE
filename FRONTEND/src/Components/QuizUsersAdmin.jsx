@@ -131,12 +131,10 @@ const QuizUsersAdmin = () => {
     try {
       setIsDeleting(true);
       const token = localStorage.getItem('adminToken');
-      const res = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/quizzes/${encodeURIComponent(quizToDelete)}`,
-        { 
-          headers: { Authorization: `Bearer ${token}` },
-          data: { otp: deleteOtp }
-        }
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/quizzes/${encodeURIComponent(quizToDelete)}/delete`,
+        { otp: deleteOtp },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         toast.success(res.data.message || 'Quiz deleted successfully');
