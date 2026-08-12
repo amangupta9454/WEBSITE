@@ -31,7 +31,7 @@ const EditSponsorModal = ({ isOpen, onClose, quizName, initialSponsorName, initi
       const fetchSponsorDetails = async () => {
         try {
           const token = localStorage.getItem('adminToken');
-          const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/sponsor/${encodeURIComponent(quizName)}`, {
+          const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/quiz-applicants/sponsor-details/${encodeURIComponent(quizName)}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (res.data.success && res.data.sponsorDetails) {
