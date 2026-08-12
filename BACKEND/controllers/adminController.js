@@ -2610,8 +2610,7 @@ const sendDeleteQuizOtp = async (req, res) => {
     });
     await otpEntry.save();
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    await mailService.sendEmail({
       to: adminEmail,
       subject: `Code-A-Nova: Confirm Quiz Deletion (${quizName})`,
       text: `Hello Admin,
@@ -2623,9 +2622,11 @@ This OTP is valid for 10 minutes. If you did not request this, please ignore thi
 
 Best regards,
 Code-A-Nova Team`,
-    };
-
-    await transporter.sendMail(mailOptions);
+      html: `<p>Hello Admin,</p><p>An attempt was made to delete the quiz "<b>${quizName}</b>" and all its participants.</p><p>Your verification OTP is: <b>${otp}</b></p><p>This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p><p>Best regards,<br/>Code-A-Nova Team</p>`,
+      campaign: "Admin Action",
+      source: "Quiz Deletion OTP",
+      recipientName: "Admin",
+    });
 
     res.json({ success: true, message: `OTP sent successfully to ${adminEmail}` });
   } catch (error) {
