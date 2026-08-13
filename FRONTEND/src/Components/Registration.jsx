@@ -42,7 +42,6 @@ const Registration = () => {
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [paymentEnabled, setPaymentEnabled] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
-  const [otpVerifying, setOtpVerifying] = useState(false);
 
   const [waitlistData, setWaitlistData] = useState({ name: '', email: '' });
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
