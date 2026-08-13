@@ -34,10 +34,10 @@ const Home = () => {
   return (
     <MainLayout>
       <Hero />
+      <Partners />
       <Stats />
       <ProblemSolution />
       <ServicesOverview />
-      <Partners />
       <MockInterviewCTA />
       <ResumeBuilderCTA />
       {showJobPortal && <JobPortalCTA />}
