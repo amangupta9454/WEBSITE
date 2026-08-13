@@ -12,6 +12,7 @@ import IndustriesServed from '../sections/IndustriesServed';
 import PortfolioPreview from '../sections/PortfolioPreview';
 import WhyWebsite from '../sections/WhyWebsite';
 import Process from '../sections/Process';
+import Partners from '../sections/Partners';
 import Testimonials from '../sections/Testimonials';
 import CTA, { InternshipCTA } from '../sections/CTA';
 
@@ -33,6 +34,7 @@ const Home = () => {
   return (
     <MainLayout>
       <Hero />
+      <Partners />
       <Stats />
       <ProblemSolution />
       <ServicesOverview />
