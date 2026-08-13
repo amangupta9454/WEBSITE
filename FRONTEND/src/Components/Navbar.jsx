@@ -11,6 +11,9 @@ const Navbar = () => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [featuresDropdownOpen, setFeaturesDropdownOpen] = useState(false);
+  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
+  const [featuresConfig, setFeaturesConfig] = useState({ jobPortal: true, interview: true, resume: true, assessment: true });
   const location = useLocation();
 
   useEffect(() => {
@@ -33,12 +36,35 @@ const Navbar = () => {
     fetchSetting();
   }, []);
 
+
+  useEffect(() => {
+    const fetchFeatureSettings = async () => {
+      try {
+        const [jobRes, intRes, resRes, assmtRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/job-portal`).catch(() => ({data: {jobPortalEnabled: true}})),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/interview-settings`).catch(() => ({data: {enabled: true}})),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings`).catch(() => ({data: {enabled: true}})),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/assessment-settings`).catch(() => ({data: {enabled: true}}))
+        ]);
+        setFeaturesConfig({
+          jobPortal: jobRes.data?.jobPortalEnabled ?? true,
+          interview: intRes.data?.enabled ?? true,
+          resume: resRes.data?.enabled ?? true,
+          assessment: assmtRes.data?.enabled ?? true,
+        });
+      } catch (err) {
+        console.error('Failed to fetch feature settings', err);
+      }
+    };
+    fetchFeatureSettings();
+  }, []);
+
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
     { name: 'Industries', path: '/industries' },
     { name: 'Projects', path: '/projects' },
-    { name: 'Jobs', path: '/jobs' },
+    { name: 'Our Features', path: '#' },
     { name: 'Internship', path: '/internship' }
   ];
 
@@ -70,6 +96,33 @@ const Navbar = () => {
         {/* Desktop Nav */}
         <nav className="hidden min-[920px]:flex items-center gap-8">
           {navLinks.map((link) => {
+            if (link.name === 'Our Features') {
+              const hasFeatures = featuresConfig.jobPortal || featuresConfig.interview || featuresConfig.resume || featuresConfig.assessment;
+              if (!hasFeatures) return null;
+              return (
+                <div key={link.name} className="relative group" onMouseEnter={() => setFeaturesDropdownOpen(true)} onMouseLeave={() => setFeaturesDropdownOpen(false)}>
+                  <button className={`flex items-center gap-1 text-sm font-semibold transition-colors hover:text-brand-purple ${featuresDropdownOpen ? 'text-brand-purple' : 'text-gray-600'}`}>
+                    Our Features <ChevronDown size={14} className={`transition-transform ${featuresDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {featuresDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-2"
+                      >
+                        {featuresConfig.interview && <Link to={isLoggedIn ? "/interview-setup" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Mock Interview</Link>}
+                        {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Resume Builder</Link>}
+                        {featuresConfig.jobPortal && <Link to="/jobs" className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Job Portal</Link>}
+                        {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Assessments</Link>}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
             if (link.name === 'Internship' && showLeaderboard) {
               return (
                 <div key={link.name} className="relative group" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
@@ -182,6 +235,40 @@ const Navbar = () => {
                 <div className="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-gray-100 via-gray-200 to-transparent" />
                 
                 {navLinks.map((link, i) => {
+                  if (link.name === 'Our Features') {
+                    const hasFeatures = featuresConfig.jobPortal || featuresConfig.interview || featuresConfig.resume || featuresConfig.assessment;
+                    if (!hasFeatures) return null;
+                    return (
+                      <motion.div
+                        key={link.name}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: i * 0.05 + 0.1, type: 'spring', stiffness: 300, damping: 24 }}
+                        className="relative pb-2"
+                      >
+                        <button onClick={() => setMobileFeaturesOpen(!mobileFeaturesOpen)} className={`w-full flex items-center justify-between py-2 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${mobileFeaturesOpen ? 'text-gray-900 translate-x-2' : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'}`}>
+                          Our Features <ChevronDown size={20} className={`transition-transform ${mobileFeaturesOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        <AnimatePresence>
+                          {mobileFeaturesOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden flex flex-col pl-8 pr-6"
+                            >
+                              {featuresConfig.interview && <Link to={isLoggedIn ? "/interview-setup" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Mock Interview</Link>}
+                              {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Resume Builder</Link>}
+                              {featuresConfig.jobPortal && <Link to="/jobs" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Job Portal</Link>}
+                              {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Assessments</Link>}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  }
+
                   if (link.name === 'Internship' && showLeaderboard) {
                     return (
                       <motion.div
