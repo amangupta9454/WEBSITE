@@ -28,7 +28,7 @@ const Partners = () => {
             <img
               src="/edunet.svg"
               alt="Edunet Foundation"
-              className="h-18 md:h-26 object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-15 md:h-23 object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </a>
 

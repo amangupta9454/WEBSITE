@@ -218,83 +218,19 @@ class StudentPlatformService {
         .sort({ createdAt: -1 })
         .lean();
 
-      let legacyCertificates = [];
-      try {
-        const userApplicants = await QuizApplicant.find({ 
-          $or: [
-            { email: new RegExp(`^${candidateEmail.trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`, "i") }
-          ] 
-        }).lean();
-        
-        for (const app of userApplicants) {
-          if (app.quizName && !legacyCertificates.some(pq => pq.assessmentName === app.quizName)) {
-            legacyCertificates.push({
-              certificateId: app.registrationId || String(app._id),
-              assessmentName: app.quizName,
-              category: "Legacy Quiz",
-              status: "Issued",
-              version: 1,
-              issueDate: app.quizDate || app.createdAt,
-              isValid: true,
-              downloadUrl: `/api/student/download-certificate?quizName=${encodeURIComponent(app.quizName)}`,
-              verifyUrl: "#",
-            });
-          }
-          if (Array.isArray(app.quizzes)) {
-            for (const q of app.quizzes) {
-              if (q.quizName && !legacyCertificates.some(pq => pq.assessmentName === q.quizName)) {
-                legacyCertificates.push({
-                  certificateId: q.registrationId || String(q._id),
-                  assessmentName: q.quizName,
-                  category: "Legacy Quiz",
-                  status: "Issued",
-                  version: 1,
-                  issueDate: q.quizDate || q.importedAt || app.createdAt,
-                  isValid: true,
-                  downloadUrl: `/api/student/download-certificate?quizName=${encodeURIComponent(q.quizName)}`,
-                  verifyUrl: "#",
-                });
-              }
-            }
-          }
-        }
-
-        const sponsors = await QuizSponsor.find({}).lean();
-        for (const s of sponsors) {
-          if (!legacyCertificates.some(pq => pq.assessmentName === s.quizName)) {
-            legacyCertificates.push({
-              certificateId: String(s._id),
-              assessmentName: s.quizName,
-              category: "Legacy Quiz",
-              status: "Issued",
-              version: 1,
-              issueDate: s.quizDate || s.createdAt || "2026-08-01",
-              isValid: true,
-              downloadUrl: `/api/student/download-certificate?quizName=${encodeURIComponent(s.quizName)}`,
-              verifyUrl: "#",
-            });
-          }
-        }
-      } catch (legacyErr) {
-        console.warn("Legacy certificate fetch failed:", legacyErr);
-      }
-
       return {
         success: true,
-        data: [
-          ...certificates.map((c) => ({
-            certificateId: c.certificateId,
-            assessmentName: c.assessmentName || c.snapshot?.assessmentName || "Certified Domain Mastery",
-            category: c.category || "Enterprise Tech",
-            status: c.status,
-            version: c.version || 1,
-            issueDate: c.issueDate || c.createdAt,
-            isValid: c.status === "Issued" && c.isCurrentActive,
-            downloadUrl: `/api/assessment/certificates/${c.certificateId}/download`,
-            verifyUrl: `/verify/${c.certificateId}`,
-          })),
-          ...legacyCertificates
-        ],
+        data: certificates.map((c) => ({
+          certificateId: c.certificateId,
+          assessmentName: c.assessmentName || c.snapshot?.assessmentName || "Certified Domain Mastery",
+          category: c.category || "Enterprise Tech",
+          status: c.status,
+          version: c.version || 1,
+          issueDate: c.issueDate || c.createdAt,
+          isValid: c.status === "Issued" && c.isCurrentActive,
+          downloadUrl: `/api/assessment/certificates/${c.certificateId}/download`,
+          verifyUrl: `/verify/${c.certificateId}`,
+        })),
       };
     } catch (err) {
       return { success: false, error: err.message };
