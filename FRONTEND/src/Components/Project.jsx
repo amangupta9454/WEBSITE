@@ -15,6 +15,7 @@ const Project = () => {
     email: '',
     domain: '',
     duration: '',
+    targetMonth: location.state?.targetMonth || null,
     assignments: [
       { projectName: location.state?.taskName || '', github: '', hosted: '' }
     ]
@@ -54,7 +55,7 @@ const Project = () => {
         console.log("Backend response:", res.data);
 
         if (res.data.canSubmit) {
-          setCurrentMonth(res.data.currentMonth);
+          setCurrentMonth(location.state?.targetMonth || res.data.currentMonth);
 
           // Autofill and mark fields as auto-filled (only if not already filled manually)
           const newAutoFilled = { name: false, email: false, domain: false, duration: false };
@@ -148,6 +149,7 @@ const Project = () => {
       email: '',
       domain: '',
       duration: '',
+      targetMonth: null,
       assignments: [
         { projectName: '', github: '', hosted: '' }
       ]

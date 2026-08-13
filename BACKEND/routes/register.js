@@ -6,7 +6,9 @@ const Waitlist = require('../models/Waitlist');
 const { 
   registerInternship, 
   createRegistrationOrder, 
-  verifyRegistrationPayment 
+  verifyRegistrationPayment,
+  sendRegistrationOtp,
+  verifyRegistrationOtp
 } = require('../controllers/registerController');
 
 const router = express.Router();
@@ -14,6 +16,9 @@ const router = express.Router();
 router.post('/', upload.single('resume'), registerInternship); // Legacy route
 router.post('/create-order', createRegistrationOrder);
 router.post('/verify-payment', upload.single('resume'), verifyRegistrationPayment);
+
+router.post('/send-otp', sendRegistrationOtp);
+router.post('/verify-otp', verifyRegistrationOtp);
 
 // Waitlist - join when registration is closed
 router.post('/waitlist', async (req, res) => {

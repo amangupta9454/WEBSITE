@@ -348,7 +348,7 @@ async function processAssignmentsWithAI(assignments, internship, user) {
 
 const submitProject = async (req, res) => {
   try {
-    const { studentId, name, email, mobile, domain, duration, assignments } = req.body;
+    const { studentId, name, email, mobile, domain, duration, assignments, targetMonth } = req.body;
 
     const user = await User.findOne({ 'internships.studentId': studentId });
     if (!user) {
@@ -378,12 +378,14 @@ const submitProject = async (req, res) => {
 
     const registeredDuration = parseInt(internship.duration.split(' ')[0]);
 
-    const previousCount = await ProjectSubmission.countDocuments({ studentId });
-    if (previousCount >= registeredDuration) {
-      return res.status(400).json({ message: 'All monthly submissions completed' });
+    let currentMonth = req.body.targetMonth;
+    if (!currentMonth) {
+      const previousCount = await ProjectSubmission.countDocuments({ studentId });
+      if (previousCount >= registeredDuration) {
+        return res.status(400).json({ message: 'All monthly submissions completed' });
+      }
+      currentMonth = previousCount + 1;
     }
-
-    const currentMonth = previousCount + 1;
     const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid);
 
     if (paymentRequired) {
@@ -402,19 +404,53 @@ const submitProject = async (req, res) => {
       });
     } else {
       const processedAssignments = await processAssignmentsWithAI(assignments || [], internship, user);
+      
+      // SP Penalty for late submission
+      if (internship.startDate && req.body.targetMonth) {
+        const daysPassed = Math.floor((new Date() - new Date(internship.startDate)) / (1000 * 60 * 60 * 24));
+        const monthStartDay = (req.body.targetMonth - 1) * 30;
+        
+        // Find which task this is
+        const taskTitle = processedAssignments[0]?.projectName;
+        const NormalTask = require('../models/NormalTask');
+        const normalTaskMeta = await NormalTask.findOne({ domain: internship.domain, monthNumber: req.body.targetMonth });
+        if (normalTaskMeta && normalTaskMeta.tasks) {
+           const taskIndex = normalTaskMeta.tasks.findIndex(t => t.title === taskTitle);
+           if (taskIndex !== -1) {
+              const taskDeadlineDay = monthStartDay + (taskIndex * 15) + 15;
+              if (daysPassed > taskDeadlineDay) {
+                 // Late! Deduct 5 SP
+                 processedAssignments[0].spAwarded = Math.max(0, (processedAssignments[0].spAwarded || 0) - 5);
+                 internship.pointsHistory.push({
+                   reason: `Late submission penalty for ${taskTitle}`,
+                   pointsAdded: -5,
+                   date: new Date()
+                 });
+                 internship.sp = (internship.sp || 0) - 5;
+                 await user.save();
+              }
+           }
+        }
+      }
 
-      const submission = new ProjectSubmission({
-        studentId,
-        name,
-        email,
-        mobile: internship.mobile,
-        domain,
-        duration: registeredDuration,
-        assignments: processedAssignments,
-        month: currentMonth
-      });
-
-      await submission.save();
+      let submission = await ProjectSubmission.findOne({ studentId, month: currentMonth });
+      if (submission) {
+        // Append assignments to existing submission for this month
+        submission.assignments.push(...processedAssignments);
+        await submission.save();
+      } else {
+        submission = new ProjectSubmission({
+          studentId,
+          name,
+          email,
+          mobile: internship.mobile,
+          domain,
+          duration: registeredDuration,
+          assignments: processedAssignments,
+          month: currentMonth
+        });
+        await submission.save();
+      }
       return res.json({ message: 'Project submitted and AI-evaluated successfully' });
     }
   } catch (error) {
@@ -450,8 +486,11 @@ const verifyPayment = async (req, res) => {
     }
 
     const registeredDuration = parseInt(internship.duration.split(' ')[0]);
-    const previousCount = await ProjectSubmission.countDocuments({ studentId });
-    const currentMonth = previousCount + 1;
+    let currentMonth = formData.targetMonth;
+    if (!currentMonth) {
+      const previousCount = await ProjectSubmission.countDocuments({ studentId });
+      currentMonth = previousCount + 1;
+    }
 
     if (currentMonth !== registeredDuration) {
       return res.status(400).json({ message: 'Not the final submission month' });
@@ -459,19 +498,50 @@ const verifyPayment = async (req, res) => {
 
     const processedAssignments = await processAssignmentsWithAI(assignments || [], internship, user);
 
-    // Save submission
-    const submission = new ProjectSubmission({
-      studentId,
-      name,
-      email,
-      mobile: internship.mobile,
-      domain,
-      duration: registeredDuration,
-      assignments: processedAssignments,
-      month: currentMonth
-    });
+    // SP Penalty for late submission
+    if (internship.startDate && formData.targetMonth) {
+      const daysPassed = Math.floor((new Date() - new Date(internship.startDate)) / (1000 * 60 * 60 * 24));
+      const monthStartDay = (formData.targetMonth - 1) * 30;
+      
+      const taskTitle = processedAssignments[0]?.projectName;
+      const NormalTask = require('../models/NormalTask');
+      const normalTaskMeta = await NormalTask.findOne({ domain: internship.domain, monthNumber: formData.targetMonth });
+      if (normalTaskMeta && normalTaskMeta.tasks) {
+         const taskIndex = normalTaskMeta.tasks.findIndex(t => t.title === taskTitle);
+         if (taskIndex !== -1) {
+            const taskDeadlineDay = monthStartDay + (taskIndex * 15) + 15;
+            if (daysPassed > taskDeadlineDay) {
+               processedAssignments[0].spAwarded = Math.max(0, (processedAssignments[0].spAwarded || 0) - 5);
+               internship.pointsHistory.push({
+                 reason: `Late submission penalty for ${taskTitle}`,
+                 pointsAdded: -5,
+                 date: new Date()
+               });
+               internship.sp = (internship.sp || 0) - 5;
+               await user.save();
+            }
+         }
+      }
+    }
 
-    await submission.save();
+    // Save submission
+    let submission = await ProjectSubmission.findOne({ studentId, month: currentMonth });
+    if (submission) {
+      submission.assignments.push(...processedAssignments);
+      await submission.save();
+    } else {
+      submission = new ProjectSubmission({
+        studentId,
+        name,
+        email,
+        mobile: internship.mobile,
+        domain,
+        duration: registeredDuration,
+        assignments: processedAssignments,
+        month: currentMonth
+      });
+      await submission.save();
+    }
 
     // Update hasPaid and store actual payment details
     await User.updateOne(

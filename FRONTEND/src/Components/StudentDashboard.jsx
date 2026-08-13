@@ -114,7 +114,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
     return <CheckCircle size={16} />;
   };
 
-  const handleSubmitProject = (taskName = "") => {
+  const handleSubmitProject = (taskName = "", targetMonth = null) => {
     const finalTaskName = taskName && taskName.startsWith("http") ? "" : taskName;
     navigate("/project-submission", {
       state: {
@@ -122,6 +122,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
         domain: internship.domain,
         studentId: internship.studentId,
         taskName: finalTaskName,
+        targetMonth
       },
     });
   };
@@ -426,7 +427,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                   </div>
                   {isCurrentPending && (
                     <button
-                      onClick={() => handleSubmitProject(assignedTaskName)}
+                      onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
                       className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
                     >
                       Submit Project <ArrowRight size={18} />

@@ -27,6 +27,10 @@ const durations = ['1 Month', '2 Months', '3 Months'];
 const Registration = () => {
   const navigate = useNavigate();
   const [successData, setSuccessData] = useState(null);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', whatsapp: '',
     course: '', branch: '', college: '', state: '', passingYear: '',
@@ -92,7 +96,16 @@ const Registration = () => {
           data
         );
         
-        if (res.data.token && res.data.user) {
+        if (res.data.requiresOtp) {
+          setSuccessData({
+            studentId: res.data.studentId,
+            email: res.data.email,
+            requiresOtp: true,
+            user: res.data.user
+          });
+          setSubmitting(false);
+          return;
+        } else if (res.data.token && res.data.user) {
           setSuccessData({
             studentId: res.data.studentId,
             token: res.data.token,
@@ -155,7 +168,16 @@ const Registration = () => {
               submitData
             );
             
-            if (verifyRes.data.token && verifyRes.data.user) {
+            if (verifyRes.data.requiresOtp) {
+              setSuccessData({
+                studentId: verifyRes.data.studentId,
+                email: verifyRes.data.email,
+                requiresOtp: true,
+                user: verifyRes.data.user
+              });
+              setSubmitting(false);
+              return;
+            } else if (verifyRes.data.token && verifyRes.data.user) {
               setSuccessData({
                 studentId: verifyRes.data.studentId,
                 token: verifyRes.data.token,
@@ -439,17 +461,90 @@ const Registration = () => {
               
               <button
                 type="button"
-                onClick={() => {
-                  localStorage.setItem('studentToken', successData.token);
-                  localStorage.setItem('interviewToken', successData.token);
-                  localStorage.setItem('interviewUser', JSON.stringify(successData.user));
-                  localStorage.setItem('interviewUserRole', successData.user.role || 'intern');
-                  navigate('/dashboard');
+                disabled={otpSending}
+                onClick={async () => {
+                  if (successData.requiresOtp) {
+                    try {
+                      setOtpSending(true);
+                      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/register/send-otp`, { email: successData.email });
+                      setShowOtpModal(true);
+                      toast.success("OTP sent to your email!");
+                    } catch (err) {
+                      toast.error("Failed to send OTP. Please try again.");
+                    } finally {
+                      setOtpSending(false);
+                    }
+                  } else {
+                    localStorage.setItem('studentToken', successData.token);
+                    localStorage.setItem('interviewToken', successData.token);
+                    localStorage.setItem('interviewUser', JSON.stringify(successData.user));
+                    localStorage.setItem('interviewUserRole', successData.user.role || 'intern');
+                    navigate('/dashboard');
+                  }
                 }}
-                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-blue-700 hover:shadow-lg shadow-blue-600/30 group"
+                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-blue-700 hover:shadow-lg shadow-blue-600/30 group disabled:opacity-70"
               >
-                Go to Dashboard 
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {otpSending ? "Sending OTP..." : "Go to Dashboard"} 
+                {!otpSending && <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* OTP Modal */}
+      <AnimatePresence>
+        {showOtpModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center relative overflow-hidden"
+            >
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Verify Email</h2>
+              <p className="text-gray-500 mb-6 text-sm">
+                Enter the 4-digit OTP sent to {successData?.email}
+              </p>
+              
+              <input 
+                type="text" 
+                maxLength="4"
+                value={otpValue}
+                onChange={(e) => setOtpValue(e.target.value.replace(/[^0-9]/g, ''))}
+                className="w-full text-center text-3xl font-bold tracking-[0.5em] bg-slate-50 border border-slate-300 rounded-xl px-4 py-4 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0000"
+              />
+
+              <button
+                type="button"
+                disabled={otpVerifying || otpValue.length !== 4}
+                onClick={async () => {
+                  try {
+                    setOtpVerifying(true);
+                    const verifyRes = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/register/verify-otp`, { 
+                      email: successData.email, 
+                      otp: otpValue 
+                    });
+                    
+                    const { token, user } = verifyRes.data;
+                    localStorage.setItem('studentToken', token);
+                    localStorage.setItem('interviewToken', token);
+                    localStorage.setItem('interviewUser', JSON.stringify(user));
+                    localStorage.setItem('interviewUserRole', user.role || 'intern');
+                    navigate('/dashboard');
+                  } catch (err) {
+                    toast.error(err.response?.data?.message || "Invalid OTP");
+                  } finally {
+                    setOtpVerifying(false);
+                  }
+                }}
+                className="w-full bg-blue-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-blue-700"
+              >
+                {otpVerifying ? "Verifying..." : "Verify & Login"}
               </button>
             </motion.div>
           </motion.div>

@@ -965,39 +965,61 @@ const getNormalTasks = async (req, res) => {
 
 const createNormalTask = async (req, res) => {
   try {
-    const { domain, monthNumber, description } = req.body;
+    const { domain, monthNumber, task1Title, task1Desc, task2Title, task2Desc } = req.body;
     if (!domain || !monthNumber) {
       return res.status(400).json({ message: "Domain and month number are required" });
     }
 
-    let pdfUrl = "";
-    if (req.file) {
+    const tasks = [];
+    
+    // Process files
+    const files = req.files || [];
+    
+    // Task 1
+    if (task1Title && files.length > 0) {
       const uploadPromise = new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { resource_type: "auto", folder: "normal_tasks" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result.secure_url);
-          }
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
+        const stream = cloudinary.uploader.upload_stream({ resource_type: "auto", folder: "normal_tasks" }, (error, result) => {
+          if (error) reject(error); else resolve(result.secure_url);
+        });
+        streamifier.createReadStream(files[0].buffer).pipe(stream);
       });
-      pdfUrl = await uploadPromise;
+      const pdfUrl1 = await uploadPromise;
+      tasks.push({ title: task1Title, description: task1Desc || "", pdfUrl: pdfUrl1 });
     }
-
-    if (!pdfUrl) {
-      return res.status(400).json({ message: "Task PDF file is required" });
+    
+    // Task 2
+    if (task2Title && files.length > 1) {
+      const uploadPromise2 = new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({ resource_type: "auto", folder: "normal_tasks" }, (error, result) => {
+          if (error) reject(error); else resolve(result.secure_url);
+        });
+        streamifier.createReadStream(files[1].buffer).pipe(stream);
+      });
+      const pdfUrl2 = await uploadPromise2;
+      tasks.push({ title: task2Title, description: task2Desc || "", pdfUrl: pdfUrl2 });
+    }
+    
+    if (tasks.length === 0) {
+      return res.status(400).json({ message: "At least one task with PDF is required" });
     }
 
     const existingTask = await NormalTask.findOne({ domain, monthNumber });
     if (existingTask) {
-      existingTask.pdfUrl = pdfUrl;
-      existingTask.description = description;
+      existingTask.tasks = tasks;
+      // also keep legacy fields synced to task1 for backward compatibility
+      existingTask.pdfUrl = tasks[0].pdfUrl;
+      existingTask.description = tasks[0].description;
       await existingTask.save();
       return res.status(200).json({ message: "Task updated successfully", task: existingTask });
     }
 
-    const newTask = new NormalTask({ domain, monthNumber, pdfUrl, description });
+    const newTask = new NormalTask({ 
+      domain, 
+      monthNumber, 
+      tasks,
+      pdfUrl: tasks[0].pdfUrl,
+      description: tasks[0].description
+    });
     await newTask.save();
     res.status(201).json({ message: "Task created successfully", task: newTask });
   } catch (error) {

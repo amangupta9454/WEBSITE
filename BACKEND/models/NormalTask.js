@@ -4,8 +4,15 @@ const normalTaskSchema = new mongoose.Schema(
   {
     domain: { type: String, required: true },
     monthNumber: { type: Number, required: true },
-    pdfUrl: { type: String, required: true },
-    description: { type: String }
+    pdfUrl: { type: String },
+    description: { type: String },
+    tasks: [
+      {
+        title: { type: String },
+        pdfUrl: { type: String },
+        description: { type: String }
+      }
+    ]
   },
   { timestamps: true }
 );

@@ -180,7 +180,7 @@ router.post("/assign-v2-projects", auth, verifyAdmin, assignV2Projects);
 router.post("/manual-accept-assignment", auth, verifyAdmin, manualAcceptAssignment);
 
 router.get("/normal-tasks", auth, verifyAdmin, getNormalTasks);
-router.post("/normal-tasks", auth, verifyAdmin, upload.single("pdf"), createNormalTask);
+router.post("/normal-tasks", auth, verifyAdmin, upload.array("pdfs", 2), createNormalTask);
 router.delete("/normal-tasks/:id", auth, verifyAdmin, deleteNormalTask);
 
 router.get("/v2-global-tasks", auth, verifyAdmin, getV2GlobalTasks);

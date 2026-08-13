@@ -70,30 +70,76 @@ const runDailyCron = async (req, res) => {
         // Calculate exact days passed
         const daysPassed = Math.floor((now - new Date(internship.startDate)) / (1000 * 60 * 60 * 24));
         
-        // Month targets are roughly 28-30 days per cycle
-        // Check for Month 1, Month 2, Month 3
         for (let targetMonth = 1; targetMonth <= maxMonths; targetMonth++) {
-          // If days passed is >= 28 * targetMonth, it's time for that month's alert
-          if (daysPassed >= (28 * targetMonth)) {
-             
-             // Check if we ALREADY pushed an alert for this exact month target
-             const alertIdentifier = `Month ${targetMonth} Task Due`;
-             const hasAlert = internship.alerts.some(a => a.message.includes(alertIdentifier));
+          const monthStartDay = (targetMonth - 1) * 30;
+          
+          // --- TASK 1 ASSIGNMENT (Day 0 of month) ---
+          if (daysPassed === monthStartDay || daysPassed === monthStartDay + 1) {
+             const alertIdentifier = `Month ${targetMonth} Task 1 Assigned`;
+             if (!internship.alerts.some(a => a.message.includes(alertIdentifier))) {
+               internship.alerts.push({
+                 message: `[New Assignment]: Your ${alertIdentifier}. Please check your Dashboard.`,
+                 type: 'info', date: new Date(), isRead: false
+               });
+               const mailOptions = {
+                 from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+                 to: user.email,
+                 subject: `New Task Assigned: Month ${targetMonth} Task 1 (${internship.domain})`,
+                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your first task for Month ${targetMonth} has been assigned. Please log in to your dashboard to view the details.</p>`
+               };
+               transporter.sendMail(mailOptions).catch(console.error);
+               isModified = true; alertsGenerated++;
+             }
+          }
+          
+          // --- TASK 1 REMINDER (Day 14-15 of month) ---
+          if (daysPassed === monthStartDay + 14 || daysPassed === monthStartDay + 15) {
+             const alertIdentifier = `Month ${targetMonth} Task 1 Reminder`;
+             if (!internship.alerts.some(a => a.message.includes(alertIdentifier))) {
+               internship.alerts.push({
+                 message: `[Reminder]: Your ${alertIdentifier}. Deadline is approaching. Submit to avoid SP penalty.`,
+                 type: 'warning', date: new Date(), isRead: false
+               });
+               const mailOptions = {
+                 from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+                 to: user.email,
+                 subject: `Reminder: Month ${targetMonth} Task 1 Due (${internship.domain})`,
+                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>This is a reminder to submit your Task 1 for Month ${targetMonth}. If missed, a 5 SP penalty will apply during the grace period.</p>`
+               };
+               transporter.sendMail(mailOptions).catch(console.error);
+               isModified = true; alertsGenerated++;
+             }
+          }
 
-             if (!hasAlert) {
-               // Push the new alert to the internship subdocument natively!
+          // --- TASK 2 ASSIGNMENT (Day 15-16 of month) ---
+          if (daysPassed === monthStartDay + 15 || daysPassed === monthStartDay + 16) {
+             const alertIdentifier = `Month ${targetMonth} Task 2 Assigned`;
+             if (!internship.alerts.some(a => a.message.includes(alertIdentifier))) {
+               internship.alerts.push({
+                 message: `[New Assignment]: Your ${alertIdentifier}. Please check your Dashboard.`,
+                 type: 'info', date: new Date(), isRead: false
+               });
+               const mailOptions = {
+                 from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
+                 to: user.email,
+                 subject: `New Task Assigned: Month ${targetMonth} Task 2 (${internship.domain})`,
+                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your second task for Month ${targetMonth} has been assigned. Please log in to your dashboard to view the details.</p>`
+               };
+               transporter.sendMail(mailOptions).catch(console.error);
+               isModified = true; alertsGenerated++;
+             }
+          }
+
+          // --- TASK 2 REMINDER / MONTH END (Day 29-30 of month) ---
+          if (daysPassed === monthStartDay + 29 || daysPassed === monthStartDay + 30) {
+             const alertIdentifier = `Month ${targetMonth} Task Due`; // Keeps legacy compatibility
+             if (!internship.alerts.some(a => a.message.includes(alertIdentifier))) {
                internship.alerts.push({
                  message: `[Action Required]: Your ${alertIdentifier}. Please submit your assignment via the Dashboard immediately.`,
-                 type: 'warning',
-                 date: new Date(),
-                 isRead: false
+                 type: 'warning', date: new Date(), isRead: false
                });
-
-               // Fire off the email warning
                await sendAlertEmail(user.email, user.name, targetMonth, internship.domain);
-
-               isModified = true;
-               alertsGenerated++;
+               isModified = true; alertsGenerated++;
              }
           }
         }

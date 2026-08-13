@@ -10,8 +10,12 @@ const NormalTasksAdmin = ({ domains = [] }) => {
   const [newTask, setNewTask] = useState({
     domain: "",
     monthNumber: 1,
-    pdf: null,
-    description: ""
+    task1Title: "",
+    task1Desc: "",
+    task1Pdf: null,
+    task2Title: "",
+    task2Desc: "",
+    task2Pdf: null
   });
 
   useEffect(() => {
@@ -36,8 +40,8 @@ const NormalTasksAdmin = ({ domains = [] }) => {
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (!newTask.domain || !newTask.pdf || !newTask.monthNumber) {
-      toast.error("Please fill in all required fields (including PDF).");
+    if (!newTask.domain || !newTask.monthNumber || !newTask.task1Title || !newTask.task1Pdf) {
+      toast.error("Domain, Month, Task 1 Title and Task 1 PDF are required.");
       return;
     }
 
@@ -46,8 +50,19 @@ const NormalTasksAdmin = ({ domains = [] }) => {
       const formData = new FormData();
       formData.append("domain", newTask.domain);
       formData.append("monthNumber", newTask.monthNumber);
-      formData.append("pdf", newTask.pdf);
-      if (newTask.description) formData.append("description", newTask.description);
+      
+      formData.append("task1Title", newTask.task1Title);
+      formData.append("task1Desc", newTask.task1Desc);
+      formData.append("pdfs", newTask.task1Pdf);
+      
+      if (newTask.task2Title && newTask.task2Pdf) {
+        formData.append("task2Title", newTask.task2Title);
+        formData.append("task2Desc", newTask.task2Desc);
+        formData.append("pdfs", newTask.task2Pdf);
+      } else if (newTask.task2Title || newTask.task2Pdf) {
+        toast.error("For Task 2, both title and PDF are required if one is provided.");
+        return;
+      }
 
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/normal-tasks`, formData, {
         headers: { 
@@ -56,8 +71,16 @@ const NormalTasksAdmin = ({ domains = [] }) => {
         }
       });
       toast.success("Task template saved successfully");
-      setNewTask({ ...newTask, pdf: null, description: "", monthNumber: parseInt(newTask.monthNumber) + 1 });
-      document.getElementById("taskPdfUpload").value = "";
+      setNewTask({ 
+        ...newTask, 
+        task1Title: "", task1Desc: "", task1Pdf: null,
+        task2Title: "", task2Desc: "", task2Pdf: null,
+        monthNumber: parseInt(newTask.monthNumber) + 1 
+      });
+      const fileInput1 = document.getElementById("task1PdfUpload");
+      if (fileInput1) fileInput1.value = "";
+      const fileInput2 = document.getElementById("task2PdfUpload");
+      if (fileInput2) fileInput2.value = "";
       fetchTasks();
     } catch (err) {
       toast.error("Failed to create task template");
@@ -132,31 +155,84 @@ const NormalTasksAdmin = ({ domains = [] }) => {
                   ))}
                 </select>
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Task Document (PDF) *</label>
-                <input
-                  id="taskPdfUpload"
-                  required
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => setNewTask({ ...newTask, pdf: e.target.files[0] })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="md:col-span-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h4 className="font-bold text-sm text-slate-800 mb-3">Task 1 (Days 1-15) *</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Title *</label>
+                    <input
+                      required
+                      type="text"
+                      value={newTask.task1Title}
+                      onChange={(e) => setNewTask({ ...newTask, task1Title: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="E.g., UI Clone"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">PDF Document *</label>
+                    <input
+                      id="task1PdfUpload"
+                      required
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setNewTask({ ...newTask, task1Pdf: e.target.files[0] })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Description (Optional)</label>
+                    <input
+                      type="text"
+                      value={newTask.task1Desc}
+                      onChange={(e) => setNewTask({ ...newTask, task1Desc: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Brief description"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="md:col-span-3">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Description (Optional)</label>
-                <input
-                  type="text"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Brief description of the task"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              <div className="md:col-span-4 bg-slate-50 p-4 rounded-xl border border-slate-200 mt-2">
+                <h4 className="font-bold text-sm text-slate-800 mb-3">Task 2 (Days 16-30) (Optional)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={newTask.task2Title}
+                      onChange={(e) => setNewTask({ ...newTask, task2Title: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="E.g., Backend Integration"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">PDF Document</label>
+                    <input
+                      id="task2PdfUpload"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setNewTask({ ...newTask, task2Pdf: e.target.files[0] })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Description (Optional)</label>
+                    <input
+                      type="text"
+                      value={newTask.task2Desc}
+                      onChange={(e) => setNewTask({ ...newTask, task2Desc: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Brief description"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex items-end">
+
+              <div className="md:col-span-4 mt-2">
                 <button
                   type="submit"
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-500/20"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-500/20"
                 >
                   Save Template
                 </button>
@@ -187,11 +263,27 @@ const NormalTasksAdmin = ({ domains = [] }) => {
                         <span className="inline-block bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded mb-2">
                           Month {task.monthNumber}
                         </span>
-                        <a href={task.pdfUrl} target="_blank" rel="noreferrer" className="inline-block mt-2 text-blue-600 hover:text-blue-700 text-xs font-bold underline">
-                          View Task Document
-                        </a>
-                        {task.description && (
-                          <p className="text-xs text-slate-500 mt-2 line-clamp-2">{task.description}</p>
+                        {task.tasks && task.tasks.length > 0 ? (
+                          <div className="space-y-3 mt-3">
+                            {task.tasks.map((t, idx) => (
+                              <div key={idx} className="bg-white p-2 rounded border border-slate-200">
+                                <p className="text-xs font-bold text-slate-700">{t.title}</p>
+                                <a href={t.pdfUrl} target="_blank" rel="noreferrer" className="inline-block text-blue-600 hover:text-blue-700 text-[10px] font-bold underline">
+                                  View PDF
+                                </a>
+                                {t.description && <p className="text-[10px] text-slate-500 mt-1">{t.description}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <>
+                            <a href={task.pdfUrl} target="_blank" rel="noreferrer" className="inline-block mt-2 text-blue-600 hover:text-blue-700 text-xs font-bold underline">
+                              View Task Document (Legacy)
+                            </a>
+                            {task.description && (
+                              <p className="text-xs text-slate-500 mt-2 line-clamp-2">{task.description}</p>
+                            )}
+                          </>
                         )}
                       </div>
                     ))}

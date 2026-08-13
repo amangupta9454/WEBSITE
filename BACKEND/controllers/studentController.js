@@ -143,18 +143,28 @@ const getDashboardInfo = async (req, res) => {
       }
 
       let assignedNormalTasks = targetInternship.assignedNormalTasks || [];
-      if (
-        internshipType === "Normal Intern" &&
-        (!assignedNormalTasks || assignedNormalTasks.length === 0)
-      ) {
+      let fullNormalTasks = [];
+      if (internshipType === "Normal Intern") {
         const domainTasks = allNormalTasks
           .filter((t) => t.domain === targetInternship.domain)
           .sort((a, b) => a.monthNumber - b.monthNumber);
 
         if (domainTasks.length > 0) {
-          assignedNormalTasks = Array.from({ length: duration }).map((_, idx) => {
+          if (!assignedNormalTasks || assignedNormalTasks.length === 0) {
+            assignedNormalTasks = Array.from({ length: duration }).map((_, idx) => {
+              const task = domainTasks.find((t) => t.monthNumber === idx + 1);
+              return task ? task.pdfUrl : "";
+            });
+          }
+          // Always send the full tasks metadata for the new UI to handle both multi-tasks and single tasks
+          fullNormalTasks = Array.from({ length: duration }).map((_, idx) => {
             const task = domainTasks.find((t) => t.monthNumber === idx + 1);
-            return task ? task.pdfUrl : "";
+            if (!task) return null;
+            return {
+               pdfUrl: task.pdfUrl,
+               description: task.description,
+               tasks: task.tasks || []
+            };
           });
         }
       }
@@ -166,6 +176,7 @@ const getDashboardInfo = async (req, res) => {
         ...targetInternship.toObject(),
         internshipType,
         assignedNormalTasks,
+        fullNormalTasks,
         projects,
         isBlocked,
         blockReason,
