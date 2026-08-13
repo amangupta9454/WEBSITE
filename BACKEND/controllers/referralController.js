@@ -354,11 +354,24 @@ exports.deleteAmbassador = async (req, res) => {
     user.isAmbassador = false;
     user.ambassadorCode = null;
     user.ambassadorCollege = null;
+    
+    // Remove "campus_ambassador" role to prevent UI fetch errors
+    if (user.roles && user.roles.includes("campus_ambassador")) {
+      user.roles = user.roles.filter(role => role !== "campus_ambassador");
+    }
+    
     await user.save();
 
     if (code) {
       await Referral.deleteOne({ code });
     }
+
+    // Mark their application as Rejected so they do not auto-rejoin upon login
+    const AmbassadorAppModel = require("../models/AmbassadorApplication");
+    await AmbassadorAppModel.updateMany(
+      { email: new RegExp(`^${user.email}$`, "i") },
+      { $set: { status: "Rejected" } }
+    );
 
     res.json({ success: true, message: `${user.name || "Ambassador"} removed successfully` });
   } catch (error) {
