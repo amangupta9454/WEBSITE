@@ -32,26 +32,7 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
     if (callback) callback();
   };
 
-  const handleApplyClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
-    if (!token) {
-      handleUnauthenticated('Apply');
-      return;
-    }
-
-    if (onToggleApply && !isApplied) {
-      onToggleApply(job._id);
-    }
-    if (job.applyUrl) {
-      window.open(job.applyUrl, '_blank', 'noopener,noreferrer');
-    } else if (job.applyEmail) {
-      window.location.href = `mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`;
-    } else {
-      toast.error('Application link not specified.');
-    }
-  };
+  // handleApplyClick removed as we now only navigate to details
 
   return (
     <Link 
@@ -132,24 +113,18 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
 
       {/* Actions */}
       <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-100 relative z-10">
-        {job.isLocked ? (
-          <button 
-            type="button"
-            onClick={(e) => checkLoginAndExecute(e, () => navigate(`/jobs/${job._id}`), 'Unlock Premium')}
-            className="flex-1 inline-flex justify-center items-center gap-1.5 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-900 px-3 py-2.5 rounded-xl font-bold hover:from-amber-300 hover:to-yellow-300 transition-all text-sm shadow-sm"
-          >
-            🔒 Unlock 
-          </button>
-        ) : (
-          <button 
-            type="button"
-            onClick={handleApplyClick}
-            className="flex-1 inline-flex justify-center items-center gap-1.5 bg-indigo-600 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/20 text-sm"
-          >
-            {job.applyEmail && !job.applyUrl ? '📧 Email' : 'Apply Now'}
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <button 
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(`/jobs/${job._id}`);
+          }}
+          className="flex-1 inline-flex justify-center items-center gap-1.5 bg-indigo-600 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/20 text-sm"
+        >
+          View Details
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
         
         <button 
           type="button"
@@ -163,21 +138,6 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         >
           <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
         </button>
-        
-        {onToggleApply && (
-          <button 
-            type="button"
-            onClick={(e) => checkLoginAndExecute(e, () => onToggleApply(job._id), 'Record Application')}
-            className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
-              isApplied 
-                ? 'bg-emerald-100 border-emerald-400 text-emerald-600 shadow-sm' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
-            }`}
-            title={isApplied ? "Unmark Applied" : "Mark as Applied"}
-          >
-            <CheckSquare className={`w-4 h-4 ${isApplied ? 'fill-current' : ''}`} />
-          </button>
-        )}
       </div>
     </Link>
   );
