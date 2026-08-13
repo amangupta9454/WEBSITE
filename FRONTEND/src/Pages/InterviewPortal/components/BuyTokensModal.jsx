@@ -10,7 +10,7 @@ const bonusPackages = [
 ];
 
 export default function BuyTokensModal({ isOpen, onClose, onSelectPackage }) {
-  const [activeTab, setActiveTab] = useState('packs'); // 'packs' | 'custom'
+  const [activeTab, setActiveTab] = useState('custom'); // 'packs' | 'custom'
   const [customAmount, setCustomAmount] = useState(100);
 
   const handleCustomSubmit = (e) => {

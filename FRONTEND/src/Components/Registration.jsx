@@ -4,6 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Trophy, FileCheck, Target, HeartHandshake, Loader2, Send, Upload, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { AnimatedSubmitButton } from './animations/AnimatedSubmitButton';
 
 const states = [
@@ -24,6 +25,8 @@ const domains = [
 const durations = ['1 Month', '2 Months', '3 Months'];
 
 const Registration = () => {
+  const navigate = useNavigate();
+  const [successData, setSuccessData] = useState(null);
   const [formData, setFormData] = useState({
     name: '', email: '', whatsapp: '',
     course: '', branch: '', college: '', state: '', passingYear: '',
@@ -89,9 +92,17 @@ const Registration = () => {
           data
         );
         
-        toast.success(`Application submitted! Your Student ID: ${res.data.studentId}`, {
-          autoClose: 10000
-        });
+        if (res.data.token && res.data.user) {
+          setSuccessData({
+            studentId: res.data.studentId,
+            token: res.data.token,
+            user: res.data.user
+          });
+          setSubmitting(false);
+          return;
+        } else {
+          toast.success(`Application submitted! Your Student ID: ${res.data.studentId}`, { autoClose: 10000 });
+        }
         
         setFormData({
           name:'',email:'',whatsapp:'',course:'',branch:'',
@@ -144,9 +155,17 @@ const Registration = () => {
               submitData
             );
             
-            toast.success(`Application submitted! Your Student ID: ${verifyRes.data.studentId}`, {
-              autoClose: 10000
-            });
+            if (verifyRes.data.token && verifyRes.data.user) {
+              setSuccessData({
+                studentId: verifyRes.data.studentId,
+                token: verifyRes.data.token,
+                user: verifyRes.data.user
+              });
+              setSubmitting(false);
+              return;
+            } else {
+              toast.success(`Application submitted! Your Student ID: ${verifyRes.data.studentId}`, { autoClose: 10000 });
+            }
             
             setFormData({
               name:'',email:'',whatsapp:'',course:'',branch:'',
@@ -395,6 +414,47 @@ const Registration = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Success Popup */}
+      <AnimatePresence>
+        {successData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Registration Complete!</h2>
+              <p className="text-gray-500 mb-6 text-sm">
+                Your application has been submitted successfully. Your Student ID is <span className="font-bold text-gray-900">{successData.studentId}</span>.
+              </p>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('studentToken', successData.token);
+                  localStorage.setItem('interviewToken', successData.token);
+                  localStorage.setItem('interviewUser', JSON.stringify(successData.user));
+                  localStorage.setItem('interviewUserRole', successData.user.role || 'intern');
+                  navigate('/dashboard');
+                }}
+                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-blue-700 hover:shadow-lg shadow-blue-600/30 group"
+              >
+                Go to Dashboard 
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

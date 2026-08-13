@@ -6,6 +6,7 @@ const getInternshipType = (duration) => {
 };
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const cloudinary = require("cloudinary").v2;
@@ -245,10 +246,33 @@ const registerInternship = async (req, res) => {
       // We still return 201 success because registration is complete
     }
 
+    
+    const isIntern = user.role === 'intern' || (user.internships && user.internships.length > 0);
+    const role = isIntern ? 'intern' : 'interview_user';
+    const tokenPayload = { 
+      id: user._id,
+      userId: user._id, 
+      unifiedUserId: user._id, 
+      unifiedRole: role 
+    };
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || 'secret',
+      { expiresIn: '30d' }
+    );
+
     res.status(201).json({
       message: "Application submitted successfully",
       studentId,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: role
+      }
     });
+  
 
     // Queue WhatsApp Welcome Message safely in background
     if (normalizedMobile && normalizedMobile !== "0000000000") {
@@ -510,10 +534,33 @@ const verifyRegistrationPayment = async (req, res) => {
       // We still return 201 success because registration and payment are complete
     }
 
+    
+    const isIntern = user.role === 'intern' || (user.internships && user.internships.length > 0);
+    const role = isIntern ? 'intern' : 'interview_user';
+    const tokenPayload = { 
+      id: user._id,
+      userId: user._id, 
+      unifiedUserId: user._id, 
+      unifiedRole: role 
+    };
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || 'secret',
+      { expiresIn: '30d' }
+    );
+
     res.status(201).json({
       message: "Application submitted successfully",
       studentId,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: role
+      }
     });
+  
 
     // Queue WhatsApp Welcome Message safely in background
     if (normalizedMobile && normalizedMobile !== "0000000000") {
