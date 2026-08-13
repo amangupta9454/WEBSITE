@@ -37,6 +37,7 @@ const ReferralAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(null);
   const [dateFilter, setDateFilter] = useState("All Time");
+  const [appFilter, setAppFilter] = useState("All");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   
@@ -361,6 +362,67 @@ const ReferralAdmin = () => {
 
   const activeAmbassadorsCount = ambassadors.filter((a) => a.isActive !== false).length;
 
+  
+  const handleDownloadAmbassadorReport = (amb) => {
+    if (!amb.filteredReferredUsers || amb.filteredReferredUsers.length === 0) {
+      toast.error("No users to export for this ambassador.");
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
+    
+    amb.filteredReferredUsers.forEach(u => {
+      const joinedDate = u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+      const row = [
+        `"${u.name}"`,
+        `"${u.email}"`,
+        `"${u.mobile || "N/A"}"`,
+        `"${u.appliedFeatures || "N/A"}"`,
+        `"${joinedDate}"`
+      ];
+      csvContent += row.join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${amb.name.replace(/\s+/g, '_')}_referrals_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadReport = () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Ambassador Name,Ambassador Code,Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
+    
+    processedAmbassadors.forEach(amb => {
+      amb.filteredReferredUsers.forEach(u => {
+        const joinedDate = u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+        const row = [
+          `"${amb.name}"`,
+          `"${amb.code}"`,
+          `"${u.name}"`,
+          `"${u.email}"`,
+          `"${u.mobile || "N/A"}"`,
+          `"${u.appliedFeatures || "N/A"}"`,
+          `"${joinedDate}"`
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ambassador_report_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
   const processedAmbassadors = useMemo(() => {
     let list = ambassadors.map((amb) => {
       let filteredReferredUsers = amb.referredUsers || [];
@@ -394,6 +456,14 @@ const ReferralAdmin = () => {
           });
         }
       }
+
+      if (appFilter !== "All") {
+        filteredReferredUsers = filteredReferredUsers.filter(u => {
+          const features = (u.appliedFeatures || "").toLowerCase();
+          return features.includes(appFilter.toLowerCase());
+        });
+      }
+
       return {
         ...amb,
         filteredReferredUsers,
@@ -403,7 +473,7 @@ const ReferralAdmin = () => {
 
     list.sort((a, b) => b.displayUsesCount - a.displayUsesCount);
     return list;
-  }, [ambassadors, dateFilter, customStartDate, customEndDate]);
+  }, [ambassadors, dateFilter, customStartDate, customEndDate, appFilter]);
 
   return (
     <div className="space-y-8">
@@ -625,6 +695,26 @@ const ReferralAdmin = () => {
                   <option value="This Month">This Month (Last 30 Days)</option>
                   <option value="Custom Range">Custom Date Range</option>
                 </select>
+
+                <select
+                  value={appFilter}
+                  onChange={(e) => setAppFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                >
+                  <option value="All">All Features</option>
+                  <option value="internship">Internship</option>
+                  <option value="job portal">Job Portal</option>
+                  <option value="ai resume">AI Resume</option>
+                  <option value="ai interview">AI Interview</option>
+                </select>
+                
+                <button
+                  onClick={handleDownloadReport}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  Download CSV
+                </button>
               </div>
             </div>
 
@@ -747,10 +837,21 @@ const ReferralAdmin = () => {
                             <tr>
                               <td colSpan={7} className="bg-purple-50/30 p-4 border-y border-purple-100">
                                 <div className="space-y-3">
-                                  <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                                    <UserCheck className="w-4 h-4 text-purple-600" />
-                                    Users Referred by {amb.name} ({amb.filteredReferredUsers?.length || 0})
-                                  </h4>
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                                      <UserCheck className="w-4 h-4 text-purple-600" />
+                                      Users Referred by {amb.name} ({amb.filteredReferredUsers?.length || 0})
+                                    </h4>
+                                    {amb.filteredReferredUsers && amb.filteredReferredUsers.length > 0 && (
+                                      <button 
+                                        onClick={() => handleDownloadAmbassadorReport(amb)}
+                                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] rounded-lg shadow-sm flex items-center gap-1.5 transition-colors"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                        Export List
+                                      </button>
+                                    )}
+                                  </div>
                                   {amb.filteredReferredUsers && amb.filteredReferredUsers.length > 0 ? (
                                     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                                       <table className="w-full text-left text-[11px]">
