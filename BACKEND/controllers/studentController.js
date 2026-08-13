@@ -808,66 +808,8 @@ const getMyCertificates = async (req, res) => {
         }
       }
     }
-    // Fallback: Fetch all distinct quizzes so everyone sees all quizzes even if they haven't taken them
-    const allQuizNames = await QuizApplicant.distinct("quizName");
-    for (const qName of allQuizNames) {
-      if (qName && !certificates.some(c => c.quizName === qName)) {
-        const sampleApp = await QuizApplicant.findOne({ quizName: qName }).lean();
-        if (sampleApp) {
-          certificates.push({
-            id: String(sampleApp._id),
-            certificateId: String(sampleApp._id),
-            title: qName,
-            quizName: qName,
-            recipientName: userName || "Participant",
-            email: userEmail,
-            issueDate: sampleApp.quizDate || sampleApp.createdAt,
-            score: "N/A",
-            totalScore: sampleApp.totalScore || "N/A",
-            result: "Participant",
-            percentage: "N/A",
-            effectiveScore: "N/A",
-            sponsorName: sampleApp.sponsorName || "",
-            sponsorLogo: sampleApp.sponsorLogo || "",
-            sponsorSignature: sampleApp.sponsorSignature || "",
-            sponsorSignatoryName: sampleApp.sponsorSignatoryName || "",
-            type: "Quiz Certificate",
-            category: "Quiz & Assessment",
-            status: "VERIFIED & ISSUED"
-          });
-        }
-      }
-    }
+    // Removed mock data fallback blocks here
 
-    // Fallback: If no certificates found, fetch from QuizSponsor so the admin can see their created quiz certificates
-    if (certificates.length === 0) {
-      const sponsors = await QuizSponsor.find({}).lean();
-      for (const s of sponsors) {
-        if (!certificates.some(c => c.quizName === s.quizName)) {
-          certificates.push({
-            id: String(s._id),
-            certificateId: String(s._id),
-            title: s.quizName,
-            quizName: s.quizName,
-            recipientName: userName || "Participant",
-            email: userEmail,
-            issueDate: s.quizDate || s.createdAt || "2026-08-01",
-            score: "N/A",
-            totalScore: "N/A",
-            result: "Participant",
-            percentage: "N/A",
-            effectiveScore: "N/A",
-            sponsorName: s.sponsorName || "",
-            sponsorLogo: s.sponsorLogo || "",
-            sponsorSignature: s.sponsorSignature || "",
-            sponsorSignatoryName: s.sponsorSignatoryName || "",
-            type: "Quiz Certificate",
-            category: "Quiz & Assessment",
-            status: "VERIFIED & ISSUED"
-          });
-        }
-      }
-    }
     // 2. Fetch Internship/Domain Certificates from Certificate collection
     if (studentId || userName) {
       const query = [];
@@ -1024,62 +966,8 @@ const getMyQuizzes = async (req, res) => {
       }
     }
 
-    // Fallback: Fetch all distinct quizzes so everyone sees all quizzes even if they haven't taken them
-    const allQuizNames = await QuizApplicant.distinct("quizName");
-    for (const qName of allQuizNames) {
-      if (qName && !pastQuizzes.some(pq => pq.quizName === qName)) {
-        const sampleApp = await QuizApplicant.findOne({ quizName: qName }).lean();
-        if (sampleApp) {
-          pastQuizzes.push({
-            id: String(sampleApp._id),
-            quizName: qName,
-            registrationId: "CAN-QUIZ-2026",
-            quizDate: sampleApp.quizDate || sampleApp.createdAt,
-            score: "N/A",
-            totalScore: sampleApp.totalScore || "N/A",
-            result: "Participant",
-            percentage: "N/A",
-            effectiveScore: "N/A",
-            totalQuestions: sampleApp.totalQuestions || "N/A",
-            attemptedQuestions: "N/A",
-            sponsorName: sampleApp.sponsorName || "",
-            sponsorLogo: sampleApp.sponsorLogo || "",
-            sponsorSignature: sampleApp.sponsorSignature || "",
-            sponsorSignatoryName: sampleApp.sponsorSignatoryName || "",
-            name: userName || "Participant",
-            email: userEmail,
-            hasCertificate: true,
-            status: "COMPLETED"
-          });
-        }
-      }
-    }
+    // Removed mock data fallback blocks here
 
-    // 2. Fetch from QuizSponsor (ALWAYS execute this so any new quizzes from admin panel show up)
-    const sponsors = await QuizSponsor.find({}).lean();
-    for (const s of sponsors) {
-      if (!pastQuizzes.some(pq => pq.quizName === s.quizName)) {
-        pastQuizzes.push({
-          id: String(s._id),
-          quizName: s.quizName,
-          registrationId: "CAN-QUIZ-2026",
-          quizDate: s.quizDate || s.createdAt || "2026-08-01",
-          score: "N/A",
-          totalScore: "N/A",
-          result: "N/A",
-          percentage: "N/A",
-          effectiveScore: "N/A",
-          sponsorName: s.sponsorName || "",
-          sponsorLogo: s.sponsorLogo || "",
-          sponsorSignature: s.sponsorSignature || "",
-          sponsorSignatoryName: s.sponsorSignatoryName || "",
-          name: userName || "Participant",
-          email: userEmail,
-          hasCertificate: true,
-          status: "COMPLETED"
-        });
-      }
-    }
 
     // 3. Fetch from AssessmentCertificate
     try {
