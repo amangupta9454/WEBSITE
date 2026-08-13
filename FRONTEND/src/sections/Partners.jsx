@@ -24,24 +24,22 @@ const Partners = () => {
           className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 opacity-70 grayscale hover:grayscale-0 transition-all duration-500"
         >
           {/* Edunet Foundation */}
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              E
-            </div>
-            <span className="text-2xl font-black text-gray-800 tracking-tight group-hover:text-blue-600 transition-colors duration-300">
-              Edunet Foundation
-            </span>
-          </div>
+          <a href="https://edunetfoundation.org/" target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
+            <img 
+              src="/edunet.svg" 
+              alt="Edunet Foundation" 
+              className="h-12 object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+          </a>
 
           {/* Aptimaster AI */}
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              A
-            </div>
-            <span className="text-2xl font-black text-gray-800 tracking-tight group-hover:text-indigo-600 transition-colors duration-300">
-              Aptimaster AI
-            </span>
-          </div>
+          <a href="https://aptimasterai.online/" target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
+            <img 
+              src="/aptimaster.png" 
+              alt="Aptimaster AI" 
+              className="h-16 object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+          </a>
         </motion.div>
       </div>
     </section>
