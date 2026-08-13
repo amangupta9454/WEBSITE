@@ -368,7 +368,11 @@ const submitProject = async (req, res) => {
     const end = new Date(internship.endDate);
     end.setHours(23, 59, 59, 999);
     
-    if (now < new Date(internship.startDate) || now > end) {
+    // Add 5 days grace period
+    const graceEnd = new Date(end);
+    graceEnd.setDate(graceEnd.getDate() + 5);
+    
+    if (now < new Date(internship.startDate) || now > graceEnd) {
       return res.status(400).json({ message: 'You can only submit projects within your active internship dates.' });
     }
 

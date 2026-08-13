@@ -384,8 +384,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
               ),
             }).map((_, idx) => {
               const isSubmitted = idx < submitted;
-              // Ensure sequential submission: only show button if this is the CURRENT pending task
-              const isCurrentPending = idx === submitted;
+              const isCurrentPending = !isSubmitted; // Relaxed: allow ANY unsubmitted project to be submitted
 
               const assignedTaskName =
                 internship.assignedNormalTasks &&
@@ -432,11 +431,6 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                     >
                       Submit Project <ArrowRight size={18} />
                     </button>
-                  )}
-                  {!isSubmitted && !isCurrentPending && (
-                    <div className="px-6 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold flex items-center gap-2 justify-center shrink-0">
-                      Pending Previous
-                    </div>
                   )}
                   {isSubmitted && (
                     <div className="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-slate-100">
