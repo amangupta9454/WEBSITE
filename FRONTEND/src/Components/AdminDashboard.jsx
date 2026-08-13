@@ -2267,6 +2267,18 @@ const AdminDashboard = () => {
                 >
                   <Briefcase className="w-4 h-4" /> Job Portal
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("assessment")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "assessment" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <Award className="w-4 h-4 text-indigo-600" /> Assessment
+                </button>
+                <button
+                  onClick={() => setActiveFeatureTab("quiz_users")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "quiz_users" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <BrainCircuit className="w-4 h-4 text-indigo-600" /> Quiz Users
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -2310,6 +2322,16 @@ const AdminDashboard = () => {
               {activeFeatureTab === "jobs" && (
                 <div className="animate-fade-in">
                   <JobAdminPage />
+                </div>
+              )}
+              {activeFeatureTab === "assessment" && (
+                <div className="animate-fade-in">
+                  <AssessmentDashboard />
+                </div>
+              )}
+              {activeFeatureTab === "quiz_users" && (
+                <div className="animate-fade-in">
+                  <QuizUsersAdmin />
                 </div>
               )}
             </div>
@@ -2375,19 +2397,6 @@ const AdminDashboard = () => {
             >
               <CreditCard className="w-4 h-4" />
               Recent Paid
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab("assessment")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "assessment" ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
-            >
-              <Award className="w-4 h-4 text-indigo-600" /> Assessment
-            </button>
-            <button
-              onClick={() => setActiveSidebarTab("quiz_users")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "quiz_users" ? "bg-cyan-50 text-cyan-700 font-bold border border-cyan-100" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
-            >
-              <BrainCircuit className="w-5 h-5" />
-              Quiz Users
             </button>
             <button
               onClick={() => setActiveSidebarTab("settings")}
@@ -3459,18 +3468,6 @@ const AdminDashboard = () => {
           {activeSidebarTab === "impersonate" && (
             <div className="w-full animate-fade-in">
               <ImpersonateIntern />
-            </div>
-          )}
-
-          {activeSidebarTab === "assessment" && (
-            <div className="w-full animate-fade-in">
-              <AssessmentDashboard />
-            </div>
-          )}
-
-          {activeSidebarTab === "quiz_users" && (
-            <div className="w-full animate-fade-in">
-              <QuizUsersAdmin />
             </div>
           )}
 
