@@ -16,9 +16,7 @@ const Project = () => {
     domain: '',
     duration: '',
     assignments: [
-      { projectName: location.state?.taskName || '', github: '', hosted: '' },
-      { projectName: '', github: '', hosted: '' },
-      { projectName: '', github: '', hosted: '' }
+      { projectName: location.state?.taskName || '', github: '', hosted: '' }
     ]
   });
 
@@ -135,18 +133,11 @@ const Project = () => {
 
   const validateAssignments = () => {
     const ass1 = formData.assignments[0];
-    const ass2 = formData.assignments[1];
 
     if (!ass1.projectName?.trim() || !ass1.github?.trim()) {
-      toast.error('Assignment 1: Project Name and GitHub Link are required!');
+      toast.error('Project Name and GitHub link are required for the assignment.');
       return false;
     }
-
-    if (!ass2.projectName?.trim() || !ass2.github?.trim()) {
-      toast.error('Assignment 2: Project Name and GitHub Link are required!');
-      return false;
-    }
-
     return true;
   };
 
@@ -158,8 +149,6 @@ const Project = () => {
       domain: '',
       duration: '',
       assignments: [
-        { projectName: '', github: '', hosted: '' },
-        { projectName: '', github: '', hosted: '' },
         { projectName: '', github: '', hosted: '' }
       ]
     });
@@ -465,8 +454,7 @@ const Project = () => {
 
               <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-8">
                 <p className="text-amber-800 text-sm font-medium">
-                  <strong>Assignment 1 & 2:</strong> Project Name & GitHub Link are mandatory.<br />
-                  <strong>Assignment 3:</strong> Completely optional.
+                  <strong>Assignment:</strong> Project Name & GitHub Link are mandatory.
                 </p>
               </div>
 
@@ -474,51 +462,45 @@ const Project = () => {
                 {formData.assignments.map((ass, index) => (
                   <div
                     key={index}
-                    className={`p-6 sm:p-8 rounded-2xl border transition-all duration-300 hover:shadow-md ${
-                      index === 2 
-                        ? 'bg-slate-50 border-slate-200 border-dashed' 
-                        : 'bg-white border-slate-200 shadow-sm'
-                    }`}
+                    className="p-6 sm:p-8 rounded-2xl border transition-all duration-300 hover:shadow-md bg-white border-slate-200 shadow-sm"
                   >
                     <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
                       <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm text-white ${index === 2 ? 'bg-slate-400' : 'bg-emerald-500'}`}>
-                          {index + 1}
+                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white bg-emerald-500">
+                          1
                         </span>
-                        Assignment {index + 1}
+                        Project Details
                       </h3>
-                      {index < 2 && (
-                        <span className="text-xs font-bold uppercase tracking-wider bg-red-100 text-red-600 px-3 py-1 rounded-full">
-                          Required
-                        </span>
-                      )}
+                      <span className="text-xs font-bold uppercase tracking-wider bg-red-100 text-red-600 px-3 py-1 rounded-full">
+                        Required
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="md:col-span-2">
                         <label htmlFor={`projectName-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
-                          Project Name {index < 2 && <span className="text-red-500">*</span>}
+                          Project Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           id={`projectName-${index}`}
                           value={ass.projectName}
                           onChange={(e) => handleAssignmentChange(index, 'projectName', e.target.value)}
                           placeholder="e.g., E-commerce Dashboard"
-                          required={index < 2}
+                          required
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
                         />
                       </div>
 
                       <div>
                         <label htmlFor={`github-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
-                          GitHub Link {index < 2 && <span className="text-red-500">*</span>}
+                          GitHub Link <span className="text-red-500">*</span>
                         </label>
                         <input
                           id={`github-${index}`}
                           value={ass.github}
                           onChange={(e) => handleAssignmentChange(index, 'github', e.target.value)}
                           placeholder="https://github.com/..."
-                          required={index < 2}
+                          required
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
                         />
                       </div>
