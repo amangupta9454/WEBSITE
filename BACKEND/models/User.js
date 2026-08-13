@@ -165,6 +165,12 @@ userSchema.pre('save', async function () {
         const PreGrantedBonus = mongoose.model('PreGrantedBonus');
         if (PreGrantedBonus && this.email) {
           const formattedEmail = this.email.toLowerCase().trim();
+          // Give 15 days of job portal premium by default to ALL new users
+          if (!this.jobPortalPremiumExpires || this.jobPortalPremiumExpires.getTime() < Date.now() + 15 * 24 * 60 * 60 * 1000) {
+            this.jobPortalPremium = true;
+            this.jobPortalPremiumExpires = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+          }
+
           const preGrant = await PreGrantedBonus.findOne({ email: formattedEmail });
           if (preGrant) {
             this.freeResumesGranted = preGrant.freeResumesGranted || 0;
