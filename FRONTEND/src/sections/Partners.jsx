@@ -21,14 +21,14 @@ const Partners = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 opacity-70 grayscale hover:grayscale-0 transition-all duration-500"
+          className="flex flex-col md:flex-row items-center justify-center gap-16 md:gap-32 transition-all duration-500"
         >
           {/* Edunet Foundation */}
           <a href="https://edunetfoundation.org/" target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
             <img 
               src="/edunet.svg" 
               alt="Edunet Foundation" 
-              className="h-12 object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-24 md:h-32 object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </a>
 
@@ -37,7 +37,7 @@ const Partners = () => {
             <img 
               src="/aptimaster.png" 
               alt="Aptimaster AI" 
-              className="h-16 object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-32 md:h-40 object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </a>
         </motion.div>
