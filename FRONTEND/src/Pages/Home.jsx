@@ -35,9 +35,9 @@ const Home = () => {
     <MainLayout>
       <Hero />
       <Partners />
-      <Stats />
       <ProblemSolution />
       <ServicesOverview />
+      <Stats />
       <MockInterviewCTA />
       <ResumeBuilderCTA />
       {showJobPortal && <JobPortalCTA />}

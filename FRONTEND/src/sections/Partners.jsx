@@ -6,7 +6,7 @@ const Partners = () => {
   return (
     <section className="py-12 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-        <motion.p 
+        <motion.p
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
@@ -15,8 +15,8 @@ const Partners = () => {
         >
           Our Trusted Partners
         </motion.p>
-        
-        <motion.div 
+
+        <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
@@ -25,19 +25,19 @@ const Partners = () => {
         >
           {/* Edunet Foundation */}
           <a href="https://edunetfoundation.org/" target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
-            <img 
-              src="/edunet.svg" 
-              alt="Edunet Foundation" 
-              className="h-24 md:h-32 object-contain group-hover:scale-105 transition-transform duration-300"
+            <img
+              src="/edunet.svg"
+              alt="Edunet Foundation"
+              className="h-18 md:h-26 object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </a>
 
           {/* Aptimaster AI */}
           <a href="https://aptimasterai.online/" target="_blank" rel="noopener noreferrer" className="group cursor-pointer">
-            <img 
-              src="/aptimaster.png" 
-              alt="Aptimaster AI" 
-              className="h-32 md:h-40 object-contain group-hover:scale-105 transition-transform duration-300"
+            <img
+              src="/aptimaster.png"
+              alt="Aptimaster AI"
+              className="h-18 md:h-26 object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </a>
         </motion.div>
