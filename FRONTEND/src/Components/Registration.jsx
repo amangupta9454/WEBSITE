@@ -19,7 +19,7 @@ const domains = [
   'Frontend Development','Backend Development','Full Stack Development',
   'C Programming','Python Development','Artificial Intelligence',
   'Figma or UI/UX','Data Science','Machine Learning',
-  'App Development','Marketing'
+  'App Development','Marketing', 'Video Editing'
 ];
 
 const durations = ['1 Month', '2 Months', '3 Months'];
@@ -35,7 +35,7 @@ const Registration = () => {
     name: '', email: '', whatsapp: '',
     course: '', branch: '', college: '', state: '', passingYear: '',
     domain: '', duration: '',
-    github: '', linkedin: ''
+    github: '', linkedin: '', portfolio: ''
   });
   const [resume, setResume] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -369,10 +369,17 @@ const Registration = () => {
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Links & Resume</h3>
               <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">GitHub URL *</label>
-                  <input required name="github" value={formData.github} onChange={handleChange} className={inputClasses} placeholder="https://github.com/username" />
-                </div>
+                {formData.domain === 'Video Editing' ? (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Portfolio URL *</label>
+                    <input required name="portfolio" value={formData.portfolio} onChange={handleChange} className={inputClasses} placeholder="https://yourportfolio.com" />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">GitHub URL *</label>
+                    <input required name="github" value={formData.github} onChange={handleChange} className={inputClasses} placeholder="https://github.com/username" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">LinkedIn URL *</label>
                   <input required name="linkedin" value={formData.linkedin} onChange={handleChange} className={inputClasses} placeholder="https://linkedin.com/in/username" />

@@ -61,6 +61,7 @@ const registerInternship = async (req, res) => {
       duration,
       github,
       linkedin,
+      portfolio,
     } = req.body;
 
     const normalizedEmail = email ? email.trim().toLowerCase() : "";
@@ -154,12 +155,13 @@ const registerInternship = async (req, res) => {
         isFirstLogin: true,
         github: github || "",
         linkedin: linkedin || "",
-        portfolio: "", // Portfolio removed
+        portfolio: portfolio || "",
         internships: [],
       });
       // Opt: sync the latest links if provided
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
+      if (portfolio) user.portfolio = portfolio;
 
       // Fix for legacy or pre-registered ambassador users missing required fields
       if (!user.name || user.name === normalizedEmail.split('@')[0]) user.name = name || user.name || "Student";
@@ -357,7 +359,8 @@ const verifyRegistrationPayment = async (req, res) => {
       state,
       passingYear,
       github,
-      linkedin
+      linkedin,
+      portfolio
     } = req.body;
 
     // 1. Verify Payment Signature
@@ -435,6 +438,7 @@ const verifyRegistrationPayment = async (req, res) => {
       duration,
       github,
       linkedin,
+      portfolio,
       resume: resumeUrl,
       internshipType: getInternshipType(duration),
       studentId,
@@ -454,12 +458,13 @@ const verifyRegistrationPayment = async (req, res) => {
         isFirstLogin: true,
         github: github || "",
         linkedin: linkedin || "",
-        portfolio: "",
+        portfolio: portfolio || "",
         internships: [],
       });
     } else {
       if (github) user.github = github;
       if (linkedin) user.linkedin = linkedin;
+      if (portfolio) user.portfolio = portfolio;
 
       // Fix for legacy users missing required fields
       if (!user.name) user.name = name || "Student";
