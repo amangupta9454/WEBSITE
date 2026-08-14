@@ -176,11 +176,14 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
   const result = quizData?.result || "N/A";
 
   let isWinner = false;
+  let isAssessmentPassed = false;
   if (result.match(/1st|2nd|3rd|winner/i)) {
     isWinner = true;
+  } else if (result === "Assessment Passed") {
+    isAssessmentPassed = true;
   }
 
-  const certificateTitle = isWinner ? "Certificate of Excellence" : "Certificate of Participation";
+  const certificateTitle = (isWinner || isAssessmentPassed) ? "Certificate of Excellence" : "Certificate of Participation";
   const sponsorName = quizData?.sponsorName || applicant?.sponsorName || "";
   const sponsorLogoUrl = quizData?.sponsorLogo || applicant?.sponsorLogo || "";
   const sponsorSignatureUrl = quizData?.sponsorSignature || applicant?.sponsorSignature || "";
@@ -319,7 +322,7 @@ const QuizCertificate = forwardRef(({ applicant, quizData, issueDateOverride }, 
               fontWeight: 500,
               textAlign: 'center'
             }}>
-              {isWinner 
+              {(isWinner || isAssessmentPassed) 
                 ? "In recognition of exceptional technical proficiency, outstanding performance, and exemplary problem-solving skills demonstrated throughout the assessment."
                 : "In appreciation of active participation, valuable effort, and dedicated commitment towards technical excellence and continuous learning."}
             </p>

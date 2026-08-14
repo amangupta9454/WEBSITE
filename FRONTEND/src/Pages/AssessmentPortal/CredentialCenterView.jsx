@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Award,
   Download,
@@ -11,18 +11,38 @@ import {
   FolderOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import QuizCertificate from "../../Components/QuizCertificate";
 
 /**
  * My Certificates / Credential Center (Part 10 & Component 5)
  * Lists earned digital credentials with Status, Version, and Verification URLs in existing Light Theme.
  * Completely zero hardcoded demo certificates; shows professional empty state when no credentials exist.
  */
-const CredentialCenterView = ({ credentials = [] }) => {
+const CredentialCenterView = ({ credentials = [], candidateName = "Participant" }) => {
   const [search, setSearch] = useState("");
   const [selectedCert, setSelectedCert] = useState(null);
+  const [downloadingCert, setDownloadingCert] = useState(null);
+  const certRef = useRef(null);
 
   const handleDownload = (id) => {
-    toast.success(`📥 Initiating download for verified certificate ${id}...`);
+    const cert = credentials.find((c) => (c.certificateId || c._id) === id);
+    if (!cert) return;
+
+    if (cert.category === "Legacy Quiz" && cert.downloadUrl) {
+      // It's a legacy quiz, but we can also use our frontend generator if we want.
+      // But let's use the exact same template for ALL of them via frontend!
+      // This is uniform and avoids backend PDFKit dependencies.
+    }
+
+    setDownloadingCert(cert);
+    toast.success(`📥 Generating printable certificate ${id}...`);
+
+    setTimeout(() => {
+      if (certRef.current) {
+        certRef.current.triggerDownload();
+        setTimeout(() => setDownloadingCert(null), 1000);
+      }
+    }, 500);
   };
 
   const filteredCerts = credentials.filter((c) =>
@@ -193,6 +213,29 @@ const CredentialCenterView = ({ credentials = [] }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {downloadingCert && (
+        <QuizCertificate
+          ref={certRef}
+          applicant={{
+            name: candidateName,
+            email: ""
+          }}
+          quizData={{
+            quizName: downloadingCert.assessmentName || downloadingCert.title || "Technical Domain Credential",
+            score: "N/A",
+            totalScore: "N/A",
+            result: "Assessment Passed",
+            percentage: "N/A",
+            registrationId: downloadingCert.certificateId || downloadingCert._id,
+            sponsorName: "",
+            sponsorLogo: "",
+            sponsorSignature: "",
+            sponsorSignatoryName: "",
+            quizDate: downloadingCert.issueDate || downloadingCert.createdAt || new Date().toISOString()
+          }}
+        />
       )}
     </div>
   );

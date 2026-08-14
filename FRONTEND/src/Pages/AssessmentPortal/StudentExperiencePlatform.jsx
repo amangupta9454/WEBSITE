@@ -253,7 +253,11 @@ const StudentExperiencePlatform = ({ isEmbedded = false }) => {
         )}
 
         {!loading && activeTab === "certificates" && (
-          <CredentialCenterView credentials={credentialsData} onRefresh={fetchWorkspaceData} />
+          <CredentialCenterView 
+            credentials={credentialsData} 
+            onRefresh={fetchWorkspaceData} 
+            candidateName={dashboardData?.welcome?.candidateName}
+          />
         )}
 
         {!loading && activeTab === "timeline" && (
