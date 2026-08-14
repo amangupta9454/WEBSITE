@@ -223,7 +223,7 @@ const CredentialCenterView = ({ credentials = [], candidateName = "Participant" 
             email: ""
           }}
           quizData={{
-            quizName: (downloadingCert.category && downloadingCert.subcategory) ? `${downloadingCert.category} - ${downloadingCert.subcategory}` : (downloadingCert.assessmentName || downloadingCert.title || "Technical Domain Credential"),
+            quizName: downloadingCert.subcategory || downloadingCert.assessmentName || downloadingCert.title || "Technical Domain Credential",
             score: "N/A",
             totalScore: "N/A",
             result: "Assessment Passed",

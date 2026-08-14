@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   FileText,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import QuizCertificate from "../../Components/QuizCertificate";
 
 /**
  * Result Center / My Results (Part 10 & Component 4)
@@ -24,6 +25,23 @@ const ResultCenterView = ({ results = [] }) => {
   const [selectedResult, setSelectedResult] = useState(null);
   const [sessionDetails, setSessionDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [downloadingCert, setDownloadingCert] = useState(null);
+  const certRef = useRef(null);
+
+  const handleDownloadCertificate = (r) => {
+    if (!r.certificate) {
+      toast.error("Certificate not generated yet.");
+      return;
+    }
+    setDownloadingCert(r.certificate);
+    toast.success(`📥 Generating printable certificate...`);
+    setTimeout(() => {
+      if (certRef.current) {
+        certRef.current.triggerDownload();
+        setTimeout(() => setDownloadingCert(null), 1000);
+      }
+    }, 500);
+  };
 
   
   const handleViewDetails = async (r) => {
@@ -138,6 +156,17 @@ const ResultCenterView = ({ results = [] }) => {
                           <Eye className="w-3.5 h-3.5 text-indigo-600" />
                           <span>Details</span>
                         </button>
+
+                        {passed && r.certificate && (
+                          <button
+                            onClick={() => handleDownloadCertificate(r)}
+                            className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200 inline-flex items-center gap-1.5 transition-colors"
+                            title="Download Certificate"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Certificate</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={handleDownloadSummary}
@@ -265,6 +294,29 @@ const ResultCenterView = ({ results = [] }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {downloadingCert && (
+        <QuizCertificate
+          ref={certRef}
+          applicant={{
+            name: downloadingCert.candidateName,
+            email: ""
+          }}
+          quizData={{
+            quizName: downloadingCert.subcategory || "Technical Domain Credential",
+            score: "N/A",
+            totalScore: "N/A",
+            result: "Assessment Passed",
+            percentage: "N/A",
+            registrationId: downloadingCert.certificateId,
+            sponsorName: "",
+            sponsorLogo: "",
+            sponsorSignature: "",
+            sponsorSignatoryName: "",
+            quizDate: downloadingCert.issueDate
+          }}
+        />
       )}
     </div>
   );

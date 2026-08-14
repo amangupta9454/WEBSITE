@@ -188,20 +188,31 @@ class StudentPlatformService {
         .sort({ createdAt: -1 })
         .lean();
 
+      const certificates = await AssessmentCertificate.find({ candidateId: candidateEmail }).lean();
+
       return {
         success: true,
-        data: results.map((r) => ({
-          identifier: r.evaluationPackageId || r._id,
-          sessionId: r.sessionId,
-          title: r.subcategoryId?.name || r.course || "Technical Evaluation",
-          score: r.scoreSummary?.finalScore || 0,
-          totalScore: r.scoreSummary?.maxPossibleScore || 100,
-          percentage: r.scoreSummary?.percentage || 0,
-          passed: r.scoreSummary?.status === "Passed",
-          status: r.scoreSummary?.status || "Failed",
-          completedAt: r.createdAt,
-          downloadSummaryPlaceholder: true, // Future ready
-        })),
+        data: results.map((r) => {
+          const cert = certificates.find(c => c.resultId === r.resultId || c.sessionId === r.sessionId);
+          return {
+            identifier: r.evaluationPackageId || r._id,
+            sessionId: r.sessionId,
+            title: r.subcategoryId?.name || r.course || "Technical Evaluation",
+            score: r.scoreSummary?.finalScore || 0,
+            totalScore: r.scoreSummary?.maxPossibleScore || 100,
+            percentage: r.scoreSummary?.percentage || 0,
+            passed: r.scoreSummary?.status === "Passed",
+            status: r.scoreSummary?.status || "Failed",
+            completedAt: r.createdAt,
+            certificate: cert ? {
+              certificateId: cert.certificateId,
+              issueDate: cert.issueDate || cert.createdAt,
+              category: cert.category,
+              subcategory: cert.subcategory,
+              candidateName: cert.candidateName || "Candidate"
+            } : null
+          };
+        }),
       };
     } catch (err) {
       return { success: false, error: err.message };

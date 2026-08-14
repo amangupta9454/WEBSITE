@@ -198,8 +198,8 @@ const PublicVerificationPage = () => {
                     <span className="text-[11px] font-bold text-slate-400 mt-0.5 block">{result.candidateEmail || "Not Available"}</span>
                   </div>
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Domain & Subcategory</span>
-                    <span className="text-xs font-extrabold text-slate-300 mt-1 block">{result.category} • {result.subcategory}</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Assessment Domain</span>
+                    <span className="text-xs font-extrabold text-slate-300 mt-1 block">{result.subcategory}</span>
                   </div>
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Time Passed & Version</span>
