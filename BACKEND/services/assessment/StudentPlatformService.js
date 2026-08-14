@@ -35,8 +35,8 @@ class StudentPlatformService {
       ]);
 
       const totalAssessments = sessions.length;
-      const passedCount = results.filter((r) => r.score && r.score.passed).length;
-      const failedCount = results.filter((r) => r.score && !r.score.passed).length;
+      const passedCount = results.filter((r) => r.scoreSummary && r.scoreSummary.status === "Passed").length;
+      const failedCount = results.filter((r) => r.scoreSummary && r.scoreSummary.status !== "Passed").length;
       const activeSessions = sessions.filter((s) => ["Created", "Initializing", "Running", "Paused", "in_progress"].includes(s.status));
       const certificatesEarned = certificates.length;
 
@@ -194,11 +194,11 @@ class StudentPlatformService {
           identifier: r.evaluationPackageId || r._id,
           sessionId: r.sessionId,
           title: r.subcategoryId?.name || r.course || "Technical Evaluation",
-          score: r.score?.finalScore || 0,
-          totalScore: r.score?.totalMaxScore || 100,
-          percentage: r.score?.percentage || 0,
-          passed: r.score?.passed || false,
-          status: r.score?.passed ? "Passed" : "Failed",
+          score: r.scoreSummary?.finalScore || 0,
+          totalScore: r.scoreSummary?.maxPossibleScore || 100,
+          percentage: r.scoreSummary?.percentage || 0,
+          passed: r.scoreSummary?.status === "Passed",
+          status: r.scoreSummary?.status || "Failed",
           completedAt: r.createdAt,
           downloadSummaryPlaceholder: true, // Future ready
         })),
@@ -281,10 +281,10 @@ class StudentPlatformService {
           id: `r-pub-${r._id}`,
           category: "RESULT",
           action: "Authoritative Evaluation Result Published",
-          title: r.subcategoryId?.name || "Evaluation Report",
+          title: `Result: ${r.subcategoryId?.name || "Evaluation"}`,
           timestamp: r.createdAt,
-          status: r.score?.passed ? "Passed" : "Failed",
-          details: `Score: ${r.score?.percentage || 0}%`,
+          status: r.scoreSummary?.status === "Passed" ? "Passed" : "Failed",
+          details: `Score: ${r.scoreSummary?.percentage || 0}%`,
           iconType: "FileText",
         });
       });
@@ -321,12 +321,12 @@ class StudentPlatformService {
       const certs = await AssessmentCertificate.find({ candidateId: candidateEmail, status: "Issued" }).lean();
 
       const totalAttempts = results.length;
-      const passed = results.filter((r) => r.score?.passed).length;
+      const passed = results.filter((r) => r.scoreSummary?.status === "Passed").length;
       const passRate = totalAttempts > 0 ? Math.round((passed / totalAttempts) * 100) : 0;
 
       let sumPercents = 0;
       results.forEach((r) => {
-        sumPercents += Number(r.score?.percentage || 0);
+        sumPercents += Number(r.scoreSummary?.percentage || 0);
       });
       const avgScore = totalAttempts > 0 ? Math.round(sumPercents / totalAttempts) : 0;
 
