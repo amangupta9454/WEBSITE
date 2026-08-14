@@ -35,6 +35,20 @@ class CredentialEngine {
     // Component 3: Generate Globally Unique Readable ID
     const certificateId = await idGenerator.generateUniqueId("ASMT");
 
+    const User = require("../../models/User");
+
+    // Attempt to resolve real user's name from DB if not provided
+    if (!options.candidateName && resultObject.candidateId) {
+      try {
+        const user = await User.findOne({ email: resultObject.candidateId }).lean();
+        if (user && user.name) {
+          options.candidateName = user.name;
+        }
+      } catch (err) {
+        console.warn("[CredentialEngine] Failed to resolve candidate name:", err.message);
+      }
+    }
+
     // Component 2 & 8: Build Immutable Credential Snapshot and Cryptographic Verification Hashes
     const { snapshot, hashes } = snapshotBuilder.buildSnapshotAndHashes(resultObject, {
       candidateName: options.candidateName,
