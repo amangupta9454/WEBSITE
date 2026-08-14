@@ -224,6 +224,7 @@ class StudentPlatformService {
           certificateId: c.certificateId,
           assessmentName: c.assessmentName || c.snapshot?.assessmentName || "Certified Domain Mastery",
           category: c.category || "Enterprise Tech",
+          subcategory: c.subcategory || "Evaluation",
           status: c.status,
           version: c.version || 1,
           issueDate: c.issueDate || c.createdAt,
