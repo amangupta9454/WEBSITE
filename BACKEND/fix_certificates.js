@@ -4,15 +4,10 @@ const AssessmentCertificate = require('./models/assessment/AssessmentCertificate
 const User = require('./models/User');
 
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  console.log("Connected to MongoDB. Fixing old certificates...");
+  console.log("Connected to MongoDB. Scanning ALL assessment certificates...");
   
-  const certs = await AssessmentCertificate.find({ 
-    $or: [
-      { candidateName: 'Code-A-Nova Candidate' },
-      { candidateName: { $exists: false } }
-    ]
-  });
-  
+  // Find ALL certificates
+  const certs = await AssessmentCertificate.find({});
   let updatedCount = 0;
   
   for(let c of certs) {
@@ -20,6 +15,7 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     
     const user = await User.findOne({ email: c.candidateId });
     if (user && user.name) {
+      // Always sync with the actual User's name
       c.candidateName = user.name;
       if (c.snapshot) {
         c.snapshot.candidateName = user.name;
@@ -40,7 +36,7 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     }
   }
   
-  console.log('🎉 Total certificates fixed:', updatedCount);
+  console.log('🎉 Total certificates checked and fixed:', updatedCount);
   process.exit(0);
 }).catch(err => {
   console.error("Database connection error:", err);
