@@ -60,6 +60,43 @@ const JobAdminPage = () => {
     return Object.values(map).sort((a, b) => new Date(b.latestActionAt) - new Date(a.latestActionAt));
   }, [auditLogs]);
 
+  const visitStats = useMemo(() => {
+    if (!auditLogs || auditLogs.length === 0) return { today: 0, yesterday: 0, percent: 0, total: 0 };
+    
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 86400000;
+    
+    const todayIPs = new Set();
+    const yesterdayIPs = new Set();
+    
+    auditLogs.forEach(log => {
+      const time = new Date(log.createdAt).getTime();
+      if (time >= todayStart) {
+        todayIPs.add(log.ip);
+      } else if (time >= yesterdayStart && time < todayStart) {
+        yesterdayIPs.add(log.ip);
+      }
+    });
+    
+    const today = todayIPs.size;
+    const yesterday = yesterdayIPs.size;
+    
+    let percent = 0;
+    if (yesterday === 0) {
+      percent = today > 0 ? 100 : 0;
+    } else {
+      percent = Math.round(((today - yesterday) / yesterday) * 100);
+    }
+    
+    return {
+      today,
+      yesterday,
+      percent,
+      total: groupedAuditLogs.length
+    };
+  }, [auditLogs, groupedAuditLogs]);
+
   // Student Plans management state
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
@@ -168,6 +205,7 @@ const JobAdminPage = () => {
 
   useEffect(() => {
     fetchGrantedUsers();
+    fetchAuditLogs(); // Fetch to populate stats
   }, []);
 
   const handleGrantPremium = async (e) => {
@@ -661,7 +699,7 @@ const JobAdminPage = () => {
 
       {/* Student Activity & Interaction Insights Dashboard */}
       <div className="mt-12 pt-12 border-t-2 border-slate-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
               <span>👥 Student Activity & Interaction Insights</span>
@@ -671,23 +709,23 @@ const JobAdminPage = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-nowrap overflow-x-auto pb-2 xl:pb-0 w-full xl:w-auto">
+            <div className="flex bg-slate-200 p-1 rounded-xl font-black text-xs sm:text-sm shadow-inner shrink-0 flex-nowrap">
               <button
                 onClick={() => handleTabChange('applied')}
-                className={`px-3 sm:px-4 py-2 rounded-lg transition-all ${interactionType === 'applied' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all whitespace-nowrap ${interactionType === 'applied' ? 'bg-white text-emerald-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Applied
               </button>
               <button
                 onClick={() => handleTabChange('saved')}
-                className={`px-3 sm:px-4 py-2 rounded-lg transition-all ${interactionType === 'saved' ? 'bg-white text-indigo-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all whitespace-nowrap ${interactionType === 'saved' ? 'bg-white text-indigo-800 shadow' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Saved
               </button>
               <button
                 onClick={() => handleTabChange('audit')}
-                className={`px-3 sm:px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 ${interactionType === 'audit' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow' : 'text-purple-700 hover:text-purple-900 font-extrabold'}`}
+                className={`px-3 sm:px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${interactionType === 'audit' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow' : 'text-purple-700 hover:text-purple-900 font-extrabold'}`}
               >
                 <Activity className="w-4 h-4 animate-pulse" />
                 <span>Audit Logs (IP Activity)</span>
@@ -699,8 +737,30 @@ const JobAdminPage = () => {
               className="p-2.5 sm:p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold flex items-center justify-center shrink-0 shadow-sm"
               title="Refresh Records"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingInteractions ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loadingInteractions || loadingAuditLogs ? 'animate-spin' : ''}`} />
             </button>
+          </div>
+        </div>
+
+        {/* Visit Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex flex-col justify-center">
+            <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Today's Visits</p>
+            <p className="text-2xl sm:text-3xl font-black text-indigo-900">{visitStats.today}</p>
+          </div>
+          <div className="bg-gradient-to-br from-slate-50 to-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Yesterday's Visits</p>
+            <p className="text-2xl sm:text-3xl font-black text-slate-700">{visitStats.yesterday}</p>
+          </div>
+          <div className={`bg-gradient-to-br ${visitStats.percent >= 0 ? 'from-emerald-50 border-emerald-100' : 'from-rose-50 border-rose-100'} to-white p-4 rounded-2xl border shadow-sm flex flex-col justify-center`}>
+            <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${visitStats.percent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>Growth vs Yesterday</p>
+            <p className={`text-2xl sm:text-3xl font-black flex items-center gap-1 ${visitStats.percent >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              {visitStats.percent >= 0 ? '↑' : '↓'} {Math.abs(visitStats.percent)}%
+            </p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-white p-4 rounded-2xl border border-purple-100 shadow-sm flex flex-col justify-center">
+            <p className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Total Unique IPs</p>
+            <p className="text-2xl sm:text-3xl font-black text-purple-900">{visitStats.total}</p>
           </div>
         </div>
 
