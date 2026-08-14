@@ -110,7 +110,7 @@ const CredentialCenterView = ({ credentials = [], candidateName = "Participant" 
                     {c.category || "Competency Credential"}
                   </div>
                   <h3 className="text-lg font-black text-slate-900 leading-snug mt-0.5">
-                    {c.assessmentName || c.title || "Technical Domain Credential"}
+                    {c.subcategory || c.title || "Technical Domain Credential"}
                   </h3>
                 </div>
 
@@ -169,7 +169,7 @@ const CredentialCenterView = ({ credentials = [], candidateName = "Participant" 
                 <Award className="w-8 h-8" />
               </div>
               <div className="text-[11px] font-extrabold uppercase text-indigo-600 tracking-widest">Verifiable Digital Credential</div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900">{selectedCert.assessmentName || selectedCert.title}</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">{selectedCert.subcategory || selectedCert.title || selectedCert.assessmentName}</h2>
               <div className="font-mono text-xs font-bold text-slate-600 bg-slate-100 py-1.5 px-4 rounded-xl border border-slate-200 inline-block">
                 ID: {selectedCert.certificateId || selectedCert._id}
               </div>
@@ -223,7 +223,7 @@ const CredentialCenterView = ({ credentials = [], candidateName = "Participant" 
             email: ""
           }}
           quizData={{
-            quizName: downloadingCert.assessmentName || downloadingCert.title || "Technical Domain Credential",
+            quizName: (downloadingCert.category && downloadingCert.subcategory) ? `${downloadingCert.category} - ${downloadingCert.subcategory}` : (downloadingCert.assessmentName || downloadingCert.title || "Technical Domain Credential"),
             score: "N/A",
             totalScore: "N/A",
             result: "Assessment Passed",

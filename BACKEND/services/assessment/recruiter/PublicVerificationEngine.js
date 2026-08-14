@@ -94,8 +94,13 @@ class PublicVerificationEngine {
       const safePublicResult = {
         certificateId: cert.certificateId || String(cert._id),
         candidateName: cert.candidateName || cert.snapshot?.candidateName || "Code-A-Nova Certified Candidate",
+        candidateEmail: cert.candidateId || cert.snapshot?.candidateId || "Not Available",
         assessmentTitle: cert.assessmentTitle || cert.snapshot?.assessmentTitle || "Validated Technical Evaluation",
+        category: cert.category || cert.snapshot?.category || "Technical Domain",
+        subcategory: cert.subcategory || cert.snapshot?.subcategory || "Evaluation",
+        percentage: cert.snapshot?.percentage !== undefined ? cert.snapshot.percentage : null,
         issueDate: cert.issuedAt || cert.createdAt,
+        passedAt: cert.issuedAt || cert.createdAt,
         version: `v${cert.version || 1}`,
         status: verificationStatus,
         verificationHash: cert.certificateHash || cert.snapshotHash || "SHA256-VALIDATED-CREDENTIAL",

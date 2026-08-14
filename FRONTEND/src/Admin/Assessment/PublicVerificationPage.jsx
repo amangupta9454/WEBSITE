@@ -195,21 +195,24 @@ const PublicVerificationPage = () => {
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Certified Candidate</span>
                     <span className="text-base font-black text-white mt-1 block">{result.candidateName}</span>
-                  </div>
-                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Assessment Title</span>
-                    <span className="text-base font-black text-white mt-1 block">{result.assessmentName}</span>
+                    <span className="text-[11px] font-bold text-slate-400 mt-0.5 block">{result.candidateEmail || "Not Available"}</span>
                   </div>
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Domain & Subcategory</span>
                     <span className="text-xs font-extrabold text-slate-300 mt-1 block">{result.category} • {result.subcategory}</span>
                   </div>
                   <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Issue Date & Version</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Time Passed & Version</span>
                     <span className="text-xs font-extrabold text-slate-300 font-mono mt-1 block">
-                      {new Date(result.issueDate || Date.now()).toLocaleDateString('en-GB', { year: "numeric", month: "long", day: "numeric" })} ({result.version})
+                      {new Date(result.passedAt || result.issueDate || Date.now()).toLocaleString('en-GB', { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} ({result.version})
                     </span>
                   </div>
+                  {result.percentage !== null && result.percentage !== undefined && (
+                    <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800/80 sm:col-span-2">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Assessment Score</span>
+                      <span className="text-lg font-black text-emerald-400 mt-1 block">{result.percentage}%</span>
+                    </div>
+                  )}
                 </div>
               )}
 
