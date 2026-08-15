@@ -79,6 +79,19 @@ const Project = () => {
               updates.duration = res.data.duration;
               newAutoFilled.duration = true;
             }
+            
+            if (res.data.hasTwoAssignments) {
+              if (updates.assignments.length < 2) {
+                updates.assignments = [
+                  updates.assignments[0] || { projectName: '', github: '', hosted: '' },
+                  { projectName: '', github: '', hosted: '' }
+                ];
+              }
+            } else {
+              if (updates.assignments.length > 1) {
+                updates.assignments = [ updates.assignments[0] ];
+              }
+            }
 
             return updates;
           });
@@ -133,11 +146,12 @@ const Project = () => {
   };
 
   const validateAssignments = () => {
-    const ass1 = formData.assignments[0];
-
-    if (!ass1.projectName?.trim() || !ass1.github?.trim()) {
-      toast.error('Project Name and GitHub link are required for the assignment.');
-      return false;
+    for (let i = 0; i < formData.assignments.length; i++) {
+      const ass = formData.assignments[i];
+      if (!ass.projectName?.trim() || !ass.github?.trim()) {
+        toast.error(`Project Name and GitHub link are required for Assignment ${i + 1}.`);
+        return false;
+      }
     }
     return true;
   };
@@ -469,7 +483,7 @@ const Project = () => {
                     <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
                       <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm text-white bg-emerald-500">
-                          1
+                          {index + 1}
                         </span>
                         Project Details
                       </h3>

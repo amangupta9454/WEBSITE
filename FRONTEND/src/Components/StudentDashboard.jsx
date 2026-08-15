@@ -424,6 +424,12 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                         ? "This task has been successfully submitted."
                         : "Submit your assigned task updates to move forward."}
                     </p>
+                    {!isSubmitted && startDate && (
+                      <p className="text-xs font-bold text-rose-600 mt-2 flex items-center gap-1 bg-rose-50 w-fit px-2 py-1 rounded-md border border-rose-100">
+                        <span className="inline-block">⏰</span>
+                        Last Date to Submit: {new Date(new Date(startDate).getTime() + (idx + 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
                   </div>
                   {isCurrentPending && (
                     <button

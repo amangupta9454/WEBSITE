@@ -38,11 +38,17 @@ router.get('/current-month/:studentId', async (req, res) => {
 
     const canSubmit = currentMonth <= maxMonths;
 
+    let hasTwoAssignments = false;
+    if (internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z')) {
+      hasTwoAssignments = true;
+    }
+
     // NEW: Return student basic info too
     res.json({
       currentMonth,
       maxMonths,
       canSubmit,
+      hasTwoAssignments,
       needsPayment: (currentMonth === maxMonths) && !internship.hasPaid,
       name: internship.name,
       email: internship.email,
