@@ -391,13 +391,20 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
               const monthSubmission = internship.submissions?.find(s => s.month === idx + 1);
               const submittedTasksCount = monthSubmission ? (monthSubmission.assignments?.length || 0) : 0;
               
+              const daysSinceStart = startDate ? Math.max(0, (new Date() - startDate) / (1000 * 60 * 60 * 24)) : 0;
+              
               const renderCard = (cardIdx, isCardSubmitted) => {
+                const unlockDayOffset = (idx * 30) + (isAug05Batch && cardIdx === 1 ? 15 : 0);
+                if (startDate && daysSinceStart < unlockDayOffset) return null;
+
                 const assignedTaskName = internship.assignedNormalTasks && internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx] 
                   ? internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx]
                   : null;
                 const isCurrentPending = !isCardSubmitted;
                 const assignmentData = monthSubmission?.assignments?.[cardIdx];
-                const taskLabel = isAug05Batch ? `Task ${cardIdx + 1} Assignment` : `Task Assignment`;
+                const taskLabel = isAug05Batch ? `Month ${idx + 1} - Task ${cardIdx + 1} Assignment` : `Month ${idx + 1} - Task Assignment`;
+                
+                const dueDateDays = (idx * 30) + (isAug05Batch && cardIdx === 0 ? 15 : 30);
                 
                 return (
                   <div
@@ -409,7 +416,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                         className={`font-bold text-lg leading-tight ${isCardSubmitted ? "text-emerald-900" : "text-blue-900"}`}
                       >
                         {assignedTaskName && !assignedTaskName.startsWith("http")
-                          ? assignedTaskName
+                          ? `Month ${idx + 1} - ${assignedTaskName}`
                           : taskLabel}
                       </h4>
                       {assignedTaskName &&
@@ -433,7 +440,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                       {!isCardSubmitted && startDate && (
                         <p className="text-xs font-bold text-rose-600 mt-2 flex items-center gap-1 bg-rose-50 w-fit px-2 py-1 rounded-md border border-rose-100">
                           <span className="inline-block">⏰</span>
-                          Last Date to Submit: {new Date(new Date(startDate).getTime() + (idx + 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          Last Date to Submit: {new Date(new Date(startDate).getTime() + dueDateDays * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
                       )}
                     </div>
