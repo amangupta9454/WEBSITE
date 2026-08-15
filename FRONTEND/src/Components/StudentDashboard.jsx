@@ -386,6 +386,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
             }).map((_, idx) => {
               const isSubmitted = idx < submitted;
               const isCurrentPending = !isSubmitted; // Relaxed: allow ANY unsubmitted project to be submitted
+              const hasTwoAssignments = startDate && new Date(startDate) >= new Date('2026-08-05T00:00:00.000Z');
 
               const assignedTaskName =
                 internship.assignedNormalTasks &&
@@ -404,7 +405,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                     >
                       {assignedTaskName && !assignedTaskName.startsWith("http")
                         ? assignedTaskName
-                        : `Task Assignment`}
+                        : (hasTwoAssignments ? `Task 1 & Task 2 Assignments` : `Task Assignment`)}
                     </h4>
                     {assignedTaskName &&
                       assignedTaskName.startsWith("http") && (
@@ -421,8 +422,8 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                       className={`text-sm mt-2 ${isSubmitted ? "text-emerald-700" : "text-blue-700"}`}
                     >
                       {isSubmitted
-                        ? "This task has been successfully submitted."
-                        : "Submit your assigned task updates to move forward."}
+                        ? (hasTwoAssignments ? "These tasks have been successfully submitted." : "This task has been successfully submitted.")
+                        : (hasTwoAssignments ? "Submit your two assigned task updates to move forward." : "Submit your assigned task updates to move forward.")}
                     </p>
                     {!isSubmitted && startDate && (
                       <p className="text-xs font-bold text-rose-600 mt-2 flex items-center gap-1 bg-rose-50 w-fit px-2 py-1 rounded-md border border-rose-100">
@@ -436,7 +437,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                       onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
                       className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
                     >
-                      Submit Project <ArrowRight size={18} />
+                      {hasTwoAssignments ? "Submit Projects" : "Submit Project"} <ArrowRight size={18} />
                     </button>
                   )}
                   {isSubmitted && (
