@@ -43,13 +43,18 @@ const DIFFICULTY_PROMPTS = {
  * Build a Groq prompt for a given difficulty and topic.
  */
 function buildPrompt(categoryName, subcategoryName, difficulty, count = 5) {
+  const entropy = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
   return `You are an expert technical educator creating assessment questions for a professional learning platform.
 
 Topic: ${categoryName} - ${subcategoryName}
 Difficulty: ${difficulty.toUpperCase()} (${DIFFICULTY_PROMPTS[difficulty]})
 Number of questions: ${count}
+Generation Seed: ${entropy}
 
-Generate exactly ${count} high-quality multiple choice questions. Each question MUST:
+Generate exactly ${count} high-quality, completely unique and randomized multiple choice questions.
+CRITICAL: Do NOT generate the same standard or generic questions. Explore edge cases, real-world scenarios, debugging situations, and highly diverse sub-topics within "${subcategoryName}". Ensure high variety.
+
+Each question MUST:
 1. Be directly relevant to "${subcategoryName}" in the context of "${categoryName}"
 2. Have exactly 4 options (A, B, C, D)
 3. Have one clearly correct answer
@@ -110,7 +115,7 @@ async function generateForDifficulty(categoryName, subcategoryName, difficulty, 
       },
       { role: "user", content: prompt }
     ],
-    temperature: 0.7,
+    temperature: 0.9,
     max_tokens: 2048,
   });
 
