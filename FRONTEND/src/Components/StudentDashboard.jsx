@@ -378,16 +378,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
         </div>
         {isStarted ? (
           <div className="space-y-4">
-            {Array.from({
-              length: Math.min(
-                Math.floor(
-                  Math.max(0, (new Date() - startDate) / (1000 * 60 * 60 * 24)),
-                ) /
-                  30 +
-                  1,
-                totalMonths,
-              ),
-            }).map((_, idx) => {
+            {Array.from({ length: totalMonths }).map((_, idx) => {
               const monthSubmission = internship.submissions?.find(s => s.month === idx + 1);
               const submittedTasksCount = monthSubmission ? (monthSubmission.assignments?.length || 0) : 0;
               
@@ -395,7 +386,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
               
               const renderCard = (cardIdx, isCardSubmitted) => {
                 const unlockDayOffset = (idx * 30) + (isAug05Batch && cardIdx === 1 ? 15 : 0);
-                if (startDate && daysSinceStart < unlockDayOffset) return null;
+                const isLocked = startDate && daysSinceStart < unlockDayOffset;
 
                 const assignedTaskName = internship.assignedNormalTasks && internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx] 
                   ? internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx]
@@ -404,6 +395,33 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                 const assignmentData = monthSubmission?.assignments?.[cardIdx];
                 const taskLabel = isAug05Batch ? `Month ${idx + 1} - Task ${cardIdx + 1} Assignment` : `Month ${idx + 1} - Task Assignment`;
                 
+                if (isLocked) {
+                  const unlockDate = new Date(new Date(startDate).getTime() + unlockDayOffset * 24 * 60 * 60 * 1000);
+                  const displayTaskName = assignedTaskName && !assignedTaskName.startsWith("http") 
+                    ? `Month ${idx + 1} - ${assignedTaskName}` 
+                    : taskLabel;
+                    
+                  return (
+                    <div
+                      key={`${idx}-${cardIdx}`}
+                      className={`p-6 border rounded-xl flex flex-col justify-between gap-4 bg-slate-50 border-slate-200 ${cardIdx > 0 ? 'mt-4' : ''}`}
+                    >
+                      <div className="opacity-70">
+                        <h4 className="font-bold text-lg leading-tight text-slate-500 flex items-center gap-2">
+                          <span className="text-xl">🔒</span> {displayTaskName}
+                        </h4>
+                        <p className="text-sm mt-2 text-slate-500">
+                          This task is currently locked and will be available on its scheduled unlock date.
+                        </p>
+                        <p className="text-xs font-bold text-slate-600 mt-2 flex items-center gap-1 bg-slate-100 w-fit px-2 py-1 rounded-md border border-slate-200">
+                          <span className="inline-block">📅</span>
+                          Unlocks on: {unlockDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const dueDateDays = (idx * 30) + (isAug05Batch && cardIdx === 0 ? 15 : 30);
                 
                 return (

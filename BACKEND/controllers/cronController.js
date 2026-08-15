@@ -85,7 +85,7 @@ const runDailyCron = async (req, res) => {
                  from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
                  to: user.email,
                  subject: `New Task Assigned: Month ${targetMonth} Task 1 (${internship.domain})`,
-                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your first task for Month ${targetMonth} has been assigned. Please log in to your dashboard to view the details.</p>`
+                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your first task for Month ${targetMonth} has been unlocked. Please log in to your dashboard to view the details.</p>`
                };
                transporter.sendMail(mailOptions).catch(console.error);
                isModified = true; alertsGenerated++;
@@ -111,8 +111,10 @@ const runDailyCron = async (req, res) => {
              }
           }
 
+          const isAug05Batch = new Date(internship.startDate) >= new Date("2026-08-05T00:00:00.000Z");
+
           // --- TASK 2 ASSIGNMENT (Day 15-16 of month) ---
-          if (daysPassed === monthStartDay + 15 || daysPassed === monthStartDay + 16) {
+          if (isAug05Batch && (daysPassed === monthStartDay + 15 || daysPassed === monthStartDay + 16)) {
              const alertIdentifier = `Month ${targetMonth} Task 2 Assigned`;
              if (!internship.alerts.some(a => a.message.includes(alertIdentifier))) {
                internship.alerts.push({
@@ -123,7 +125,7 @@ const runDailyCron = async (req, res) => {
                  from: `"CODE-A-NOVA Internships" <${process.env.EMAIL_USER}>`,
                  to: user.email,
                  subject: `New Task Assigned: Month ${targetMonth} Task 2 (${internship.domain})`,
-                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your second task for Month ${targetMonth} has been assigned. Please log in to your dashboard to view the details.</p>`
+                 html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your second task for Month ${targetMonth} has been unlocked. Please log in to your dashboard to view the details.</p>`
                };
                transporter.sendMail(mailOptions).catch(console.error);
                isModified = true; alertsGenerated++;
