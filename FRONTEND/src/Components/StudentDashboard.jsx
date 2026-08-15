@@ -419,17 +419,6 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                           ? `Month ${idx + 1} - ${assignedTaskName}`
                           : taskLabel}
                       </h4>
-                      {assignedTaskName &&
-                        assignedTaskName.startsWith("http") && (
-                          <a
-                            href={assignedTaskName}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded-md transition-colors"
-                          >
-                            📄 View Task Document
-                          </a>
-                        )}
                       <p
                         className={`text-sm mt-2 ${isCardSubmitted ? "text-emerald-700" : "text-blue-700"}`}
                       >
@@ -445,19 +434,44 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                       )}
                     </div>
                     {isCurrentPending && (
-                      <button
-                        onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
-                      >
-                        Submit Project <ArrowRight size={18} />
-                      </button>
+                      <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 mt-4 lg:mt-0 w-full lg:w-auto">
+                        {assignedTaskName && assignedTaskName.startsWith("http") && (
+                          <a
+                            href={assignedTaskName}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 justify-center whitespace-nowrap"
+                          >
+                            📄 View Task Document
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
+                          className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
+                        >
+                          Submit Project <ArrowRight size={18} />
+                        </button>
+                      </div>
                     )}
                     {isCardSubmitted && assignmentData && (
-                      <div className="w-full lg:w-1/2 mt-4 lg:mt-0 bg-white rounded-xl p-4 shadow-sm border border-slate-100 shrink-0">
-                        <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-3">
-                          <CheckCircle size={18} className="text-emerald-500" />
-                          <span className="font-bold text-emerald-700">Submitted Successfully</span>
-                        </div>
+                      <div className="w-full lg:w-1/2 mt-4 lg:mt-0 flex flex-col gap-3 shrink-0">
+                        {assignedTaskName && assignedTaskName.startsWith("http") && (
+                          <div className="flex justify-start lg:justify-end">
+                            <a
+                              href={assignedTaskName}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-4 py-2 bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 rounded-lg text-sm font-bold transition-all shadow-sm inline-flex items-center gap-2 whitespace-nowrap"
+                            >
+                              📄 View Task Document
+                            </a>
+                          </div>
+                        )}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                          <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-3">
+                            <CheckCircle size={18} className="text-emerald-500" />
+                            <span className="font-bold text-emerald-700">Submitted Successfully</span>
+                          </div>
                         
                         <div className="mb-2 last:mb-0">
                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
@@ -513,6 +527,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                                </div>
                             )}
                           </div>
+                        </div>
                         </div>
                       </div>
                     )}
