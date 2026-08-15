@@ -273,7 +273,7 @@ Return ONLY a valid JSON array, no markdown:
           // Race: 7000ms timeout vs AI completion
           const aiRace = await Promise.race([
             client.chat.completions.create({
-              model: "llama-3.3-70b-versatile",
+              model: "llama-3.3-70b-specdec",
               messages: [
                 { role: "system", content: "You are a JSON-only MCQ generator. Return only valid JSON arrays, no markdown." },
                 { role: "user", content: prompt }

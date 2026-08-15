@@ -256,7 +256,7 @@ Remember, return ONLY the JSON object.`;
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.3-70b-specdec',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt }

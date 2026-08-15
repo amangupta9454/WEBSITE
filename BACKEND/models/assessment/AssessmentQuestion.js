@@ -53,7 +53,7 @@ const assessmentQuestionSchema = new mongoose.Schema(
     model: {
       type: String,
       default: null,
-      // Target model ID (e.g., llama-3.3-70b-versatile)
+      // Target model ID (e.g., llama-3.3-70b-specdec)
     },
     createdBy: {
       type: String,

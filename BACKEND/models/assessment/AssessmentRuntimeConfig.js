@@ -39,7 +39,7 @@ const assessmentRuntimeConfigSchema = new mongoose.Schema(
     },
     modelName: {
       type: String,
-      default: "llama-3.3-70b-versatile",
+      default: "llama-3.3-70b-specdec",
       trim: true
     },
     fallbackProviders: [{

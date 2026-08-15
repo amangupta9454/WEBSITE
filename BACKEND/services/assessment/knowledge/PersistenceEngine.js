@@ -55,7 +55,7 @@ class PersistenceEngine {
       requestId: questionData.requestId || null,
       blueprintVersion: questionData.blueprintVersion || null,
       provider: questionData.provider || "Groq",
-      model: questionData.model || "llama-3.3-70b-versatile",
+      model: questionData.model || "llama-3.3-70b-specdec",
       createdBy: actor,
       language: questionData.language || "English",
       tags: questionData.tags || ["verified", "kb-approved"],

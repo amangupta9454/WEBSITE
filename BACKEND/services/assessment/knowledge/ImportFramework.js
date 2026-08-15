@@ -65,7 +65,7 @@ class ImportFramework {
         createdSource: source,
         requestId: options.requestId || null,
         provider: options.provider || (source.includes("AI") ? "Groq" : "Human-Verified"),
-        model: options.model || (source.includes("AI") ? "llama-3.3-70b-versatile" : "expert-curator"),
+        model: options.model || (source.includes("AI") ? "llama-3.3-70b-specdec" : "expert-curator"),
         bloomLevel: rep.bloomLevel || q.bloomLevel || "Apply",
         qualityScore: rep.qualityScore || q.qualityScore || 95,
         fingerprint: rep.fingerprint || null,
