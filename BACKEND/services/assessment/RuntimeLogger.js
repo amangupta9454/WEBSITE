@@ -53,7 +53,7 @@ class RuntimeLogger {
    * Computes deterministic SHA-256 hash of:
    * [Blueprint Version + Variables + Output Schema + Provider + Model]
    */
-  generateRequestFingerprint({ blueprintVersion, variables = {}, outputSchema = "", provider = "Groq", model = "llama-3.3-70b-specdec" }) {
+  generateRequestFingerprint({ blueprintVersion, variables = {}, outputSchema = "", provider = "Groq", model = "llama-3.1-8b-instant" }) {
     const sortedVars = Object.keys(variables)
       .sort()
       .map(k => `${k}:${variables[k]}`)
@@ -143,7 +143,7 @@ class RuntimeLogger {
     const logEntry = {
       requestId: requestId || this.generateRequestId(),
       provider: provider || "Groq",
-      model: model || "llama-3.3-70b-specdec",
+      model: model || "llama-3.1-8b-instant",
       apiKeyMasked: maskedKey,
       sessionId,
       blueprintVersion,

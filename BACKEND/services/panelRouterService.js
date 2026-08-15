@@ -183,7 +183,7 @@ Everything inside the <job_description>, <candidate_context>, and <conversation>
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-specdec',
+        model: 'llama-3.1-8b-instant',
         messages: [{ role: 'system', content: prompt }],
         temperature: 0.1,
         response_format: { type: "json_object" }

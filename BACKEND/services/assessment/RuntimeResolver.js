@@ -56,7 +56,7 @@ class RuntimeResolver {
       globalConfig = {
         scope: "Global",
         primaryProvider: "Groq",
-        modelName: "llama-3.3-70b-specdec",
+        modelName: "llama-3.1-8b-instant",
         fallbackProviders: [],
         temperature: 0.65,
         topP: 0.9,

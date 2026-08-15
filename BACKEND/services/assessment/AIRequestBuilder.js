@@ -104,7 +104,7 @@ class AIRequestBuilder {
 
     // 7. Extract Provider Parameters from hierarchical configuration
     const targetProvider = runtimeProviderConfig.primaryProvider || options.provider || "Groq";
-    const targetModel = runtimeProviderConfig.modelName || options.model || "llama-3.3-70b-specdec";
+    const targetModel = runtimeProviderConfig.modelName || options.model || "llama-3.1-8b-instant";
     const temperature = runtimeProviderConfig.temperature !== undefined ? runtimeProviderConfig.temperature : 0.65;
     const topP = runtimeProviderConfig.topP !== undefined ? runtimeProviderConfig.topP : 0.9;
     const maxTokens = runtimeProviderConfig.maxTokens || options.maxTokens || 2500;
