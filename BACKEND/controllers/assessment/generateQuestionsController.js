@@ -187,13 +187,46 @@ exports.generateQuestions = async (req, res) => {
 };
 
 /**
+ * Calculates Sørensen-Dice coefficient for fast string similarity (0.0 to 1.0).
+ */
+function getBigrams(str) {
+  const s = (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const bigrams = new Set();
+  for (let i = 0; i < s.length - 1; i++) {
+    bigrams.add(s.substring(i, i + 2));
+  }
+  return bigrams;
+}
+
+function diceCoefficient(str1, str2) {
+  const b1 = getBigrams(str1);
+  const b2 = getBigrams(str2);
+  if (b1.size === 0 || b2.size === 0) return 0;
+  let intersection = 0;
+  for (let b of b1) {
+    if (b2.has(b)) intersection++;
+  }
+  return (2.0 * intersection) / (b1.size + b2.size);
+}
+
+/**
  * Save parsed questions to AssessmentQuestion collection.
- * Skips duplicates using fingerprint.
+ * Skips exact duplicates (fingerprint) AND similar questions (>80% similarity).
+ * Optimized to fetch existing questions only once per batch.
  */
 async function saveQuestions(questions, { categoryId, subcategoryId, difficulty }) {
   if (!Array.isArray(questions) || questions.length === 0) return 0;
 
+  // Pre-fetch all existing question texts for this subcategory for fast memory comparison
+  const existingQuestions = await AssessmentQuestion.find(
+    { subcategoryId },
+    { text: 1, fingerprint: 1 }
+  ).lean();
+
+  // We will keep a working array to also check against questions saved within this loop
+  const currentBatch = [...existingQuestions];
   let saved = 0;
+
   for (const q of questions) {
     try {
       if (!q.text || !Array.isArray(q.options) || q.options.length < 2) continue;
@@ -203,9 +236,24 @@ async function saveQuestions(questions, { categoryId, subcategoryId, difficulty 
         .update((q.text || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim())
         .digest("hex");
 
-      // Skip duplicate
-      const existing = await AssessmentQuestion.findOne({ fingerprint });
-      if (existing) continue;
+      // Fast in-memory duplicate & similarity check
+      let isDuplicate = false;
+      for (const existing of currentBatch) {
+        if (existing.fingerprint === fingerprint) {
+          isDuplicate = true;
+          break;
+        }
+        // If question text is 80% similar, consider it a duplicate
+        if (diceCoefficient(q.text, existing.text) > 0.8) {
+          isDuplicate = true;
+          break;
+        }
+      }
+
+      if (isDuplicate) continue;
+
+      // Add to current batch so subsequent questions in this run don't duplicate it
+      currentBatch.push({ text: q.text, fingerprint });
 
       await AssessmentQuestion.create({
         text: q.text.trim(),
