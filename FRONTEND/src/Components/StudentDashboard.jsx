@@ -64,7 +64,11 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
     ? new Date(internship.startDate)
     : null;
   const isStarted = startDate && startDate <= new Date();
-  const submitted = internship.submissions?.length || 0;
+  const isAug05Batch = internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z');
+  const submitted = internship.submissions?.filter(s => {
+    const required = isAug05Batch ? 2 : 1;
+    return s.assignments?.length >= required;
+  }).length || 0;
 
   let currentStage = 0;
   if (internship.offerLetterStatus === "Sent") {
@@ -384,129 +388,142 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                 totalMonths,
               ),
             }).map((_, idx) => {
-              const isSubmitted = idx < submitted;
-              const isCurrentPending = !isSubmitted; // Relaxed: allow ANY unsubmitted project to be submitted
-              const hasTwoAssignments = startDate && new Date(startDate) >= new Date('2026-08-05T00:00:00.000Z');
-
-              const assignedTaskName =
-                internship.assignedNormalTasks &&
-                internship.assignedNormalTasks[idx]
-                  ? internship.assignedNormalTasks[idx]
+              const monthSubmission = internship.submissions?.find(s => s.month === idx + 1);
+              const submittedTasksCount = monthSubmission ? (monthSubmission.assignments?.length || 0) : 0;
+              
+              const renderCard = (cardIdx, isCardSubmitted) => {
+                const assignedTaskName = internship.assignedNormalTasks && internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx] 
+                  ? internship.assignedNormalTasks[idx * (isAug05Batch ? 2 : 1) + cardIdx]
                   : null;
-
-              return (
-                <div
-                  key={idx}
-                  className={`p-6 border rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${isSubmitted ? "border-emerald-100 bg-emerald-50" : "border-blue-100 bg-gradient-to-br from-blue-50 to-white"}`}
-                >
-                  <div>
-                    <h4
-                      className={`font-bold text-lg leading-tight ${isSubmitted ? "text-emerald-900" : "text-blue-900"}`}
-                    >
-                      {assignedTaskName && !assignedTaskName.startsWith("http")
-                        ? assignedTaskName
-                        : (hasTwoAssignments ? `Task 1 & Task 2 Assignments` : `Task Assignment`)}
-                    </h4>
-                    {assignedTaskName &&
-                      assignedTaskName.startsWith("http") && (
-                        <a
-                          href={assignedTaskName}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded-md transition-colors"
-                        >
-                          📄 View Task Document
-                        </a>
-                      )}
-                    <p
-                      className={`text-sm mt-2 ${isSubmitted ? "text-emerald-700" : "text-blue-700"}`}
-                    >
-                      {isSubmitted
-                        ? (hasTwoAssignments ? "These tasks have been successfully submitted." : "This task has been successfully submitted.")
-                        : (hasTwoAssignments ? "Submit your two assigned task updates to move forward." : "Submit your assigned task updates to move forward.")}
-                    </p>
-                    {!isSubmitted && startDate && (
-                      <p className="text-xs font-bold text-rose-600 mt-2 flex items-center gap-1 bg-rose-50 w-fit px-2 py-1 rounded-md border border-rose-100">
-                        <span className="inline-block">⏰</span>
-                        Last Date to Submit: {new Date(new Date(startDate).getTime() + (idx + 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                const isCurrentPending = !isCardSubmitted;
+                const assignmentData = monthSubmission?.assignments?.[cardIdx];
+                const taskLabel = isAug05Batch ? `Task ${cardIdx + 1} Assignment` : `Task Assignment`;
+                
+                return (
+                  <div
+                    key={`${idx}-${cardIdx}`}
+                    className={`p-6 border rounded-xl flex flex-col lg:flex-row justify-between lg:items-center gap-4 ${isCardSubmitted ? "border-emerald-100 bg-emerald-50" : "border-blue-100 bg-gradient-to-br from-blue-50 to-white"} ${cardIdx > 0 ? 'mt-4' : ''}`}
+                  >
+                    <div>
+                      <h4
+                        className={`font-bold text-lg leading-tight ${isCardSubmitted ? "text-emerald-900" : "text-blue-900"}`}
+                      >
+                        {assignedTaskName && !assignedTaskName.startsWith("http")
+                          ? assignedTaskName
+                          : taskLabel}
+                      </h4>
+                      {assignedTaskName &&
+                        assignedTaskName.startsWith("http") && (
+                          <a
+                            href={assignedTaskName}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded-md transition-colors"
+                          >
+                            📄 View Task Document
+                          </a>
+                        )}
+                      <p
+                        className={`text-sm mt-2 ${isCardSubmitted ? "text-emerald-700" : "text-blue-700"}`}
+                      >
+                        {isCardSubmitted
+                          ? "This task has been successfully submitted."
+                          : "Submit your assigned task updates to move forward."}
                       </p>
+                      {!isCardSubmitted && startDate && (
+                        <p className="text-xs font-bold text-rose-600 mt-2 flex items-center gap-1 bg-rose-50 w-fit px-2 py-1 rounded-md border border-rose-100">
+                          <span className="inline-block">⏰</span>
+                          Last Date to Submit: {new Date(new Date(startDate).getTime() + (idx + 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                    {isCurrentPending && (
+                      <button
+                        onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
+                      >
+                        Submit Project <ArrowRight size={18} />
+                      </button>
                     )}
-                  </div>
-                  {isCurrentPending && (
-                    <button
-                      onClick={() => handleSubmitProject(assignedTaskName, idx + 1)}
-                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 justify-center whitespace-nowrap shrink-0"
-                    >
-                      {hasTwoAssignments ? "Submit Projects" : "Submit Project"} <ArrowRight size={18} />
-                    </button>
-                  )}
-                  {isSubmitted && (
-                    <div className="w-full mt-4 bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                      <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-3">
-                        <CheckCircle size={18} className="text-emerald-500" />
-                        <span className="font-bold text-emerald-700">Submitted Successfully</span>
-                      </div>
-                      
-                      {internship.submissions[idx]?.assignments?.map((assignment, aIdx) => (
-                        <div key={assignment._id || aIdx} className="mb-4 last:mb-0 p-4 border rounded-lg bg-slate-50">
+                    {isCardSubmitted && assignmentData && (
+                      <div className="w-full lg:w-1/2 mt-4 lg:mt-0 bg-white rounded-xl p-4 shadow-sm border border-slate-100 shrink-0">
+                        <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-3">
+                          <CheckCircle size={18} className="text-emerald-500" />
+                          <span className="font-bold text-emerald-700">Submitted Successfully</span>
+                        </div>
+                        
+                        <div className="mb-2 last:mb-0">
                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
-                            <h5 className="font-bold text-slate-800">{assignment.projectName}</h5>
-                            <a href={assignment.github} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-600 hover:underline inline-flex items-center gap-1">
+                            <h5 className="font-bold text-slate-800">{assignmentData.projectName}</h5>
+                            <a href={assignmentData.github} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-600 hover:underline inline-flex items-center gap-1">
                               <Github size={14} /> View Repository
                             </a>
                           </div>
                           
-                          <div className={`mt-3 p-3 rounded-lg border flex flex-col gap-2 ${assignment.aiStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200' : assignment.aiStatus === 'Rejected' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                          <div className={`mt-3 p-3 rounded-lg border flex flex-col gap-2 ${assignmentData.aiStatus === 'Accepted' ? 'bg-emerald-50 border-emerald-200' : assignmentData.aiStatus === 'Rejected' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
                             <div className="flex justify-between items-center">
-                              <span className={`text-xs font-bold uppercase tracking-wider ${assignment.aiStatus === 'Accepted' ? 'text-emerald-700' : assignment.aiStatus === 'Rejected' ? 'text-rose-700' : 'text-amber-700'}`}>
-                                AI Status: {assignment.aiStatus || 'Pending'}
+                              <span className={`text-xs font-bold uppercase tracking-wider ${assignmentData.aiStatus === 'Accepted' ? 'text-emerald-700' : assignmentData.aiStatus === 'Rejected' ? 'text-rose-700' : 'text-amber-700'}`}>
+                                AI Status: {assignmentData.aiStatus || 'Pending'}
                               </span>
-                              {assignment.spAwarded > 0 && (
+                              {assignmentData.spAwarded > 0 && (
                                 <span className="text-xs font-black bg-blue-100 text-blue-800 px-2 py-1 rounded-md">
-                                  {assignment.spAwarded} SP
+                                  {assignmentData.spAwarded} SP
                                 </span>
                               )}
                             </div>
                             
-                            {assignment.aiFeedback && (
+                            {assignmentData.aiFeedback && (
                               <p className="text-sm text-slate-700">
-                                <strong>Feedback:</strong> {assignment.aiFeedback}
+                                <strong>Feedback:</strong> {assignmentData.aiFeedback}
                               </p>
                             )}
                           </div>
                           
                           <div className="mt-3 border-t border-slate-200 pt-3">
                             <button 
-                              onClick={() => setUpdateLinkInputs({...updateLinkInputs, [assignment._id]: assignment.github})}
+                              onClick={() => setUpdateLinkInputs({...updateLinkInputs, [assignmentData._id]: assignmentData.github})}
                               className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors mb-2"
                             >
                               Update Project Link (Warning: -5 SP Penalty)
                             </button>
                             
-                            {updateLinkInputs[assignment._id] !== undefined && (
-                               <div className="flex flex-col sm:flex-row gap-2 max-w-lg mt-1">
+                            {updateLinkInputs[assignmentData._id] !== undefined && (
+                               <div className="flex flex-col sm:flex-row gap-2 w-full mt-1">
                                  <input
                                    type="url"
                                    placeholder="https://github.com/..."
-                                   value={updateLinkInputs[assignment._id]}
-                                   onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [assignment._id]: e.target.value })}
-                                   className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                   value={updateLinkInputs[assignmentData._id]}
+                                   onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [assignmentData._id]: e.target.value })}
+                                   className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full"
                                  />
                                  <button
-                                   onClick={() => handleUpdateLink(internship.submissions[idx]._id, assignment._id)}
-                                   disabled={updatingLinkProjectId === assignment._id}
-                                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                                   onClick={() => handleUpdateLink(monthSubmission._id, assignmentData._id)}
+                                   disabled={updatingLinkProjectId === assignmentData._id}
+                                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
                                  >
-                                   {updatingLinkProjectId === assignment._id ? "Updating..." : "Update & Evaluate"}
+                                   {updatingLinkProjectId === assignmentData._id ? "Updating..." : "Update"}
                                  </button>
                                </div>
                             )}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              return (
+                <React.Fragment key={idx}>
+                  {isAug05Batch ? (
+                    <>
+                      {renderCard(0, submittedTasksCount >= 1)}
+                      {renderCard(1, submittedTasksCount >= 2)}
+                    </>
+                  ) : (
+                    renderCard(0, submittedTasksCount >= 1)
                   )}
-                </div>
+                </React.Fragment>
               );
             })}
           </div>

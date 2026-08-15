@@ -80,17 +80,8 @@ const Project = () => {
               newAutoFilled.duration = true;
             }
             
-            if (res.data.hasTwoAssignments) {
-              if (updates.assignments.length < 2) {
-                updates.assignments = [
-                  updates.assignments[0] || { projectName: '', github: '', hosted: '' },
-                  { projectName: '', github: '', hosted: '' }
-                ];
-              }
-            } else {
-              if (updates.assignments.length > 1) {
-                updates.assignments = [ updates.assignments[0] ];
-              }
+            if (updates.assignments.length > 1) {
+              updates.assignments = [ updates.assignments[0] ];
             }
 
             return updates;
