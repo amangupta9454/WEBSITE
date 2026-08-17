@@ -341,9 +341,9 @@ const ResumeBuilder = () => {
 
       <Footer />
 
-      {/* Hidden print container - positioned off-screen so react-to-print can access the DOM */}
-      <div className="hidden">
-        <div ref={downloadRef} style={{ width: '210mm', minHeight: '297mm', background: 'white' }}>
+      {/* Hidden print container - positioned off-screen so react-to-print can access the DOM with proper layout calculation */}
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+        <div ref={downloadRef} style={{ width: '794px', minHeight: '1123px', background: 'white' }}>
           <ResumePreview data={resume.data} template={resume.template} isWebPreview={false} />
         </div>
       </div>
