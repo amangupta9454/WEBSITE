@@ -25,14 +25,21 @@ const ResumePreview = ({ data, template, isWebPreview = false }) => {
     const BOTTOM_PADDING = 20; // Reduced padding so larger fonts still fit at relaxed levels
     const targetLimit = PAGE_HEIGHT - BOTTOM_PADDING;
     
-    // Extensively defined scales ranging from extremely tight to spacious
+    // Extensively defined scales with granular steps to minimize empty gaps
     const layoutScales = [
-      { '--section-mb': '2px', '--item-mb': '0px', '--title-size': '19px', '--h2-size': '11.5px', '--h3-size': '11px', '--text-size': '9.5px', '--text-sm-size': '8.5px', '--line-height': '1.15', '--list-pl': '12px' }, // Level 0: Extreme Compact
-      { '--section-mb': '4px', '--item-mb': '2px', '--title-size': '21px', '--h2-size': '12.5px', '--h3-size': '12px', '--text-size': '10.5px', '--text-sm-size': '9.5px', '--line-height': '1.2', '--list-pl': '14px' }, // Level 1: Super Compact
-      { '--section-mb': '6px', '--item-mb': '4px', '--title-size': '23px', '--h2-size': '13px', '--h3-size': '12.5px', '--text-size': '11px', '--text-sm-size': '10px', '--line-height': '1.25', '--list-pl': '16px' }, // Level 2: Compact
-      { '--section-mb': '10px', '--item-mb': '6px', '--title-size': '27px', '--h2-size': '14.5px', '--h3-size': '13.5px', '--text-size': '12px', '--text-sm-size': '11px', '--line-height': '1.35', '--list-pl': '16px' }, // Level 3: Normal
-      { '--section-mb': '14px', '--item-mb': '8px', '--title-size': '33px', '--h2-size': '16px', '--h3-size': '15px', '--text-size': '13px', '--text-sm-size': '12px', '--line-height': '1.45', '--list-pl': '16px' }, // Level 4: Relaxed
-      { '--section-mb': '20px', '--item-mb': '12px', '--title-size': '37px', '--h2-size': '18px', '--h3-size': '16.5px', '--text-size': '14.5px', '--text-sm-size': '13px', '--line-height': '1.55', '--list-pl': '16px' }, // Level 5: Spacious
+      { '--section-mb': '2px', '--item-mb': '0px', '--title-size': '18px', '--h2-size': '11px', '--h3-size': '10.5px', '--text-size': '9px', '--text-sm-size': '8px', '--line-height': '1.15', '--list-pl': '10px' },
+      { '--section-mb': '3px', '--item-mb': '1px', '--title-size': '19px', '--h2-size': '11.5px', '--h3-size': '11px', '--text-size': '9.5px', '--text-sm-size': '8.5px', '--line-height': '1.15', '--list-pl': '12px' },
+      { '--section-mb': '4px', '--item-mb': '2px', '--title-size': '21px', '--h2-size': '12px', '--h3-size': '11.5px', '--text-size': '10px', '--text-sm-size': '9px', '--line-height': '1.2', '--list-pl': '14px' },
+      { '--section-mb': '5px', '--item-mb': '3px', '--title-size': '22px', '--h2-size': '12.5px', '--h3-size': '11.8px', '--text-size': '10.3px', '--text-sm-size': '9.3px', '--line-height': '1.2', '--list-pl': '15px' },
+      { '--section-mb': '6px', '--item-mb': '3px', '--title-size': '23px', '--h2-size': '13px', '--h3-size': '12px', '--text-size': '10.5px', '--text-sm-size': '9.5px', '--line-height': '1.25', '--list-pl': '16px' },
+      { '--section-mb': '7px', '--item-mb': '4px', '--title-size': '24px', '--h2-size': '13.5px', '--h3-size': '12.3px', '--text-size': '10.8px', '--text-sm-size': '9.8px', '--line-height': '1.28', '--list-pl': '16px' },
+      { '--section-mb': '8px', '--item-mb': '4px', '--title-size': '25px', '--h2-size': '13.8px', '--h3-size': '12.5px', '--text-size': '11px', '--text-sm-size': '10px', '--line-height': '1.3', '--list-pl': '16px' },
+      { '--section-mb': '9px', '--item-mb': '5px', '--title-size': '26px', '--h2-size': '14px', '--h3-size': '12.8px', '--text-size': '11.3px', '--text-sm-size': '10.3px', '--line-height': '1.33', '--list-pl': '16px' },
+      { '--section-mb': '10px', '--item-mb': '6px', '--title-size': '27px', '--h2-size': '14.5px', '--h3-size': '13.5px', '--text-size': '12px', '--text-sm-size': '11px', '--line-height': '1.35', '--list-pl': '16px' },
+      { '--section-mb': '12px', '--item-mb': '7px', '--title-size': '29px', '--h2-size': '15px', '--h3-size': '14px', '--text-size': '12.5px', '--text-sm-size': '11.5px', '--line-height': '1.4', '--list-pl': '16px' },
+      { '--section-mb': '14px', '--item-mb': '8px', '--title-size': '31px', '--h2-size': '16px', '--h3-size': '15px', '--text-size': '13px', '--text-sm-size': '12px', '--line-height': '1.45', '--list-pl': '16px' },
+      { '--section-mb': '16px', '--item-mb': '10px', '--title-size': '34px', '--h2-size': '17px', '--h3-size': '16px', '--text-size': '14px', '--text-sm-size': '12.5px', '--line-height': '1.5', '--list-pl': '16px' },
+      { '--section-mb': '20px', '--item-mb': '12px', '--title-size': '37px', '--h2-size': '18px', '--h3-size': '17px', '--text-size': '15px', '--text-sm-size': '13.5px', '--line-height': '1.6', '--list-pl': '16px' },
     ];
 
     // Temporarily remove forced height to measure true content size
