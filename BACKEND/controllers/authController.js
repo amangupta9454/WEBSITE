@@ -2,6 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const auditLogger = require("../utils/auditLogger");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -66,6 +67,14 @@ const loginStudent = async (req, res) => {
         roles: typeof user.getUserRoles === 'function' ? user.getUserRoles() : (user.roles || ['student']),
         status: user.status || 'Registered'
       },
+    });
+
+    // Log the login event
+    auditLogger.log('STUDENT_LOGIN', {
+      userId: user._id,
+      userEmail: user.email,
+      studentId: internship.studentId,
+      ipAddress: req.ip
     });
   } catch (err) {
     console.error("[Backend] Login error:", err);

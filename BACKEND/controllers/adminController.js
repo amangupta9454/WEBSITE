@@ -15,6 +15,7 @@ const streamifier = require("streamifier");
 const nodemailer = require("nodemailer");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 const mailService = require("../services/mailService");
+const auditLogger = require("../utils/auditLogger");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -53,6 +54,13 @@ const adminLogin = async (req, res) => {
 
     const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, {
       expiresIn: "365d",
+    });
+
+    // Log the admin login event
+    auditLogger.log('ADMIN_LOGIN', {
+      userId: admin._id,
+      userEmail: admin.email,
+      ipAddress: req.ip
     });
 
     res.json({ token });

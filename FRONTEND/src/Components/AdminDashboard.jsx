@@ -56,7 +56,8 @@ import ReferralAdmin from "./ReferralAdmin";
 import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
 import EmailCenter from "../Admin/Email/EmailCenter";
 import QuizUsersAdmin from "./QuizUsersAdmin";
-import { Bell, Settings, Zap, Database, Share2, Check, BrainCircuit } from "lucide-react";
+import AuditLogsAdmin from "./AuditLogsAdmin";
+import { Bell, Settings, Zap, Database, Share2, Check, BrainCircuit, ClipboardList } from "lucide-react";
 
 const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
@@ -2279,6 +2280,12 @@ const AdminDashboard = () => {
                 >
                   <BrainCircuit className="w-4 h-4 text-indigo-600" /> Quiz Users
                 </button>
+                <button
+                  onClick={() => setActiveFeatureTab("audit_logs")}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeFeatureTab === "audit_logs" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+                >
+                  <ClipboardList className="w-4 h-4 text-indigo-600" /> Audit Logs
+                </button>
               </div>
             </div>
             {/* Feature Content */}
@@ -2332,6 +2339,11 @@ const AdminDashboard = () => {
               {activeFeatureTab === "quiz_users" && (
                 <div className="animate-fade-in">
                   <QuizUsersAdmin />
+                </div>
+              )}
+              {activeFeatureTab === "audit_logs" && (
+                <div className="animate-fade-in">
+                  <AuditLogsAdmin />
                 </div>
               )}
             </div>

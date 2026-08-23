@@ -44,6 +44,7 @@ const InterviewConfigInitializer = require("./initializers/InterviewConfigInitia
 const adminAssessmentRoutes   = require("./routes/assessment/adminAssessment");
 const studentAssessmentRoutes = require("./routes/assessment/studentAssessment");
 const publicAssessmentRoutes  = require("./routes/assessment/publicAssessment");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 require("./scripts/v2NotificationsCron");
 
 // Global cached connection (very important for serverless!)
@@ -162,6 +163,7 @@ app.use("/api/interview-config", interviewConfigRoutes);
 app.use("/api/admin/assessment", auth, adminAssessmentRoutes);
 app.use("/api/assessment",       studentAssessmentRoutes);
 app.use("/api/public/assessment",publicAssessmentRoutes);
+app.use("/api/admin/audit-logs", auditLogRoutes);
 
 // Production Health Endpoint
 app.get("/healthz", async (req, res) => {
