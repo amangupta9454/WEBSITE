@@ -126,8 +126,9 @@ router.post('/track', async (req, res) => {
     // Track page visits or other public actions
     // Only allow specific actions to avoid abuse
     if (action === 'PAGE_VISIT' || action === 'NEW_VISITOR') {
+      const ip = req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip;
       await auditLogger.log(action, {
-        ipAddress: req.ip,
+        ipAddress: ip,
         ...(details || {})
       });
     }
