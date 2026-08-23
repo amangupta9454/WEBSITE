@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, Calendar, Users, List, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Activity, Calendar, Users, List, RefreshCw, Globe, ChevronUp, ChevronDown } from 'lucide-react';
 
 const AuditLogsAdmin = () => {
   const [activeTab, setActiveTab] = useState('recent'); // 'recent' or 'stats'
@@ -10,6 +10,7 @@ const AuditLogsAdmin = () => {
   
   const [filterAction, setFilterAction] = useState('');
   const [filterDays, setFilterDays] = useState('');
+  const [expandedIps, setExpandedIps] = useState({});
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -62,6 +63,36 @@ const AuditLogsAdmin = () => {
     }
     setLoading(false);
   };
+
+  const groupedLogs = useMemo(() => {
+    const map = {};
+    logs.forEach(log => {
+      const ip = (log.details && log.details.ipAddress) || 'Unknown IP';
+      if (!map[ip]) {
+        map[ip] = {
+          ip,
+          emails: new Set(),
+          actionsCount: 0,
+          latestActionAt: log.createdAt,
+          actionCounts: {},
+          logs: []
+        };
+      }
+      map[ip].actionsCount++;
+      const email = log.userEmail;
+      if (email && email !== 'Anonymous / Guest') {
+        map[ip].emails.add(email);
+      } else if (map[ip].emails.size === 0) {
+        map[ip].emails.add('Anonymous / Guest');
+      }
+      map[ip].actionCounts[log.action] = (map[ip].actionCounts[log.action] || 0) + 1;
+      map[ip].logs.push(log);
+      if (new Date(log.createdAt) > new Date(map[ip].latestActionAt)) {
+        map[ip].latestActionAt = log.createdAt;
+      }
+    });
+    return Object.values(map).sort((a, b) => new Date(b.latestActionAt) - new Date(a.latestActionAt));
+  }, [logs]);
 
   const fetchSummary = async () => {
     try {
@@ -188,47 +219,103 @@ const AuditLogsAdmin = () => {
 
       {/* Content */}
       {loading && logs.length === 0 && stats.length === 0 ? (
-        <div className="py-12 text-center text-slate-500">Loading data...</div>
+        <div className="py-12 text-center text-slate-500 font-extrabold text-base">Loading data...</div>
       ) : activeTab === 'recent' ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 text-sm text-slate-500">
-                <th className="py-3 px-4 font-medium">Timestamp</th>
-                <th className="py-3 px-4 font-medium">Action</th>
-                <th className="py-3 px-4 font-medium">User Email</th>
-                <th className="py-3 px-4 font-medium">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.length > 0 ? logs.map((log) => (
-                <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50 text-sm text-slate-700">
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">{log.userEmail || '-'}</td>
-                  <td className="py-3 px-4 max-w-xs truncate" title={JSON.stringify(log.details)}>
-                    {JSON.stringify(log.details)}
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="4" className="py-8 text-center text-slate-500">No recent logs found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {groupedLogs.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm text-slate-500 font-extrabold text-base">
+              🌐 No visitor activity recorded in this period.
+            </div>
+          ) : (
+            groupedLogs.map((group) => {
+              const isExpanded = expandedIps[group.ip];
+              return (
+                <div key={group.ip} className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden transition-all hover:border-purple-300">
+                  {/* Expandable Header Card */}
+                  <div 
+                    onClick={() => setExpandedIps(prev => ({ ...prev, [group.ip]: !prev[group.ip] }))}
+                    className="p-5 bg-gradient-to-r from-slate-50 via-purple-50/20 to-slate-50 hover:bg-slate-100/70 cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-4 select-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                        <Globe className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-base sm:text-lg font-black text-slate-900 font-mono tracking-tight">{group.ip}</span>
+                          <span className="px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[11px] font-black rounded-full border border-purple-200 uppercase tracking-wider">
+                            Unique Visitor IP
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
+                          <span className="text-slate-500">📧 Associated Email(s):</span>
+                          {Array.from(group.emails).map((email, idx) => (
+                            <span key={idx} className={`px-2 py-0.5 rounded text-[11px] font-extrabold ${email === 'Anonymous / Guest' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                              {email}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Count Badges */}
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:justify-end">
+                      <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl font-black text-xs border border-indigo-100 shadow-sm">
+                        ⚡ {group.actionsCount} Total Actions
+                      </span>
+                      {Object.entries(group.actionCounts).slice(0, 3).map(([act, count]) => (
+                        <span key={act} className="px-2.5 py-1.5 bg-slate-100 text-slate-800 rounded-lg text-xs font-extrabold border border-slate-200">
+                          {count}x {act}
+                        </span>
+                      ))}
+                      <div className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-sm ml-auto lg:ml-0">
+                        {isExpanded ? <ChevronUp className="w-5 h-5 stroke-[3]" /> : <ChevronDown className="w-5 h-5 stroke-[3]" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Activity Timeline */}
+                  {isExpanded && (
+                    <div className="p-5 sm:p-6 border-t-2 border-slate-100 bg-white">
+                      <div className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <span>Detailed Activity Timeline for IP: {group.ip}</span>
+                        <span>Latest First ↓</span>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {group.logs.map((log) => (
+                          <div key={log._id} className="py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 px-3 rounded-xl transition-colors">
+                            <div className="flex items-start sm:items-center gap-3">
+                              <span className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide shrink-0 border bg-purple-50 text-purple-800 border-purple-200`}>
+                                {log.action}
+                              </span>
+                              <div>
+                                <div className="font-extrabold text-slate-900 text-sm">
+                                  {log.userEmail || 'Anonymous'}
+                                </div>
+                                <div className="text-xs text-slate-500 font-semibold mt-0.5">
+                                  {JSON.stringify(log.details)}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs font-bold text-slate-400 shrink-0 flex flex-col items-end">
+                              <span>{new Date(log.createdAt).toLocaleDateString()}</span>
+                              <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 text-sm text-slate-600">
+            <div className="flex justify-between items-center mt-6 text-sm font-bold text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <button 
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 bg-slate-100 rounded-md disabled:opacity-50"
+                className="px-4 py-2 bg-white rounded-lg disabled:opacity-50 border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm"
               >
                 Previous
               </button>
@@ -236,7 +323,7 @@ const AuditLogsAdmin = () => {
               <button 
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1 bg-slate-100 rounded-md disabled:opacity-50"
+                className="px-4 py-2 bg-white rounded-lg disabled:opacity-50 border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm"
               >
                 Next
               </button>
