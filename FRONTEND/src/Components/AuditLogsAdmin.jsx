@@ -5,6 +5,7 @@ const AuditLogsAdmin = () => {
   const [activeTab, setActiveTab] = useState('recent'); // 'recent' or 'stats'
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   
   const [filterAction, setFilterAction] = useState('');
@@ -62,6 +63,24 @@ const AuditLogsAdmin = () => {
     setLoading(false);
   };
 
+  const fetchSummary = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/audit-logs/summary`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      const data = await response.json();
+      setSummary(data);
+    } catch (err) {
+      console.error("Failed to fetch summary stats", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'recent') {
       fetchLogs(1); // Reset to page 1 on filter/tab change
@@ -93,6 +112,31 @@ const AuditLogsAdmin = () => {
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
+
+      {/* Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-indigo-50/50 rounded-2xl p-6 border border-indigo-100 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-xs font-bold text-indigo-600 mb-2 uppercase tracking-widest">Today's Visits</h3>
+            <p className="text-4xl font-black text-indigo-900">{summary.todaysVisits}</p>
+          </div>
+          <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Yesterday's Visits</h3>
+            <p className="text-4xl font-black text-slate-700">{summary.yesterdaysVisits}</p>
+          </div>
+          <div className={`rounded-2xl p-6 border flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow ${summary.growth >= 0 ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100'}`}>
+            <h3 className={`text-xs font-bold mb-2 uppercase tracking-widest ${summary.growth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>Growth VS Yesterday</h3>
+            <div className={`flex items-center gap-2 text-4xl font-black ${summary.growth >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              <span className="text-3xl">{summary.growth >= 0 ? '↑' : '↓'}</span>
+              {Math.abs(summary.growth)}%
+            </div>
+          </div>
+          <div className="bg-fuchsia-50/50 rounded-2xl p-6 border border-fuchsia-100 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-xs font-bold text-fuchsia-600 mb-2 uppercase tracking-widest">Total Unique IPs</h3>
+            <p className="text-4xl font-black text-fuchsia-900">{summary.totalUniqueIps}</p>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-4 mb-6">

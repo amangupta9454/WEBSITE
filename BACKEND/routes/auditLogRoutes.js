@@ -2,9 +2,49 @@ const express = require('express');
 const router = express.Router();
 const AuditLog = require('../models/AuditLog');
 const AuditStat = require('../models/AuditStat');
+const UniqueIP = require('../models/UniqueIP');
 const auth = require('../middleware/auth');
 const { verifyAdmin } = require('../middleware/verifyAdmin');
 const auditLogger = require('../utils/auditLogger');
+
+// Get summary metrics
+router.get('/summary', auth, verifyAdmin, async (req, res) => {
+  try {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const todayStr = today.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Find today's visits (NEW_VISITOR and STUDENT_LOGIN could both count as visits, but we'll use NEW_VISITOR to match the generic visits. Or we can just sum all 'NEW_VISITOR' stats)
+    // Actually, let's just sum all NEW_VISITOR counts
+    const todayStats = await AuditStat.findOne({ date: todayStr, action: 'NEW_VISITOR' });
+    const yesterdayStats = await AuditStat.findOne({ date: yesterdayStr, action: 'NEW_VISITOR' });
+
+    const todaysVisits = todayStats ? todayStats.count : 0;
+    const yesterdaysVisits = yesterdayStats ? yesterdayStats.count : 0;
+
+    let growth = 0;
+    if (yesterdaysVisits > 0) {
+      growth = Math.round(((todaysVisits - yesterdaysVisits) / yesterdaysVisits) * 100);
+    } else if (todaysVisits > 0) {
+      growth = 100;
+    }
+
+    const totalUniqueIps = await UniqueIP.countDocuments();
+
+    res.json({
+      todaysVisits,
+      yesterdaysVisits,
+      growth,
+      totalUniqueIps
+    });
+  } catch (error) {
+    console.error("Error fetching summary stats:", error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 // Get all audit stats (aggregated)
 router.get('/stats', auth, verifyAdmin, async (req, res) => {

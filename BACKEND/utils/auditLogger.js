@@ -2,6 +2,7 @@
 const { redactPII } = require('./piiRedactor');
 const AuditLog = require('../models/AuditLog');
 const AuditStat = require('../models/AuditStat');
+const UniqueIP = require('../models/UniqueIP');
 
 const auditLogger = {
   log: async (event, metadata = {}) => {
@@ -37,6 +38,15 @@ const auditLogger = {
         { $inc: { count: 1 } },
         { upsert: true, new: true }
       );
+
+      // Track Unique IP if present
+      if (metadata.ipAddress) {
+        await UniqueIP.updateOne(
+          { ip: metadata.ipAddress },
+          { $setOnInsert: { ip: metadata.ipAddress } },
+          { upsert: true }
+        );
+      }
     } catch (error) {
       console.error("Failed to save audit log to DB:", error);
     }
