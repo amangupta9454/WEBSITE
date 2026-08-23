@@ -60,8 +60,9 @@ const UnifiedLayout = () => (
 
 function App() {
   useEffect(() => {
-    // Only track once per session
-    if (!sessionStorage.getItem('site_visited')) {
+    // Only track once per session and skip admins
+    const isAdmin = localStorage.getItem('adminToken') !== null;
+    if (!isAdmin && !sessionStorage.getItem('site_visited')) {
       fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/audit-logs/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
