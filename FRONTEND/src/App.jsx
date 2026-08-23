@@ -63,10 +63,15 @@ function App() {
     // Only track once per session and skip admins
     const isAdmin = localStorage.getItem('adminToken') !== null;
     if (!isAdmin && !sessionStorage.getItem('site_visited')) {
+      const email = localStorage.getItem("userEmail") || 
+                    localStorage.getItem("studentEmail") || 
+                    (localStorage.getItem('interviewUserData') ? JSON.parse(localStorage.getItem('interviewUserData')).email : null) ||
+                    (localStorage.getItem('studentData') ? JSON.parse(localStorage.getItem('studentData')).email : null);
+
       fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/audit-logs/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'NEW_VISITOR' })
+        body: JSON.stringify({ action: 'NEW_VISITOR', details: { userEmail: email } })
       }).catch(err => console.error("Tracking error", err));
       sessionStorage.setItem('site_visited', 'true');
     }
