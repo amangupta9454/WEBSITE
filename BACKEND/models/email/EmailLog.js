@@ -13,6 +13,13 @@ const attachmentSchema = new mongoose.Schema(
 
 const emailLogSchema = new mongoose.Schema(
   {
+    senderEmail: {
+      type: String,
+      default: 'Unknown',
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
     recipientName: {
       type: String,
       default: '',

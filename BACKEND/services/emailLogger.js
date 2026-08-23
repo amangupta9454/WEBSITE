@@ -74,6 +74,7 @@ class EmailLoggerService {
    * Executed non-blockingly so database I/O latency never impacts live SMTP routing speed.
    */
   async logEmail({
+    senderEmail = 'Unknown',
     recipientName = '',
     recipientEmail,
     subject = '',
@@ -106,6 +107,7 @@ class EmailLoggerService {
       }
 
       const logEntry = new EmailLog({
+        senderEmail: senderEmail.trim().toLowerCase(),
         recipientName: finalName,
         recipientEmail: recipientEmail.trim().toLowerCase(),
         subject: subject.trim(),

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const sendSafeEmail = require('../utils/safeMailSender');
 const jobController = require('./jobController');
 
 // Setup Nodemailer transporter
@@ -35,7 +36,7 @@ const sendAlertEmail = async (email, name, monthNumber, domain) => {
     `
   };
   try {
-    await transporter.sendMail(mailOptions);
+    await sendSafeEmail(transporter, mailOptions, 'Cron Unused Tokens');
   } catch (err) {
     console.error(`Failed to send alert email to ${email}:`, err);
   }
@@ -87,7 +88,7 @@ const runDailyCron = async (req, res) => {
                  subject: `New Task Assigned: Month ${targetMonth} Task 1 (${internship.domain})`,
                  html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your first task for Month ${targetMonth} has been unlocked. Please log in to your dashboard to view the details.</p>`
                };
-               transporter.sendMail(mailOptions).catch(console.error);
+               sendSafeEmail(transporter, mailOptions, 'Cron Profile Reminder').catch(console.error);
                isModified = true; alertsGenerated++;
              }
           }
@@ -106,7 +107,7 @@ const runDailyCron = async (req, res) => {
                  subject: `Reminder: Month ${targetMonth} Task 1 Due (${internship.domain})`,
                  html: `<p>Dear <strong>${user.name}</strong>,</p><p>This is a reminder to submit your Task 1 for Month ${targetMonth}. If missed, a 5 SP penalty will apply during the grace period.</p>`
                };
-               transporter.sendMail(mailOptions).catch(console.error);
+               sendSafeEmail(transporter, mailOptions, 'Cron Project Due').catch(console.error);
                isModified = true; alertsGenerated++;
              }
           }
@@ -127,7 +128,7 @@ const runDailyCron = async (req, res) => {
                  subject: `New Task Assigned: Month ${targetMonth} Task 2 (${internship.domain})`,
                  html: `<p>Dear <strong>${user.name}</strong>,</p><p>Your second task for Month ${targetMonth} has been unlocked. Please log in to your dashboard to view the details.</p>`
                };
-               transporter.sendMail(mailOptions).catch(console.error);
+               sendSafeEmail(transporter, mailOptions, 'Cron Pending Interview').catch(console.error);
                isModified = true; alertsGenerated++;
              }
           }
@@ -216,7 +217,7 @@ const runWeeklySocialCron = async (req, res) => {
           };
           
           try {
-            await transporter.sendMail(mailOptions);
+            await sendSafeEmail(transporter, mailOptions, 'Cron Missing Action');
             emailsSent++;
           } catch (err) {
             console.error(`Failed to send social reminder email to ${user.email}:`, err);

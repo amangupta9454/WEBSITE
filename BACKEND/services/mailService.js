@@ -3,6 +3,7 @@ const { ImapFlow } = require('imapflow');
 const MailComposer = require('nodemailer/lib/mail-composer');
 const { mailConfig, defaultSender } = require('../config/mailConfig');
 const emailLogger = require('./emailLogger');
+const sendSafeEmail = require('../utils/safeMailSender');
 
 /**
  * Mail Service for Code-A-Nova
@@ -139,7 +140,7 @@ class MailService {
         ...(attachments && { attachments }),
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await sendSafeEmail(this.transporter, mailOptions, campaign);
 
       const finalCampaign = campaign || 'General';
       const finalSource = source || 'Google Apps Script';

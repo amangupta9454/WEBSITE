@@ -745,6 +745,7 @@ router.post("/impersonate/invite", auth, verifyAdmin, async (req, res) => {
     if (!email) return res.status(400).json({ success: false, message: "Email is required" });
     
     const nodemailer = require("nodemailer");
+    const sendSafeEmail = require("../utils/safeMailSender");
     if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
       const transporter = nodemailer.createTransport({
         service: "gmail",
@@ -754,7 +755,7 @@ router.post("/impersonate/invite", auth, verifyAdmin, async (req, res) => {
         },
       });
       const inviteUrl = `${process.env.FRONTEND_URL || "https://code-a-nova.online"}/student-login?invite=${encodeURIComponent(email)}`;
-      await transporter.sendMail({
+      const mailOptions = {
         from: `"Code-A-Nova Admin" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: `${resend ? "[Reminder] " : ""}Invitation to Register on Code-A-Nova Portal`,
@@ -767,7 +768,8 @@ router.post("/impersonate/invite", auth, verifyAdmin, async (req, res) => {
             <p>Or copy this link: <br /><code>${inviteUrl}</code></p>
           </div>
         `
-      }).catch(err => console.error("Error sending invite email:", err));
+      };
+      sendSafeEmail(transporter, mailOptions, 'Admin Invite').catch(err => console.error("Error sending invite email:", err));
     }
     res.json({ success: true, message: resend ? "Invitation resent successfully" : "Invitation email sent successfully" });
   } catch (err) {

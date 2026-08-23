@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const auditLogger = require("../utils/auditLogger");
+const sendSafeEmail = require("../utils/safeMailSender");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -152,7 +153,7 @@ const forgotPassword = async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendSafeEmail(transporter, mailOptions, 'Welcome Email');
     res.json({ message: "OTP sent to email successfully" });
   } catch (err) {
     console.error("[Backend] Forgot password error:", err);

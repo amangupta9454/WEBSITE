@@ -317,7 +317,7 @@ exports.assignAmbassador = async (req, res) => {
           </div>
         `,
       };
-      mailTransporter.sendMail(mailOptions).catch((err) => console.error("Error sending ambassador notification email:", err));
+      sendSafeEmail(mailTransporter, mailOptions, 'Ambassador Notification').catch((err) => console.error("Error sending ambassador notification email:", err));
     }
 
     res.json({
@@ -689,6 +689,7 @@ exports.trackUserActivity = async (req, res) => {
 
 const AmbassadorApplication = require("../models/AmbassadorApplication");
 const nodemailer = require("nodemailer");
+const sendSafeEmail = require("../utils/safeMailSender");
 
 const mailTransporter = nodemailer.createTransport({
   service: "gmail",
@@ -871,7 +872,7 @@ exports.approveAmbassadorApplication = async (req, res) => {
           </div>
         `,
       };
-      mailTransporter.sendMail(mailOptions).catch((err) => console.error("Error sending ambassador approval email:", err));
+      sendSafeEmail(mailTransporter, mailOptions, 'Ambassador Approval').catch((err) => console.error("Error sending ambassador approval email:", err));
     }
 
     res.json({

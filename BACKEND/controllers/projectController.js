@@ -8,6 +8,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 const nodemailer = require('nodemailer');
+const sendSafeEmail = require('../utils/safeMailSender');
 const pdfParse = require('pdf-parse');
 
 let currentGroqKeyIndex = 0;
@@ -62,7 +63,7 @@ const sendAIEvaluationEmail = async (email, name, projectName, aiStatus, aiFeedb
         </div>
       `
     };
-    await statusEmailTransporter.sendMail(mailOptions);
+    await sendSafeEmail(statusEmailTransporter, mailOptions, 'AI Evaluation');
     console.log(`Email sent to ${email} for ${projectName} using ${senderEmail}`);
   } catch (err) {
     console.error("Failed to send AI evaluation email:", err);

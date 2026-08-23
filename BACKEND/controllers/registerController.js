@@ -6,6 +6,7 @@ const getInternshipType = (duration) => {
   return "Normal Intern";
 };
 const nodemailer = require("nodemailer");
+const sendSafeEmail = require("../utils/safeMailSender");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Razorpay = require("razorpay");
@@ -242,7 +243,7 @@ const registerInternship = async (req, res) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      await sendSafeEmail(transporter, mailOptions, 'Welcome Email');
       console.log(`Confirmation email sent to ${email}`);
     } catch (mailErr) {
       console.error(`Failed to send confirmation email to ${email}:`, mailErr);
@@ -523,7 +524,7 @@ const verifyRegistrationPayment = async (req, res) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      await sendSafeEmail(transporter, mailOptions, 'Registration Notification');
       console.log(`Paid Confirmation email sent to ${email}`);
     } catch (mailErr) {
       console.error(`Failed to send paid confirmation email to ${email}:`, mailErr);
@@ -591,7 +592,7 @@ const sendRegistrationOtp = async (req, res) => {
       subject: "Your Dashboard Login OTP",
       html: `<p>Your OTP to login to the dashboard is: <strong>${otp}</strong></p><p>It is valid for 10 minutes.</p>`
     };
-    await transporter.sendMail(mailOptions);
+    await sendSafeEmail(transporter, mailOptions, 'Contact Notification');
 
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (err) {

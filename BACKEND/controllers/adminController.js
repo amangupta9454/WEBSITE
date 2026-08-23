@@ -13,6 +13,7 @@ const XLSX = require("xlsx");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 const nodemailer = require("nodemailer");
+const sendSafeEmail = require("../utils/safeMailSender");
 const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
 const mailService = require("../services/mailService");
 
@@ -1278,7 +1279,7 @@ const reviewSummerProject = async (req, res) => {
         `,
       };
       
-      await transporter.sendMail(mailOptions);
+      await sendSafeEmail(transporter, mailOptions, 'Admin Custom Email');
     } catch (emailError) {
       console.error("[Admin] Failed to send email notification for project review:", emailError);
     }

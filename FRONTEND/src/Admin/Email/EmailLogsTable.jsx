@@ -227,6 +227,7 @@ export default function EmailLogsTable({ initialStatusFilter, onResendEmail, res
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                 <th className="py-4 px-5">Recipient Details</th>
+                <th className="py-4 px-4">Sender Details</th>
                 <th className="py-4 px-4">Campaign & Source</th>
                 <th className="py-4 px-4">Subject</th>
                 <th className="py-4 px-4">Status</th>
@@ -238,13 +239,13 @@ export default function EmailLogsTable({ initialStatusFilter, onResendEmail, res
             <tbody className="divide-y divide-slate-100 text-sm">
               {loading && logs.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-16 text-center text-slate-400 font-medium animate-pulse">
+                  <td colSpan="8" className="py-16 text-center text-slate-400 font-medium animate-pulse">
                     Retrieving email historical records from MongoDB...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-16 text-center text-slate-400 font-medium">
+                  <td colSpan="8" className="py-16 text-center text-slate-400 font-medium">
                     <Mail className="w-10 h-10 mx-auto text-slate-300 mb-3" />
                     No email logs found matching your search and filter criteria.
                   </td>
@@ -262,6 +263,11 @@ export default function EmailLogsTable({ initialStatusFilter, onResendEmail, res
                         <div className="text-xs text-indigo-600 font-semibold hover:underline">
                           {log.recipientEmail}
                         </div>
+                      </td>
+
+                      {/* Sender */}
+                      <td className="py-3.5 px-4 text-xs font-medium text-slate-600">
+                        {log.senderEmail || "Unknown"}
                       </td>
 
                       {/* Campaign Badge */}
