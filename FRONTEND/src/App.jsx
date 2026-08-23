@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -58,6 +59,18 @@ const UnifiedLayout = () => (
 );
 
 function App() {
+  useEffect(() => {
+    // Only track once per session
+    if (!sessionStorage.getItem('site_visited')) {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/admin/audit-logs/track`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'NEW_VISITOR' })
+      }).catch(err => console.error("Tracking error", err));
+      sessionStorage.setItem('site_visited', 'true');
+    }
+  }, []);
+
   return (
     <Router>
       <ReferralTracker />
