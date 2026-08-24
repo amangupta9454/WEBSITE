@@ -72,7 +72,7 @@ class SessionCreationService {
         config = await AssessmentConfig.findOne({ categoryId: categoryId }).lean();
       }
       if (!config) {
-        config = await AssessmentConfig.findOne({ isGlobal: true }).lean() || {
+        config = await AssessmentConfig.findOne({ scope: "global" }).lean() || {
           totalQuestions: 15,
           passingPercentage: 70,
           timeLimitMinutes: 30,
@@ -91,17 +91,18 @@ class SessionCreationService {
       const expiresAt = new Date(startedAt.getTime() + timeLimitMinutes * 60 * 1000);
 
       const configSnapshot = {
+        ...config,
         assessmentConfigVersion: config.version || 1,
         runtimeConfigVersion: runtimeConfig.versionNumber || 1,
         blueprintVersion: blueprint.versionNumber || 1,
         passingPercentage: config.passingPercentage || 70,
         timeLimitMinutes: timeLimitMinutes,
-        assessmentType: "MCQ",
+        assessmentType: config.assessmentType || "MCQ",
         totalQuestions: totalQuestions,
-        batchSize: totalQuestions, // Deliver all available questions in batch 1 to allow frontend polling
+        batchSize: totalQuestions, 
         allowReview: config.allowReview !== undefined ? config.allowReview : true,
         allowPrevious: config.allowPrevious !== undefined ? config.allowPrevious : true,
-        questionTimerSeconds: config.questionTimerSeconds || 60, // 60-second per-question rule
+        questionTimerSeconds: config.questionTimerSeconds || 60,
       };
 
       // 3. Component 3: Question Snapshot (AI-First / DB Fallback immutable set generation)

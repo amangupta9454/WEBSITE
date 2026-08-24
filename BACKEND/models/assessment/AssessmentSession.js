@@ -82,8 +82,7 @@ const assessmentSessionSchema = new mongoose.Schema(
     },
 
     // Component 2: Configuration Snapshot (Immutable during execution)
-    configSnapshot: {
-      assessmentConfigVersion: { type: Number, default: 1 },
+    configSnapshot: { type: mongoose.Schema.Types.Mixed, default: {} },
       runtimeConfigVersion:    { type: Number, default: 1 },
       blueprintVersion:        { type: Number, default: 1 },
       passingPercentage:       { type: Number, default: 70 },

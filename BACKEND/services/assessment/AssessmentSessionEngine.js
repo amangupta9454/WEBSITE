@@ -52,7 +52,7 @@ class AssessmentSessionEngine {
   static async getSessionDetails(sessionId) {
     try {
       const session = await AssessmentSession.findOne({ sessionId })
-        .populate("userId", "name email")
+        .populate("userId", "name email").populate("configId")
         .populate("subcategoryId", "name description")
         .lean();
       if (!session) {
