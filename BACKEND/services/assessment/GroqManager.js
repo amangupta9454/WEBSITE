@@ -201,7 +201,7 @@ class GroqManager {
             success: true,
             rawText: sampleMockJson,
             provider: "Groq (Simulation Engine)",
-            model: payload.targetModel || "llama-3.1-8b-instant",
+            model: payload.targetModel || "llama3-8b-8192",
             apiKeyMasked: activeKey.apiKeyMasked,
             latencyMs: execDuration,
             retryCount: retriesPerformed,
@@ -215,7 +215,7 @@ class GroqManager {
         // ── LIVE PRODUCTION GROQ INFERENCE ──────────────────────────────────────
         else {
           const createParams = {
-            model: payload.targetModel || "llama-3.1-8b-instant",
+            model: payload.targetModel || "llama3-8b-8192",
             messages: payload.messages,
             max_tokens: payload.maxTokens || 2500,
             temperature: payload.temperature !== undefined ? payload.temperature : 0.65,

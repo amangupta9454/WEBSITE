@@ -222,7 +222,7 @@ async function runEvaluationBackground(sessionId) {
               headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'llama-3.1-8b-instant',
+                model: 'llama3-8b-8192',
                 temperature: 0.2,
                 response_format: { type: 'json_object' }
               }),
@@ -440,7 +440,7 @@ exports.processEvaluation = async (req, res) => {
                 },
                 body: JSON.stringify({
                   messages: [{ role: 'user', content: prompt }],
-                  model: 'llama-3.1-8b-instant',
+                  model: 'llama3-8b-8192',
                   temperature: 0.2,
                   response_format: { type: "json_object" }
                 }),

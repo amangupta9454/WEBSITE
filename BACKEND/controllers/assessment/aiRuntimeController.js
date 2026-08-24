@@ -164,7 +164,7 @@ async function ensureDefaultLibrariesSeeded() {
       await AssessmentRuntimeConfig.create({
         scope: "Global",
         primaryProvider: "Groq",
-        modelName: "llama-3.1-8b-instant",
+        modelName: "llama3-8b-8192",
         fallbackProviders: [],
         temperature: 0.65,
         topP: 0.9,

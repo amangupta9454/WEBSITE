@@ -50,7 +50,7 @@ class AIRuntimeEngine {
     let parseTimeMs = 0;
     let validationTimeMs = 0;
     let targetProvider = "Groq";
-    let targetModel = "llama-3.1-8b-instant";
+    let targetModel = "llama3-8b-8192";
     let apiKeyMasked = "UNRESOLVED";
     let retryCount = 0;
     let requestFingerprint = null;
@@ -75,7 +75,7 @@ class AIRuntimeEngine {
       queueTimeMs = Date.now() - resolverStartTime;
 
       targetProvider = runtimeProviderConfig.primaryProvider || "Groq";
-      targetModel = runtimeProviderConfig.modelName || "llama-3.1-8b-instant";
+      targetModel = runtimeProviderConfig.modelName || "llama3-8b-8192";
       blueprintVersion = resolverOutput.blueprint?.activeVersion || 1;
 
       // ── STEP 2: AI REQUEST BUILDER (Component 1) ─────────────────────────────
