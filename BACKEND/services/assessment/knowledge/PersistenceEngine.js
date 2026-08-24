@@ -55,7 +55,7 @@ class PersistenceEngine {
       requestId: questionData.requestId || null,
       blueprintVersion: questionData.blueprintVersion || null,
       provider: questionData.provider || "Groq",
-      model: questionData.model || "llama3-8b-8192",
+      model: questionData.model || "openai/gpt-oss-20b",
       createdBy: actor,
       language: questionData.language || "English",
       tags: questionData.tags || ["verified", "kb-approved"],

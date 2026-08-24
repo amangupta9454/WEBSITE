@@ -164,7 +164,7 @@ async function ensureDefaultLibrariesSeeded() {
       await AssessmentRuntimeConfig.create({
         scope: "Global",
         primaryProvider: "Groq",
-        modelName: "llama3-8b-8192",
+        modelName: "openai/gpt-oss-20b",
         fallbackProviders: [],
         temperature: 0.65,
         topP: 0.9,

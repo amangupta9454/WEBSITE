@@ -50,7 +50,7 @@ class AIRuntimeEngine {
     let parseTimeMs = 0;
     let validationTimeMs = 0;
     let targetProvider = "Groq";
-    let targetModel = "llama3-8b-8192";
+    let targetModel = "openai/gpt-oss-20b";
     let apiKeyMasked = "UNRESOLVED";
     let retryCount = 0;
     let requestFingerprint = null;
@@ -75,7 +75,7 @@ class AIRuntimeEngine {
       queueTimeMs = Date.now() - resolverStartTime;
 
       targetProvider = runtimeProviderConfig.primaryProvider || "Groq";
-      targetModel = runtimeProviderConfig.modelName || "llama3-8b-8192";
+      targetModel = runtimeProviderConfig.modelName || "openai/gpt-oss-20b";
       blueprintVersion = resolverOutput.blueprint?.activeVersion || 1;
 
       // ── STEP 2: AI REQUEST BUILDER (Component 1) ─────────────────────────────
