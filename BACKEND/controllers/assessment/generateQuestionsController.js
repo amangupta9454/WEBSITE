@@ -147,8 +147,8 @@ exports.generateQuestions = async (req, res) => {
     const results = {};
     let totalSaved = 0;
 
-    // Generate and save questions for each difficulty sequentially
-    for (const difficulty of DIFFICULTIES) {
+    // Generate and save questions for each difficulty concurrently to avoid timeouts
+    const difficultyPromises = DIFFICULTIES.map(async (difficulty) => {
       try {
         const rawQuestions = await generateForDifficulty(
           category.name,
@@ -163,13 +163,19 @@ exports.generateQuestions = async (req, res) => {
           difficulty,
         });
 
-        results[difficulty] = { generated: rawQuestions.length, saved: savedCount };
-        totalSaved += savedCount;
         console.log(`[generateQuestionsController] ✅ ${difficulty}: ${savedCount} questions saved`);
+        return { difficulty, generated: rawQuestions.length, saved: savedCount };
       } catch (diffErr) {
         console.error(`[generateQuestionsController] ❌ ${difficulty} generation failed:`, diffErr.message);
-        results[difficulty] = { generated: 0, saved: 0, error: diffErr.message };
+        return { difficulty, generated: 0, saved: 0, error: diffErr.message };
       }
+    });
+
+    const generationResults = await Promise.all(difficultyPromises);
+
+    for (const res of generationResults) {
+      results[res.difficulty] = { generated: res.generated, saved: res.saved, error: res.error };
+      totalSaved += res.saved;
     }
 
     return res.json({
