@@ -83,17 +83,7 @@ const assessmentSessionSchema = new mongoose.Schema(
 
     // Component 2: Configuration Snapshot (Immutable during execution)
     configSnapshot: { type: mongoose.Schema.Types.Mixed, default: {} },
-      runtimeConfigVersion:    { type: Number, default: 1 },
-      blueprintVersion:        { type: Number, default: 1 },
-      passingPercentage:       { type: Number, default: 70 },
-      timeLimitMinutes:        { type: Number, default: 30 },
-      assessmentType:          { type: String, default: "MCQ" },
-      totalQuestions:          { type: Number, default: 20 },
-      batchSize:               { type: Number, default: 5 },
-      allowReview:             { type: Boolean, default: true },
-      allowPrevious:           { type: Boolean, default: true },
-      questionTimerSeconds:    { type: Number, default: 0 },
-    },
+
 
     // Component 3: Question Snapshot (Frozen at initialization)
     questionSnapshot: [questionSnapshotSchema],
