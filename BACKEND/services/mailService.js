@@ -140,10 +140,10 @@ class MailService {
         ...(attachments && { attachments }),
       };
 
-      const info = await sendSafeEmail(this.transporter, mailOptions, campaign);
-
       const finalCampaign = campaign || 'General';
       const finalSource = source || 'Google Apps Script';
+
+      const info = await sendSafeEmail(this.transporter, mailOptions, campaign, finalSource);
 
       console.log("==========================================");
       console.log("EMAIL SENT (Diagnostics)");
@@ -171,24 +171,8 @@ class MailService {
         console.error("[MailService] ⚠️ IMAP message generation failed (non-blocking exception):", imapErr.message);
       }
 
-      // Fix 1 & 2: Automatic logging after successful SMTP transaction; failure MUST NOT block delivery
-      emailLogger.logEmail({
-        recipientName,
-        recipientEmail: to,
-        subject,
-        campaign: finalCampaign,
-        status: "SUCCESS",
-        messageId: info.messageId,
-        accepted: info.accepted,
-        rejected: info.rejected,
-        smtpResponse: info.response || "250 2.0.0 OK",
-        html,
-        text: mailOptions.text,
-        attachments,
-        source: finalSource,
-      }).catch((err) => {
-        console.error("[MailService] ⚠️ MongoDB logging failed (non-blocking exception):", err.message);
-      });
+      // Logging is now handled centrally by sendSafeEmail to avoid duplicates
+
 
       return {
         success: true,
@@ -209,22 +193,8 @@ class MailService {
       console.error("SMTP Response / Error:", error.message);
       console.error("==========================================");
 
-      // Fix 1 & 2: Automatic logging on failed SMTP transaction; failure MUST NOT throw back to caller
-      emailLogger.logEmail({
-        recipientName,
-        recipientEmail: to,
-        subject,
-        campaign: finalCampaign,
-        status: "FAILED",
-        messageId: null,
-        smtpResponse: error.message || "SMTP transmission error",
-        html,
-        text: text || "",
-        attachments,
-        source: finalSource,
-      }).catch((err) => {
-        console.error("[MailService] ⚠️ MongoDB failure log attempt failed (non-blocking):", err.message);
-      });
+      // Logging is now handled centrally by sendSafeEmail to avoid duplicates
+
 
       return {
         success: false,

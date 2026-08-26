@@ -6,7 +6,7 @@ const emailLogger = require('../services/emailLogger');
  * Implements a Circuit Breaker pattern to block sending for 1 hour after 3 consecutive failures.
  * Also automatically logs the email to the centralized Email Center.
  */
-async function sendSafeEmail(transporter, mailOptions, campaign = 'General') {
+async function sendSafeEmail(transporter, mailOptions, campaign = 'General', source = 'Backend API') {
   const serviceName = 'email';
   const FAILURE_THRESHOLD = 3;
   const COOLDOWN_PERIOD_MS = 60 * 60 * 1000; // 1 hour
@@ -57,7 +57,9 @@ async function sendSafeEmail(transporter, mailOptions, campaign = 'General') {
       accepted: info.accepted,
       rejected: info.rejected,
       smtpResponse: info.response,
-      attachments: mailOptions.attachments || []
+      attachments: mailOptions.attachments || [],
+      source: source
+
     });
 
     return info;
@@ -81,7 +83,8 @@ async function sendSafeEmail(transporter, mailOptions, campaign = 'General') {
       campaign,
       status: 'FAILED',
       smtpResponse: error.message,
-      attachments: mailOptions.attachments || []
+      attachments: mailOptions.attachments || [],
+      source: source
     });
 
     throw error;
