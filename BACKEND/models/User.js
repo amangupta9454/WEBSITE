@@ -100,7 +100,7 @@ const userSchema = new mongoose.Schema(
         graphicSubmissions: [
           {
             link: { type: String },
-            fileUrl: { type: String },
+            fileUrls: [{ type: String }],
             linkedinCaption: { type: String, required: true },
             instagramCaption: { type: String, required: true },
             submittedAt: { type: Date, default: Date.now },

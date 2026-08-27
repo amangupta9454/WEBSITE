@@ -1185,9 +1185,9 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   );
 };
 
-const GraphicInternDashboard = ({ internship, onRefresh }) => {
+const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => {
   const [link, setLink] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [linkedinCaption, setLinkedinCaption] = useState("");
   const [instagramCaption, setInstagramCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1199,15 +1199,15 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       toast.error("Both LinkedIn and Instagram captions are required.");
       return;
     }
-    if (!link && !file) {
-      toast.error("Please provide either a link or a file.");
+    if (!link && files.length === 0) {
+      toast.error("Please provide either a link or at least one file.");
       return;
     }
     setSubmitting(true);
     const token = localStorage.getItem("studentToken");
     const formData = new FormData();
     if (link) formData.append("link", link);
-    if (file) formData.append("file", file);
+    files.forEach(f => formData.append("files", f));
     formData.append("linkedinCaption", linkedinCaption);
     formData.append("instagramCaption", instagramCaption);
 
@@ -1220,7 +1220,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       });
       toast.success("Graphic design submitted successfully!");
       setLink("");
-      setFile(null);
+      setFiles([]);
       setLinkedinCaption("");
       setInstagramCaption("");
       if (onRefresh) onRefresh();
@@ -1298,6 +1298,25 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
         </ul>
       </div>
 
+      {graphicResources && graphicResources.length > 0 && (
+        <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-2xl mb-8">
+          <h3 className="font-bold text-purple-800 text-lg mb-3 flex items-center gap-2">
+            Resources & Materials
+          </h3>
+          <ul className="space-y-3">
+            {graphicResources.map(res => (
+              <li key={res._id} className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="font-semibold text-purple-900">{res.title}</span>
+                <div className="flex gap-3">
+                  {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded hover:bg-purple-200 transition-colors font-medium">View Link</a>}
+                  {res.fileUrl && <a href={res.fileUrl} target="_blank" rel="noreferrer" className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors font-medium">Download File</a>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
         <h3 className="text-xl font-bold text-slate-800 mb-4">Submit Your Work</h3>
         <form onSubmit={handleGraphicSubmit} className="space-y-4">
@@ -1317,10 +1336,11 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
             <div className="h-px bg-slate-200 flex-1"></div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Upload File (Image/PDF)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Upload File(s) (Image/PDF)</label>
             <input 
               type="file" 
-              onChange={(e) => setFile(e.target.files[0])}
+              multiple
+              onChange={(e) => setFiles(Array.from(e.target.files))}
               className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
           </div>
@@ -1379,7 +1399,10 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
                     <td className="py-3 px-4 whitespace-nowrap text-sm">
                       {sub.link && <a href={sub.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block">View Link</a>}
                       {sub.fileUrl && <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block mt-1">View File</a>}
-                      {!sub.link && !sub.fileUrl && <span className="text-slate-400">N/A</span>}
+                      {sub.fileUrls && sub.fileUrls.map((url, fIdx) => (
+                        <a key={fIdx} href={url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block mt-1">View File {fIdx + 1}</a>
+                      ))}
+                      {!sub.link && !sub.fileUrl && (!sub.fileUrls || sub.fileUrls.length === 0) && <span className="text-slate-400">N/A</span>}
 
                       <div className="mt-2 space-y-1 max-w-xs whitespace-normal">
                         {sub.linkedinCaption && (
@@ -1820,6 +1843,7 @@ const StudentDashboard = () => {
                       {internship.domain === 'Graphic Design' ? (
                         <GraphicInternDashboard
                           internship={internship}
+                          graphicResources={data.graphicResources}
                           onRefresh={fetchDashboard}
                         />
                       ) : mode === "Summer/Winter Intern" ? (

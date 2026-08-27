@@ -2781,6 +2781,67 @@ const updateGraphicSubmissionStatus = async (req, res) => {
   }
 };
 
+const GraphicResource = require('../models/GraphicResource');
+
+const uploadGraphicResource = async (req, res) => {
+  try {
+    const { title, link, target, targetUserId } = req.body;
+    let fileUrl = "";
+
+    if (req.file) {
+      fileUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "graphic_resources", resource_type: "auto" },
+          (error, result) => {
+            if (result) {
+              resolve(result.secure_url);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
+    const newResource = new GraphicResource({
+      title,
+      link,
+      fileUrl,
+      target,
+      targetUserId: target === 'Specific' ? targetUserId : undefined,
+      addedBy: "Admin"
+    });
+
+    await newResource.save();
+    res.json({ success: true, message: "Resource added successfully", resource: newResource });
+  } catch (error) {
+    console.error("[Admin] Error uploading graphic resource:", error);
+    res.status(500).json({ success: false, message: "Server error uploading resource" });
+  }
+};
+
+const deleteGraphicResource = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await GraphicResource.findByIdAndDelete(id);
+    res.json({ success: true, message: "Resource deleted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error deleting graphic resource:", error);
+    res.status(500).json({ success: false, message: "Server error deleting resource" });
+  }
+};
+
+const getGraphicResources = async (req, res) => {
+  try {
+    const resources = await GraphicResource.find().sort({ createdAt: -1 });
+    res.json({ success: true, resources });
+  } catch (error) {
+    console.error("[Admin] Error fetching graphic resources:", error);
+    res.status(500).json({ success: false, message: "Server error fetching resources" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -2804,6 +2865,9 @@ module.exports = {
   getGraphicInterns,
   updateStipendStatus,
   updateGraphicSubmissionStatus,
+  uploadGraphicResource,
+  deleteGraphicResource,
+  getGraphicResources,
   getJobPortalSetting,
   toggleJobPortalSetting,
   toggleJobPortalFreeMode,

@@ -228,6 +228,14 @@ const getDashboardInfo = async (req, res) => {
       }
     }
 
+    const GraphicResource = require('../models/GraphicResource');
+    const graphicResources = await GraphicResource.find({
+      $or: [
+        { target: 'All' },
+        { targetUserId: user._id }
+      ]
+    }).sort({ createdAt: -1 });
+
     res.json({
       user: {
         id: user._id,
@@ -244,6 +252,7 @@ const getDashboardInfo = async (req, res) => {
       },
       internships: enrichedInternships,
       notifications: activeNotifications,
+      graphicResources,
     });
   } catch (error) {
     console.error("[Backend] Get dashboard info error:", error);
@@ -1028,7 +1037,7 @@ const submitGraphicDesign = async (req, res) => {
   try {
     const userId = req.user.id;
     const { link, linkedinCaption, instagramCaption } = req.body;
-    let fileUrl = "";
+    let fileUrls = [];
 
     if (!linkedinCaption || !instagramCaption) {
       return res.status(400).json({ message: "Both LinkedIn and Instagram captions are required" });
@@ -1043,8 +1052,26 @@ const submitGraphicDesign = async (req, res) => {
       return res.status(403).json({ message: "No active Graphic Design internship found" });
     }
 
-    if (req.file) {
-      fileUrl = await new Promise((resolve, reject) => {
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "graphic_submissions", resource_type: "auto" },
+            (error, result) => {
+              if (result) {
+                resolve(result.secure_url);
+              } else {
+                reject(error);
+              }
+            }
+          );
+          streamifier.createReadStream(file.buffer).pipe(stream);
+        });
+      });
+      fileUrls = await Promise.all(uploadPromises);
+    } else if (req.file) {
+      // Fallback for older frontend version just in case
+      const fileUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "graphic_submissions", resource_type: "auto" },
           (error, result) => {
@@ -1057,16 +1084,17 @@ const submitGraphicDesign = async (req, res) => {
         );
         streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
+      fileUrls = [fileUrl];
     }
 
-    if (!link && !fileUrl) {
+    if (!link && fileUrls.length === 0) {
       return res.status(400).json({ message: "Please provide either a file or a link" });
     }
 
     user.internships[internshipIndex].graphicSubmissions = user.internships[internshipIndex].graphicSubmissions || [];
     user.internships[internshipIndex].graphicSubmissions.push({
       link: link || "",
-      fileUrl: fileUrl || "",
+      fileUrls: fileUrls,
       linkedinCaption,
       instagramCaption,
       submittedAt: new Date(),
