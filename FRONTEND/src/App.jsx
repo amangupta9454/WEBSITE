@@ -58,6 +58,8 @@ const UnifiedLayout = () => (
   </MainLayout>
 );
 
+import RouteTracker from "./Components/RouteTracker";
+
 function App() {
   useEffect(() => {
     // Only track once per session and skip admins
@@ -79,6 +81,7 @@ function App() {
 
   return (
     <Router>
+      <RouteTracker />
       <ReferralTracker />
       <Toaster position="top-right" containerStyle={{ top: 80 }} />
       <FeatureBanner />
