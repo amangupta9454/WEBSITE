@@ -1191,7 +1191,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
   const [linkedinCaption, setLinkedinCaption] = useState("");
   const [instagramCaption, setInstagramCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const BACKEND_URL = "https://code-a-nova.online";
+  
   
   const handleGraphicSubmit = async (e) => {
     e.preventDefault();
