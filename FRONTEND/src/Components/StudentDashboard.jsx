@@ -1204,7 +1204,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       return;
     }
     setSubmitting(true);
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("studentToken");
     const formData = new FormData();
     if (link) formData.append("link", link);
     if (file) formData.append("file", file);
@@ -1234,7 +1234,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
 
   const handleDeleteSubmission = async (submissionId) => {
     if (!window.confirm("Are you sure you want to delete this submission?")) return;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("studentToken");
     try {
       await axios.delete(`${BACKEND_URL}/api/student/graphic-submission/${submissionId}`, {
         headers: { Authorization: `Bearer ${token}` }
