@@ -817,4 +817,9 @@ router.post("/assessment-settings/toggle", auth, verifyAdmin, async (req, res) =
   }
 });
 
+const { getGraphicInterns, updateStipendStatus, updateGraphicSubmissionStatus } = require("../controllers/adminController");
+router.get("/graphic-interns", auth, verifyAdmin, getGraphicInterns);
+router.post("/update-stipend", auth, verifyAdmin, updateStipendStatus);
+router.post("/graphic-submission-status", auth, verifyAdmin, updateGraphicSubmissionStatus);
+
 module.exports = router;

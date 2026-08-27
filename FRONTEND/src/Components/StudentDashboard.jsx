@@ -1183,6 +1183,150 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   );
 };
 
+const GraphicInternDashboard = ({ internship, onRefresh }) => {
+  const [link, setLink] = useState("");
+  const [file, setFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const BACKEND_URL = "https://code-a-nova.online";
+  
+  const handleGraphicSubmit = async (e) => {
+    e.preventDefault();
+    if (!link && !file) {
+      toast.error("Please provide either a link or a file.");
+      return;
+    }
+    setSubmitting(true);
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    if (link) formData.append("link", link);
+    if (file) formData.append("file", file);
+
+    try {
+      await axios.post(`${BACKEND_URL}/api/student/submit-graphic`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      toast.success("Graphic design submitted successfully!");
+      setLink("");
+      setFile(null);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to submit graphic design");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-sm border border-slate-100 mb-8 relative overflow-hidden transition-all duration-300">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
+          <p className="text-slate-500 font-medium mt-1">Domain: {internship.domain}</p>
+        </div>
+        <div className="bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+          <p className="text-sm text-slate-600 font-semibold">Stipend Status: <span className={internship.stipendStatus === 'Paid' ? 'text-green-600' : 'text-slate-800'}>{internship.stipendStatus || 'Unpaid'}</span></p>
+          {internship.stipendStatus === 'Paid' && (
+            <p className="text-sm text-slate-600 font-semibold mt-1">Amount: <span className="text-green-600">₹{internship.stipendAmount || 0} / month</span></p>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-2xl mb-8">
+        <h3 className="font-bold text-amber-800 text-lg mb-3 flex items-center gap-2">
+          <BookOpen className="w-5 h-5" /> Rules & Guidelines
+        </h3>
+        <ul className="list-disc pl-5 space-y-2 text-amber-900 font-medium">
+          <li><strong>Weekly Work Requirement:</strong> A minimum of 3 posts per week will be required for Instagram and LinkedIn. The same design may be used on both platforms, or separate versions may be created based on the requirements.</li>
+          <li><strong>Notice Period:</strong> A 15-day notice period will be required before leaving the internship.</li>
+          <li><strong>Ownership of Work:</strong> All designs, creatives, templates, source files, and other materials created for us during the internship will be considered work created for the organization.</li>
+          <li><strong>No Reselling or Reusing:</strong> Our designs, creatives, templates, or other work cannot be sold, reused, distributed, or provided to any third party, even after changing the organization’s logo, name, colors, text, or other elements.</li>
+        </ul>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
+        <h3 className="text-xl font-bold text-slate-800 mb-4">Submit Your Work</h3>
+        <form onSubmit={handleGraphicSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Post Link (LinkedIn/Instagram/Drive etc.)</label>
+            <input 
+              type="url" 
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium placeholder:text-slate-400 placeholder:font-normal"
+            />
+          </div>
+          <div className="flex items-center gap-4 py-2">
+            <div className="h-px bg-slate-200 flex-1"></div>
+            <span className="text-slate-400 font-medium text-sm uppercase tracking-wider">OR / AND</span>
+            <div className="h-px bg-slate-200 flex-1"></div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Upload File (Image/PDF)</label>
+            <input 
+              type="file" 
+              onChange={(e) => setFile(e.target.files[0])}
+              className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
+            {submitting ? 'Submitting...' : 'Submit Work'}
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-xl font-bold text-slate-800 mb-4">Submission History</h3>
+        {internship.graphicSubmissions && internship.graphicSubmissions.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider rounded-tl-xl">Date</th>
+                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Work</th>
+                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider rounded-tr-xl">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {internship.graphicSubmissions.slice().reverse().map((sub, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4 whitespace-nowrap text-sm text-slate-600 font-medium">
+                      {new Date(sub.submittedAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-sm">
+                      {sub.link && <a href={sub.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block">View Link</a>}
+                      {sub.fileUrl && <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block mt-1">View File</a>}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-sm">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${sub.status === 'Reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {sub.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 font-medium">No work submitted yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const StudentDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1572,7 +1716,12 @@ const StudentDashboard = () => {
                   const mode = getInternshipMode(internship);
                   return (
                     <div key={internship._id} className="mb-10 animate-fade-in">
-                      {mode === "Summer/Winter Intern" ? (
+                      {internship.domain === 'Graphic Design' ? (
+                        <GraphicInternDashboard
+                          internship={internship}
+                          onRefresh={fetchDashboard}
+                        />
+                      ) : mode === "Summer/Winter Intern" ? (
                         <SummerInternDashboard
                           internship={internship}
                           onRefresh={fetchDashboard}

@@ -49,6 +49,7 @@ import InterviewAdminPage from "./InterviewAdminPage";
 import TokenAdminPage from "./TokenAdminPage";
 import AdminResumeView from "./AdminResumeView";
 import JobAdminPage from "./JobAdminPage";
+import GraphicInternAdmin from "./GraphicInternAdmin";
 
 import ImportQuizModal from "./ImportQuizModal";
 import AllUsersAdmin from "./AllUsersAdmin";
@@ -2411,6 +2412,13 @@ const AdminDashboard = () => {
               Recent Paid
             </button>
             <button
+              onClick={() => setActiveSidebarTab("graphic_interns")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "graphic_interns" ? "bg-pink-50 text-pink-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <FileText className="w-4 h-4" />
+              Graphic Interns
+            </button>
+            <button
               onClick={() => setActiveSidebarTab("settings")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "settings" ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
@@ -3480,6 +3488,12 @@ const AdminDashboard = () => {
           {activeSidebarTab === "impersonate" && (
             <div className="w-full animate-fade-in">
               <ImpersonateIntern />
+            </div>
+          )}
+
+          {activeSidebarTab === "graphic_interns" && (
+            <div className="w-full animate-fade-in">
+              <GraphicInternAdmin BACKEND_URL={BACKEND_URL} authToken={authToken} />
             </div>
           )}
 

@@ -2,6 +2,8 @@ const express = require('express');
 const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink, getMyCertificates, getMyQuizzes } = require('../controllers/studentController');
 const authMiddleware = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
@@ -23,5 +25,7 @@ router.get('/ambassador-stats', authMiddleware, requireRole('student', 'campus_a
 router.post('/track-activity', authMiddleware, trackUserActivity);
 router.post('/ambassador-apply', submitAmbassadorApplication);
 router.post('/ambassador-linkedin-post', authMiddleware, requireRole('campus_ambassador', 'admin'), saveAmbassadorLinkedInPost);
+const { submitGraphicDesign } = require('../controllers/studentController');
+router.post('/submit-graphic', authMiddleware, requireRole('intern', 'admin'), upload.single('file'), submitGraphicDesign);
 
 module.exports = router;

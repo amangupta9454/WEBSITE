@@ -1,6 +1,14 @@
 const Settings = require("../models/Settings");
 const Waitlist = require("../models/Waitlist");
 const User = require("../models/User");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 const ProjectSubmission = require("../models/ProjectSubmission");
 const SummerProject = require("../models/SummerProject");
 const NormalTask = require("../models/NormalTask");
@@ -1016,6 +1024,58 @@ const getMyQuizzes = async (req, res) => {
   }
 };
 
+const submitGraphicDesign = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { link } = req.body;
+    let fileUrl = "";
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Find the graphic design internship
+    const internshipIndex = user.internships.findIndex(i => i.domain === 'Graphic Design');
+    if (internshipIndex === -1) {
+      return res.status(403).json({ message: "No active Graphic Design internship found" });
+    }
+
+    if (req.file) {
+      fileUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "graphic_submissions", resource_type: "auto" },
+          (error, result) => {
+            if (result) {
+              resolve(result.secure_url);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
+    if (!link && !fileUrl) {
+      return res.status(400).json({ message: "Please provide either a file or a link" });
+    }
+
+    user.internships[internshipIndex].graphicSubmissions = user.internships[internshipIndex].graphicSubmissions || [];
+    user.internships[internshipIndex].graphicSubmissions.push({
+      link: link || "",
+      fileUrl: fileUrl || "",
+      submittedAt: new Date(),
+      status: "Pending"
+    });
+
+    await user.save();
+    res.status(200).json({ message: "Graphic design submitted successfully" });
+
+  } catch (error) {
+    console.error("[Backend] Error submitting graphic design:", error);
+    res.status(500).json({ message: "Server error submitting graphic design" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
@@ -1028,5 +1088,6 @@ module.exports = {
   getPublicLeaderboard,
   updateProjectLink,
   getMyCertificates,
-  getMyQuizzes
+  getMyQuizzes,
+  submitGraphicDesign
 };

@@ -2699,6 +2699,88 @@ const deleteQuiz = async (req, res) => {
   }
 };
 
+const getGraphicInterns = async (req, res) => {
+  try {
+    const users = await User.find({ "internships.domain": "Graphic Design" });
+    const graphicInterns = [];
+
+    users.forEach(user => {
+      user.internships.forEach(internship => {
+        if (internship.domain === "Graphic Design") {
+          graphicInterns.push({
+            userId: user._id,
+            studentId: internship.studentId,
+            name: internship.name,
+            email: internship.email,
+            mobile: internship.mobile,
+            stipendStatus: internship.stipendStatus,
+            stipendAmount: internship.stipendAmount,
+            graphicSubmissions: internship.graphicSubmissions,
+            internshipId: internship._id
+          });
+        }
+      });
+    });
+
+    res.json({ success: true, interns: graphicInterns });
+  } catch (error) {
+    console.error("[Admin] Error fetching graphic interns:", error);
+    res.status(500).json({ success: false, message: "Server error fetching graphic interns" });
+  }
+};
+
+const updateStipendStatus = async (req, res) => {
+  try {
+    const { userId, internshipId, stipendStatus, stipendAmount } = req.body;
+    
+    if (!['Paid', 'Unpaid'].includes(stipendStatus)) {
+      return res.status(400).json({ success: false, message: "Invalid stipend status" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const internship = user.internships.id(internshipId);
+    if (!internship) return res.status(404).json({ success: false, message: "Internship not found" });
+
+    internship.stipendStatus = stipendStatus;
+    internship.stipendAmount = Number(stipendAmount) || 0;
+
+    await user.save();
+    res.json({ success: true, message: "Stipend status updated successfully" });
+  } catch (error) {
+    console.error("[Admin] Error updating stipend status:", error);
+    res.status(500).json({ success: false, message: "Server error updating stipend status" });
+  }
+};
+
+const updateGraphicSubmissionStatus = async (req, res) => {
+  try {
+    const { userId, internshipId, submissionId, status } = req.body;
+
+    if (!['Pending', 'Reviewed'].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const internship = user.internships.id(internshipId);
+    if (!internship) return res.status(404).json({ success: false, message: "Internship not found" });
+
+    const submission = internship.graphicSubmissions.id(submissionId);
+    if (!submission) return res.status(404).json({ success: false, message: "Submission not found" });
+
+    submission.status = status;
+    await user.save();
+
+    res.json({ success: true, message: "Submission status updated successfully" });
+  } catch (error) {
+    console.error("[Admin] Error updating graphic submission status:", error);
+    res.status(500).json({ success: false, message: "Server error updating submission status" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -2719,6 +2801,9 @@ module.exports = {
   deleteApplication,
   bulkDeleteApplications,
   toggleLeaderboardSetting,
+  getGraphicInterns,
+  updateStipendStatus,
+  updateGraphicSubmissionStatus,
   getJobPortalSetting,
   toggleJobPortalSetting,
   toggleJobPortalFreeMode,

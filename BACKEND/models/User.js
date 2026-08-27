@@ -95,6 +95,16 @@ const userSchema = new mongoose.Schema(
         paidExported: { type: Boolean, default: false },
         projectExported: { type: Boolean, default: false },
         isCertificateSent: { type: Boolean, default: false },
+        stipendStatus: { type: String, enum: ['Unpaid', 'Paid'], default: 'Unpaid' },
+        stipendAmount: { type: Number, default: 0 },
+        graphicSubmissions: [
+          {
+            link: { type: String },
+            fileUrl: { type: String },
+            submittedAt: { type: Date, default: Date.now },
+            status: { type: String, enum: ['Pending', 'Reviewed'], default: 'Pending' }
+          }
+        ],
         alerts: [
           {
             message: String,
