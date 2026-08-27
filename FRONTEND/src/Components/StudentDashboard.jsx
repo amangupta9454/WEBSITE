@@ -1372,6 +1372,22 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
                     <td className="py-3 px-4 whitespace-nowrap text-sm">
                       {sub.link && <a href={sub.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block">View Link</a>}
                       {sub.fileUrl && <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline font-medium block mt-1">View File</a>}
+                      {!sub.link && !sub.fileUrl && <span className="text-slate-400">N/A</span>}
+
+                      <div className="mt-2 space-y-1 max-w-xs whitespace-normal">
+                        {sub.linkedinCaption && (
+                          <div className="text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                            <span className="font-semibold text-blue-700 block mb-1">LinkedIn Caption:</span>
+                            <span className="text-slate-600 break-words line-clamp-3" title={sub.linkedinCaption}>{sub.linkedinCaption}</span>
+                          </div>
+                        )}
+                        {sub.instagramCaption && (
+                          <div className="text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                            <span className="font-semibold text-pink-700 block mb-1">Instagram Caption:</span>
+                            <span className="text-slate-600 break-words line-clamp-3" title={sub.instagramCaption}>{sub.instagramCaption}</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap text-sm">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${sub.status === 'Reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
