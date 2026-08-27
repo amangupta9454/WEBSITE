@@ -136,6 +136,21 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                                 </a>
                               )}
                               {!sub.link && !sub.fileUrl && <span className="text-gray-400">N/A</span>}
+                              
+                              <div className="mt-2 space-y-1 max-w-xs">
+                                {sub.linkedinCaption && (
+                                  <div className="text-xs bg-white p-2 rounded border border-gray-200">
+                                    <span className="font-semibold text-blue-700 block mb-1">LinkedIn Caption:</span>
+                                    <span className="text-gray-600 break-words line-clamp-3" title={sub.linkedinCaption}>{sub.linkedinCaption}</span>
+                                  </div>
+                                )}
+                                {sub.instagramCaption && (
+                                  <div className="text-xs bg-white p-2 rounded border border-gray-200">
+                                    <span className="font-semibold text-pink-700 block mb-1">Instagram Caption:</span>
+                                    <span className="text-gray-600 break-words line-clamp-3" title={sub.instagramCaption}>{sub.instagramCaption}</span>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="py-2 px-4 border-b text-sm">
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${sub.status === 'Reviewed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>

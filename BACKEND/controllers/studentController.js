@@ -1027,8 +1027,12 @@ const getMyQuizzes = async (req, res) => {
 const submitGraphicDesign = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { link } = req.body;
+    const { link, linkedinCaption, instagramCaption } = req.body;
     let fileUrl = "";
+
+    if (!linkedinCaption || !instagramCaption) {
+      return res.status(400).json({ message: "Both LinkedIn and Instagram captions are required" });
+    }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -1063,6 +1067,8 @@ const submitGraphicDesign = async (req, res) => {
     user.internships[internshipIndex].graphicSubmissions.push({
       link: link || "",
       fileUrl: fileUrl || "",
+      linkedinCaption,
+      instagramCaption,
       submittedAt: new Date(),
       status: "Pending"
     });

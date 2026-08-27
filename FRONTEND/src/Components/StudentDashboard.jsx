@@ -1188,11 +1188,17 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
 const GraphicInternDashboard = ({ internship, onRefresh }) => {
   const [link, setLink] = useState("");
   const [file, setFile] = useState(null);
+  const [linkedinCaption, setLinkedinCaption] = useState("");
+  const [instagramCaption, setInstagramCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const BACKEND_URL = "https://code-a-nova.online";
   
   const handleGraphicSubmit = async (e) => {
     e.preventDefault();
+    if (!linkedinCaption || !instagramCaption) {
+      toast.error("Both LinkedIn and Instagram captions are required.");
+      return;
+    }
     if (!link && !file) {
       toast.error("Please provide either a link or a file.");
       return;
@@ -1202,6 +1208,8 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
     const formData = new FormData();
     if (link) formData.append("link", link);
     if (file) formData.append("file", file);
+    formData.append("linkedinCaption", linkedinCaption);
+    formData.append("instagramCaption", instagramCaption);
 
     try {
       await axios.post(`${BACKEND_URL}/api/student/submit-graphic`, formData, {
@@ -1213,6 +1221,8 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       toast.success("Graphic design submitted successfully!");
       setLink("");
       setFile(null);
+      setLinkedinCaption("");
+      setInstagramCaption("");
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error(err);
@@ -1305,6 +1315,28 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
               type="file" 
               onChange={(e) => setFile(e.target.files[0])}
               className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">LinkedIn Caption <span className="text-red-500">*</span></label>
+            <textarea 
+              value={linkedinCaption}
+              onChange={(e) => setLinkedinCaption(e.target.value)}
+              placeholder="Write your LinkedIn caption here..."
+              required
+              rows={3}
+              className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium placeholder:text-slate-400 placeholder:font-normal"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Instagram Caption <span className="text-red-500">*</span></label>
+            <textarea 
+              value={instagramCaption}
+              onChange={(e) => setInstagramCaption(e.target.value)}
+              placeholder="Write your Instagram caption here..."
+              required
+              rows={3}
+              className="w-full px-4 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 font-medium placeholder:text-slate-400 placeholder:font-normal"
             />
           </div>
           <button 
