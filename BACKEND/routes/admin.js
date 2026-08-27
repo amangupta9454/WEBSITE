@@ -822,8 +822,6 @@ router.get("/graphic-interns", auth, verifyAdmin, getGraphicInterns);
 router.post("/update-stipend", auth, verifyAdmin, updateStipendStatus);
 router.post("/graphic-submission-status", auth, verifyAdmin, updateGraphicSubmissionStatus);
 
-const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage() });
 router.post("/graphic-resource", auth, verifyAdmin, upload.single('file'), uploadGraphicResource);
 router.delete("/graphic-resource/:id", auth, verifyAdmin, deleteGraphicResource);
 router.get("/graphic-resources", auth, verifyAdmin, getGraphicResources);
