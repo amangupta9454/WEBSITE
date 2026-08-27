@@ -3493,7 +3493,10 @@ const AdminDashboard = () => {
 
           {activeSidebarTab === "graphic_interns" && (
             <div className="w-full animate-fade-in">
-              <GraphicInternAdmin BACKEND_URL={BACKEND_URL} authToken={authToken} />
+              <GraphicInternAdmin 
+                BACKEND_URL={import.meta.env.VITE_BACKEND_URL || "https://code-a-nova.online"} 
+                authToken={localStorage.getItem("adminToken")} 
+              />
             </div>
           )}
 
