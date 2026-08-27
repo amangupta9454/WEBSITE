@@ -1,5 +1,5 @@
 const express = require('express');
-const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink, getMyCertificates, getMyQuizzes } = require('../controllers/studentController');
+const { getDashboardInfo, updateProfile, markAlertRead, submitProjectRepo, finalSubmitProjectRepo, dismissNotification, getPublicLeaderboard, updateProjectLink, getMyCertificates, getMyQuizzes, deleteGraphicSubmission } = require('../controllers/studentController');
 const authMiddleware = require('../middleware/auth');
 const { requireRole } = require('../middleware/rbac');
 const multer = require('multer');
@@ -27,5 +27,6 @@ router.post('/ambassador-apply', submitAmbassadorApplication);
 router.post('/ambassador-linkedin-post', authMiddleware, requireRole('campus_ambassador', 'admin'), saveAmbassadorLinkedInPost);
 const { submitGraphicDesign } = require('../controllers/studentController');
 router.post('/submit-graphic', authMiddleware, requireRole('intern', 'admin'), upload.single('file'), submitGraphicDesign);
+router.delete('/graphic-submission/:submissionId', authMiddleware, requireRole('intern', 'admin'), deleteGraphicSubmission);
 
 module.exports = router;

@@ -36,6 +36,7 @@ import {
   Info,
   ChevronDown,
   UploadCloud,
+  Trash2,
 } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
@@ -1221,6 +1222,21 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
     }
   };
 
+  const handleDeleteSubmission = async (submissionId) => {
+    if (!window.confirm("Are you sure you want to delete this submission?")) return;
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${BACKEND_URL}/api/student/graphic-submission/${submissionId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Submission deleted successfully");
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to delete submission");
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-sm border border-slate-100 mb-8 relative overflow-hidden transition-all duration-300">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -1311,7 +1327,8 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
                 <tr>
                   <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider rounded-tl-xl">Date</th>
                   <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Work</th>
-                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider rounded-tr-xl">Status</th>
+                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="py-3 px-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider rounded-tr-xl">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1328,6 +1345,17 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${sub.status === 'Reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                         {sub.status}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap text-sm text-center">
+                      {sub.status === 'Pending' && (
+                        <button 
+                          onClick={() => handleDeleteSubmission(sub._id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
+                          title="Delete submission"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

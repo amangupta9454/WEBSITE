@@ -1076,6 +1076,41 @@ const submitGraphicDesign = async (req, res) => {
   }
 };
 
+const deleteGraphicSubmission = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { submissionId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const internshipIndex = user.internships.findIndex(i => i.domain === 'Graphic Design');
+    if (internshipIndex === -1) {
+      return res.status(403).json({ message: "No active Graphic Design internship found" });
+    }
+
+    const submissionIndex = user.internships[internshipIndex].graphicSubmissions.findIndex(
+      sub => sub._id.toString() === submissionId
+    );
+
+    if (submissionIndex === -1) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    if (user.internships[internshipIndex].graphicSubmissions[submissionIndex].status === 'Reviewed') {
+      return res.status(400).json({ message: "Cannot delete a reviewed submission" });
+    }
+
+    user.internships[internshipIndex].graphicSubmissions.splice(submissionIndex, 1);
+    await user.save();
+    
+    res.status(200).json({ message: "Submission deleted successfully" });
+  } catch (error) {
+    console.error("[Backend] Error deleting graphic submission:", error);
+    res.status(500).json({ message: "Server error deleting graphic submission" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
@@ -1089,5 +1124,6 @@ module.exports = {
   updateProjectLink,
   getMyCertificates,
   getMyQuizzes,
-  submitGraphicDesign
+  submitGraphicDesign,
+  deleteGraphicSubmission
 };
