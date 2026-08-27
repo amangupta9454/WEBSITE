@@ -1254,7 +1254,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-3 sm:mt-2">
             <span className="bg-purple-100 text-purple-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-              Graphic Design Intern
+              {internship.internshipType === "Normal" ? "Normal Intern" : (internship.internshipType || "Graphic Design Intern")}
             </span>
             <span className="text-slate-500 text-[11px] sm:text-sm font-medium">
               • ID: {internship.studentId}
