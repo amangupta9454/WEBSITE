@@ -1226,9 +1226,26 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
-          <p className="text-slate-500 font-medium mt-1">Domain: {internship.domain}</p>
+          <p className="text-slate-500 font-medium mt-1 mb-3">Domain: {internship.domain}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {internship.startDate && (
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
+                Start Date: {new Date(internship.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            )}
+            {internship.endDate && (
+              <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-red-50 text-red-700 border-red-200 shadow-sm leading-none flex items-center">
+                End Date: {new Date(internship.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            )}
+            <span
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border shadow-sm leading-none flex items-center ${internship.offerLetterStatus === "Sent" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
+            >
+              Offer Letter: {internship.offerLetterStatus || "Pending"}
+            </span>
+          </div>
         </div>
-        <div className="bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+        <div className="bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 shrink-0">
           <p className="text-sm text-slate-600 font-semibold">Stipend Status: <span className={internship.stipendStatus === 'Paid' ? 'text-green-600' : 'text-slate-800'}>{internship.stipendStatus || 'Unpaid'}</span></p>
           {internship.stipendStatus === 'Paid' && (
             <p className="text-sm text-slate-600 font-semibold mt-1">Amount: <span className="text-green-600">₹{internship.stipendAmount || 0} / month</span></p>
@@ -1252,7 +1269,7 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
         <h3 className="text-xl font-bold text-slate-800 mb-4">Submit Your Work</h3>
         <form onSubmit={handleGraphicSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Post Link (LinkedIn/Instagram/Drive etc.)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Project / Design Link (Drive, LinkedIn, Instagram etc.)</label>
             <input 
               type="url" 
               value={link}
