@@ -1252,7 +1252,14 @@ const GraphicInternDashboard = ({ internship, onRefresh }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
-          <p className="text-slate-500 font-medium mt-1 mb-3">Domain: {internship.domain}</p>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-3 sm:mt-2">
+            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+              Graphic Design Intern
+            </span>
+            <span className="text-slate-500 text-[11px] sm:text-sm font-medium">
+              • ID: {internship.studentId}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {internship.startDate && (
               <span className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-sm font-bold border bg-blue-50 text-blue-700 border-blue-200 shadow-sm leading-none flex items-center">
