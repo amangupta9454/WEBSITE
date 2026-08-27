@@ -1309,7 +1309,7 @@ const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => 
                 <span className="font-semibold text-purple-900">{res.title}</span>
                 <div className="flex gap-3">
                   {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded hover:bg-purple-200 transition-colors font-medium">View Link</a>}
-                  {res.fileUrl && <a href={res.fileUrl} target="_blank" rel="noreferrer" className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors font-medium">Download File</a>}
+                  {res.fileUrl && <a href={res.fileUrl.includes('cloudinary.com') && res.fileUrl.includes('/upload/') ? res.fileUrl.replace('/upload/', '/upload/fl_attachment/') : res.fileUrl} target="_blank" rel="noreferrer" download className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors font-medium">Download File</a>}
                 </div>
               </li>
             ))}
