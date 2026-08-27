@@ -2756,7 +2756,7 @@ const updateStipendStatus = async (req, res) => {
 
 const updateGraphicSubmissionStatus = async (req, res) => {
   try {
-    const { userId, internshipId, submissionId, status } = req.body;
+    const { userId, internshipId, submissionId, status, spPoints } = req.body;
 
     if (!['Pending', 'Reviewed'].includes(status)) {
       return res.status(400).json({ success: false, message: "Invalid status" });
@@ -2772,6 +2772,10 @@ const updateGraphicSubmissionStatus = async (req, res) => {
     if (!submission) return res.status(404).json({ success: false, message: "Submission not found" });
 
     submission.status = status;
+    if (spPoints !== undefined) {
+      submission.spPoints = Number(spPoints);
+    }
+    
     await user.save();
 
     res.json({ success: true, message: "Submission status updated successfully" });

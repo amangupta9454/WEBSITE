@@ -63,10 +63,22 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   };
 
   const handleUpdateSubmissionStatus = async (userId, internshipId, submissionId, status) => {
+    let spPoints = null;
+    if (status === 'Reviewed') {
+      const pointsStr = window.prompt("Enter SP Points for this submission (0-10):");
+      if (pointsStr === null) return; // cancelled
+      const points = parseInt(pointsStr, 10);
+      if (isNaN(points) || points < 0 || points > 10) {
+        alert("Please enter a valid number between 0 and 10.");
+        return;
+      }
+      spPoints = points;
+    }
+
     try {
       await axios.post(
         `${BACKEND_URL}/api/admin/graphic-submission-status`,
-        { userId, internshipId, submissionId, status },
+        { userId, internshipId, submissionId, status, spPoints },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       fetchInterns();
@@ -323,9 +335,14 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                                 </div>
                               </td>
                               <td className="py-2 px-4 border-b text-sm">
-                                <span className={`px-2 py-1 rounded text-xs font-semibold ${sub.status === 'Reviewed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                <span className={`px-2 py-1 rounded text-xs ${sub.status === 'Reviewed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                   {sub.status}
                                 </span>
+                                {sub.spPoints !== undefined && sub.spPoints !== null && (
+                                  <div className="mt-1 text-xs font-bold text-purple-700">
+                                    SP: {sub.spPoints}/10
+                                  </div>
+                                )}
                               </td>
                               <td className="py-2 px-4 border-b text-sm">
                                 {sub.status === 'Pending' && (

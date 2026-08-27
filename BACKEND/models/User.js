@@ -104,7 +104,8 @@ const userSchema = new mongoose.Schema(
             linkedinCaption: { type: String, required: true },
             instagramCaption: { type: String, required: true },
             submittedAt: { type: Date, default: Date.now },
-            status: { type: String, enum: ['Pending', 'Reviewed'], default: 'Pending' }
+            status: { type: String, enum: ['Pending', 'Reviewed'], default: 'Pending' },
+            spPoints: { type: Number, min: 0, max: 10, default: null }
           }
         ],
         alerts: [

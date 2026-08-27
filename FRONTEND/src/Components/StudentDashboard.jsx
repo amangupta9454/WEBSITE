@@ -1423,6 +1423,11 @@ const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => 
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${sub.status === 'Reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                         {sub.status}
                       </span>
+                      {sub.spPoints !== undefined && sub.spPoints !== null && (
+                        <div className="mt-2 text-xs font-black text-purple-700">
+                          SP Earned: {sub.spPoints}/10
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap text-sm text-center">
                       {sub.status === 'Pending' && (
