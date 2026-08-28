@@ -41,6 +41,27 @@ import {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
 
+const getResignationStatus = (internship) => {
+  if (!internship?.resigned?.isResigned) return { isResigned: false };
+  const resignationDate = new Date(internship.resigned.resignationDate);
+  const noticePeriodDays = 15;
+  const now = new Date();
+  
+  const diffTime = Math.abs(now - resignationDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  const isNoticeActive = diffDays <= noticePeriodDays;
+  const noticeEndDate = new Date(resignationDate);
+  noticeEndDate.setDate(noticeEndDate.getDate() + noticePeriodDays);
+
+  return {
+    isResigned: true,
+    isNoticeActive,
+    diffDays,
+    noticeEndDate
+  };
+};
+
 // Normal Intern Dashboard Component
 const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
   const navigate = useNavigate();
@@ -200,8 +221,29 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
     }
   };
 
+  const resStatus = getResignationStatus(internship);
+
   return (
     <div className="space-y-6">
+      {resStatus.isResigned && (
+        <div className={`p-4 rounded-xl border ${resStatus.isNoticeActive ? 'bg-orange-50 border-orange-200 text-orange-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-sm sm:text-base">
+                {resStatus.isNoticeActive ? "Notice Period Active" : "Notice Period Ended"}
+              </h3>
+              <p className="text-xs sm:text-sm mt-1">
+                You have been marked as Resigned / Layoff. 
+                {resStatus.isNoticeActive 
+                  ? ` You can continue to access your dashboard and submit tasks until ${resStatus.noticeEndDate.toLocaleDateString()}. (${resStatus.diffDays} days into 15-day notice)`
+                  : " Your 15-day notice period has ended. You can no longer perform activities for this internship."
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 sm:mb-8">
           <div>
@@ -338,8 +380,9 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
         </div>
       </div>
 
-      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
-        <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
+      {(!resStatus.isResigned || resStatus.isNoticeActive) ? (
+        <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+          <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
           <BookOpen className="text-blue-600" /> Assigned Projects
         </h3>
 
@@ -582,6 +625,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
           </div>
         )}
       </div>
+      ) : null}
 
       {v2SubmissionModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
@@ -650,6 +694,8 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   const [finalSubmitting, setFinalSubmitting] = useState(null);
   const [updatingLinkProjectId, setUpdatingLinkProjectId] = useState(null);
   const [updateLinkInputs, setUpdateLinkInputs] = useState({});
+
+  const resStatus = getResignationStatus(internship);
 
   const handleSubmitRepo = async (projectId) => {
     const link = repoInputs[projectId];
@@ -801,7 +847,29 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
+      {resStatus.isResigned && (
+        <div className={`p-4 rounded-xl border ${resStatus.isNoticeActive ? 'bg-orange-50 border-orange-200 text-orange-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-sm sm:text-base">
+                {resStatus.isNoticeActive ? "Notice Period Active" : "Notice Period Ended"}
+              </h3>
+              <p className="text-xs sm:text-sm mt-1">
+                You have been marked as Resigned / Layoff. 
+                {resStatus.isNoticeActive 
+                  ? ` You can continue to access your dashboard and submit tasks until ${resStatus.noticeEndDate.toLocaleDateString()}. (${resStatus.diffDays} days into 15-day notice)`
+                  : " Your 15-day notice period has ended. You can no longer perform activities for this internship."
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {(!resStatus.isResigned || resStatus.isNoticeActive) ? (
+        <>
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6 sm:mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-tight">
@@ -1181,11 +1249,17 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
           </div>
         )}
       </div>
+      
+        </>
+      ) : null}
+
     </div>
   );
 };
 
 const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => {
+  const resStatus = getResignationStatus(internship);
+  
   const [link, setLink] = useState("");
   const [files, setFiles] = useState([]);
   const [linkedinCaption, setLinkedinCaption] = useState("");
@@ -1249,7 +1323,29 @@ const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => 
 
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-sm border border-slate-100 mb-8 relative overflow-hidden transition-all duration-300">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      {resStatus.isResigned && (
+        <div className={`p-4 rounded-xl border mb-6 ${resStatus.isNoticeActive ? 'bg-orange-50 border-orange-200 text-orange-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-sm sm:text-base">
+                {resStatus.isNoticeActive ? "Notice Period Active" : "Notice Period Ended"}
+              </h3>
+              <p className="text-xs sm:text-sm mt-1">
+                You have been marked as Resigned / Layoff. 
+                {resStatus.isNoticeActive 
+                  ? ` You can continue to access your dashboard and submit tasks until ${resStatus.noticeEndDate.toLocaleDateString()}. (${resStatus.diffDays} days into 15-day notice)`
+                  : " Your 15-day notice period has ended. You can no longer perform activities for this internship."
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(!resStatus.isResigned || resStatus.isNoticeActive) ? (
+        <>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-3 sm:mt-2">
@@ -1452,6 +1548,9 @@ const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => 
           </div>
         )}
       </div>
+      
+        </>
+      ) : null}
     </div>
   );
 };

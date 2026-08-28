@@ -137,6 +137,30 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     }
   };
 
+  const handleMarkResigned = async (userId, internshipId, currentResignedStatus) => {
+    if (currentResignedStatus) {
+      alert("Intern is already marked as resigned.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to mark this intern as resigned? A 15-day notice period will begin.")) return;
+
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/admin/internship-resignation`, 
+        { userId, internshipId },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      if (res.data.success) {
+        alert("Intern marked as resigned successfully");
+        fetchGraphicInterns();
+      } else {
+        alert(res.data.message || "Failed to mark resigned");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred");
+    }
+  };
+
   if (loading) return <div className="text-center p-4">Loading Graphic Interns...</div>;
   if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
 
@@ -238,7 +262,14 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                     <h3 className="text-xl font-semibold text-gray-800">{intern.name}</h3>
                     <p className="text-sm text-gray-600">ID: {intern.studentId} | Email: {intern.email} | Mobile: {intern.mobile}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <button
+                      onClick={() => handleMarkResigned(intern.userId, intern.internshipId, intern.resigned?.isResigned)}
+                      className={`px-3 py-1.5 rounded text-sm font-semibold border ${intern.resigned?.isResigned ? 'bg-orange-100 text-orange-700 cursor-not-allowed border-orange-200' : 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'}`}
+                      disabled={intern.resigned?.isResigned}
+                    >
+                      {intern.resigned?.isResigned ? "Resigned" : "Mark Resigned"}
+                    </button>
                     <button 
                       onClick={() => {
                         setResourceTarget("Specific");

@@ -88,6 +88,10 @@ const userSchema = new mongoose.Schema(
           default: "Not Sent",
         },
         hasPaid: { type: Boolean, default: false }, // New: tracks if final payment done
+        resigned: {
+          isResigned: { type: Boolean, default: false },
+          resignationDate: { type: Date }
+        },
         paymentAmount: { type: Number, default: 0 },
         paymentDate: { type: Date }, // Tracks when the payment was made
         refundAmount: { type: Number, default: 0 },

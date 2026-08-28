@@ -943,6 +943,30 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleMarkResigned = async (userId, internshipId, currentResignedStatus) => {
+    if (currentResignedStatus) {
+      alert("Intern is already marked as resigned.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to mark this intern as resigned? A 15-day notice period will begin.")) return;
+
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/admin/internship-resignation`, 
+        { userId, internshipId },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      if (res.data.success) {
+        toast.success("Intern marked as resigned successfully");
+        fetchApplications();
+      } else {
+        toast.error(res.data.message || "Failed to mark resigned");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred");
+    }
+  };
+
   const handleSelectAll = (e, currentApps) => {
     if (e.target.checked) {
       const newSelections = [...selectedApplications];
@@ -3262,13 +3286,23 @@ const AdminDashboard = () => {
                                 </>
                               )}
                                   <td className="py-3.5 px-4 text-right">
-                                    <button
-                                      onClick={() => setDeletingApplication(app)}
-                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center border border-transparent hover:border-red-200"
-                                      title="Delete Application"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => handleMarkResigned(app.userId, app._id, app.resigned?.isResigned)}
+                                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.resigned?.isResigned ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
+                                        title={app.resigned?.isResigned ? "Already Resigned" : "Mark Resigned"}
+                                        disabled={app.resigned?.isResigned}
+                                      >
+                                        {app.resigned?.isResigned ? "Resigned" : "Resign"}
+                                      </button>
+                                      <button
+                                        onClick={() => setDeletingApplication(app)}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center border border-transparent hover:border-red-200"
+                                        title="Delete Application"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
                                   </td>
                             </tr>
                           ))}

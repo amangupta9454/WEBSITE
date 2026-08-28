@@ -2968,9 +2968,29 @@ module.exports = {
         }
       }
       
-      res.json({ success: true, message: `Fixed ${extractedCount} improperly merged internships.` });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
+  },
+  markInternResigned: async (req, res) => {
+    try {
+      const { userId, internshipId } = req.body;
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+      const internship = user.internships.id(internshipId);
+      if (!internship) return res.status(404).json({ success: false, message: "Internship not found" });
+
+      // Initialize resigned object if it doesn't exist
+      if (!internship.resigned) {
+        internship.resigned = {};
+      }
+
+      internship.resigned.isResigned = true;
+      internship.resigned.resignationDate = new Date();
+
+      await user.save();
+      res.json({ success: true, message: "Intern marked as resigned successfully." });
+    } catch (error) {
+      console.error("Error marking intern as resigned:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
 };
