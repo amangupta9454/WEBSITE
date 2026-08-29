@@ -370,7 +370,7 @@ const AdminDashboard = () => {
     setExporting(true);
     const token = localStorage.getItem("adminToken");
     try {
-      const newApps = filteredApplications.filter((app) => !app.downloadedAt);
+      const newApps = filteredApplications.filter((app) => !app.downloadedAt && !app.resigned?.isResigned && !app.rejected?.isRejected);
       if (newApps.length === 0) {
         toast.info("No new applications to export");
         setExporting(false);
@@ -507,7 +507,7 @@ const AdminDashboard = () => {
   const handleExportPaid = async () => {
     try {
       const paidApps = applications.filter(
-        (app) => app.hasPaid && !app.paidExported,
+        (app) => app.hasPaid && !app.paidExported && !app.resigned?.isResigned && !app.rejected?.isRejected,
       );
       if (paidApps.length === 0) {
         toast.info("No newly paid applications found to export.");
@@ -626,7 +626,7 @@ const AdminDashboard = () => {
         const subCount = app.submissions ? app.submissions.length : 0;
         const isTargetDuration = regDuration === parseInt(durationVal, 10);
         return (
-          isTargetDuration && subCount >= regDuration && !app.projectExported
+          isTargetDuration && subCount >= regDuration && !app.projectExported && !app.resigned?.isResigned && !app.rejected?.isRejected
         );
       });
 
@@ -951,7 +951,7 @@ const AdminDashboard = () => {
     if (!window.confirm("Are you sure you want to mark this intern as resigned? A 15-day notice period will begin.")) return;
 
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/admin/internship-resignation`, 
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internship-resignation`, 
         { userId, internshipId },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -960,6 +960,30 @@ const AdminDashboard = () => {
         fetchApplications();
       } else {
         toast.error(res.data.message || "Failed to mark resigned");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleRejectInternship = async (userId, internshipId, currentRejectedStatus) => {
+    if (currentRejectedStatus) {
+      alert("Application is already marked as rejected.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to reject this application? An email will be sent to the user.")) return;
+
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internship-reject`, 
+        { userId, internshipId },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      if (res.data.success) {
+        toast.success("Application rejected and email sent successfully");
+        fetchApplications();
+      } else {
+        toast.error(res.data.message || "Failed to reject application");
       }
     } catch (err) {
       console.error(err);
@@ -3294,6 +3318,14 @@ const AdminDashboard = () => {
                                         disabled={app.resigned?.isResigned}
                                       >
                                         {app.resigned?.isResigned ? "Resigned" : "Resign"}
+                                      </button>
+                                      <button
+                                        onClick={() => handleRejectInternship(app.userId, app._id, app.rejected?.isRejected)}
+                                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.rejected?.isRejected ? 'bg-gray-100 text-gray-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
+                                        title={app.rejected?.isRejected ? "Already Rejected" : "Reject Application"}
+                                        disabled={app.rejected?.isRejected}
+                                      >
+                                        {app.rejected?.isRejected ? "Rejected" : "Reject"}
                                       </button>
                                       <button
                                         onClick={() => setDeletingApplication(app)}

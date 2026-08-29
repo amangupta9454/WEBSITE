@@ -92,6 +92,10 @@ const userSchema = new mongoose.Schema(
           isResigned: { type: Boolean, default: false },
           resignationDate: { type: Date }
         },
+        rejected: {
+          isRejected: { type: Boolean, default: false },
+          rejectionDate: { type: Date }
+        },
         paymentAmount: { type: Number, default: 0 },
         paymentDate: { type: Date }, // Tracks when the payment was made
         refundAmount: { type: Number, default: 0 },

@@ -817,11 +817,12 @@ router.post("/assessment-settings/toggle", auth, verifyAdmin, async (req, res) =
   }
 });
 
-const { getGraphicInterns, updateStipendStatus, updateGraphicSubmissionStatus, uploadGraphicResource, deleteGraphicResource, getGraphicResources, markInternResigned } = require("../controllers/adminController");
+const { getGraphicInterns, updateStipendStatus, updateGraphicSubmissionStatus, uploadGraphicResource, deleteGraphicResource, getGraphicResources, markInternResigned, rejectInternship } = require("../controllers/adminController");
 router.get("/graphic-interns", auth, verifyAdmin, getGraphicInterns);
 router.post("/update-stipend", auth, verifyAdmin, updateStipendStatus);
 router.post("/graphic-submission-status", auth, verifyAdmin, updateGraphicSubmissionStatus);
-router.post("/internship-resignation", auth, verifyAdmin, markInternResigned);
+router.post('/internship-resignation', auth, verifyAdmin, markInternResigned);
+router.post('/internship-reject', auth, verifyAdmin, rejectInternship);
 
 router.post("/graphic-resource", auth, verifyAdmin, upload.single('file'), uploadGraphicResource);
 router.delete("/graphic-resource/:id", auth, verifyAdmin, deleteGraphicResource);

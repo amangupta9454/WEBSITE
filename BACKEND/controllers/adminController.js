@@ -2995,5 +2995,50 @@ module.exports = {
       console.error("Error marking intern as resigned:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
+  },
+  rejectInternship: async (req, res) => {
+    try {
+      const { userId, internshipId } = req.body;
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+      const internship = user.internships.id(internshipId);
+      if (!internship) return res.status(404).json({ success: false, message: "Internship not found" });
+
+      if (!internship.rejected) {
+        internship.rejected = {};
+      }
+
+      internship.rejected.isRejected = true;
+      internship.rejected.rejectionDate = new Date();
+
+      await user.save();
+
+      // Send rejection email
+      try {
+        const mailOptions = {
+          to: user.email,
+          subject: "Code-A-Nova Internship Application Update",
+          html: `<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
+                  <h2 style="color: #d9534f;">Application Status Update</h2>
+                  <p>Dear ${user.name},</p>
+                  <p>Thank you for applying for the <strong>${internship.domain}</strong> internship role at Code-A-Nova.</p>
+                  <p>We appreciate the time you took to apply and share your portfolio with us. However, we regret to inform you that we will not be moving forward with your application at this time.</p>
+                  <p>We encourage you to keep learning and building your skills, and you are welcome to apply for future opportunities with us.</p>
+                  <br/>
+                  <p>Best regards,</p>
+                  <p><strong>Code-A-Nova Team</strong></p>
+                 </div>`
+        };
+        await mailService.sendEmail(mailOptions);
+      } catch (emailError) {
+        console.error("Error sending rejection email:", emailError);
+      }
+
+      res.json({ success: true, message: "Application marked as rejected and email sent." });
+    } catch (error) {
+      console.error("Error marking application as rejected:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
   }
 };
