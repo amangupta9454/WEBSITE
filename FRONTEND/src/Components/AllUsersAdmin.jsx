@@ -656,7 +656,7 @@ const AllUsersAdmin = () => {
                                   <div className="flex justify-between items-start mb-2">
                                     <div>
                                       <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">{internship.domain || "General"}</div>
-                                      <div className="font-bold text-slate-900">{repo.projectId?.title || "Project ID: " + repo.projectId}</div>
+                                      <div className="font-bold text-slate-900">{repo.projectId?.name || "Project ID: " + (repo.projectId?._id || repo.projectId)}</div>
                                     </div>
                                     <div className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">SP: {repo.spAwarded || 0}</div>
                                   </div>
