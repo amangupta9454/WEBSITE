@@ -424,6 +424,11 @@ const AllUsersAdmin = () => {
                   <div className="flex items-center gap-3 text-xs text-slate-500 font-medium mt-1">
                     <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {selectedUser.email}</span>
                     <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {selectedUser.mobile || "N/A"}</span>
+                    {!selectedUser.isQuizOnly && (
+                      <span className="flex items-center gap-1 font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                        <IndianRupee className="w-3.5 h-3.5" /> {selectedUser.fullData?.interviewCredits || 0} Tokens
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -649,7 +654,10 @@ const AllUsersAdmin = () => {
                               internship.assignedRepos?.map((repo, idx) => (
                                 <div key={`${internship._id}-${idx}`} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                                   <div className="flex justify-between items-start mb-2">
-                                    <div className="font-bold text-slate-900">{repo.projectId?.title || "Project ID: " + repo.projectId}</div>
+                                    <div>
+                                      <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">{internship.domain || "General"}</div>
+                                      <div className="font-bold text-slate-900">{repo.projectId?.title || "Project ID: " + repo.projectId}</div>
+                                    </div>
                                     <div className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">SP: {repo.spAwarded || 0}</div>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
