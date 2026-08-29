@@ -54,7 +54,7 @@ const {
   updateJobPortalPrice,
 } = require("../controllers/adminController");
 const { assignV2Projects, saveV2GlobalTask, getV2GlobalTasks, deleteV2GlobalTask } = require("../controllers/adminControllerV2");
-const { getAllUsers } = require("../controllers/adminUsersController");
+const { getAllUsers, getUserDetails } = require("../controllers/adminUsersController");
 const {
   createReferralCode,
   getReferralCodes,
@@ -79,6 +79,7 @@ router.get("/internships", auth, verifyAdmin, getInternships);
 
 // All Users & Referral routes
 router.get("/users", auth, verifyAdmin, getAllUsers);
+router.get("/users/:id/details", auth, verifyAdmin, getUserDetails);
 router.get("/referrals", auth, verifyAdmin, getReferralCodes);
 router.post("/referrals/create", auth, verifyAdmin, createReferralCode);
 router.post("/referrals/toggle/:id", auth, verifyAdmin, toggleReferralStatus);

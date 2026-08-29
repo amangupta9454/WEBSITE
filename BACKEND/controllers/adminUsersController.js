@@ -167,3 +167,66 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.getUserDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First try to find in User collection
+    let user = await User.findById(id).populate('internships.assignedRepos.projectId').lean();
+    let isQuizOnly = false;
+
+    if (!user) {
+      // If not found in User, it might be a quiz-only applicant
+      user = await QuizApplicant.findById(id).lean();
+      if (user) {
+        isQuizOnly = true;
+      }
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // If it's a regular user, also fetch their quiz data by email to merge it
+    let quizzes = [];
+    if (!isQuizOnly && user.email) {
+      const quizApplicant = await QuizApplicant.findOne({ email: new RegExp(`^${user.email}$`, 'i') }).lean();
+      if (quizApplicant) {
+        quizzes = quizApplicant.quizzes && quizApplicant.quizzes.length > 0 
+          ? quizApplicant.quizzes 
+          : [{
+              quizName: quizApplicant.quizName,
+              registrationId: quizApplicant.registrationId,
+              score: quizApplicant.score,
+              totalScore: quizApplicant.totalScore,
+              result: quizApplicant.result,
+              percentage: quizApplicant.percentage,
+              importedAt: quizApplicant.createdAt
+            }];
+      }
+    } else if (isQuizOnly) {
+      quizzes = user.quizzes && user.quizzes.length > 0 
+        ? user.quizzes 
+        : [{
+            quizName: user.quizName,
+            registrationId: user.registrationId,
+            score: user.score,
+            totalScore: user.totalScore,
+            result: user.result,
+            percentage: user.percentage,
+            importedAt: user.createdAt
+          }];
+    }
+
+    res.json({
+      success: true,
+      user,
+      isQuizOnly,
+      quizzes
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ success: false, message: "Server error fetching user details" });
+  }
+};
