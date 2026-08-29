@@ -2967,7 +2967,10 @@ module.exports = {
           }
         }
       }
-      
+      res.json({ success: true, message: `Fixed ${extractedCount} accounts.` });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   },
   markInternResigned: async (req, res) => {
     try {
