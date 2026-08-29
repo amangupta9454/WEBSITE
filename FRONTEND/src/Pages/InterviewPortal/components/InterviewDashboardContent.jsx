@@ -219,7 +219,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                        <div className="bg-indigo-50/50 rounded-2xl border-2 border-indigo-100 p-6 shadow-sm">
                           <h3 className="text-xl font-black text-indigo-900 mb-6 flex items-center gap-2">
                             <User className="text-indigo-500" /> Sarah (HR / Behavioral) Feedback
-                          </h3>
+                          </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-lg">
                             <CircularScore score={evaluation.hr_feedback?.communication_score} max={100} label="Communication" colorClass="text-indigo-600" bgClass="bg-white border-indigo-100" textClass="text-indigo-900" />
                             <CircularScore score={evaluation.hr_feedback?.confidence_score} max={100} label="Confidence" colorClass="text-pink-500" bgClass="bg-white border-pink-100" textClass="text-pink-900" />
@@ -252,7 +252,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                        <div className="bg-emerald-50/50 rounded-2xl border-2 border-emerald-100 p-6 shadow-sm">
                           <h3 className="text-xl font-black text-emerald-900 mb-6 flex items-center gap-2">
                             <User className="text-emerald-500" /> David (Tech Lead) Feedback
-                          </h3>
+                          </h2>
                           <div className="grid grid-cols-1 gap-4 mb-6 max-w-xs">
                             <CircularScore score={evaluation.technical_feedback?.overall_technical_score} max={100} label="Technical Depth" colorClass="text-emerald-600" bgClass="bg-white border-emerald-100" textClass="text-emerald-900" />
                           </div>
@@ -279,7 +279,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                             <div>
                               <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Technical Strengths
-                              </h3>
+                              </h2>
                               <ul className="space-y-2">
                                 {evaluation.technical_feedback?.strengths?.map((s, i) => (
                                   <li key={i} className="text-sm text-slate-600 bg-emerald-50/50 px-3 py-2 rounded-lg border border-emerald-100">{s}</li>
@@ -292,7 +292,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                             <div>
                               <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div> Knowledge Gaps
-                              </h3>
+                              </h2>
                               <ul className="space-y-2">
                                 {evaluation.technical_feedback?.weaknesses?.map((w, i) => (
                                   <li key={i} className="text-sm text-slate-600 bg-amber-50/50 px-3 py-2 rounded-lg border border-amber-100">{w}</li>
@@ -309,7 +309,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                        <div className="bg-slate-900 rounded-2xl border-2 border-slate-800 p-6 text-white shadow-xl shadow-slate-900/20">
                           <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
                             <Briefcase className="text-indigo-400" /> Hiring Committee Decision
-                          </h3>
+                          </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Final Recommendation</p>
@@ -374,7 +374,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-400/10 rounded-full blur-2xl"></div>
                 <h3 className="text-amber-900 font-black flex items-center gap-2 text-lg mb-1">
                   🚀 Your Path to Success
-                </h3>
+                </h2>
                 <p className="text-amber-800/80 text-sm font-medium mb-3">
                   Don't worry about the raw scores—interviews are about improvement! Review the Enterprise Assessment below, study your specific knowledge gaps, and practice the suggested better answers. You've got this!
                 </p>
@@ -391,7 +391,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 <div>
                   <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Strengths
-                  </h3>
+                  </h2>
                   <ul className="space-y-2">
                     {evaluation.strengths?.map((s, i) => (
                       <li key={i} className="text-sm text-slate-600 bg-emerald-50/50 px-3 py-2 rounded-lg border border-emerald-100">{s}</li>
@@ -401,7 +401,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 <div>
                   <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-amber-500"></div> Areas to Improve
-                  </h3>
+                  </h2>
                   <ul className="space-y-2">
                     {evaluation.weaknesses?.map((w, i) => (
                       <li key={i} className="text-sm text-slate-600 bg-amber-50/50 px-3 py-2 rounded-lg border border-amber-100">{w}</li>
@@ -414,7 +414,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 <div>
                   <h3 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div> Actionable Enhancements
-                  </h3>
+                  </h2>
                   <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                     <ul className="space-y-3">
                       {evaluation.enhancements.map((e, i) => (
@@ -432,7 +432,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                 <div className="space-y-6 pt-6 border-t border-slate-100">
                   <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
                     <Briefcase className="text-indigo-500" /> Enterprise Hiring Assessment
-                  </h3>
+                  </h2>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -710,26 +710,26 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
             onClick={() => navigate('/my-resumes')}
           >
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500">
               <FileText className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Bypass ATS smartly</p>
           </div>
         )}
 
         {hasPermission(userRoles, "mock_interviews") && interviewEnabled && (
           <div className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-sm shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={() => navigate('/my-interviews')}>
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500">
               <Video className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Practice with AI</p>
           </div>
         )}
@@ -739,13 +739,13 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-indigo-200 shadow-sm shadow-indigo-100 hover:-translate-y-1 hover:shadow-md hover:shadow-indigo-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
             onClick={() => navigate('/jobs')}
           >
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500">
               <Briefcase className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <Briefcase className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Latest Jobs</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Latest Jobs</h3>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Apply to verified jobs</p>
           </div>
         )}
@@ -755,13 +755,13 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-cyan-200 shadow-sm shadow-cyan-100 hover:-translate-y-1 hover:shadow-md hover:shadow-cyan-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
             onClick={() => navigate('/dashboard/assessment')}
           >
-            <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-cyan-600">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500 text-cyan-600">
               <GraduationCap className="w-12 h-12 sm:w-20 sm:h-20" />
             </div>
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-cyan-100 text-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
             <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Take quizzes & coding tests.</p>
           </div>
         )}
@@ -771,7 +771,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-purple-200 shadow-sm shadow-purple-100 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
           onClick={() => navigate('/my-quizzes')}
         >
-          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-purple-600">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500 text-purple-600">
             <Trophy className="w-12 h-12 sm:w-20 sm:h-20" />
           </div>
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-purple-100 text-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
@@ -786,7 +786,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-amber-200 shadow-sm shadow-amber-100 hover:-translate-y-1 hover:shadow-md hover:shadow-amber-200 cursor-pointer relative overflow-hidden group transition-all duration-300"
           onClick={() => navigate('/my-certificates')}
         >
-          <div className="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform text-amber-600">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500 text-amber-600">
             <Award className="w-12 h-12 sm:w-20 sm:h-20" />
           </div>
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">

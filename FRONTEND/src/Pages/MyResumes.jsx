@@ -231,7 +231,7 @@ const MyResumes = () => {
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-50/50 rounded-full blur-[100px] -mr-96 -mt-96 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[100px] -ml-64 -mb-64 pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest mb-6">
@@ -266,33 +266,33 @@ const MyResumes = () => {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-4 mb-8">
-                <div className="flex items-center gap-2 bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  <span className="text-sm font-bold text-emerald-800">Bypass ATS Filters</span>
+              <div className="flex flex-wrap gap-4 md:gap-6 mb-8">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
+                  <span className="text-xs md:text-sm font-bold text-slate-700">Bypass ATS Filters</span>
                 </div>
-                <div className="flex items-center gap-2 bg-amber-50 rounded-xl p-3 border border-amber-100">
-                  <Zap className="w-5 h-5 text-amber-600" />
-                  <span className="text-sm font-bold text-amber-800">Instant Formatting</span>
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
+                  <span className="text-xs md:text-sm font-bold text-slate-700">Instant Formatting</span>
                 </div>
-                <div className="flex items-center gap-2 bg-blue-50 rounded-xl p-3 border border-blue-100">
-                  <Award className="w-5 h-5 text-blue-600" />
-                  <span className="text-sm font-bold text-blue-800">Industry Standard</span>
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                  <span className="text-xs md:text-sm font-bold text-slate-700">Industry Standard</span>
                 </div>
               </div>
 
               <button 
                 onClick={handleCreate}
-                className="w-full md:w-fit bg-gradient-to-r from-brand-purple to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-black py-4 px-8 rounded-xl transition-all shadow-xl shadow-brand-purple/30 flex items-center justify-center gap-2 hover:-translate-y-1 text-lg mb-6 md:mb-0"
+                className="w-full md:w-fit bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 text-base md:text-lg mb-6 md:mb-0"
               >
-                <Plus className="w-6 h-6" /> Create New Resume
+                <Plus className="w-5 h-5 md:w-6 md:h-6" /> Create New Resume
               </button>
             </div>
 
             {/* Token Infographic Card */}
             <div className="bg-white rounded-3xl border border-slate-200 p-4 md:p-6 w-full md:w-80 shrink-0 shadow-xl shadow-slate-200/50">
               <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="font-bold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h3>
+                <h2 className="font-bold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h2>
                 <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 md:px-3 md:py-1 rounded-lg font-black text-base md:text-lg border border-indigo-100">
                   {credits} <span className="text-[9px] md:text-[10px] font-bold uppercase">Tokens</span>
                 </div>
@@ -326,7 +326,7 @@ const MyResumes = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 mt-12">
 
         {/* Recent Resume Highlight */}
         {recentResume && (

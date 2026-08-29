@@ -141,7 +141,7 @@ export default function UnifiedDashboard() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full sm:w-auto overflow-x-auto gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full sm:w-auto overflow-x-auto gap-2 mx-auto max-w-fit [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <button
             onClick={() => setActiveTab("overview")}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${activeTab === "overview"
@@ -172,7 +172,7 @@ export default function UnifiedDashboard() {
             <button
               onClick={() => setActiveTab("ambassador")}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 py-2 sm:px-6 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${activeTab === "ambassador"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 }`}
             >

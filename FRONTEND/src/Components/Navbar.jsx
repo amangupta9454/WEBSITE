@@ -125,7 +125,9 @@ const Navbar = () => {
             if (link.name === 'Internship' && showLeaderboard) {
               return (
                 <div key={link.name} className="relative group" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
-                  <button className={`flex items-center gap-1 text-sm font-semibold transition-colors hover:text-brand-purple ${(location.pathname === '/internship' || location.pathname === '/leaderboard') ? 'text-brand-purple' : 'text-gray-600'}`}>
+                  <button className={`flex items-center gap-1 text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${
+                    (location.pathname === '/internship' || location.pathname === '/leaderboard') ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                  }`}>
                     Internship <ChevronDown size={14} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
@@ -149,8 +151,8 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-semibold transition-colors hover:text-brand-purple ${
-                  location.pathname === link.path ? 'text-brand-purple' : 'text-gray-600'
+                className={`text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${
+                  location.pathname === link.path ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
                 }`}
               >
                 {link.name}

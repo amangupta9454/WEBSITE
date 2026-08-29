@@ -172,39 +172,39 @@ export default function DashboardTopSection() {
       
       {/* Admin Bonus Banners */}
       {!isBonusBannerDismissed && ((userData?.freeResumesGranted > 0) || (userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date())) && (
-        <div className="mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-3 sm:p-4 shadow-sm relative animate-fade-in">
+        <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-2 sm:p-3 relative animate-fade-in flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-sm">
           <button 
             onClick={() => {
               setIsBonusBannerDismissed(true);
               localStorage.setItem('dismissedAdminBonusBanner', 'true');
             }} 
-            className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-purple-400 hover:text-purple-700 transition-colors bg-white/50 hover:bg-white rounded-full p-1"
+            className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-indigo-400 hover:text-indigo-700 transition-colors bg-white/50 hover:bg-white rounded-full p-1"
           >
             <X className="w-4 h-4" />
           </button>
           
-          <div className="pr-6">
-            <h3 className="font-bold text-purple-800 text-sm sm:text-base flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-4 h-4 text-purple-600" /> Admin Bonuses Active!
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 pr-6 w-full">
+            <h3 className="font-bold text-indigo-800 text-xs sm:text-sm flex items-center gap-1.5 shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Admin Bonus Active:
             </h3>
-            <div className="flex flex-col gap-1.5 sm:gap-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full text-xs">
               {userData?.freeResumesGranted > 0 && (
-                <div className="flex items-center justify-between bg-white/70 p-2 sm:p-2.5 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
-                  <p className="text-purple-800 text-xs sm:text-sm font-medium">
-                    You have <b className="text-purple-900">{userData.freeResumesGranted} free AI Resume builds</b> & <b className="text-purple-900">{userData.freeDownloadsPerResume} PDF downloads</b> per resume.
-                  </p>
-                  <button onClick={() => navigate('/my-resumes')} className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-colors shadow-sm ml-4">
-                    Use Resumes
+                <div className="flex items-center justify-between bg-white px-2 py-1 sm:px-3 sm:py-1.5 rounded border border-indigo-100 flex-1 sm:flex-none">
+                  <span className="text-indigo-700 font-medium truncate mr-2">
+                    {userData.freeResumesGranted} Free Resumes
+                  </span>
+                  <button onClick={() => navigate('/my-resumes')} className="text-indigo-600 hover:text-indigo-800 font-bold underline shrink-0">
+                    Use
                   </button>
                 </div>
               )}
               {userData?.jobPortalPremium && userData?.jobPortalPremiumExpires && new Date(userData.jobPortalPremiumExpires) > new Date() && (
-                <div className="flex items-center justify-between bg-white/70 p-2 sm:p-2.5 rounded-lg border border-purple-100/50 hover:bg-white/90 transition-colors">
-                  <p className="text-purple-800 text-xs sm:text-sm font-medium">
-                    Job Portal VIP Access valid until <b className="text-purple-900">{new Date(userData.jobPortalPremiumExpires).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</b>.
-                  </p>
-                  <button onClick={() => navigate('/jobs')} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 sm:px-4 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-colors shadow-sm ml-4">
-                    View Jobs
+                <div className="flex items-center justify-between bg-white px-2 py-1 sm:px-3 sm:py-1.5 rounded border border-indigo-100 flex-1 sm:flex-none">
+                  <span className="text-indigo-700 font-medium truncate mr-2">
+                    Job VIP Access
+                  </span>
+                  <button onClick={() => navigate('/jobs')} className="text-indigo-600 hover:text-indigo-800 font-bold underline shrink-0">
+                    View
                   </button>
                 </div>
               )}
@@ -284,9 +284,9 @@ export default function DashboardTopSection() {
                 )}
                 <button
                   onClick={() => navigate('/profile')}
-                  className="mt-0.5 sm:mt-2 text-[9px] sm:text-[10px] font-bold text-indigo-500 hover:text-indigo-700 uppercase tracking-wider flex items-center gap-1 transition-colors sm:bg-indigo-50 sm:hover:bg-indigo-100 sm:px-2 sm:py-1 rounded-md w-fit"
+                  className="mt-2 text-xs sm:text-sm font-bold text-indigo-700 bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 w-fit shadow-sm"
                 >
-                  <Settings size={10} className="sm:w-3 sm:h-3" />
+                  <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Edit Profile</span>
                   <span className="sm:hidden">Edit</span>
                 </button>
