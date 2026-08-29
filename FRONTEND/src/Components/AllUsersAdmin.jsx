@@ -510,18 +510,42 @@ const AllUsersAdmin = () => {
                   {/* Platform Tab */}
                   {activeTab === "platform" && (
                     <div className="space-y-6">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
-                          <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Tokens</div>
-                          <div className="text-2xl font-black text-indigo-950">{selectedUser.fullData?.interviewCredits || 0}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex justify-between items-center">
+                          <div>
+                            <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Interview Tokens</div>
+                            <div className="text-2xl font-black text-indigo-950">{selectedUser.fullData?.interviewCredits || 0}</div>
+                          </div>
+                          {selectedUser.fullData?.interviewUnlimitedExpiresAt && new Date(selectedUser.fullData.interviewUnlimitedExpiresAt) > new Date() && (
+                            <div className="text-right">
+                              <div className="text-[10px] font-bold text-indigo-400 uppercase">Unlimited Until</div>
+                              <div className="text-sm font-bold text-indigo-700">{new Date(selectedUser.fullData.interviewUnlimitedExpiresAt).toLocaleDateString('en-GB')}</div>
+                            </div>
+                          )}
+                          {selectedUser.fullData?.interviewAccessOverride && (
+                            <div className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Admin Override</div>
+                          )}
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm">
-                          <div className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">Premium Status</div>
-                          <div className="text-lg font-black text-amber-950 mt-1">{selectedUser.fullData?.jobPortalPremium ? "Active" : "Inactive"}</div>
+                        <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm flex justify-between items-center">
+                          <div>
+                            <div className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">Job Portal Premium</div>
+                            <div className="text-lg font-black text-amber-950 mt-1">{selectedUser.fullData?.jobPortalPremium ? "Active" : "Inactive"}</div>
+                          </div>
+                          {selectedUser.fullData?.jobPortalPremium && selectedUser.fullData?.jobPortalPremiumExpires && (
+                            <div className="text-right">
+                              <div className="text-[10px] font-bold text-amber-400 uppercase">Expires On</div>
+                              <div className="text-sm font-bold text-amber-700">{new Date(selectedUser.fullData.jobPortalPremiumExpires).toLocaleDateString('en-GB')}</div>
+                            </div>
+                          )}
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
-                          <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">Free Resumes</div>
-                          <div className="text-2xl font-black text-emerald-950">{selectedUser.fullData?.freeResumesGranted || 0}</div>
+                        <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm flex justify-between items-center">
+                          <div>
+                            <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">Free Resumes</div>
+                            <div className="text-2xl font-black text-emerald-950">{selectedUser.fullData?.freeResumesGranted || 0}</div>
+                          </div>
+                          {selectedUser.fullData?.resumeAccessOverride && (
+                            <div className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">Admin Override</div>
+                          )}
                         </div>
                         <div className="bg-white p-4 rounded-2xl border border-blue-100 shadow-sm">
                           <div className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1">Synergy Points</div>
