@@ -42,6 +42,7 @@ const {
   overrideSP,
   evaluatePendingAI,
   getRecentPayments,
+  getTokenPurchases,
   sendEvaluationEmails,
   resetAIEvaluations,
   migrateDates,
@@ -113,7 +114,7 @@ router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
 router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
 // Bulk Import & Quiz Routes
-const { importInterns, importQuizUsers, sendQuizCertificate, getQuizApplicants, getQuizSponsorDetails, deleteQuizApplicant, deleteApplication, bulkDeleteApplications, updateQuizSponsor, sendDeleteQuizOtp, deleteQuiz, getTokenPurchases } = require("../controllers/adminController");
+const { importInterns, importQuizUsers, sendQuizCertificate, getQuizApplicants, getQuizSponsorDetails, deleteQuizApplicant, deleteApplication, bulkDeleteApplications, updateQuizSponsor, sendDeleteQuizOtp, deleteQuiz } = require("../controllers/adminController");
 router.post("/import-interns", auth, verifyAdmin, upload.single("excelFile"), importInterns);
 router.post("/import-quiz-users", auth, verifyAdmin, upload.fields([{ name: "excelFile", maxCount: 1 }, { name: "sponsorLogo", maxCount: 1 }, { name: "sponsorSignature", maxCount: 1 }]), importQuizUsers);
 router.get("/quiz-applicants", auth, verifyAdmin, getQuizApplicants);
