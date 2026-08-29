@@ -121,6 +121,9 @@ const registerInternship = async (req, res) => {
 
     let resumeUrl = "";
     if (req.file) {
+      if (req.file.mimetype !== 'application/pdf') {
+        return res.status(400).json({ message: "Only PDF format is allowed for resume." });
+      }
       resumeUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "resumes", resource_type: "auto" },
@@ -411,6 +414,9 @@ const verifyRegistrationPayment = async (req, res) => {
 
     let resumeUrl = "";
     if (req.file) {
+      if (req.file.mimetype !== 'application/pdf') {
+        return res.status(400).json({ message: "Only PDF format is allowed for resume." });
+      }
       resumeUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "resumes", resource_type: "auto" },

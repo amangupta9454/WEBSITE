@@ -70,7 +70,13 @@ const Registration = () => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setResume(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.type !== 'application/pdf') {
+        toast.error('Only PDF format is allowed for resume');
+        e.target.value = '';
+        return;
+      }
+      setResume(file);
     }
   };
 
@@ -390,7 +396,7 @@ const Registration = () => {
                       <input
                         id="resume-upload"
                         type="file"
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf,application/pdf"
                         onChange={handleFileChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         required
@@ -402,7 +408,7 @@ const Registration = () => {
                         ) : (
                           <div>
                             <p className="text-gray-600 font-bold mb-1">Click to upload or drag and drop</p>
-                            <p className="text-gray-400 text-sm">PDF, DOC, DOCX (Max 5MB)</p>
+                            <p className="text-gray-400 text-sm">PDF only (Max 5MB)</p>
                           </div>
                         )}
                       </div>
