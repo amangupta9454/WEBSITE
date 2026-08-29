@@ -549,7 +549,9 @@ const AllUsersAdmin = () => {
                         </div>
                         <div className="bg-white p-4 rounded-2xl border border-blue-100 shadow-sm">
                           <div className="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1">Synergy Points</div>
-                          <div className="text-2xl font-black text-blue-950">{selectedUser.fullData?.synergyPoints || 0}</div>
+                          <div className="text-2xl font-black text-blue-950">
+                            {selectedUser.fullData?.internships?.reduce((acc, internship) => acc + (internship.synergyPoints || 0), 0) || 0}
+                          </div>
                         </div>
                       </div>
 
