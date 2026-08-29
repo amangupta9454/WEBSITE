@@ -237,6 +237,9 @@ const JobDetail = () => {
     );
   };
 
+  const hasValidUrl = Boolean(job.applyUrl && job.applyUrl !== '#' && !job.applyUrl.startsWith('mailto:'));
+  const hasEmail = Boolean(job.applyEmail);
+
   return (
     <MainLayout>
       <div className="bg-[#FAFAFA] min-h-screen pt-24 pb-20">
@@ -311,9 +314,9 @@ const JobDetail = () => {
                 ) : (
                   <button 
                     onClick={() => {
-                      if (job.applyUrl) {
+                      if (hasValidUrl) {
                         handleOpenApplication(job.applyUrl, false);
-                      } else if (job.applyEmail) {
+                      } else if (hasEmail) {
                         handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true);
                       } else {
                         toast.error('Application link is not currently specified.');
@@ -321,7 +324,7 @@ const JobDetail = () => {
                     }}
                     className="flex-1 md:flex-none inline-flex justify-center items-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-6 md:px-8 py-3.5 md:py-4 rounded-2xl font-black hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg shadow-indigo-600/20 hover:-translate-y-1 text-sm md:text-base cursor-pointer"
                   >
-                    {job.applyEmail && !job.applyUrl ? '📧 Click to Email' : '🚀 Apply Now'}
+                    {hasEmail && !hasValidUrl ? '📧 Click to Email' : '🚀 Apply Now'}
                     <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 )}
@@ -385,7 +388,7 @@ const JobDetail = () => {
                 <p className="text-indigo-900/70 text-sm font-semibold">Use our interactive click-to-apply protection buttons below to open the application or email the recruiter.</p>
               </div>
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                {job.applyEmail && (
+                {hasEmail && (
                   <button
                     onClick={() => handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true)}
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border-2 border-indigo-200 px-6 py-3.5 rounded-2xl font-extrabold shadow-sm transition-all text-sm cursor-pointer"
@@ -394,7 +397,7 @@ const JobDetail = () => {
                     📧 Click to Email Recruiter
                   </button>
                 )}
-                {job.applyUrl && (
+                {hasValidUrl && (
                   <button
                     onClick={() => handleOpenApplication(job.applyUrl, false)}
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-7 py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-600/20 transition-all text-sm cursor-pointer"
@@ -403,7 +406,7 @@ const JobDetail = () => {
                     <ExternalLink className="w-4 h-4" />
                   </button>
                 )}
-                {!job.applyEmail && !job.applyUrl && (
+                {!hasEmail && !hasValidUrl && (
                   <span className="px-5 py-3 bg-slate-200 text-slate-600 font-bold rounded-xl text-sm">
                     Application portal temporarily offline
                   </span>
