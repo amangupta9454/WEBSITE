@@ -91,7 +91,9 @@ const PortfolioPreview = () => {
                     🚀 {project.results}
                   </div>
                 </div>
-                <h3 className={`text-xl md:text-3xl font-black ${project.titleColor} mb-3 md:mb-4 leading-tight`}>{project.title}</h3>
+                <div className="min-h-[3rem] md:min-h-[4.5rem] flex flex-col justify-center mb-3 md:mb-4">
+                  <h3 className={`text-xl md:text-3xl font-black ${project.titleColor} leading-tight`}>{project.title}</h3>
+                </div>
                 
                 <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
                   {project.tech.map((t, i) => (

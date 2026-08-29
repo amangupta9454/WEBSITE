@@ -30,7 +30,7 @@ const Hero = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm mb-8"
             >
               <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-sm text-gray-600 font-bold tracking-wide uppercase">
+              <span className="text-sm text-gray-600 font-bold">
                 Premium Business Solutions
               </span>
             </motion.div>
@@ -40,7 +40,7 @@ const Hero = () => {
               className="text-5xl md:text-7xl lg:text-[5rem] font-black leading-[1.05] mb-6 tracking-tight text-gray-900"
             >
               Build a{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-700">
                 Website
               </span>{" "}
               That <br className="hidden md:block" />
@@ -102,7 +102,7 @@ const Hero = () => {
                     <p className="text-gray-400 text-sm font-bold mb-1 uppercase tracking-wider">
                       Online Sales
                     </p>
-                    <h3 className="text-5xl font-black text-gray-900">$124k</h3>
+                    <div className="text-5xl font-black text-gray-900">$124k</div>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 bg-green-100 px-3 py-1 rounded-full text-sm font-bold">
                     <ArrowRight size={14} className="-rotate-45" /> +24%

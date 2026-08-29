@@ -20,32 +20,32 @@ const industries = [
   {
     name: "Restaurants",
     slug: "restaurants",
-    icon: <Utensils size={24} className="text-orange-500" />,
+    icon: <Utensils size={24} className="text-blue-600" />,
   },
   {
     name: "Cafés",
     slug: "cafes",
-    icon: <Coffee size={24} className="text-amber-600" />,
+    icon: <Coffee size={24} className="text-blue-600" />,
   },
   {
     name: "Gyms",
     slug: "gyms",
-    icon: <Dumbbell size={24} className="text-blue-500" />,
+    icon: <Dumbbell size={24} className="text-blue-600" />,
   },
   {
     name: "Salons",
     slug: "salons",
-    icon: <Scissors size={24} className="text-pink-500" />,
+    icon: <Scissors size={24} className="text-blue-600" />,
   },
   {
     name: "Clinics",
     slug: "clinics",
-    icon: <Stethoscope size={24} className="text-teal-500" />,
+    icon: <Stethoscope size={24} className="text-blue-600" />,
   },
   {
     name: "Schools",
     slug: "schools",
-    icon: <GraduationCap size={24} className="text-indigo-500" />,
+    icon: <GraduationCap size={24} className="text-blue-600" />,
   },
   {
     name: "Colleges",
@@ -55,22 +55,22 @@ const industries = [
   {
     name: "Startups",
     slug: "startups",
-    icon: <Rocket size={24} className="text-purple-500" />,
+    icon: <Rocket size={24} className="text-blue-600" />,
   },
   {
     name: "Retail Shops",
     slug: "retail",
-    icon: <ShoppingBag size={24} className="text-red-500" />,
+    icon: <ShoppingBag size={24} className="text-blue-600" />,
   },
   {
     name: "Real Estate",
     slug: "realestate",
-    icon: <Building2 size={24} className="text-blue-700" />,
+    icon: <Building2 size={24} className="text-blue-600" />,
   },
   {
     name: "Personal Brands",
     slug: "personalbrands",
-    icon: <User size={24} className="text-gray-700" />,
+    icon: <User size={24} className="text-blue-600" />,
   },
 ];
 
@@ -105,18 +105,18 @@ const IndustriesServed = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="flex flex-wrap justify-center gap-3 md:gap-5 max-w-5xl mx-auto"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto"
         >
           {industries.map((ind, i) => (
             <motion.div key={i} variants={fadeUp}>
               <Link
                 to={`/industries/${ind.slug}`}
-                className="group flex items-center gap-3 md:gap-4 bg-white border border-gray-100 rounded-full py-2.5 px-5 md:py-4 md:px-8 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 hover:border-blue-100 transition-all duration-300 cursor-pointer"
+                className="group flex flex-col md:flex-row items-center md:items-start gap-3 md:gap-4 bg-white border border-gray-100 rounded-2xl md:rounded-full py-4 px-4 md:px-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-blue-100 transition-all duration-300 cursor-pointer h-full"
               >
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-50 group-hover:bg-blue-50 rounded-full flex items-center justify-center transition-colors">
                   {ind.icon}
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm md:text-lg tracking-wide">
+                <h3 className="font-bold text-gray-900 text-sm md:text-base text-center md:text-left">
                   {ind.name}
                 </h3>
               </Link>

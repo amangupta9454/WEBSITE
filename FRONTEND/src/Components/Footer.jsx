@@ -36,24 +36,6 @@ const Footer = () => {
             >
               Get Your Free Proposal <ArrowRight size={18} />
             </button>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://www.linkedin.com/company/code-a-nova/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100"
-              >
-                <Linkedin size={18} />
-              </a>
-              <a
-                href="https://www.instagram.com/codenova31/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-pink-50 hover:text-pink-600 transition-colors border border-gray-100"
-              >
-                <Instagram size={18} />
-              </a>
-            </div>
           </div>
 
           {/* Links Grid (Compact on mobile) */}
@@ -144,16 +126,35 @@ const Footer = () => {
               <ul className="flex flex-col gap-4 mb-4">
                 <li className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 font-bold text-sm hover:border-blue-200 transition-colors">
                   <Mail size={18} className="text-blue-600 shrink-0" />
-                  <a href="mailto:codeanova26@gmail.com" className="truncate">
+                  <a href="mailto:codeanova26@gmail.com" className="hover:text-blue-600 transition-colors">
                     codeanova26@gmail.com
                   </a>
                 </li>
               </ul>
               
-              <div className="mt-auto flex justify-end">
+              <div className="flex items-center gap-4 mb-6">
+                <a
+                  href="https://www.linkedin.com/company/code-a-nova/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100"
+                >
+                  <Linkedin size={18} />
+                </a>
+                <a
+                  href="https://www.instagram.com/codenova31/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-pink-50 hover:text-pink-600 transition-colors border border-gray-100"
+                >
+                  <Instagram size={18} />
+                </a>
+              </div>
+
+              <div className="mt-auto flex justify-start">
                 <button
                   onClick={() => navigate('/student-login')}
-                  className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-xs rounded-full hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105"
+                  className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white font-bold text-xs rounded-full hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
                 >
                   Intern Login <ArrowRight size={14} />
                 </button>

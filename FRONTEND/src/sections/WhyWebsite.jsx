@@ -42,7 +42,7 @@ const WhyWebsite = () => {
             variants={staggerContainer}
           >
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">
-              Why Does Your Business Need a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Website?</span>
+              Why Does Your Business Need a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-700">Website?</span>
             </motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-gray-500 font-medium mb-10 leading-relaxed">
               Relying only on word-of-mouth or social media is holding your business back. A dedicated website is the ultimate asset for building trust, capturing leads, and scaling your revenue predictably.
@@ -55,7 +55,7 @@ const WhyWebsite = () => {
                     {r.icon}
                   </div>
                   <div>
-                    <h4 className="text-base md:text-xl font-bold text-gray-900 mb-1 md:mb-2 leading-tight">{r.title}</h4>
+                    <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1 md:mb-2 leading-tight">{r.title}</h3>
                     <p className="text-[13px] md:text-base text-gray-500 font-medium leading-relaxed">{r.desc}</p>
                   </div>
                 </motion.div>
@@ -70,8 +70,8 @@ const WhyWebsite = () => {
             transition={{ duration: 0.8 }}
             className="relative"
           >
-            <div className="bg-gradient-to-tr from-blue-600 to-purple-600 p-1 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-blue-900/20 mt-8 lg:mt-0">
-              <div className="bg-white rounded-[1.9rem] md:rounded-[2.4rem] overflow-hidden p-6 md:p-10 relative">
+            <div className="bg-gradient-to-tr from-blue-600 to-blue-700 p-1 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-blue-900/20 mt-8 lg:mt-0 h-full flex flex-col justify-center">
+              <div className="bg-white rounded-[1.9rem] md:rounded-[2.4rem] overflow-hidden p-6 md:p-10 relative h-full flex flex-col justify-center">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-transparent to-transparent" />
                 
                 <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-6 md:mb-8 relative z-10 text-center">See The Difference</h3>

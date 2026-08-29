@@ -11,7 +11,7 @@ const Partners = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-8"
+          className="text-sm font-bold text-gray-500 mb-8"
         >
           Our Trusted Partners
         </motion.p>

@@ -44,7 +44,7 @@ const Testimonials = () => {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-50 rounded-full blur-[100px] pointer-events-none opacity-50" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-black mb-6 text-gray-900 tracking-tight">Client <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Success Stories</span></h2>
+          <h2 className="text-3xl md:text-5xl font-black mb-6 text-gray-900 tracking-tight">Client <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-700">Success Stories</span></h2>
           <p className="text-gray-500 font-medium text-lg">See how we help local businesses grow their online presence.</p>
         </div>
 
@@ -93,7 +93,7 @@ const Testimonials = () => {
                   {testimonial.name.charAt(0)}
                 </div>
                 <div>
-                  <h4 className="text-gray-900 font-bold text-sm md:text-lg leading-tight">{testimonial.name}</h4>
+                  <h3 className="text-gray-900 font-bold text-sm md:text-lg leading-tight">{testimonial.name}</h3>
                   <p className="text-gray-500 font-medium text-[11px] md:text-sm">{testimonial.role}</p>
                 </div>
               </div>
