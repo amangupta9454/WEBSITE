@@ -93,6 +93,7 @@ router.get("/ambassador-applications", auth, verifyAdmin, getAmbassadorApplicati
 router.post("/ambassador-applications/approve/:id", auth, verifyAdmin, approveAmbassadorApplication);
 router.post("/ambassador-applications/reject/:id", auth, verifyAdmin, rejectAmbassadorApplication);
 router.get("/recent-payments", auth, verifyAdmin, getRecentPayments);
+router.get("/token-purchases", auth, verifyAdmin, getTokenPurchases);
 router.post("/mark-downloaded", auth, verifyAdmin, markDownloaded);
 router.post("/update-internship", auth, verifyAdmin, updateInternshipDetails);
 router.post(
@@ -112,7 +113,7 @@ router.post("/mark-project-exported", auth, verifyAdmin, markProjectExported);
 router.post("/bulk-update", auth, verifyAdmin, bulkUpdate);
 
 // Bulk Import & Quiz Routes
-const { importInterns, importQuizUsers, sendQuizCertificate, getQuizApplicants, getQuizSponsorDetails, deleteQuizApplicant, deleteApplication, bulkDeleteApplications, updateQuizSponsor, sendDeleteQuizOtp, deleteQuiz } = require("../controllers/adminController");
+const { importInterns, importQuizUsers, sendQuizCertificate, getQuizApplicants, getQuizSponsorDetails, deleteQuizApplicant, deleteApplication, bulkDeleteApplications, updateQuizSponsor, sendDeleteQuizOtp, deleteQuiz, getTokenPurchases } = require("../controllers/adminController");
 router.post("/import-interns", auth, verifyAdmin, upload.single("excelFile"), importInterns);
 router.post("/import-quiz-users", auth, verifyAdmin, upload.fields([{ name: "excelFile", maxCount: 1 }, { name: "sponsorLogo", maxCount: 1 }, { name: "sponsorSignature", maxCount: 1 }]), importQuizUsers);
 router.get("/quiz-applicants", auth, verifyAdmin, getQuizApplicants);

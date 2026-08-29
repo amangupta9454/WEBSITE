@@ -2849,6 +2849,84 @@ const getGraphicResources = async (req, res) => {
   }
 };
 
+const getTokenPurchases = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Get paginated purchases
+    const purchasesPipeline = [
+      { $match: { "interviewPayments.0": { $exists: true } } },
+      { $unwind: "$interviewPayments" },
+      { $project: {
+          name: 1,
+          email: 1,
+          payment: "$interviewPayments"
+      }},
+      { $sort: { "payment.paidAt": -1 } },
+      { $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }]
+      }}
+    ];
+
+    const result = await User.aggregate(purchasesPipeline);
+    const data = result[0].data || [];
+    const totalCount = result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
+
+    // Calculate today's total
+    const todayPipeline = [
+      { $match: { "interviewPayments.0": { $exists: true } } },
+      { $unwind: "$interviewPayments" },
+      { $match: { "interviewPayments.paidAt": { $gte: startOfToday } } },
+      { $project: { payment: "$interviewPayments" } }
+    ];
+    
+    const todayPurchases = await User.aggregate(todayPipeline);
+    
+    let todayRupees = 0;
+    let todayTokens = 0;
+
+    todayPurchases.forEach(p => {
+      todayRupees += (p.payment.amount || 0);
+      
+      let tknMatch = p.payment.packageId ? p.payment.packageId.match(/(\d+)/) : null;
+      let tknAmount = tknMatch ? parseInt(tknMatch[1]) : 0;
+      
+      if (tknAmount === 10 && p.payment.amount === 299) {
+        tknAmount = 100;
+      }
+      if (tknAmount === 50 && p.payment.amount === 199) {
+        tknAmount = 50;
+      }
+      
+      // Handle custom tokens
+      if (p.payment.packageId && p.payment.packageId.startsWith('custom_')) {
+         tknAmount = parseInt(p.payment.packageId.replace('custom_', ''), 10) || tknAmount;
+      }
+
+      todayTokens += tknAmount;
+    });
+
+    res.json({
+      success: true,
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      todayRupees,
+      todayTokens
+    });
+  } catch (error) {
+    console.error("[Admin] Error fetching token purchases:", error);
+    res.status(500).json({ success: false, message: "Server error fetching token purchases" });
+  }
+};
+
 module.exports = {
   adminLogin,
   getInternships,
@@ -2868,6 +2946,7 @@ module.exports = {
   deleteQuiz,
   deleteApplication,
   bulkDeleteApplications,
+  getTokenPurchases,
   toggleLeaderboardSetting,
   getGraphicInterns,
   updateStipendStatus,

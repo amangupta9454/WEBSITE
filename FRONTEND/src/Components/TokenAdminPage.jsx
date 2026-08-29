@@ -194,6 +194,14 @@ export default function TokenAdminPage() {
   const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
   const [selectedAdjustUser, setSelectedAdjustUser] = useState(null);
 
+  // Real Token Purchases State
+  const [purchases, setPurchases] = useState([]);
+  const [purchasesPage, setPurchasesPage] = useState(1);
+  const [purchasesTotalPages, setPurchasesTotalPages] = useState(1);
+  const [todayRupees, setTodayRupees] = useState(0);
+  const [todayTokens, setTodayTokens] = useState(0);
+  const [loadingPurchases, setLoadingPurchases] = useState(true);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -234,7 +242,31 @@ export default function TokenAdminPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchPurchases = async (page = purchasesPage) => {
+    setLoadingPurchases(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.get(`${BACKEND}/api/admin/token-purchases?page=${page}&limit=5`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setPurchases(res.data.data);
+        setPurchasesTotalPages(res.data.totalPages);
+        setPurchasesPage(res.data.currentPage);
+        setTodayRupees(res.data.todayRupees);
+        setTodayTokens(res.data.todayTokens);
+      }
+    } catch (err) {
+      toast.error("Failed to load token purchases");
+    } finally {
+      setLoadingPurchases(false);
+    }
+  };
+
+  useEffect(() => { 
+    fetchData(); 
+    fetchPurchases();
+  }, []);
 
   const filtered = users.filter(u =>
     !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
@@ -269,6 +301,98 @@ export default function TokenAdminPage() {
             {savingTokens ? "Saving..." : "Save Settings"}
           </button>
         </div>
+      </div>
+
+      {/* Real Token Purchases */}
+      <div className="bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+          <IndianRupee className="w-32 h-32 text-emerald-600" />
+        </div>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 relative z-10">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <IndianRupee className="w-4 h-4 text-emerald-600" /> Real Token Purchases
+          </h3>
+          <div className="flex items-center gap-4">
+             <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-emerald-700 font-bold text-sm">
+                Today's Total: ₹{todayRupees} ({todayTokens} Tokens)
+             </div>
+             <button onClick={() => fetchPurchases()} className="text-slate-400 hover:text-emerald-600 p-1 transition-colors">
+               <RefreshCw className="w-4 h-4" />
+             </button>
+          </div>
+        </div>
+
+        {loadingPurchases ? (
+          <div className="flex justify-center py-8"><RefreshCw className="w-6 h-6 animate-spin text-emerald-600" /></div>
+        ) : (
+          <div className="overflow-x-auto relative z-10">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs uppercase font-black tracking-wider border-b border-slate-200">
+                  <th className="p-3">Buyer</th>
+                  <th className="p-3">Package / Tokens</th>
+                  <th className="p-3">Amount Paid</th>
+                  <th className="p-3">Payment ID</th>
+                  <th className="p-3 text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {purchases.length === 0 ? (
+                  <tr><td colSpan="5" className="p-4 text-center text-slate-500 italic">No real token purchases found.</td></tr>
+                ) : (
+                  purchases.map((p, i) => {
+                    const payment = p.payment;
+                    let tokens = 0;
+                    if (payment.packageId) {
+                       const match = payment.packageId.match(/(\d+)/);
+                       tokens = match ? parseInt(match[1]) : 0;
+                       if (tokens === 10 && payment.amount === 299) tokens = 100;
+                       if (tokens === 50 && payment.amount === 199) tokens = 50;
+                       if (payment.packageId.startsWith('custom_')) tokens = parseInt(payment.packageId.replace('custom_', ''), 10) || tokens;
+                    }
+                    return (
+                      <tr key={i} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3">
+                          <div className="font-bold text-slate-800">{p.name}</div>
+                          <div className="text-xs text-slate-500">{p.email}</div>
+                        </td>
+                        <td className="p-3 font-semibold text-emerald-600">
+                           {tokens > 0 ? `${tokens} Tokens` : payment.packageId}
+                        </td>
+                        <td className="p-3 font-black text-slate-700">₹{payment.amount}</td>
+                        <td className="p-3 font-mono text-xs text-slate-500">{payment.razorpayPaymentId || '-'}</td>
+                        <td className="p-3 text-xs text-slate-500 font-medium text-right">
+                          {new Date(payment.paidAt).toLocaleDateString("en-GB", { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            
+            {/* Pagination */}
+            {purchasesTotalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => fetchPurchases(purchasesPage - 1)} 
+                  disabled={purchasesPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50 transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-slate-500 font-semibold">Page {purchasesPage} of {purchasesTotalPages}</span>
+                <button 
+                  onClick={() => fetchPurchases(purchasesPage + 1)} 
+                  disabled={purchasesPage === purchasesTotalPages}
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Users Search */}
