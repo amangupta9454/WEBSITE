@@ -12,6 +12,7 @@ const JobDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
+  const [showApplyPrompt, setShowApplyPrompt] = useState(false);
   const [premiumPrice, setPremiumPrice] = useState(199);
 
   const handleUnauthenticatedAttempt = (actionName) => {
@@ -34,7 +35,7 @@ const JobDetail = () => {
       return;
     }
     if (!isApplied) {
-      toggleApplyJob();
+      setShowApplyPrompt(true);
     }
     if (isMail) {
       window.location.href = targetUrl;
@@ -311,6 +312,12 @@ const JobDetail = () => {
                   >
                     🔒 Unlock Premium to Apply
                   </Link>
+                ) : showApplyPrompt ? (
+                  <div className="flex-1 md:flex-none flex items-center gap-3 bg-indigo-50 border border-indigo-200 p-2 pl-4 rounded-2xl shadow-inner animate-[fadeIn_0.3s_ease-out]">
+                    <span className="text-sm font-bold text-indigo-900 whitespace-nowrap">Successfully applied?</span>
+                    <button onClick={() => { toggleApplyJob(); setShowApplyPrompt(false); }} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700">Yes</button>
+                    <button onClick={() => setShowApplyPrompt(false)} className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-black hover:bg-slate-50">No</button>
+                  </div>
                 ) : (
                   <button 
                     onClick={() => {
@@ -388,28 +395,38 @@ const JobDetail = () => {
                 <p className="text-indigo-900/70 text-sm font-semibold">Use our interactive click-to-apply protection buttons below to open the application or email the recruiter.</p>
               </div>
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                {hasEmail && (
-                  <button
-                    onClick={() => handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true)}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border-2 border-indigo-200 px-6 py-3.5 rounded-2xl font-extrabold shadow-sm transition-all text-sm cursor-pointer"
-                  >
-                    <Mail className="w-4 h-4 text-indigo-600" />
-                    📧 Click to Email Recruiter
-                  </button>
-                )}
-                {hasValidUrl && (
-                  <button
-                    onClick={() => handleOpenApplication(job.applyUrl, false)}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-7 py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-600/20 transition-all text-sm cursor-pointer"
-                  >
-                    🚀 Click to Open Career Link
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                )}
-                {!hasEmail && !hasValidUrl && (
-                  <span className="px-5 py-3 bg-slate-200 text-slate-600 font-bold rounded-xl text-sm">
-                    Application portal temporarily offline
-                  </span>
+                {showApplyPrompt ? (
+                  <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 p-2 pl-4 rounded-2xl shadow-inner animate-[fadeIn_0.3s_ease-out]">
+                    <span className="text-sm font-bold text-indigo-900 whitespace-nowrap">Successfully applied?</span>
+                    <button onClick={() => { toggleApplyJob(); setShowApplyPrompt(false); }} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-colors">Yes</button>
+                    <button onClick={() => setShowApplyPrompt(false)} className="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-black hover:bg-slate-50 transition-colors">No</button>
+                  </div>
+                ) : (
+                  <>
+                    {hasEmail && (
+                      <button
+                        onClick={() => handleOpenApplication(`mailto:${job.applyEmail}?subject=Application for ${encodeURIComponent(job.title)}`, true)}
+                        className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border-2 border-indigo-200 px-6 py-3.5 rounded-2xl font-extrabold shadow-sm transition-all text-sm cursor-pointer"
+                      >
+                        <Mail className="w-4 h-4 text-indigo-600" />
+                        📧 Click to Email Recruiter
+                      </button>
+                    )}
+                    {hasValidUrl && (
+                      <button
+                        onClick={() => handleOpenApplication(job.applyUrl, false)}
+                        className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-7 py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-600/20 transition-all text-sm cursor-pointer"
+                      >
+                        🚀 Click to Open Career Link
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    )}
+                    {!hasEmail && !hasValidUrl && (
+                      <span className="px-5 py-3 bg-slate-200 text-slate-600 font-bold rounded-xl text-sm">
+                        Application portal temporarily offline
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
