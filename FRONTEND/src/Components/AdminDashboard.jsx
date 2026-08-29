@@ -1238,9 +1238,17 @@ const AdminDashboard = () => {
                 <h3 className="text-slate-900 font-semibold text-sm truncate">
                   {app.name}
                 </h3>
-                <p className="text-slate-500 text-xs">
-                  {app.studentId || "No ID"}
-                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-slate-500 text-xs">
+                    {app.studentId || "No ID"}
+                  </p>
+                  {app.resigned?.isResigned && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
+                  )}
+                  {app.rejected?.isRejected && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -2965,7 +2973,15 @@ const AdminDashboard = () => {
                                 />
                               </td>
                               <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">
-                                {app.studentId || "—"}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span>{app.studentId || "—"}</span>
+                                  {app.resigned?.isResigned && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
+                                  )}
+                                  {app.rejected?.isRejected && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-3.5 px-4">
                                 <span className="text-slate-900 font-medium text-sm group-hover:text-blue-300 transition-colors">
