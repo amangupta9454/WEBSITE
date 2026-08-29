@@ -577,29 +577,51 @@ const AllUsersAdmin = () => {
                           <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                               <h4 className="text-base font-black text-slate-900">{app.domain}</h4>
-                              <span className="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-md font-bold text-xs tracking-wider">
-                                ID: {app.studentId}
-                              </span>
+                                <div className="flex items-center gap-3">
+                                  <span className="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-md font-bold text-xs tracking-wider">
+                                    ID: {app.studentId}
+                                  </span>
+                                  {app.resume && (
+                                    <a
+                                      href={app.resume}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 text-xs font-bold rounded-md transition-all shadow-sm"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" /> Resume
+                                    </a>
+                                  )}
+                                </div>
                             </div>
-                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                              <div>
-                                <span className="block text-xs font-bold text-slate-400 mb-1">Details</span>
-                                <div className="space-y-1.5">
-                                  <div className="flex justify-between"><span className="text-slate-500">Duration:</span> <span className="font-bold text-slate-800">{app.duration} Months</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Type:</span> <span className="font-bold text-slate-800">{app.internshipType}</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Batch:</span> <span className="font-bold text-slate-800">{app.batch || "N/A"}</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Applied:</span> <span className="font-bold text-slate-800">{new Date(app.appliedAt).toLocaleDateString('en-GB')}</span></div>
+                              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                                <div>
+                                  <span className="block text-xs font-bold text-slate-400 mb-1">Details</span>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between"><span className="text-slate-500">Duration:</span> <span className="font-bold text-slate-800">{app.duration} Months</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Type:</span> <span className="font-bold text-slate-800">{app.internshipType}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Batch:</span> <span className="font-bold text-slate-800">{app.batch || "N/A"}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Applied:</span> <span className="font-bold text-slate-800">{new Date(app.appliedAt).toLocaleDateString('en-GB')}</span></div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <span className="block text-xs font-bold text-slate-400 mb-1">Status</span>
-                                <div className="space-y-1.5">
-                                  <div className="flex justify-between"><span className="text-slate-500">Payment:</span> <span className={`font-bold ${app.hasPaid ? 'text-emerald-600' : 'text-amber-600'}`}>{app.hasPaid ? `Paid (₹${app.paymentAmount || 0})` : 'Unpaid'}</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Offer Letter:</span> <span className="font-bold text-slate-800">{app.offerLetterStatus}</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Stipend:</span> <span className={`font-bold ${app.stipendStatus === 'Paid' ? 'text-emerald-600' : 'text-slate-800'}`}>{app.stipendStatus}</span></div>
-                                  <div className="flex justify-between"><span className="text-slate-500">Certificate:</span> <span className="font-bold text-slate-800">{app.isCertificateSent ? "Sent" : "Pending"}</span></div>
+                                <div>
+                                  <span className="block text-xs font-bold text-slate-400 mb-1">Academics</span>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between"><span className="text-slate-500">Course:</span> <span className="font-bold text-slate-800 text-right">{app.course || "N/A"}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Branch:</span> <span className="font-bold text-slate-800 text-right truncate w-24" title={app.branch}>{app.branch || "N/A"}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">College:</span> <span className="font-bold text-slate-800 text-right truncate w-24" title={app.college}>{app.college || "N/A"}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Pass Year:</span> <span className="font-bold text-slate-800 text-right">{app.passingYear || app.year || "N/A"}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">State:</span> <span className="font-bold text-slate-800 text-right">{app.state || "N/A"}</span></div>
+                                  </div>
                                 </div>
-                              </div>
+                                <div>
+                                  <span className="block text-xs font-bold text-slate-400 mb-1">Status</span>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between"><span className="text-slate-500">Payment:</span> <span className={`font-bold ${app.hasPaid ? 'text-emerald-600' : 'text-amber-600'}`}>{app.hasPaid ? `Paid (₹${app.paymentAmount || 0})` : 'Unpaid'}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Offer Letter:</span> <span className="font-bold text-slate-800 text-right">{app.offerLetterStatus}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Stipend:</span> <span className={`font-bold ${app.stipendStatus === 'Paid' ? 'text-emerald-600' : 'text-slate-800'}`}>{app.stipendStatus}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-500">Certificate:</span> <span className="font-bold text-slate-800">{app.isCertificateSent ? "Sent" : "Pending"}</span></div>
+                                  </div>
+                                </div>
                               <div className="col-span-full pt-2 mt-2 border-t border-slate-100">
                                 <span className="block text-xs font-bold text-slate-400 mb-1">Why Hire?</span>
                                 <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{app.whyHire || "N/A"}</p>
