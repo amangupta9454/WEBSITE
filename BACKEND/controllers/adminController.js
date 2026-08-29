@@ -103,7 +103,7 @@ const getInternships = async (req, res) => {
           linkedin: app.linkedin,
           whyHire: app.whyHire,
           hearAbout: app.hearAbout,
-          resumeUrl: app.resumeUrl,
+          resumeUrl: app.resume || app.resumeUrl,
           batch: app.batch,
           internshipType: app.internshipType || "Normal Intern",
           appliedAt: app.appliedAt,
