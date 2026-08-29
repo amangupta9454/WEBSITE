@@ -42,11 +42,7 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
       {/* Top floating NEW Badge */}
       {job.createdAt && (new Date() - new Date(job.createdAt)) < 24 * 60 * 60 * 1000 && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest shadow-md border-2 border-white relative">
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-100"></span>
-            </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
             ✨ NEW
           </span>
         </div>
@@ -88,21 +84,18 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
 
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg text-[11px] font-bold border border-slate-200">
-          <MapPin className="w-3 h-3" />
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold border border-slate-200">
+          <MapPin className="w-3.5 h-3.5" />
           {job.location}
         </span>
         {job.isRemote && (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-100">
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold border border-slate-200">
             Remote
           </span>
         )}
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-bold border border-amber-100">
-          <DollarSign className="w-3 h-3" />
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold border border-slate-200">
+          <DollarSign className="w-3.5 h-3.5" />
           {job.salary || 'Not disclosed'}
-        </span>
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[11px] font-bold border border-indigo-100">
-          💼 {job.jobType || 'Full-time'}
         </span>
       </div>
 
@@ -129,10 +122,10 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         <button 
           type="button"
           onClick={(e) => checkLoginAndExecute(e, () => onSave(job._id), 'Bookmark Job')}
-          className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl border-2 transition-all ${
+          className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl transition-all border ${
             isSaved 
               ? 'bg-rose-50 border-rose-200 text-rose-500 hover:bg-rose-100' 
-              : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
+              : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
           }`}
           title={isSaved ? "Saved Bookmark" : "Bookmark Job"}
         >

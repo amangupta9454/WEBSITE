@@ -379,27 +379,27 @@ const Jobs = () => {
                 </p>
 
                 <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-xl">
-                  <div className="flex-1 flex items-center bg-white rounded-2xl px-4 py-3 border-2 border-slate-200 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+                  <div className="flex-1 flex items-center bg-white rounded-2xl px-4 h-[48px] border-2 border-slate-200 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
                     <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
                     <input 
                       type="text" 
                       placeholder="Search by job title, skill, or company..." 
-                      className="w-full bg-transparent outline-none text-slate-800 placeholder-slate-400 font-bold text-sm"
+                      className="w-full h-full bg-transparent outline-none text-slate-800 placeholder-slate-400 font-bold text-sm"
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                     />
                   </div>
-                  <button type="submit" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black px-7 py-3 rounded-2xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center shrink-0 text-sm">
+                  <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-7 h-12 rounded-2xl transition-all shadow-sm flex items-center justify-center shrink-0 text-sm">
                     Search Jobs &rarr;
                   </button>
                 </form>
               </div>
 
               {/* Job Portal Membership & Token Dashboard (Light Theme) */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 w-full lg:w-[390px] shrink-0 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 w-full lg:w-[390px] shrink-0 shadow-xl shadow-slate-200/50 flex flex-col">
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-extrabold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h3>
+                    <h2 className="font-extrabold text-slate-500 text-xs md:text-sm uppercase tracking-wider">Your Balance</h2>
                     <div className="bg-indigo-50 text-indigo-700 px-3.5 py-1.5 rounded-xl font-black text-base md:text-lg border border-indigo-100 flex items-center gap-1 shadow-xs">
                       <span>{userStatus.tokens}</span>{' '}
                       <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-indigo-600">Tokens</span>
@@ -444,7 +444,7 @@ const Jobs = () => {
                         <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
                         <span>Admin Bonus Active!</span>
                       </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
+                      <p className="text-xs text-slate-600 leading-relaxed font-semibold">
                         You've been granted VIP access by an admin! Valid until <b className="text-slate-900">{new Date(userStatus.adminBonusExpires).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</b>.
                       </p>
                     </div>
@@ -456,7 +456,7 @@ const Jobs = () => {
                         <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
                         <span>VIP Roles Currently Free!</span>
                       </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed font-semibold">
+                      <p className="text-xs text-slate-600 leading-relaxed font-semibold">
                         {userStatus.freeModeExpires ? (
                           <>Promo valid until <b className="text-slate-900">{new Date(userStatus.freeModeExpires).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</b> before auto-switching to Token pricing.</>
                         ) : (
@@ -472,11 +472,11 @@ const Jobs = () => {
                   )}
                 </div>
 
-                <div className="space-y-3 mt-auto">
+                <div className="space-y-3 mt-6">
                   {!userStatus.isPremium && !userStatus.isFreeMode && (
                     <button
                       onClick={handlePurchasePremium}
-                      className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-900 font-black text-sm transition-all shadow-md shadow-amber-500/15 flex items-center justify-center gap-2"
+                      className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
                     >
                       <Zap className="w-4 h-4 fill-current text-slate-900" />
                       Upgrade Premium ({userStatus.premiumPrice || 199} Tokens / 3 Mo)
@@ -484,7 +484,7 @@ const Jobs = () => {
                   )}
                   <button
                     onClick={() => setIsBuyModalOpen(true)}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all text-sm shadow-lg shadow-indigo-600/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors text-sm shadow-sm flex items-center justify-center gap-2"
                   >
                     Purchase More Tokens
                   </button>
@@ -537,15 +537,17 @@ const Jobs = () => {
                 Saved Jobs ({savedJobs.length})
               </button>
               
-              <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 transition-all text-sm font-bold text-slate-700">
-                <input 
-                  type="checkbox" 
-                  checked={remote}
-                  onChange={(e) => setRemote(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 w-4 h-4"
-                />
+              <button 
+                onClick={() => setRemote(!remote)} 
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-sm border transition-all ${
+                  remote ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 shadow-xs'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${remote ? 'bg-white border-white' : 'border-slate-400'}`}>
+                  {remote && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />}
+                </div>
                 Remote Only
-              </label>
+              </button>
             </div>
           </div>
 
