@@ -593,7 +593,7 @@ const AllUsersAdmin = () => {
                                   )}
                                 </div>
                             </div>
-                              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+                              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                                 <div>
                                   <span className="block text-xs font-bold text-slate-400 mb-1">Details</span>
                                   <div className="space-y-1.5">
@@ -601,16 +601,6 @@ const AllUsersAdmin = () => {
                                     <div className="flex justify-between"><span className="text-slate-500">Type:</span> <span className="font-bold text-slate-800">{app.internshipType}</span></div>
                                     <div className="flex justify-between"><span className="text-slate-500">Batch:</span> <span className="font-bold text-slate-800">{app.batch || "N/A"}</span></div>
                                     <div className="flex justify-between"><span className="text-slate-500">Applied:</span> <span className="font-bold text-slate-800">{new Date(app.appliedAt).toLocaleDateString('en-GB')}</span></div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <span className="block text-xs font-bold text-slate-400 mb-1">Academics</span>
-                                  <div className="space-y-1.5">
-                                    <div className="flex justify-between"><span className="text-slate-500">Course:</span> <span className="font-bold text-slate-800 text-right">{app.course || "N/A"}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500">Branch:</span> <span className="font-bold text-slate-800 text-right truncate w-24" title={app.branch}>{app.branch || "N/A"}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500">College:</span> <span className="font-bold text-slate-800 text-right truncate w-24" title={app.college}>{app.college || "N/A"}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500">Pass Year:</span> <span className="font-bold text-slate-800 text-right">{app.passingYear || app.year || "N/A"}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500">State:</span> <span className="font-bold text-slate-800 text-right">{app.state || "N/A"}</span></div>
                                   </div>
                                 </div>
                                 <div>
@@ -622,7 +612,19 @@ const AllUsersAdmin = () => {
                                     <div className="flex justify-between"><span className="text-slate-500">Certificate:</span> <span className="font-bold text-slate-800">{app.isCertificateSent ? "Sent" : "Pending"}</span></div>
                                   </div>
                                 </div>
-                              <div className="col-span-full pt-2 mt-2 border-t border-slate-100">
+
+                                <div className="col-span-full pt-3 mt-1 border-t border-slate-100">
+                                  <span className="block text-xs font-bold text-slate-400 mb-2.5">Academics</span>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">Course</span> <div className="font-bold text-slate-800">{app.course || "N/A"}</div></div>
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">Branch</span> <div className="font-bold text-slate-800 truncate" title={app.branch}>{app.branch || "N/A"}</div></div>
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">College</span> <div className="font-bold text-slate-800 truncate" title={app.college}>{app.college || "N/A"}</div></div>
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">Pass Year</span> <div className="font-bold text-slate-800">{app.passingYear || app.year || "N/A"}</div></div>
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">State</span> <div className="font-bold text-slate-800">{app.state || "N/A"}</div></div>
+                                  </div>
+                                </div>
+
+                              <div className="col-span-full pt-3 mt-1 border-t border-slate-100">
                                 <span className="block text-xs font-bold text-slate-400 mb-1">Why Hire?</span>
                                 <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{app.whyHire || "N/A"}</p>
                               </div>
