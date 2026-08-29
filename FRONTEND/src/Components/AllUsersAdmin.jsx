@@ -513,7 +513,7 @@ const AllUsersAdmin = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex justify-between items-center">
                           <div>
-                            <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Interview Tokens</div>
+                            <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Tokens</div>
                             <div className="text-2xl font-black text-indigo-950">{selectedUser.fullData?.interviewCredits || 0}</div>
                           </div>
                           {selectedUser.fullData?.interviewUnlimitedExpiresAt && new Date(selectedUser.fullData.interviewUnlimitedExpiresAt) > new Date() && (
