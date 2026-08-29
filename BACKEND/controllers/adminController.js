@@ -82,6 +82,9 @@ const getInternships = async (req, res) => {
         });
         allApplications.push({
           _id: app._id, // ← MUST include this
+          userId: user._id,
+          resigned: app.resigned,
+          rejected: app.rejected,
           studentId: app.studentId,
           name: app.name,
           email: app.email,
