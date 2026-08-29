@@ -217,7 +217,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                     <div className="space-y-8">
                        {/* Sarah's Section */}
                        <div className="bg-indigo-50/50 rounded-2xl border-2 border-indigo-100 p-6 shadow-sm">
-                          <h3 className="text-xl font-black text-indigo-900 mb-6 flex items-center gap-2">
+                          <h2 className="text-xl font-black text-indigo-900 mb-6 flex items-center gap-2">
                             <User className="text-indigo-500" /> Sarah (HR / Behavioral) Feedback
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-lg">
@@ -250,7 +250,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
 
                        {/* David's Section */}
                        <div className="bg-emerald-50/50 rounded-2xl border-2 border-emerald-100 p-6 shadow-sm">
-                          <h3 className="text-xl font-black text-emerald-900 mb-6 flex items-center gap-2">
+                          <h2 className="text-xl font-black text-emerald-900 mb-6 flex items-center gap-2">
                             <User className="text-emerald-500" /> David (Tech Lead) Feedback
                           </h2>
                           <div className="grid grid-cols-1 gap-4 mb-6 max-w-xs">
@@ -277,7 +277,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                              <h2 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Technical Strengths
                               </h2>
                               <ul className="space-y-2">
@@ -290,7 +290,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                               </ul>
                             </div>
                             <div>
-                              <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div> Knowledge Gaps
                               </h2>
                               <ul className="space-y-2">
@@ -307,7 +307,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                        
                        {/* Hiring Committee Decision */}
                        <div className="bg-slate-900 rounded-2xl border-2 border-slate-800 p-6 text-white shadow-xl shadow-slate-900/20">
-                          <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
+                          <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2">
                             <Briefcase className="text-indigo-400" /> Hiring Committee Decision
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -372,7 +372,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
               {/* Encouraging Action Plan Banner */}
               <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-5 shadow-sm relative overflow-hidden">
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-400/10 rounded-full blur-2xl"></div>
-                <h3 className="text-amber-900 font-black flex items-center gap-2 text-lg mb-1">
+                <h2 className="text-amber-900 font-black flex items-center gap-2 text-lg mb-1">
                   🚀 Your Path to Success
                 </h2>
                 <p className="text-amber-800/80 text-sm font-medium mb-3">
@@ -381,7 +381,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
               </div>
               
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">Detailed Feedback</h3>
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">Detailed Feedback</h2>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-slate-600 leading-relaxed text-sm">
                   {evaluation.detailed_feedback}
                 </div>
@@ -389,7 +389,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Strengths
                   </h2>
                   <ul className="space-y-2">
@@ -399,7 +399,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-amber-500"></div> Areas to Improve
                   </h2>
                   <ul className="space-y-2">
@@ -412,7 +412,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
               
               {evaluation.enhancements && evaluation.enhancements.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div> Actionable Enhancements
                   </h2>
                   <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
@@ -430,7 +430,7 @@ export function FeedbackModal({ feedback: session, onClose }) {
               
               {enterprise && (
                 <div className="space-y-6 pt-6 border-t border-slate-100">
-                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                  <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
                     <Briefcase className="text-indigo-500" /> Enterprise Hiring Assessment
                   </h2>
                   
@@ -716,7 +716,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <FileText className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">AI Resume</h2>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Bypass ATS smartly</p>
           </div>
         )}
@@ -729,7 +729,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <PlayCircle className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Mock Interviews</h2>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Practice with AI</p>
           </div>
         )}
@@ -745,7 +745,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <Briefcase className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Latest Jobs</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Latest Jobs</h2>
             <p className="text-[9px] sm:text-sm text-slate-500 relative z-10 leading-tight">Apply to verified jobs</p>
           </div>
         )}
@@ -761,7 +761,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-8 h-8 sm:w-12 sm:h-12 bg-cyan-100 text-cyan-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
               <GraduationCap className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h3>
+            <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Assessment</h2>
             <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Take quizzes & coding tests.</p>
           </div>
         )}
@@ -777,7 +777,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-purple-100 text-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
             <Trophy className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Quizzes</h3>
+          <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Quizzes</h2>
           <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Live quizzes & past scores.</p>
         </div>
 
@@ -792,7 +792,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           <div className="w-8 h-8 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
             <Award className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
-          <h3 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Certificates</h3>
+          <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Certificates</h2>
           <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Earned credentials & badges.</p>
         </div>
 
@@ -811,7 +811,7 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
             <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <PlayCircle size={32} />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Re-practice Session</h3>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Re-practice Session</h2>
             <p className="text-slate-500 text-sm mb-6">
               You are about to re-practice your interview for <strong>{rePracticeSession.jobTitle}</strong>. No extra credits will be deducted.
             </p>
