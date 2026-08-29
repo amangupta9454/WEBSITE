@@ -1238,15 +1238,22 @@ const AdminDashboard = () => {
                 <h3 className="text-slate-900 font-semibold text-sm truncate">
                   {app.name}
                 </h3>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-slate-500 text-xs">
-                    {app.studentId || "No ID"}
-                  </p>
-                  {app.resigned?.isResigned && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
-                  )}
-                  {app.rejected?.isRejected && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-slate-500 text-xs">
+                      {app.studentId || "No ID"}
+                    </p>
+                    {app.resigned?.isResigned && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
+                    )}
+                    {app.rejected?.isRejected && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                    )}
+                  </div>
+                  {app.resumeUrl && (
+                    <a href={app.resumeUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded w-fit transition-colors">
+                      <FileText size={12} /> View Resume
+                    </a>
                   )}
                 </div>
               </div>
@@ -2973,13 +2980,20 @@ const AdminDashboard = () => {
                                 />
                               </td>
                               <td className="py-3.5 px-4 text-slate-500 text-sm font-mono">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span>{app.studentId || "—"}</span>
-                                  {app.resigned?.isResigned && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
-                                  )}
-                                  {app.rejected?.isRejected && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span>{app.studentId || "—"}</span>
+                                    {app.resigned?.isResigned && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-700">Resigned</span>
+                                    )}
+                                    {app.rejected?.isRejected && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">Rejected</span>
+                                    )}
+                                  </div>
+                                  {app.resumeUrl && (
+                                    <a href={app.resumeUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded w-fit transition-colors">
+                                      <FileText size={12} /> View Resume
+                                    </a>
                                   )}
                                 </div>
                               </td>
