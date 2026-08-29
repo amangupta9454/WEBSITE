@@ -950,10 +950,11 @@ const AdminDashboard = () => {
     }
     if (!window.confirm("Are you sure you want to mark this intern as resigned? A 15-day notice period will begin.")) return;
 
+    const token = localStorage.getItem("adminToken");
     try {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internship-resignation`, 
         { userId, internshipId },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         toast.success("Intern marked as resigned successfully");
@@ -974,10 +975,11 @@ const AdminDashboard = () => {
     }
     if (!window.confirm("Are you sure you want to reject this application? An email will be sent to the user.")) return;
 
+    const token = localStorage.getItem("adminToken");
     try {
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/admin/internship-reject`, 
         { userId, internshipId },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         toast.success("Application rejected and email sent successfully");
