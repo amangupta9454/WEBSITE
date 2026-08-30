@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import SEO from '../Components/SEO';
 import MainLayout from '../layouts/MainLayout';
 import Hero from '../sections/Hero';
 import Stats from '../sections/Stats';
@@ -33,6 +34,19 @@ const Home = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title="Code-A-Nova | Web Development, AI & Business Software Solutions"
+        description="Code-A-Nova provides web development, e-commerce, AI automation, ERP and custom software solutions for modern businesses, along with technology internships and career opportunities."
+        canonicalUrl="https://code-a-nova.online/"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Code-A-Nova",
+          "url": "https://code-a-nova.online/",
+          "logo": "https://code-a-nova.online/LOGO.png",
+          "description": "Code-A-Nova provides web development, AI automation, e-commerce, ERP and custom software solutions."
+        }}
+      />
       <Hero />
       <Partners />
       <ProblemSolution />

@@ -1,5 +1,6 @@
 import React from "react";
 import MainLayout from '../layouts/MainLayout';
+import SEO from '../Components/SEO';
 import { motion } from "framer-motion";
 import { fadeUp } from '../animations/variants';
 import { Shield } from "lucide-react";
@@ -84,6 +85,11 @@ const Privacy = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title="Privacy Policy | Code-A-Nova"
+        description="Read the Code-A-Nova privacy policy and learn how user information is collected and handled."
+        canonicalUrl="https://code-a-nova.online/privacy-policy"
+      />
       <div className="pt-32 pb-24 bg-[#FAFAFA] dark:bg-gray-900 min-h-screen relative overflow-hidden transition-colors duration-300">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-[100px] pointer-events-none" />
 

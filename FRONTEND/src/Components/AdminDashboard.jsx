@@ -4,6 +4,7 @@ import axios from "axios";
 import { clearAllUserData } from '../utils/auth';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import SEO from './SEO';
 import * as XLSX from "xlsx";
 import {
   LogOut,
@@ -2197,6 +2198,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <SEO noIndex={true} title="Admin Dashboard | Code-A-Nova" />
       {/* Top Navbar */}
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">

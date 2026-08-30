@@ -7,6 +7,7 @@ import StudentDashboard from "../Components/StudentDashboard";
 import AmbassadorTab from "../Components/AmbassadorTab";
 import DashboardTopSection from "./InterviewPortal/components/DashboardTopSection";
 import StudentExperiencePlatform from "./AssessmentPortal/StudentExperiencePlatform";
+import SEO from '../Components/SEO';
 
 export default function UnifiedDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -90,6 +91,7 @@ export default function UnifiedDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20 sm:pt-28 pb-16 px-4 max-w-7xl mx-auto relative">
+      <SEO noIndex={true} title="Dashboard | Code-A-Nova" />
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none rounded-b-[3rem]"></div>
       <div className="absolute top-20 right-10 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>

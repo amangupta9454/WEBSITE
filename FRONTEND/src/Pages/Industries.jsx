@@ -1,5 +1,6 @@
 import React from 'react';
 import MainLayout from '../layouts/MainLayout';
+import SEO from '../Components/SEO';
 import { motion } from 'framer-motion';
 import { fadeUp } from '../animations/variants';
 import IndustriesServed from '../sections/IndustriesServed';
@@ -9,6 +10,11 @@ import CTA from '../sections/CTA';
 const Industries = () => {
   return (
     <MainLayout>
+      <SEO 
+        title="Industries We Serve | Code-A-Nova"
+        description="Discover technology and software solutions from Code-A-Nova for businesses across different industries."
+        canonicalUrl="https://code-a-nova.online/industries"
+      />
       <div className="pt-16">
         <IndustriesServed />
       </div>

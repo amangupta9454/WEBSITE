@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import SEO from "../Components/SEO";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -224,6 +225,11 @@ const IndustryDetail = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title={`${industry.title} Solutions | Code-A-Nova`}
+        description={industry.description}
+        canonicalUrl={`https://code-a-nova.online/industries/${slug}`}
+      />
       <section className="pt-24 pb-16 bg-white">
         <div className="max-w-6xl mx-auto px-6 md:px-12">
           <Link

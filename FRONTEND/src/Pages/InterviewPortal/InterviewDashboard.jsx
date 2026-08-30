@@ -6,6 +6,7 @@ import { clearAllUserData } from '../../utils/auth';
 import InterviewDashboardContent from "./components/InterviewDashboardContent";
 import BuyTokensModal from "./components/BuyTokensModal";
 import toast from "react-hot-toast";
+import SEO from '../../Components/SEO';
 
 function loadScript(src) {
   return new Promise((resolve) => {
@@ -220,6 +221,7 @@ function InterviewDashboard() {
 
   return (
     <div className="w-full">
+      <SEO noIndex={true} title="Interview Dashboard | Code-A-Nova" />
       <InterviewDashboardContent 
         credits={credits} 
         isUnlimited={isUnlimited}

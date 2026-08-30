@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import SEO from '../Components/SEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Monitor, ShoppingCart, CalendarCheck, LayoutDashboard, Cpu, Database, 
@@ -295,6 +296,11 @@ const ServiceDetails = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title={`${service.title} Services | Code-A-Nova`}
+        description={service.description}
+        canonicalUrl={`https://code-a-nova.online/service/${id}`}
+      />
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-[#FAFAFA]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-[#FAFAFA] to-[#FAFAFA] pointer-events-none" />

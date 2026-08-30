@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import SEO from './SEO';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Trophy, FileCheck, Target, HeartHandshake, Loader2, Send, Upload, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
@@ -255,6 +256,11 @@ const Registration = () => {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] pt-32 pb-24 px-6 relative">
+      <SEO 
+        title="Register | Code-A-Nova"
+        description="Register with Code-A-Nova for internships, programs and technology opportunities."
+        canonicalUrl="https://code-a-nova.online/registration"
+      />
       <ToastContainer position="top-right" theme="light" />
 
       <div className="max-w-4xl mx-auto">

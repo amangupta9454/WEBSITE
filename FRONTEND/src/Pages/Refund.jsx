@@ -1,5 +1,6 @@
 import React from "react";
 import MainLayout from '../layouts/MainLayout';
+import SEO from '../Components/SEO';
 import { motion } from "framer-motion";
 import { fadeUp } from '../animations/variants';
 import { AlertCircle, ShieldAlert } from "lucide-react";
@@ -30,6 +31,11 @@ const Refund = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title="Refund Policy | Code-A-Nova"
+        description="Read the Code-A-Nova refund policy and understand the terms and conditions for eligible refunds."
+        canonicalUrl="https://code-a-nova.online/refund-policy"
+      />
       <div className="pt-32 pb-24 bg-[#FAFAFA] min-h-screen relative overflow-hidden">
         {/* Subtle Background Glow */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-50 rounded-full blur-[100px] pointer-events-none" />

@@ -1,39 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Static Pages -->
+  <url><loc>https://code-a-nova.online/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://code-a-nova.online/about</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://code-a-nova.online/contact</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://code-a-nova.online/services</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://code-a-nova.online/industries</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://code-a-nova.online/projects</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://code-a-nova.online/jobs</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://code-a-nova.online/registration</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/campus-ambassador</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/leaderboard</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
 
-  <url>
-    <loc>https://code-a-nova.online/</loc>
-    <priority>1.0</priority>
-  </url>
+  <!-- Legal Pages -->
+  <url><loc>https://code-a-nova.online/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://code-a-nova.online/refund-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://code-a-nova.online/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 
-  <url>
-    <loc>https://code-a-nova.online/about</loc>
-    <priority>0.8</priority>
-  </url>
+  <!-- Dynamic Services -->
+  <url><loc>https://code-a-nova.online/service/business-websites</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/service/ecommerce-stores</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/service/booking-systems</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/service/admin-dashboards</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/service/ai-automation</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/service/erp-systems</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
-  <url>
-    <loc>https://code-a-nova.online/contact</loc>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://code-a-nova.online/service</loc>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://code-a-nova.online/privacy</loc>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://code-a-nova.online/terms</loc>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://code-a-nova.online/verify</loc>
-    <priority>0.6</priority>
-  </url>
-
+  <!-- Dynamic Industries -->
+  <url><loc>https://code-a-nova.online/industries/restaurants</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/cafes</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/gyms</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/salons</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/clinics</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/schools</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/colleges</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/startups</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/retail</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/realestate</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/industries/personalbrands</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

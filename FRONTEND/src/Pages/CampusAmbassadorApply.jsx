@@ -18,6 +18,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import SEO from '../Components/SEO';
 import { AnimatedSubmitButton } from "../Components/animations/AnimatedSubmitButton";
 
 const CampusAmbassadorApply = () => {
@@ -93,6 +94,11 @@ const CampusAmbassadorApply = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen pt-24 pb-10 px-4">
+      <SEO 
+        title="Campus Ambassador Program | Code-A-Nova"
+        description="Join the Code-A-Nova Campus Ambassador Program and build experience in technology, community and professional development."
+        canonicalUrl="https://code-a-nova.online/campus-ambassador"
+      />
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* Poster Banner */}

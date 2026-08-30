@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Trophy, Star, Medal, Award, Crown, ChevronLeft, ChevronRight, Zap, Github, Linkedin } from "lucide-react";
 import { useWindowSize } from "react-use";
+import SEO from './SEO';
 import Confetti from "react-confetti";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -136,6 +137,11 @@ const Leaderboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 relative overflow-hidden font-sans selection:bg-blue-500/30 selection:text-blue-900">
+      <SEO 
+        title="Leaderboard | Code-A-Nova"
+        description="View Code-A-Nova rankings, scores and leaderboard results."
+        canonicalUrl="https://code-a-nova.online/leaderboard"
+      />
       
       {/* Dynamic Background Effects */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">

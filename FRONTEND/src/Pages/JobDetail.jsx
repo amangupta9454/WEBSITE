@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import SEO from '../Components/SEO';
 import axios from 'axios';
 import MainLayout from '../layouts/MainLayout';
 import { MapPin, DollarSign, Briefcase, ExternalLink, ArrowLeft, Clock, Bookmark, Building, CheckCircle, Lock, Crown, Mail, ShieldAlert } from 'lucide-react';
@@ -243,6 +244,35 @@ const JobDetail = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title={`${job.title} at ${job.companyName} | Jobs Code-A-Nova`}
+        description={`Apply for ${job.title} role at ${job.companyName}. Location: ${job.location}.`}
+        canonicalUrl={`https://code-a-nova.online/jobs/${id}`}
+        schema={{
+          "@context": "https://schema.org/",
+          "@type": "JobPosting",
+          "title": job.title,
+          "description": job.description,
+          "identifier": {
+            "@type": "PropertyValue",
+            "name": job.companyName
+          },
+          "datePosted": job.createdAt,
+          "validThrough": job.deadline,
+          "employmentType": job.jobType,
+          "hiringOrganization": {
+            "@type": "Organization",
+            "name": job.companyName
+          },
+          "jobLocation": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": job.location
+            }
+          }
+        }}
+      />
       <div className="bg-[#FAFAFA] min-h-screen pt-24 pb-20">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           

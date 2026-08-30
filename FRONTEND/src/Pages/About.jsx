@@ -1,5 +1,6 @@
 import React from 'react';
 import MainLayout from '../layouts/MainLayout';
+import SEO from '../Components/SEO';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer } from '../animations/variants';
 import WhyChooseUs from '../sections/WhyChooseUs';
@@ -22,6 +23,11 @@ const values = [
 const About = () => {
   return (
     <MainLayout>
+      <SEO 
+        title="About Code-A-Nova | Technology & Digital Solutions"
+        description="Learn about Code-A-Nova, a technology company providing web development, AI automation, business software and digital solutions."
+        canonicalUrl="https://code-a-nova.online/about"
+      />
       {/* Hero Section */}
       <div className="pt-32 pb-20 md:pt-40 md:pb-24 bg-[#FAFAFA] relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-r from-blue-100/50 to-purple-100/50 blur-[120px] rounded-full pointer-events-none" />

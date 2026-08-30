@@ -6,6 +6,7 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import SEO from './SEO';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -36,6 +37,7 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans flex items-center justify-center py-12 px-4 sm:px-6">
+      <SEO noIndex={true} title="Admin Login | Code-A-Nova" />
       {/* Dynamic Background Elements matching Project.jsx */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent"></div>
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl opacity-50"></div>

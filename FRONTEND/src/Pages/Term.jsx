@@ -1,5 +1,6 @@
 import React from "react";
 import MainLayout from '../layouts/MainLayout';
+import SEO from '../Components/SEO';
 import { motion } from "framer-motion";
 import { fadeUp } from '../animations/variants';
 import { FileText } from "lucide-react";
@@ -80,6 +81,11 @@ const Terms = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title="Terms & Conditions | Code-A-Nova"
+        description="Read the terms and conditions governing the use of Code-A-Nova services and website."
+        canonicalUrl="https://code-a-nova.online/terms"
+      />
       <div className="pt-32 pb-24 bg-[#FAFAFA] dark:bg-gray-900 min-h-screen relative overflow-hidden transition-colors duration-300">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-50 dark:bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
         

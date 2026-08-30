@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import SEO from '../Components/SEO';
 import { Link } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import JobCard from '../Components/JobCard';
@@ -354,6 +355,11 @@ const Jobs = () => {
 
   return (
     <MainLayout>
+      <SEO 
+        title="Jobs & Career Opportunities | Code-A-Nova"
+        description="Explore current job opportunities and technology roles available through Code-A-Nova."
+        canonicalUrl="https://code-a-nova.online/jobs"
+      />
       <div className="bg-[#FAFAFA] min-h-screen pt-16 pb-24">
         
         {/* Premium Hero Section */}
