@@ -41,10 +41,10 @@ const Navbar = () => {
     const fetchFeatureSettings = async () => {
       try {
         const [jobRes, intRes, resRes, assmtRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/job-portal`).catch(() => ({data: {jobPortalEnabled: true}})),
-          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/interview-settings`).catch(() => ({data: {enabled: true}})),
-          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings`).catch(() => ({data: {enabled: true}})),
-          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/assessment-settings`).catch(() => ({data: {enabled: true}}))
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/job-portal`).catch(() => ({ data: { jobPortalEnabled: true } })),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/interview-settings`).catch(() => ({ data: { enabled: true } })),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/resume-settings`).catch(() => ({ data: { enabled: true } })),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/assessment-settings`).catch(() => ({ data: { enabled: true } }))
         ]);
         setFeaturesConfig({
           jobPortal: jobRes.data?.jobPortalEnabled ?? true,
@@ -78,12 +78,11 @@ const Navbar = () => {
   };
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${
-        scrolled || location.pathname === '/leaderboard'
-          ? 'bg-white border-b border-gray-200 py-4 shadow-sm' 
+    <header
+      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${scrolled || location.pathname === '/leaderboard'
+          ? 'bg-white border-b border-gray-200 py-4 shadow-sm'
           : 'bg-white min-[920px]:bg-transparent border-b border-gray-200 min-[920px]:border-transparent py-4 min-[920px]:py-6 shadow-sm min-[920px]:shadow-none'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
         <Link to="/" className="group transition-transform duration-300 hover:scale-105 z-50 relative">
@@ -111,7 +110,7 @@ const Navbar = () => {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-2"
                       >
-                        {featuresConfig.interview && <Link to={isLoggedIn ? "/interview-setup" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Mock Interview</Link>}
+                        {featuresConfig.interview && <Link to={isLoggedIn ? "/my-interviews" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Mock Interview</Link>}
                         {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Resume Builder</Link>}
                         {featuresConfig.jobPortal && <Link to="/jobs" className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Job Portal</Link>}
                         {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Assessments</Link>}
@@ -125,9 +124,8 @@ const Navbar = () => {
             if (link.name === 'Internship' && showLeaderboard) {
               return (
                 <div key={link.name} className="relative group" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
-                  <button className={`flex items-center gap-1 text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${
-                    (location.pathname === '/internship' || location.pathname === '/leaderboard') ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-                  }`}>
+                  <button className={`flex items-center gap-1 text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${(location.pathname === '/internship' || location.pathname === '/leaderboard') ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                    }`}>
                     Internship <ChevronDown size={14} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
@@ -151,15 +149,14 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${
-                  location.pathname === link.path ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-                }`}
+                className={`text-sm font-semibold transition-all px-3 py-1.5 rounded-lg ${location.pathname === link.path ? 'text-blue-700 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                  }`}
               >
                 {link.name}
               </Link>
             );
           })}
-          
+
           {isLoggedIn ? (
             <div className="relative group ml-4" onMouseEnter={() => setUserDropdownOpen(true)} onMouseLeave={() => setUserDropdownOpen(false)}>
               <button className={`flex items-center gap-1 text-sm font-extrabold transition-colors hover:text-brand-purple ${(location.pathname === dashboardLink) ? 'text-brand-purple' : 'text-gray-900'}`}>
@@ -182,9 +179,8 @@ const Navbar = () => {
           ) : (
             <Link
               to="/student-login"
-              className={`text-sm font-extrabold transition-colors hover:text-brand-purple ml-4 ${
-                location.pathname === '/student-login' ? 'text-brand-purple' : 'text-gray-900'
-              }`}
+              className={`text-sm font-extrabold transition-colors hover:text-brand-purple ml-4 ${location.pathname === '/student-login' ? 'text-brand-purple' : 'text-gray-900'
+                }`}
             >
               Login
             </Link>
@@ -192,7 +188,7 @@ const Navbar = () => {
         </nav>
 
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="min-[920px]:hidden relative z-50 p-2 -mr-2 text-gray-900 focus:outline-none"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
@@ -229,12 +225,12 @@ const Navbar = () => {
                   <X size={20} />
                 </button>
               </div>
-              
+
               {/* Scrollable Middle Links */}
               <div className="flex-1 overflow-y-auto px-6 py-2 flex flex-col gap-2 relative">
                 {/* Decorative left line */}
                 <div className="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-gray-100 via-gray-200 to-transparent" />
-                
+
                 {navLinks.map((link, i) => {
                   if (link.name === 'Our Features') {
                     const hasFeatures = featuresConfig.jobPortal || featuresConfig.interview || featuresConfig.resume || featuresConfig.assessment;
@@ -297,19 +293,18 @@ const Navbar = () => {
                       className="relative"
                     >
                       {location.pathname === link.path && (
-                        <motion.div 
+                        <motion.div
                           layoutId="activeIndicator"
-                          className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-[3px] h-6 bg-blue-600 rounded-r-full" 
+                          className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-[3px] h-6 bg-blue-600 rounded-r-full"
                         />
                       )}
                       <Link
                         to={link.path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`block py-3 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${
-                          location.pathname === link.path 
-                            ? 'text-gray-900 translate-x-2' 
+                        className={`block py-3 px-6 text-xl font-semibold tracking-tight transition-all duration-300 ${location.pathname === link.path
+                            ? 'text-gray-900 translate-x-2'
                             : 'text-gray-400 hover:text-gray-900 hover:translate-x-1'
-                        }`}
+                          }`}
                       >
                         {link.name}
                       </Link>
@@ -317,7 +312,7 @@ const Navbar = () => {
                   );
                 })}
               </div>
-              
+
               {/* Fixed Bottom Footer */}
               <div className="shrink-0 px-5 pt-4 pb-6 bg-gray-50/50 border-t border-gray-100 mt-auto">
                 <div className="space-y-4">
@@ -325,41 +320,41 @@ const Navbar = () => {
                     <span className="block text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-1.5">Get in Touch</span>
                     <a href="mailto:codeanova26@gmail.com" className="block text-xs font-medium text-gray-900 hover:text-blue-600 transition-colors">codeanova26@gmail.com</a>
                   </div>
-                  
+
                   <div className="space-y-2.5">
                     {isLoggedIn ? (
                       <>
-                        <Link 
-                          to={dashboardLink} 
-                          onClick={() => setMobileMenuOpen(false)} 
+                        <Link
+                          to={dashboardLink}
+                          onClick={() => setMobileMenuOpen(false)}
                           className="flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold transition-all hover:shadow-md"
                         >
                           <span>Dashboard</span>
                         </Link>
-                        <button 
-                          onClick={handleLogout} 
+                        <button
+                          onClick={handleLogout}
                           className="flex items-center justify-center w-full py-3 px-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold transition-all hover:shadow-md"
                         >
                           <span>Logout</span>
                         </button>
                       </>
                     ) : (
-                      <Link 
-                        to="/student-login" 
-                        onClick={() => setMobileMenuOpen(false)} 
+                      <Link
+                        to="/student-login"
+                        onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center justify-center w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-brand-purple text-white rounded-xl text-sm font-bold transition-all hover:shadow-md"
                       >
                         <span>Login to Practice</span>
                       </Link>
                     )}
-                    <Link 
-                      to="/contact" 
-                      onClick={() => setMobileMenuOpen(false)} 
+                    <Link
+                      to="/contact"
+                      onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-between w-full py-3 px-4 bg-gray-900 text-white rounded-xl text-sm font-bold group transition-all hover:shadow-md hover:shadow-gray-900/20"
                     >
                       <span>Start a Project</span>
                       <span className="bg-white/20 p-1 rounded-full group-hover:translate-x-1 transition-transform">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </span>
                     </Link>
                   </div>
