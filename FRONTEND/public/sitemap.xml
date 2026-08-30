@@ -17,23 +17,58 @@
   </url>
 
   <url>
-    <loc>https://code-a-nova.online/service</loc>
+    <loc>https://code-a-nova.online/services</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/industries</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/projects</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/jobs</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/internship</loc>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://code-a-nova.online/registration</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/campus-ambassador</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/leaderboard</loc>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://code-a-nova.online/privacy</loc>
+    <loc>https://code-a-nova.online/privacy-policy</loc>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://code-a-nova.online/refund-policy</loc>
     <priority>0.5</priority>
   </url>
 
   <url>
     <loc>https://code-a-nova.online/terms</loc>
     <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://code-a-nova.online/verify</loc>
-    <priority>0.6</priority>
   </url>
 
 </urlset>
