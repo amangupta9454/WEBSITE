@@ -46,26 +46,47 @@ const JobDetail = () => {
   };
 
   useEffect(() => {
-    const fetchJob = async () => {
-      const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+    if (!token) {
+      handleUnauthenticatedAttempt('View Job Details');
+      return;
+    }
+
+    const fetchJobAndUser = async () => {
       try {
+        let isUserPremium = false;
+        try {
+          const userRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/user-status`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          isUserPremium = userRes.data.isPremium || userRes.data.isFreeMode || userRes.data.adminBonusActive;
+        } catch (err) {
+          console.error('Failed to fetch user status', err);
+        }
+
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/${id}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {
-          setJob(res.data.data);
+          const fetchedJob = res.data.data;
+          
+          if (fetchedJob.planType === 'Premium' && !isUserPremium) {
+            fetchedJob.isLocked = true;
+          }
+
+          setJob(fetchedJob);
           if (res.data.premiumPrice) {
             setPremiumPrice(res.data.premiumPrice);
           }
-          // Track visitor IP activity in admin audit logs even if not logged in
+          
           const email = localStorage.getItem('studentEmail') || localStorage.getItem('userEmail') || '';
           axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
-            action: `Visited Job Details: ${res.data.data.title || ''}`,
-            jobId: res.data.data._id,
-            jobTitle: res.data.data.title || '',
-            company: res.data.data.company || '',
+            action: `Visited Job Details: ${fetchedJob.title || ''}`,
+            jobId: fetchedJob._id,
+            jobTitle: fetchedJob.title || '',
+            company: fetchedJob.company || '',
             email: email || undefined
-          }, token ? { headers: { Authorization: `Bearer ${token}` } } : {}).catch(() => {});
+          }, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
         }
       } catch (error) {
         console.error('Failed to fetch job details:', error);
@@ -76,8 +97,6 @@ const JobDetail = () => {
     };
 
     const checkSaved = async () => {
-      const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
-      if (!token) return;
       try {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/saved`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -92,8 +111,6 @@ const JobDetail = () => {
     };
 
     const checkApplied = async () => {
-      const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
-      if (!token) return;
       try {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/applied`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -107,7 +124,7 @@ const JobDetail = () => {
       }
     };
 
-    fetchJob();
+    fetchJobAndUser();
     checkSaved();
     checkApplied();
   }, [id]);

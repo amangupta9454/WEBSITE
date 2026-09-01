@@ -37,6 +37,13 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
   return (
     <Link 
       to={`/jobs/${job._id}`}
+      onClick={(e) => {
+        const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+        if (!token) {
+          e.preventDefault();
+          handleUnauthenticated('View Job Details');
+        }
+      }}
       className="bg-white rounded-[20px] shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 relative group flex flex-col h-full"
     >
       {/* Top floating NEW Badge */}
@@ -111,7 +118,12 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            navigate(`/jobs/${job._id}`);
+            const token = localStorage.getItem('studentToken') || localStorage.getItem('interviewToken');
+            if (!token) {
+              handleUnauthenticated('View Details');
+            } else {
+              navigate(`/jobs/${job._id}`);
+            }
           }}
           className="flex-1 inline-flex justify-center items-center gap-1.5 bg-indigo-600 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/20 text-sm"
         >
