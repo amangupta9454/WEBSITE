@@ -1186,7 +1186,7 @@ const AdminDashboard = () => {
   const totalRevenue = applications.reduce((sum, app) => sum + (app.paymentAmount || 0) - (app.refundAmount || 0), 0);
   const displayedApps =
     activeTab === "new" ? newApplications 
-    : activeTab === "certificates" ? applications.filter((app) => app.isCertificateSent) 
+    : activeTab === "certificates" ? filteredApplications.filter((app) => app.isCertificateSent) 
     : activeTab === "rejected" ? resignedOrRejectedApplications
     : downloadedApplications;
 
@@ -3401,22 +3401,26 @@ const AdminDashboard = () => {
                               )}
                                   <td className="py-3.5 px-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                      <button
-                                        onClick={() => handleMarkResigned(app.userId, app._id, app.resigned?.isResigned)}
-                                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.resigned?.isResigned ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
-                                        title={app.resigned?.isResigned ? "Already Resigned" : "Mark Resigned"}
-                                        disabled={app.resigned?.isResigned}
-                                      >
-                                        {app.resigned?.isResigned ? "Resigned" : "Resign"}
-                                      </button>
-                                      <button
-                                        onClick={() => handleRejectInternship(app.userId, app._id, app.rejected?.isRejected)}
-                                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.rejected?.isRejected ? 'bg-gray-100 text-gray-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
-                                        title={app.rejected?.isRejected ? "Already Rejected" : "Reject Application"}
-                                        disabled={app.rejected?.isRejected}
-                                      >
-                                        {app.rejected?.isRejected ? "Rejected" : "Reject"}
-                                      </button>
+                                      {activeTab === "downloaded" && !app.isCertificateSent && (
+                                        <button
+                                          onClick={() => handleMarkResigned(app.userId, app._id, app.resigned?.isResigned)}
+                                          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.resigned?.isResigned ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
+                                          title={app.resigned?.isResigned ? "Already Resigned" : "Mark Resigned"}
+                                          disabled={app.resigned?.isResigned}
+                                        >
+                                          {app.resigned?.isResigned ? "Resigned" : "Resign"}
+                                        </button>
+                                      )}
+                                      {activeTab === "new" && !app.isCertificateSent && (
+                                        <button
+                                          onClick={() => handleRejectInternship(app.userId, app._id, app.rejected?.isRejected)}
+                                          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${app.rejected?.isRejected ? 'bg-gray-100 text-gray-700 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}`}
+                                          title={app.rejected?.isRejected ? "Already Rejected" : "Reject Application"}
+                                          disabled={app.rejected?.isRejected}
+                                        >
+                                          {app.rejected?.isRejected ? "Rejected" : "Reject"}
+                                        </button>
+                                      )}
                                       <button
                                         onClick={() => setDeletingApplication(app)}
                                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center border border-transparent hover:border-red-200"
