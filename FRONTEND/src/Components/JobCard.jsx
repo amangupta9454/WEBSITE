@@ -109,6 +109,10 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
           <DollarSign className="w-3.5 h-3.5" />
           {job.salary || 'Not disclosed'}
         </span>
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold border border-slate-200">
+          <Briefcase className="w-3.5 h-3.5" />
+          {job.jobType || 'Full-Time'}
+        </span>
       </div>
 
       {/* Description */}
@@ -134,6 +138,19 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
         >
           View Details
           <ExternalLink className="w-3.5 h-3.5" />
+        </button>
+        
+        <button 
+          type="button"
+          onClick={(e) => checkLoginAndExecute(e, () => onToggleApply(job._id), 'Mark Applied')}
+          className={`w-10 h-10 flex shrink-0 items-center justify-center rounded-xl transition-all border ${
+            isApplied 
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100' 
+              : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+          }`}
+          title={isApplied ? "Marked as Applied" : "Mark as Applied"}
+        >
+          <CheckSquare className={`w-4 h-4 ${isApplied ? 'fill-emerald-100 text-emerald-600' : ''}`} />
         </button>
         
         <button 
