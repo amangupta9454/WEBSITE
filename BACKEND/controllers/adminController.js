@@ -3072,7 +3072,30 @@ module.exports = {
       internship.resigned.resignationDate = new Date();
 
       await user.save();
-      res.json({ success: true, message: "Intern marked as resigned successfully." });
+
+      // Send resignation confirmation email
+      try {
+        const mailOptions = {
+          to: user.email,
+          subject: "Code-A-Nova Internship Resignation Confirmation",
+          html: `<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
+                  <h2 style="color: #f59e0b;">Resignation Confirmation</h2>
+                  <p>Dear ${user.name},</p>
+                  <p>This email is to confirm that your resignation from the <strong>${internship.domain}</strong> internship at Code-A-Nova has been officially processed.</p>
+                  <p>We appreciate the contributions you made during your time with us and wish you the best of luck in your future endeavors.</p>
+                  <br/>
+                  <p>Best regards,</p>
+                  <p><strong>Code-A-Nova Team</strong></p>
+                 </div>`,
+          campaign: "Internship Resignation",
+          source: "Admin Dashboard"
+        };
+        await mailService.sendEmail(mailOptions);
+      } catch (emailError) {
+        console.error("Error sending resignation email:", emailError);
+      }
+
+      res.json({ success: true, message: "Intern marked as resigned successfully and email sent." });
     } catch (error) {
       console.error("Error marking intern as resigned:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
@@ -3110,7 +3133,9 @@ module.exports = {
                   <br/>
                   <p>Best regards,</p>
                   <p><strong>Code-A-Nova Team</strong></p>
-                 </div>`
+                 </div>`,
+          campaign: "Internship Rejection",
+          source: "Admin Dashboard"
         };
         await mailService.sendEmail(mailOptions);
       } catch (emailError) {
