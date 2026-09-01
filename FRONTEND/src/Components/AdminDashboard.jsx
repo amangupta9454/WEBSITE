@@ -704,6 +704,31 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExportRejected = () => {
+    try {
+      const apps = resignedOrRejectedApplications;
+      if (apps.length === 0) {
+        toast.info("No resigned or rejected applications found.");
+        return;
+      }
+      const data = apps.map((app) => ({
+        "Student Name": app.name,
+        "Email ID": app.email,
+        "Domain": app.domain,
+        "Status": app.resigned?.isResigned ? "Resigned" : app.rejected?.isRejected ? "Rejected" : "Unknown",
+        "Reason": app.resigned?.isResigned ? app.resigned?.reason : app.rejected?.isRejected ? app.rejected?.reason : "",
+        "Mobile Number": app.mobile,
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Rejected_Resigned");
+      XLSX.writeFile(wb, `Rejected_Resigned_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success("Exported successfully!");
+    } catch (err) {
+      toast.error("Failed to export.");
+    }
+  };
+
   const handleTogglePaidStatus = async (appId, currentStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
@@ -1148,10 +1173,13 @@ const AdminDashboard = () => {
   }
 
   const newApplications = filteredApplications.filter(
-    (app) => !app.downloadedAt,
+    (app) => !app.downloadedAt && !app.resigned?.isResigned && !app.rejected?.isRejected,
   );
   const downloadedApplications = filteredApplications.filter(
-    (app) => app.downloadedAt,
+    (app) => app.downloadedAt && !app.resigned?.isResigned && !app.rejected?.isRejected,
+  );
+  const resignedOrRejectedApplications = filteredApplications.filter(
+    (app) => app.resigned?.isResigned || app.rejected?.isRejected,
   );
   const paidCount = applications.filter((app) => app.hasPaid).length;
   const realPayerCount = applications.filter((app) => (app.paymentAmount || 0) - (app.refundAmount || 0) > 0).length;
@@ -1159,6 +1187,7 @@ const AdminDashboard = () => {
   const displayedApps =
     activeTab === "new" ? newApplications 
     : activeTab === "certificates" ? applications.filter((app) => app.isCertificateSent) 
+    : activeTab === "rejected" ? resignedOrRejectedApplications
     : downloadedApplications;
 
   const StatCard = ({ label, value, icon: Icon, color, sub }) => (
@@ -2669,6 +2698,13 @@ const AdminDashboard = () => {
                         <Download className="w-3.5 h-3.5" />
                         Export Completed
                       </button>
+                      <button
+                        onClick={handleExportRejected}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Export Rejected
+                      </button>
                     </div>
                     {selectedApplications.length > 0 && (
                       <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -2811,6 +2847,20 @@ const AdminDashboard = () => {
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveTab("rejected")}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "rejected" ? "bg-slate-200 text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Resigned / Rejected
+                  {resignedOrRejectedApplications.length > 0 && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "rejected" ? "bg-red-500/20 text-red-600" : "bg-slate-200 text-slate-500"}`}
+                    >
+                      {resignedOrRejectedApplications.length}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -2821,6 +2871,8 @@ const AdminDashboard = () => {
                         <Clock className="w-8 h-8 text-slate-600" />
                       ) : activeTab === "certificates" ? (
                         <Award className="w-8 h-8 text-slate-600" />
+                      ) : activeTab === "rejected" ? (
+                        <AlertCircle className="w-8 h-8 text-slate-600" />
                       ) : (
                         <CheckCircle className="w-8 h-8 text-slate-600" />
                       )}
@@ -2830,6 +2882,8 @@ const AdminDashboard = () => {
                         ? "No new applications"
                         : activeTab === "certificates"
                         ? "No certificates sent"
+                        : activeTab === "rejected"
+                        ? "No resigned or rejected applications"
                         : "No processed applications"}
                     </p>
                     <p className="text-slate-500 text-sm mt-1">
@@ -2837,6 +2891,8 @@ const AdminDashboard = () => {
                         ? "All applications have been exported."
                         : activeTab === "certificates"
                         ? "Certificates haven't been marked as sent yet."
+                        : activeTab === "rejected"
+                        ? "No applications have been marked as resigned or rejected."
                         : "Export new applications to see them here."}
                     </p>
                     {searchQuery && (
