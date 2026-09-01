@@ -7,6 +7,11 @@ import { MapPin, DollarSign, Briefcase, ExternalLink, Bookmark, Building, CheckS
 const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
   const navigate = useNavigate();
 
+  const obfuscateEmail = (text) => {
+    if (!text) return text;
+    return text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[Email Hidden]');
+  };
+
   const handleUnauthenticated = (actionName) => {
     // Record unauthenticated guest IP and activity attempt in Admin Audit Logs
     axios.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006'}/api/jobs/audit-log`, {
@@ -108,7 +113,7 @@ const JobCard = ({ job, onSave, isSaved, isApplied, onToggleApply }) => {
 
       {/* Description */}
       <p className="text-[13px] text-slate-500 line-clamp-2 mb-5 flex-grow font-medium">
-        {job.description || "No description provided. Click to view more details about this role."}
+        {job.description ? (job.planType === 'Premium' ? obfuscateEmail(job.description) : job.description) : "No description provided. Click to view more details about this role."}
       </p>
 
       {/* Actions */}
