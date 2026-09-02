@@ -14,7 +14,9 @@ import {
   ChevronDown,
   Calendar,
   AlertCircle,
-  Flame
+  Flame,
+  Copy,
+  Check
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -27,6 +29,9 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
 
   // Active tab inside Graphic Designer section: 'active' | 'notice' | 'resigned'
   const [activeLifecycleTab, setActiveLifecycleTab] = useState("active");
+
+  // Track copied caption state for instant visual feedback
+  const [copiedKey, setCopiedKey] = useState(null);
 
   // Manage top section view: 'tasks' | 'resources'
   const [topToolTab, setTopToolTab] = useState("tasks");
@@ -98,6 +103,42 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       setTasks(response.data.tasks || []);
     } catch (err) {
       console.error("Error fetching graphic tasks:", err);
+    }
+  };
+
+  // Copy Caption with exact formatting, spacing, and line breaks
+  const handleCopyCaption = (text, key, platform) => {
+    if (!text) return;
+    const fallbackCopy = () => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+        toast.success(`${platform} copied with exact spacing & line breaks!`);
+      } catch (err) {
+        toast.error("Failed to copy caption");
+      }
+      textArea.remove();
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopiedKey(key);
+          setTimeout(() => setCopiedKey(null), 2000);
+          toast.success(`${platform} copied with exact spacing & line breaks!`);
+        })
+        .catch(() => fallbackCopy());
+    } else {
+      fallbackCopy();
     }
   };
 
@@ -990,21 +1031,66 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                                     </div>
                                   </td>
 
-                                  <td className="py-3 px-4 text-xs align-top max-w-xs space-y-1.5">
+                                  <td className="py-3 px-4 text-xs align-top min-w-[220px] max-w-sm space-y-2">
                                     {sub.linkedinCaption && (
-                                      <div className="p-2 bg-white rounded-lg border border-slate-200">
-                                        <span className="font-bold text-blue-700 block mb-0.5">LinkedIn Caption:</span>
-                                        <span className="text-slate-600 break-words line-clamp-2" title={sub.linkedinCaption}>
+                                      <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs hover:border-blue-300 transition-colors">
+                                        <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-100">
+                                          <span className="font-bold text-blue-700 text-[11px] uppercase tracking-wider">
+                                            LinkedIn Caption
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleCopyCaption(sub.linkedinCaption, `${sub._id || idx}-linkedin`, "LinkedIn Caption")}
+                                            className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 border border-blue-200 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                            title="Copy full caption with all line breaks and spaces"
+                                          >
+                                            {copiedKey === `${sub._id || idx}-linkedin` ? (
+                                              <>
+                                                <Check className="w-3 h-3 text-emerald-600" />
+                                                <span className="text-emerald-700">Copied!</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Copy className="w-3 h-3 text-blue-600" />
+                                                <span>Copy</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                        <div className="text-slate-700 text-xs font-normal whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed select-all">
                                           {sub.linkedinCaption}
-                                        </span>
+                                        </div>
                                       </div>
                                     )}
+
                                     {sub.instagramCaption && (
-                                      <div className="p-2 bg-white rounded-lg border border-slate-200">
-                                        <span className="font-bold text-pink-700 block mb-0.5">Instagram Caption:</span>
-                                        <span className="text-slate-600 break-words line-clamp-2" title={sub.instagramCaption}>
+                                      <div className="p-2.5 bg-white rounded-xl border border-pink-100 shadow-2xs hover:border-pink-300 transition-colors">
+                                        <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-100">
+                                          <span className="font-bold text-pink-700 text-[11px] uppercase tracking-wider">
+                                            Instagram Caption
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleCopyCaption(sub.instagramCaption, `${sub._id || idx}-instagram`, "Instagram Caption")}
+                                            className="px-2 py-0.5 bg-pink-50 hover:bg-pink-100 active:scale-95 text-pink-700 border border-pink-200 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                            title="Copy full caption with all line breaks and spaces"
+                                          >
+                                            {copiedKey === `${sub._id || idx}-instagram` ? (
+                                              <>
+                                                <Check className="w-3 h-3 text-emerald-600" />
+                                                <span className="text-emerald-700">Copied!</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Copy className="w-3 h-3 text-pink-600" />
+                                                <span>Copy</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                        <div className="text-slate-700 text-xs font-normal whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed select-all">
                                           {sub.instagramCaption}
-                                        </span>
+                                        </div>
                                       </div>
                                     )}
                                   </td>
