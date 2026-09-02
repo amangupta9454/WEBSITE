@@ -2720,7 +2720,9 @@ const getGraphicInterns = async (req, res) => {
             domain: internship.domain,
             stipendStatus: internship.stipendStatus,
             stipendAmount: internship.stipendAmount,
-            graphicSubmissions: internship.graphicSubmissions,
+            graphicSubmissions: (internship.graphicSubmissions || []).sort(
+              (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
+            ),
             internshipId: internship._id,
             resigned: internship.resigned,
             rejected: internship.rejected
@@ -2853,6 +2855,85 @@ const getGraphicResources = async (req, res) => {
   }
 };
 
+const GraphicTask = require('../models/GraphicTask');
+
+const assignGraphicTask = async (req, res) => {
+  try {
+    const { title, description, referenceLink, target, targetUserId, deadline } = req.body;
+    let fileUrl = "";
+
+    if (req.file) {
+      fileUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "graphic_tasks", resource_type: "auto" },
+          (error, result) => {
+            if (result) {
+              resolve(result.secure_url);
+            } else {
+              reject(error);
+            }
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
+    let targetUserName = "";
+    let targetStudentId = "";
+
+    if (target === 'Specific' && targetUserId) {
+      const user = await User.findById(targetUserId);
+      if (user) {
+        targetUserName = user.name;
+        const internObj = user.internships?.find(i => i.domain === 'Graphic Designer' || i.domain === 'Graphic Design');
+        if (internObj) {
+          targetStudentId = internObj.studentId || "";
+        }
+      }
+    }
+
+    const newTask = new GraphicTask({
+      title,
+      description: description || "",
+      referenceLink: referenceLink || "",
+      fileUrl,
+      target: target || "All",
+      targetUserId: target === 'Specific' ? targetUserId : undefined,
+      targetUserName: target === 'Specific' ? targetUserName : undefined,
+      targetStudentId: target === 'Specific' ? targetStudentId : undefined,
+      deadline: deadline ? new Date(deadline) : undefined,
+      addedBy: "Admin"
+    });
+
+    await newTask.save();
+    res.json({ success: true, message: "Task assigned successfully", task: newTask });
+  } catch (error) {
+    console.error("[Admin] Error assigning graphic task:", error);
+    res.status(500).json({ success: false, message: "Server error assigning task" });
+  }
+};
+
+const getGraphicTasks = async (req, res) => {
+  try {
+    const tasks = await GraphicTask.find().sort({ createdAt: -1 });
+    res.json({ success: true, tasks });
+  } catch (error) {
+    console.error("[Admin] Error fetching graphic tasks:", error);
+    res.status(500).json({ success: false, message: "Server error fetching tasks" });
+  }
+};
+
+const deleteGraphicTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await GraphicTask.findByIdAndDelete(id);
+    res.json({ success: true, message: "Task deleted successfully" });
+  } catch (error) {
+    console.error("[Admin] Error deleting graphic task:", error);
+    res.status(500).json({ success: false, message: "Server error deleting task" });
+  }
+};
+
 const getTokenPurchases = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -2958,6 +3039,9 @@ module.exports = {
   uploadGraphicResource,
   deleteGraphicResource,
   getGraphicResources,
+  assignGraphicTask,
+  getGraphicTasks,
+  deleteGraphicTask,
   getJobPortalSetting,
   toggleJobPortalSetting,
   toggleJobPortalFreeMode,

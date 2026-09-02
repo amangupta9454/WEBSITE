@@ -37,8 +37,8 @@ const getDashboardInfo = async (req, res) => {
     const allSummerProjects = await SummerProject.find({});
     const allNormalTasks = await NormalTask.find({});
 
-    // Default to empty array if no internships exist yet
-    const internships = user.internships || [];
+    // Exclude rejected internships so they never show on user dashboard. Resigned internships continue to show.
+    const internships = (user.internships || []).filter(i => !i.rejected?.isRejected);
 
     const enrichedInternships = [];
 
@@ -47,7 +47,7 @@ const getDashboardInfo = async (req, res) => {
     let allInterns = [];
     allUsers.forEach(u => {
       u.internships.forEach(int => {
-        if (int.synergyPoints > 0) {
+        if (int.synergyPoints > 0 && !int.rejected?.isRejected) {
           allInterns.push({ studentId: int.studentId, sp: int.synergyPoints });
         }
       });
@@ -229,12 +229,21 @@ const getDashboardInfo = async (req, res) => {
     }
 
     const GraphicResource = require('../models/GraphicResource');
-    const graphicResources = await GraphicResource.find({
-      $or: [
-        { target: 'All' },
-        { targetUserId: user._id }
-      ]
-    }).sort({ createdAt: -1 });
+    const GraphicTask = require('../models/GraphicTask');
+    const [graphicResources, graphicTasks] = await Promise.all([
+      GraphicResource.find({
+        $or: [
+          { target: 'All' },
+          { targetUserId: user._id }
+        ]
+      }).sort({ createdAt: -1 }),
+      GraphicTask.find({
+        $or: [
+          { target: 'All' },
+          { targetUserId: user._id }
+        ]
+      }).sort({ createdAt: -1 })
+    ]);
 
     res.json({
       user: {
@@ -253,6 +262,7 @@ const getDashboardInfo = async (req, res) => {
       internships: enrichedInternships,
       notifications: activeNotifications,
       graphicResources,
+      graphicTasks,
     });
   } catch (error) {
     console.error("[Backend] Get dashboard info error:", error);
@@ -387,6 +397,10 @@ const submitProjectRepo = async (req, res) => {
     if (!internship)
       return res.status(404).json({ message: "Internship not found" });
 
+    if (internship.rejected?.isRejected) {
+      return res.status(403).json({ message: "This internship application was rejected." });
+    }
+
     if (!internship.assignedRepos) {
       internship.assignedRepos = [];
     }
@@ -446,6 +460,10 @@ const finalSubmitProjectRepo = async (req, res) => {
 
     if (!internship)
       return res.status(404).json({ message: "Internship not found" });
+
+    if (internship.rejected?.isRejected) {
+      return res.status(403).json({ message: "This internship application was rejected." });
+    }
 
     const repoIndex = internship.assignedRepos?.findIndex(
       (r) => r.projectId.toString() === projectId,
@@ -1039,7 +1057,7 @@ const getMyQuizzes = async (req, res) => {
 const submitGraphicDesign = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { link, linkedinCaption, instagramCaption } = req.body;
+    const { link, linkedinCaption, instagramCaption, taskTitle, taskId } = req.body;
     let fileUrls = [];
 
     if (!linkedinCaption || !instagramCaption) {
@@ -1049,8 +1067,10 @@ const submitGraphicDesign = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find the graphic designer internship
-    const internshipIndex = user.internships.findIndex(i => i.domain === 'Graphic Designer' || i.domain === 'Graphic Design');
+    // Find the graphic designer internship (excluding rejected)
+    const internshipIndex = user.internships.findIndex(
+      i => (i.domain === 'Graphic Designer' || i.domain === 'Graphic Design') && !i.rejected?.isRejected
+    );
     if (internshipIndex === -1) {
       return res.status(403).json({ message: "No active Graphic Designer internship found" });
     }
@@ -1100,6 +1120,8 @@ const submitGraphicDesign = async (req, res) => {
       fileUrls: fileUrls,
       linkedinCaption,
       instagramCaption,
+      taskTitle: taskTitle || "",
+      taskId: taskId || null,
       submittedAt: new Date(),
       status: "Pending"
     });

@@ -112,6 +112,8 @@ const userSchema = new mongoose.Schema(
             fileUrls: [{ type: String }],
             linkedinCaption: { type: String, required: true },
             instagramCaption: { type: String, required: true },
+            taskTitle: { type: String, default: "" },
+            taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'GraphicTask' },
             submittedAt: { type: Date, default: Date.now },
             status: { type: String, enum: ['Pending', 'Reviewed'], default: 'Pending' },
             spPoints: { type: Number, min: 0, max: 10, default: null }

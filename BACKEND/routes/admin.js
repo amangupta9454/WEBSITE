@@ -820,7 +820,19 @@ router.post("/assessment-settings/toggle", auth, verifyAdmin, async (req, res) =
   }
 });
 
-const { getGraphicInterns, updateStipendStatus, updateGraphicSubmissionStatus, uploadGraphicResource, deleteGraphicResource, getGraphicResources, markInternResigned, rejectInternship } = require("../controllers/adminController");
+const { 
+  getGraphicInterns, 
+  updateStipendStatus, 
+  updateGraphicSubmissionStatus, 
+  uploadGraphicResource, 
+  deleteGraphicResource, 
+  getGraphicResources, 
+  assignGraphicTask,
+  getGraphicTasks,
+  deleteGraphicTask,
+  markInternResigned, 
+  rejectInternship 
+} = require("../controllers/adminController");
 router.get("/graphic-interns", auth, verifyAdmin, getGraphicInterns);
 router.post("/update-stipend", auth, verifyAdmin, updateStipendStatus);
 router.post("/graphic-submission-status", auth, verifyAdmin, updateGraphicSubmissionStatus);
@@ -830,5 +842,9 @@ router.post('/internship-reject', auth, verifyAdmin, rejectInternship);
 router.post("/graphic-resource", auth, verifyAdmin, upload.single('file'), uploadGraphicResource);
 router.delete("/graphic-resource/:id", auth, verifyAdmin, deleteGraphicResource);
 router.get("/graphic-resources", auth, verifyAdmin, getGraphicResources);
+
+router.post("/graphic-task", auth, verifyAdmin, upload.single('file'), assignGraphicTask);
+router.delete("/graphic-task/:id", auth, verifyAdmin, deleteGraphicTask);
+router.get("/graphic-tasks", auth, verifyAdmin, getGraphicTasks);
 
 module.exports = router;

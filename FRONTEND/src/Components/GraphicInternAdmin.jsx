@@ -1,12 +1,44 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Trash2 } from "lucide-react";
+import { 
+  Trash2, 
+  Send, 
+  Sparkles, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle, 
+  UserX, 
+  Plus, 
+  FileText, 
+  ExternalLink,
+  ChevronDown,
+  Calendar,
+  AlertCircle
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   const [interns, setInterns] = useState([]);
   const [resources, setResources] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Active tab inside Graphic Designer section: 'active' | 'notice' | 'resigned'
+  const [activeLifecycleTab, setActiveLifecycleTab] = useState("active");
+
+  // Manage top section view: 'tasks' | 'resources'
+  const [topToolTab, setTopToolTab] = useState("tasks");
+
+  // Task Form State
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskReferenceLink, setTaskReferenceLink] = useState("");
+  const [taskFile, setTaskFile] = useState(null);
+  const [taskTarget, setTaskTarget] = useState("All");
+  const [taskTargetUserId, setTaskTargetUserId] = useState("");
+  const [taskDeadline, setTaskDeadline] = useState("");
+  const [assigningTask, setAssigningTask] = useState(false);
 
   // Resource Form State
   const [resourceTitle, setResourceTitle] = useState("");
@@ -14,11 +46,22 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   const [resourceFile, setResourceFile] = useState(null);
   const [resourceTarget, setResourceTarget] = useState("All");
   const [resourceTargetUserId, setResourceTargetUserId] = useState("");
-  const [sharing, setSharing] = useState(false);
+  const [sharingResource, setSharingResource] = useState(false);
+
+  // SP Grading Modal
+  const [gradingModal, setGradingModal] = useState({
+    isOpen: false,
+    userId: null,
+    internshipId: null,
+    submissionId: null,
+    currentPoints: ""
+  });
+  const [savingGrade, setSavingGrade] = useState(false);
 
   useEffect(() => {
     fetchInterns();
     fetchResources();
+    fetchTasks();
   }, []);
 
   const fetchInterns = async () => {
@@ -47,53 +90,82 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     }
   };
 
-  const handleUpdateStipend = async (userId, internshipId, status, amount) => {
+  const fetchTasks = async () => {
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/admin/update-stipend`,
-        { userId, internshipId, stipendStatus: status, stipendAmount: amount },
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
-      fetchInterns();
-      alert("Stipend updated successfully!");
+      const response = await axios.get(`${BACKEND_URL}/api/admin/graphic-tasks`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setTasks(response.data.tasks || []);
     } catch (err) {
-      console.error("Error updating stipend:", err);
-      alert("Failed to update stipend");
+      console.error("Error fetching graphic tasks:", err);
     }
   };
 
-  const handleUpdateSubmissionStatus = async (userId, internshipId, submissionId, status) => {
-    let spPoints = null;
-    if (status === 'Reviewed') {
-      const pointsStr = window.prompt("Enter SP Points for this submission (0-10):");
-      if (pointsStr === null) return; // cancelled
-      const points = parseInt(pointsStr, 10);
-      if (isNaN(points) || points < 0 || points > 10) {
-        alert("Please enter a valid number between 0 and 10.");
-        return;
-      }
-      spPoints = points;
+  // Assign Task
+  const handleAssignTask = async (e) => {
+    e.preventDefault();
+    if (!taskTitle) return toast.error("Task title is required");
+
+    setAssigningTask(true);
+    const formData = new FormData();
+    formData.append("title", taskTitle);
+    formData.append("description", taskDescription);
+    formData.append("referenceLink", taskReferenceLink);
+    formData.append("target", taskTarget);
+    if (taskTarget === "Specific") {
+      formData.append("targetUserId", taskTargetUserId);
+    }
+    if (taskDeadline) {
+      formData.append("deadline", taskDeadline);
+    }
+    if (taskFile) {
+      formData.append("file", taskFile);
     }
 
     try {
-      await axios.post(
-        `${BACKEND_URL}/api/admin/graphic-submission-status`,
-        { userId, internshipId, submissionId, status, spPoints },
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
-      fetchInterns();
-      alert("Submission status updated successfully!");
+      await axios.post(`${BACKEND_URL}/api/admin/graphic-task`, formData, {
+        headers: { 
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      toast.success(taskTarget === "All" ? "Task assigned to all Graphic Designers!" : "Task assigned to selected intern!");
+      setTaskTitle("");
+      setTaskDescription("");
+      setTaskReferenceLink("");
+      setTaskFile(null);
+      setTaskTarget("All");
+      setTaskTargetUserId("");
+      setTaskDeadline("");
+      fetchTasks();
     } catch (err) {
-      console.error("Error updating submission status:", err);
-      alert("Failed to update submission status");
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to assign task");
+    } finally {
+      setAssigningTask(false);
     }
   };
 
+  const handleDeleteTask = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+    try {
+      await axios.delete(`${BACKEND_URL}/api/admin/graphic-task/${id}`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      toast.success("Task deleted successfully");
+      fetchTasks();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete task");
+    }
+  };
+
+  // Share Resource
   const handleShareResource = async (e) => {
     e.preventDefault();
-    if (!resourceTitle) return alert("Title is required");
+    if (!resourceTitle) return toast.error("Resource title is required");
     
-    setSharing(true);
+    setSharingResource(true);
     const formData = new FormData();
     formData.append("title", resourceTitle);
     formData.append("link", resourceLink);
@@ -109,7 +181,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       await axios.post(`${BACKEND_URL}/api/admin/graphic-resource`, formData, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
-      alert("Resource shared successfully!");
+      toast.success("Resource shared successfully!");
       setResourceTitle("");
       setResourceLink("");
       setResourceFile(null);
@@ -118,9 +190,9 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       fetchResources();
     } catch (err) {
       console.error(err);
-      alert("Failed to share resource");
+      toast.error("Failed to share resource");
     } finally {
-      setSharing(false);
+      setSharingResource(false);
     }
   };
 
@@ -130,16 +202,34 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       await axios.delete(`${BACKEND_URL}/api/admin/graphic-resource/${id}`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
+      toast.success("Resource deleted successfully");
       fetchResources();
     } catch (err) {
-      console.error("Error deleting resource:", err);
-      alert("Failed to delete resource");
+      console.error(err);
+      toast.error("Failed to delete resource");
     }
   };
 
+  // Update Stipend
+  const handleUpdateStipend = async (userId, internshipId, status, amount) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/admin/update-stipend`,
+        { userId, internshipId, stipendStatus: status, stipendAmount: amount },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      fetchInterns();
+      toast.success("Stipend updated successfully!");
+    } catch (err) {
+      console.error("Error updating stipend:", err);
+      toast.error("Failed to update stipend");
+    }
+  };
+
+  // Mark Resigned (Starts 15-day notice period)
   const handleMarkResigned = async (userId, internshipId, currentResignedStatus) => {
     if (currentResignedStatus) {
-      alert("Intern is already marked as resigned.");
+      toast.error("Intern is already marked as resigned.");
       return;
     }
     if (!window.confirm("Are you sure you want to mark this intern as resigned? A 15-day notice period will begin.")) return;
@@ -150,255 +240,907 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       if (res.data.success) {
-        alert("Intern marked as resigned successfully");
-        fetchGraphicInterns();
+        toast.success("Intern marked as resigned. 15-day notice period active.");
+        fetchInterns();
       } else {
-        alert(res.data.message || "Failed to mark resigned");
+        toast.error(res.data.message || "Failed to mark resigned");
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred");
+      toast.error("An error occurred marking intern resigned");
     }
   };
 
-  if (loading) return <div className="text-center p-4">Loading Graphic Interns...</div>;
-  if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
+  // Reject Intern (Permanently hides intern from graphic designer views)
+  const handleRejectInternship = async (userId, internshipId) => {
+    if (!window.confirm("Are you sure you want to reject this internship application? A rejection email will be sent and this intern will no longer appear here.")) return;
+
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/admin/internship-reject`, 
+        { userId, internshipId },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      if (res.data.success) {
+        toast.success("Internship rejected successfully");
+        fetchInterns();
+      } else {
+        toast.error(res.data.message || "Failed to reject application");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error rejecting internship");
+    }
+  };
+
+  // Submit SP Grade
+  const handleSaveSpPoints = async (e) => {
+    e.preventDefault();
+    const pointsNum = parseInt(gradingModal.currentPoints, 10);
+    if (isNaN(pointsNum) || pointsNum < 0 || pointsNum > 10) {
+      toast.error("Please enter a valid number of SP points between 0 and 10.");
+      return;
+    }
+
+    setSavingGrade(true);
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/admin/graphic-submission-status`,
+        { 
+          userId: gradingModal.userId, 
+          internshipId: gradingModal.internshipId, 
+          submissionId: gradingModal.submissionId, 
+          status: 'Reviewed', 
+          spPoints: pointsNum 
+        },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      toast.success(`Awarded ${pointsNum}/10 SP points! Submission marked Reviewed.`);
+      setGradingModal({ isOpen: false, userId: null, internshipId: null, submissionId: null, currentPoints: "" });
+      fetchInterns();
+    } catch (err) {
+      console.error("Error updating submission status:", err);
+      toast.error("Failed to update submission status");
+    } finally {
+      setSavingGrade(false);
+    }
+  };
+
+  // Lifecycle Categorization Helper
+  // Requirement: Exclude rejected completely ("reject ka show nhi hoga")
+  const visibleInterns = interns.filter(i => !i.rejected?.isRejected);
+
+  const getInternStatusInfo = (intern) => {
+    const isResigned = intern.resigned?.isResigned;
+    if (!isResigned) {
+      return { category: "active", isNoticeActive: false, diffDays: 0, daysRemaining: 0 };
+    }
+
+    const resDate = new Date(intern.resigned.resignationDate || Date.now());
+    const now = new Date();
+    const diffDays = Math.floor(Math.abs(now - resDate) / (1000 * 60 * 60 * 24));
+    const isNoticeActive = diffDays <= 15;
+    const daysRemaining = Math.max(0, 15 - diffDays);
+    const noticeEndDate = new Date(resDate);
+    noticeEndDate.setDate(noticeEndDate.getDate() + 15);
+
+    if (isNoticeActive) {
+      return { category: "notice", isNoticeActive: true, diffDays, daysRemaining, noticeEndDate };
+    } else {
+      return { category: "resigned", isNoticeActive: false, diffDays, daysRemaining: 0, noticeEndDate };
+    }
+  };
+
+  const activeInterns = visibleInterns.filter(i => getInternStatusInfo(i).category === "active");
+  const noticeInterns = visibleInterns.filter(i => getInternStatusInfo(i).category === "notice");
+  const resignedInterns = visibleInterns.filter(i => getInternStatusInfo(i).category === "resigned");
+
+  const currentTabInterns = 
+    activeLifecycleTab === "active" ? activeInterns :
+    activeLifecycleTab === "notice" ? noticeInterns :
+    resignedInterns;
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200">
+      <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+      <p className="text-slate-600 font-medium text-sm">Loading Graphic Designers...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="p-6 bg-red-50 text-red-700 rounded-2xl border border-red-200 text-center font-medium">
+      {error}
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Manage Resources Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Manage Graphic Resources</h2>
-        <form onSubmit={handleShareResource} className="bg-gray-50 p-4 rounded-lg border mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold mb-1">Resource Title *</label>
-            <input type="text" className="w-full border rounded p-2" value={resourceTitle} onChange={e => setResourceTitle(e.target.value)} required placeholder="e.g. Company Logo" />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-1">Resource Link</label>
-            <input type="url" className="w-full border rounded p-2" value={resourceLink} onChange={e => setResourceLink(e.target.value)} placeholder="e.g. Google Drive Link" />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-1">Upload File</label>
-            <input type="file" className="w-full border rounded p-1.5 bg-white" onChange={e => setResourceFile(e.target.files[0])} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-1">Target Intern</label>
-            <select className="w-full border rounded p-2" value={resourceTarget} onChange={e => {
-              setResourceTarget(e.target.value);
-              if (e.target.value === "All") setResourceTargetUserId("");
-            }}>
-              <option value="All">All Graphic Designers</option>
-              <option value="Specific">Specific Intern</option>
-            </select>
-          </div>
-          {resourceTarget === "Specific" && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold mb-1">Select Specific Intern *</label>
-              <select className="w-full border rounded p-2" value={resourceTargetUserId} onChange={e => setResourceTargetUserId(e.target.value)} required={resourceTarget === "Specific"}>
-                <option value="">-- Select Intern --</option>
-                {interns.map(i => <option key={i.userId} value={i.userId}>{i.name} ({i.studentId})</option>)}
-              </select>
-            </div>
-          )}
-          <div className="md:col-span-2">
-            <button type="submit" disabled={sharing} className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 disabled:opacity-50">
-              {sharing ? "Sharing..." : "Share Resource"}
-            </button>
-          </div>
-        </form>
-
+    <div className="space-y-8">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 p-6 rounded-2xl border border-pink-100 shadow-sm">
         <div>
-          <h3 className="font-semibold text-lg mb-3">Shared Resources</h3>
-          {resources.length === 0 ? <p className="text-gray-500 text-sm">No resources shared yet.</p> : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border rounded text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="py-2 px-4 border-b text-left">Date</th>
-                    <th className="py-2 px-4 border-b text-left">Title</th>
-                    <th className="py-2 px-4 border-b text-left">Target</th>
-                    <th className="py-2 px-4 border-b text-left">Link/File</th>
-                    <th className="py-2 px-4 border-b text-left">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resources.map(res => (
-                    <tr key={res._id} className="hover:bg-gray-50">
-                      <td className="py-2 px-4 border-b">{new Date(res.createdAt).toLocaleDateString()}</td>
-                      <td className="py-2 px-4 border-b font-medium">{res.title}</td>
-                      <td className="py-2 px-4 border-b">
-                        <span className={`px-2 py-1 rounded text-xs ${res.target === 'All' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {res.target === 'All' ? 'All Graphic Designers' : 'Specific Intern'}
-                        </span>
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline block">View Link</a>}
-                        {res.fileUrl && <a href={res.fileUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline block">View File</a>}
-                      </td>
-                      <td className="py-2 px-4 border-b">
-                        <button onClick={() => handleDeleteResource(res._id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            <span className="p-2 bg-pink-500 text-white rounded-xl shadow-sm">
+              <Sparkles className="w-6 h-6" />
+            </span>
+            Graphic Designer Workspace
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Assign custom or global tasks, manage resources, review submissions with SP points, and monitor intern lifecycle.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTopToolTab(topToolTab === "tasks" ? "resources" : "tasks")}
+            className="px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold shadow-sm transition-all"
+          >
+            {topToolTab === "tasks" ? "Switch to Resources" : "Switch to Task Assignment"}
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Graphic Designer Submissions & Stipend</h2>
-        
-        {interns.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No Graphic Designer interns found.</p>
+      {/* Tools Section: Task Assignment & Resources */}
+      {topToolTab === "tasks" ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4 border-b pb-3">
+            <div>
+              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-indigo-600" />
+                Assign Tasks to Graphic Designers
+              </h2>
+              <p className="text-xs text-slate-500">
+                Give individual tasks to specific designers or broadcast the same task to everyone at once.
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg">
+              {tasks.length} Active Task{tasks.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Task Assignment Form */}
+          <form onSubmit={handleAssignTask} className="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Task Title *
+              </label>
+              <input 
+                type="text" 
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 font-medium" 
+                value={taskTitle} 
+                onChange={e => setTaskTitle(e.target.value)} 
+                required 
+                placeholder="e.g. Design 3 Promotional Instagram Carousel Slides" 
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Task Instructions / Description
+              </label>
+              <textarea 
+                rows="3"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500" 
+                value={taskDescription} 
+                onChange={e => setTaskDescription(e.target.value)} 
+                placeholder="Detailed instructions, color palette requirements, aspect ratio (1080x1350), copy guidelines, etc."
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Reference / Inspiration Link
+              </label>
+              <input 
+                type="url" 
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500" 
+                value={taskReferenceLink} 
+                onChange={e => setTaskReferenceLink(e.target.value)} 
+                placeholder="https://behance.net/... or Figma / Drive URL" 
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Attach Asset / Brand Kit (File)
+              </label>
+              <input 
+                type="file" 
+                className="w-full border border-slate-200 rounded-xl p-1.5 text-sm bg-white file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700" 
+                onChange={e => setTaskFile(e.target.files[0])} 
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Assign Target *
+              </label>
+              <select 
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white font-semibold text-slate-800" 
+                value={taskTarget} 
+                onChange={e => {
+                  setTaskTarget(e.target.value);
+                  if (e.target.value === "All") setTaskTargetUserId("");
+                }}
+              >
+                <option value="All">📢 All Graphic Designers (Same Task to Everyone)</option>
+                <option value="Specific">👤 Specific Graphic Designer (Different Individual Task)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Deadline (Optional)
+              </label>
+              <input 
+                type="date" 
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white font-medium" 
+                value={taskDeadline} 
+                onChange={e => setTaskDeadline(e.target.value)} 
+              />
+            </div>
+
+            {taskTarget === "Specific" && (
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Select Specific Graphic Designer *
+                </label>
+                <select 
+                  className="w-full border border-indigo-300 rounded-xl p-2.5 text-sm bg-white font-semibold text-indigo-900" 
+                  value={taskTargetUserId} 
+                  onChange={e => setTaskTargetUserId(e.target.value)} 
+                  required={taskTarget === "Specific"}
+                >
+                  <option value="">-- Choose Graphic Designer --</option>
+                  {visibleInterns.map(i => (
+                    <option key={i.userId} value={i.userId}>
+                      {i.name} ({i.studentId}) {i.resigned?.isResigned ? "• [On Notice]" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="md:col-span-2 pt-2 flex justify-end">
+              <button 
+                type="submit" 
+                disabled={assigningTask} 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                {assigningTask ? "Assigning Task..." : "Assign Task"}
+              </button>
+            </div>
+          </form>
+
+          {/* Assigned Tasks Table */}
+          <div>
+            <h3 className="font-bold text-slate-800 text-sm mb-3">Currently Assigned Tasks</h3>
+            {tasks.length === 0 ? (
+              <p className="text-slate-400 text-sm py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                No tasks assigned yet. Use the form above to assign work.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-slate-200 rounded-xl text-sm">
+                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                      <th className="py-2.5 px-4 border-b text-left">Date</th>
+                      <th className="py-2.5 px-4 border-b text-left">Task Title & Details</th>
+                      <th className="py-2.5 px-4 border-b text-left">Assigned To</th>
+                      <th className="py-2.5 px-4 border-b text-left">Materials</th>
+                      <th className="py-2.5 px-4 border-b text-left">Deadline</th>
+                      <th className="py-2.5 px-4 border-b text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {tasks.map(t => (
+                      <tr key={t._id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">
+                          {new Date(t.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-800">{t.title}</div>
+                          {t.description && (
+                            <p className="text-xs text-slate-500 mt-1 max-w-md line-clamp-2">{t.description}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {t.target === "All" ? (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              📢 All Designers
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              👤 {t.targetUserName || "Specific Intern"} {t.targetStudentId ? `(${t.targetStudentId})` : ""}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-xs space-y-1">
+                          {t.referenceLink && (
+                            <a href={t.referenceLink} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
+                              <ExternalLink className="w-3 h-3" /> Ref Link
+                            </a>
+                          )}
+                          {t.fileUrl && (
+                            <a href={t.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-semibold">
+                              <FileText className="w-3 h-3" /> Attached Asset
+                            </a>
+                          )}
+                          {!t.referenceLink && !t.fileUrl && <span className="text-slate-400">None</span>}
+                        </td>
+                        <td className="py-3 px-4 text-xs whitespace-nowrap">
+                          {t.deadline ? (
+                            <span className="font-bold text-slate-700 flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              {new Date(t.deadline).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">No deadline</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button 
+                            onClick={() => handleDeleteTask(t._id)} 
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete Task"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Resources Management */
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4 border-b pb-3">
+            <div>
+              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-pink-600" />
+                Manage Graphic Resources & Assets
+              </h2>
+              <p className="text-xs text-slate-500">
+                Share logos, fonts, templates, and general design assets.
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 bg-pink-50 text-pink-700 border border-pink-100 rounded-lg">
+              {resources.length} Resource{resources.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <form onSubmit={handleShareResource} className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Resource Title *</label>
+              <input type="text" className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white" value={resourceTitle} onChange={e => setResourceTitle(e.target.value)} required placeholder="e.g. Official Vector Logo & Brand Guide" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Resource Link</label>
+              <input type="url" className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white" value={resourceLink} onChange={e => setResourceLink(e.target.value)} placeholder="e.g. Google Drive / Figma Link" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Upload File</label>
+              <input type="file" className="w-full border border-slate-200 rounded-xl p-1.5 text-sm bg-white" onChange={e => setResourceFile(e.target.files[0])} />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Target Intern</label>
+              <select className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white font-semibold" value={resourceTarget} onChange={e => {
+                setResourceTarget(e.target.value);
+                if (e.target.value === "All") setResourceTargetUserId("");
+              }}>
+                <option value="All">All Graphic Designers</option>
+                <option value="Specific">Specific Intern</option>
+              </select>
+            </div>
+            {resourceTarget === "Specific" && (
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Select Specific Intern *</label>
+                <select className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white font-semibold" value={resourceTargetUserId} onChange={e => setResourceTargetUserId(e.target.value)} required={resourceTarget === "Specific"}>
+                  <option value="">-- Select Intern --</option>
+                  {visibleInterns.map(i => <option key={i.userId} value={i.userId}>{i.name} ({i.studentId})</option>)}
+                </select>
+              </div>
+            )}
+            <div className="md:col-span-2 pt-2 flex justify-end">
+              <button type="submit" disabled={sharingResource} className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50">
+                {sharingResource ? "Sharing..." : "Share Resource"}
+              </button>
+            </div>
+          </form>
+
+          <div>
+            <h3 className="font-bold text-slate-800 text-sm mb-3">Shared Resources</h3>
+            {resources.length === 0 ? <p className="text-slate-400 text-sm py-4 text-center bg-slate-50 rounded-xl">No resources shared yet.</p> : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border rounded-xl text-sm">
+                  <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
+                    <tr>
+                      <th className="py-2.5 px-4 border-b text-left">Date</th>
+                      <th className="py-2.5 px-4 border-b text-left">Title</th>
+                      <th className="py-2.5 px-4 border-b text-left">Target</th>
+                      <th className="py-2.5 px-4 border-b text-left">Link/File</th>
+                      <th className="py-2.5 px-4 border-b text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resources.map(res => (
+                      <tr key={res._id} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-4 border-b text-xs text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
+                        <td className="py-2.5 px-4 border-b font-medium text-slate-800">{res.title}</td>
+                        <td className="py-2.5 px-4 border-b">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${res.target === 'All' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {res.target === 'All' ? 'All Designers' : 'Specific Intern'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4 border-b text-xs space-y-1">
+                          {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline block font-semibold">View Link</a>}
+                          {res.fileUrl && <a href={res.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline block font-semibold">Download File</a>}
+                        </td>
+                        <td className="py-2.5 px-4 border-b text-center">
+                          <button onClick={() => handleDeleteResource(res._id)} className="text-slate-400 hover:text-red-600 p-1 rounded"><Trash2 className="w-4 h-4" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3 Lifecycle Sections / Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-6">
+          <div>
+            <h2 className="text-xl font-black text-slate-800">
+              Graphic Designer Submissions & Lifecycle
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Review tasks, award SP points, and manage notice periods.
+            </p>
+          </div>
+
+          {/* 3 Tabs */}
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl self-start sm:self-auto overflow-x-auto">
+            <button
+              onClick={() => setActiveLifecycleTab("active")}
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeLifecycleTab === "active"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+              Active Interns
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeLifecycleTab === "active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+              }`}>
+                {activeInterns.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveLifecycleTab("notice")}
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeLifecycleTab === "notice"
+                  ? "bg-white text-amber-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              On Notice Period
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeLifecycleTab === "notice" ? "bg-amber-100 text-amber-800" : "bg-slate-200 text-slate-700"
+              }`}>
+                {noticeInterns.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveLifecycleTab("resigned")}
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeLifecycleTab === "resigned"
+                  ? "bg-white text-rose-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+              Notice Period Over / Resigned
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeLifecycleTab === "resigned" ? "bg-rose-100 text-rose-800" : "bg-slate-200 text-slate-700"
+              }`}>
+                {resignedInterns.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content Display */}
+        {currentTabInterns.length === 0 ? (
+          <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <UserX className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-600 font-bold text-sm">
+              {activeLifecycleTab === "active" && "No active Graphic Designers found."}
+              {activeLifecycleTab === "notice" && "No Graphic Designers currently on notice period."}
+              {activeLifecycleTab === "resigned" && "No Graphic Designers with completed notice periods."}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">
+              {activeLifecycleTab === "notice" ? "Interns marked as resigned will appear here during their 15-day notice period." : ""}
+              {activeLifecycleTab === "resigned" ? "Interns move here automatically once their 15-day notice period ends." : ""}
+            </p>
+          </div>
         ) : (
           <div className="space-y-8">
-            {interns.map((intern) => (
-              <div key={intern.internshipId} className="border rounded-lg p-6 bg-gray-50">
-                <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">{intern.name}</h3>
-                    <p className="text-sm text-gray-600">ID: {intern.studentId} | Email: {intern.email} | Mobile: {intern.mobile}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <button
-                      onClick={() => handleMarkResigned(intern.userId, intern.internshipId, intern.resigned?.isResigned)}
-                      className={`px-3 py-1.5 rounded text-sm font-semibold border ${intern.resigned?.isResigned ? 'bg-orange-100 text-orange-700 cursor-not-allowed border-orange-200' : 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'}`}
-                      disabled={intern.resigned?.isResigned}
-                    >
-                      {intern.resigned?.isResigned ? "Resigned" : "Mark Resigned"}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setResourceTarget("Specific");
-                        setResourceTargetUserId(intern.userId);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="bg-purple-100 text-purple-700 px-3 py-1.5 rounded text-sm font-semibold border border-purple-200 hover:bg-purple-200"
-                    >
-                      + Share Resource
-                    </button>
-                    <div className="bg-white p-3 rounded shadow-sm border flex flex-col gap-2 min-w-[200px]">
-                      <label className="text-sm font-semibold text-gray-700">Stipend Status:</label>
-                      <select 
-                        className="border rounded p-1 text-sm"
-                        value={intern.stipendStatus}
-                        onChange={(e) => handleUpdateStipend(intern.userId, intern.internshipId, e.target.value, intern.stipendAmount)}
-                      >
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Paid">Paid</option>
-                      </select>
+            {currentTabInterns.map((intern) => {
+              const statusInfo = getInternStatusInfo(intern);
 
-                      {intern.stipendStatus === 'Paid' && (
-                        <>
-                          <label className="text-sm font-semibold text-gray-700 mt-2">Monthly Amount (₹):</label>
+              // Submissions sorted newest first (descending by submittedAt)
+              const sortedSubmissions = [...(intern.graphicSubmissions || [])].sort(
+                (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
+              );
+
+              // Count unreviewed submissions (spPoints is null/undefined)
+              const unreviewedSubmissions = sortedSubmissions.filter(
+                s => s.spPoints === null || s.spPoints === undefined
+              );
+              const unreviewedCount = unreviewedSubmissions.length;
+
+              return (
+                <div 
+                  key={intern.internshipId} 
+                  className={`border rounded-2xl p-6 transition-all ${
+                    unreviewedCount > 0 
+                      ? "border-emerald-300 bg-emerald-50/20 shadow-sm" 
+                      : "border-slate-200 bg-slate-50/50"
+                  }`}
+                >
+                  {/* Notice Period Status Banner */}
+                  {statusInfo.category === "notice" && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-xl mb-4 flex items-center justify-between text-xs font-semibold">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span>
+                          <strong>15-Day Notice Period Active:</strong> Day {statusInfo.diffDays} of 15. 
+                          Ends on {statusInfo.noticeEndDate ? statusInfo.noticeEndDate.toLocaleDateString() : 'N/A'}.
+                        </span>
+                      </div>
+                      <span className="bg-amber-200 text-amber-900 px-2.5 py-0.5 rounded-full font-bold">
+                        {statusInfo.daysRemaining} days left
+                      </span>
+                    </div>
+                  )}
+
+                  {statusInfo.category === "resigned" && (
+                    <div className="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-2.5 rounded-xl mb-4 flex items-center gap-2 text-xs font-semibold">
+                      <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>
+                        <strong>Notice Period Completed:</strong> This intern's 15-day notice period has elapsed. Internship is closed.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Header Row */}
+                  <div className="flex flex-wrap justify-between items-start gap-4 mb-4 pb-4 border-b border-slate-200">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-black text-slate-800">{intern.name}</h3>
+                        
+                        {/* New Uploads Indicator Badge */}
+                        {unreviewedCount > 0 && (
+                          <span className="bg-emerald-500 text-white font-black text-xs px-2.5 py-1 rounded-full shadow-sm animate-pulse inline-flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {unreviewedCount} NEW TASK{unreviewedCount > 1 ? 'S' : ''} UPLOADED
+                          </span>
+                        )}
+
+                        {unreviewedCount === 0 && sortedSubmissions.length > 0 && (
+                          <span className="bg-slate-200 text-slate-700 font-bold text-[11px] px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-600" />
+                            All Tasks Reviewed
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        <strong>ID:</strong> <span className="font-mono">{intern.studentId}</span> | <strong>Email:</strong> {intern.email} | <strong>Mobile:</strong> {intern.mobile || "N/A"}
+                      </p>
+                    </div>
+
+                    {/* Action Controls */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Quick Assign Task */}
+                      <button
+                        onClick={() => {
+                          setTopToolTab("tasks");
+                          setTaskTarget("Specific");
+                          setTaskTargetUserId(intern.userId);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          toast(`Assigning task for ${intern.name}`, { icon: "📝" });
+                        }}
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Assign Task
+                      </button>
+
+                      {/* Share Resource */}
+                      <button 
+                        onClick={() => {
+                          setTopToolTab("resources");
+                          setResourceTarget("Specific");
+                          setResourceTargetUserId(intern.userId);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          toast(`Sharing resource with ${intern.name}`, { icon: "📁" });
+                        }}
+                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Share Resource
+                      </button>
+
+                      {/* Mark Resigned */}
+                      {!intern.resigned?.isResigned && (
+                        <button
+                          onClick={() => handleMarkResigned(intern.userId, intern.internshipId, intern.resigned?.isResigned)}
+                          className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                          Mark Resigned
+                        </button>
+                      )}
+
+                      {/* Reject Application */}
+                      <button
+                        onClick={() => handleRejectInternship(intern.userId, intern.internshipId)}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                        Reject
+                      </button>
+
+                      {/* Stipend Controller */}
+                      <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-600">Stipend:</label>
+                        <select 
+                          className="border border-slate-200 rounded-lg p-1 text-xs font-bold text-slate-800"
+                          value={intern.stipendStatus || 'Unpaid'}
+                          onChange={(e) => handleUpdateStipend(intern.userId, intern.internshipId, e.target.value, intern.stipendAmount)}
+                        >
+                          <option value="Unpaid">Unpaid</option>
+                          <option value="Paid">Paid</option>
+                        </select>
+
+                        {intern.stipendStatus === 'Paid' && (
                           <input 
                             type="number" 
-                            className="border rounded p-1 text-sm w-full"
+                            className="border border-slate-200 rounded-lg p-1 text-xs w-20 font-bold text-slate-800"
                             value={intern.stipendAmount || ''}
                             onChange={(e) => {
                               const updatedInterns = [...interns];
                               const idx = updatedInterns.findIndex(i => i.internshipId === intern.internshipId);
-                              updatedInterns[idx].stipendAmount = e.target.value;
-                              setInterns(updatedInterns);
+                              if (idx !== -1) {
+                                updatedInterns[idx].stipendAmount = e.target.value;
+                                setInterns(updatedInterns);
+                              }
                             }}
                             onBlur={(e) => handleUpdateStipend(intern.userId, intern.internshipId, intern.stipendStatus, e.target.value)}
-                            placeholder="e.g. 5000"
+                            placeholder="₹ Amount"
                           />
-                        </>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-6">
-                  <h4 className="font-semibold text-lg mb-3">Submissions</h4>
-                  {intern.graphicSubmissions && intern.graphicSubmissions.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full bg-white border rounded">
-                        <thead className="bg-gray-100">
-                          <tr>
-                            <th className="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600">Date</th>
-                            <th className="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600">Work Link/File</th>
-                            <th className="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600">Status</th>
-                            <th className="py-2 px-4 border-b text-left text-sm font-semibold text-gray-600">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {intern.graphicSubmissions.map((sub, idx) => (
-                            <tr key={sub._id || idx} className="hover:bg-gray-50">
-                              <td className="py-2 px-4 border-b text-sm">
-                                {new Date(sub.submittedAt).toLocaleString()}
-                              </td>
-                              <td className="py-2 px-4 border-b text-sm">
-                                {sub.link && (
-                                  <a href={sub.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block">
-                                    View Link
-                                  </a>
-                                )}
-                                {sub.fileUrl && (
-                                  <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
-                                    View File
-                                  </a>
-                                )}
-                                {sub.fileUrls && sub.fileUrls.map((url, fIdx) => (
-                                  <a key={fIdx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-1">
-                                    View File {fIdx + 1}
-                                  </a>
-                                ))}
-                                {!sub.link && !sub.fileUrl && (!sub.fileUrls || sub.fileUrls.length === 0) && <span className="text-gray-400">N/A</span>}
-                                
-                                <div className="mt-2 space-y-1 max-w-xs">
-                                  {sub.linkedinCaption && (
-                                    <div className="text-xs bg-white p-2 rounded border border-gray-200">
-                                      <span className="font-semibold text-blue-700 block mb-1">LinkedIn Caption:</span>
-                                      <span className="text-gray-600 break-words line-clamp-3" title={sub.linkedinCaption}>{sub.linkedinCaption}</span>
-                                    </div>
-                                  )}
-                                  {sub.instagramCaption && (
-                                    <div className="text-xs bg-white p-2 rounded border border-gray-200">
-                                      <span className="font-semibold text-pink-700 block mb-1">Instagram Caption:</span>
-                                      <span className="text-gray-600 break-words line-clamp-3" title={sub.instagramCaption}>{sub.instagramCaption}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-2 px-4 border-b text-sm">
-                                <span className={`px-2 py-1 rounded text-xs ${sub.status === 'Reviewed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                  {sub.status}
-                                </span>
-                                {sub.spPoints !== undefined && sub.spPoints !== null && (
-                                  <div className="mt-1 text-xs font-bold text-purple-700">
-                                    SP: {sub.spPoints}/10
-                                  </div>
-                                )}
-                              </td>
-                              <td className="py-2 px-4 border-b text-sm">
-                                {sub.status === 'Pending' && (
-                                  <button 
-                                    onClick={() => handleUpdateSubmissionStatus(intern.userId, intern.internshipId, sub._id, 'Reviewed')}
-                                    className="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-xs"
-                                  >
-                                    Mark Reviewed
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  {/* Submissions Section (Sorted Newest First) */}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                        Submitted Tasks
+                        <span className="text-xs font-bold text-slate-500">
+                          ({sortedSubmissions.length} total • ordered newest first)
+                        </span>
+                      </h4>
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No submissions yet.</p>
-                  )}
+
+                    {sortedSubmissions.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white border border-slate-200 rounded-xl">
+                          <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider">
+                            <tr>
+                              <th className="py-2.5 px-4 border-b text-left">Date & Time</th>
+                              <th className="py-2.5 px-4 border-b text-left">Task / Work Submitted</th>
+                              <th className="py-2.5 px-4 border-b text-left">Captions</th>
+                              <th className="py-2.5 px-4 border-b text-left">Review & SP Points</th>
+                              <th className="py-2.5 px-4 border-b text-center">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sortedSubmissions.map((sub, idx) => {
+                              const isUnreviewed = sub.spPoints === null || sub.spPoints === undefined;
+
+                              return (
+                                <tr 
+                                  key={sub._id || idx} 
+                                  className={`transition-colors ${isUnreviewed ? "bg-emerald-50/40 hover:bg-emerald-50/60" : "hover:bg-slate-50"}`}
+                                >
+                                  <td className="py-3 px-4 text-xs text-slate-500 whitespace-nowrap align-top">
+                                    <div className="font-semibold text-slate-700">
+                                      {new Date(sub.submittedAt).toLocaleDateString()}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400">
+                                      {new Date(sub.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                    {/* Prominent NEW badge */}
+                                    {isUnreviewed && (
+                                      <div className="mt-1.5">
+                                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-sm animate-pulse inline-flex items-center gap-1">
+                                          ✨ NEW
+                                        </span>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  <td className="py-3 px-4 text-xs align-top space-y-1.5">
+                                    {sub.taskTitle && (
+                                      <div className="font-bold text-indigo-700 text-xs bg-indigo-50 px-2 py-0.5 rounded inline-block border border-indigo-100">
+                                        🎯 Task: {sub.taskTitle}
+                                      </div>
+                                    )}
+
+                                    <div className="space-y-1">
+                                      {sub.link && (
+                                        <a href={sub.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold flex items-center gap-1">
+                                          <ExternalLink className="w-3 h-3" /> View Work Link
+                                        </a>
+                                      )}
+                                      {sub.fileUrl && (
+                                        <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold flex items-center gap-1">
+                                          <FileText className="w-3 h-3" /> View Attached File
+                                        </a>
+                                      )}
+                                      {sub.fileUrls && sub.fileUrls.map((url, fIdx) => (
+                                        <a key={fIdx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold flex items-center gap-1">
+                                          <FileText className="w-3 h-3" /> Attachment #{fIdx + 1}
+                                        </a>
+                                      ))}
+                                      {!sub.link && !sub.fileUrl && (!sub.fileUrls || sub.fileUrls.length === 0) && (
+                                        <span className="text-slate-400">No link/files attached</span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  <td className="py-3 px-4 text-xs align-top max-w-xs space-y-1.5">
+                                    {sub.linkedinCaption && (
+                                      <div className="p-2 bg-white rounded-lg border border-slate-200">
+                                        <span className="font-bold text-blue-700 block mb-0.5">LinkedIn Caption:</span>
+                                        <span className="text-slate-600 break-words line-clamp-2" title={sub.linkedinCaption}>
+                                          {sub.linkedinCaption}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {sub.instagramCaption && (
+                                      <div className="p-2 bg-white rounded-lg border border-slate-200">
+                                        <span className="font-bold text-pink-700 block mb-0.5">Instagram Caption:</span>
+                                        <span className="text-slate-600 break-words line-clamp-2" title={sub.instagramCaption}>
+                                          {sub.instagramCaption}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  <td className="py-3 px-4 text-xs align-top whitespace-nowrap">
+                                    {isUnreviewed ? (
+                                      <div className="space-y-1">
+                                        <span className="bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full text-xs inline-block">
+                                          Pending Review
+                                        </span>
+                                        <div className="text-[11px] text-slate-400 font-medium">Needs SP points</div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-1">
+                                        <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-xs inline-flex items-center gap-1">
+                                          <CheckCircle className="w-3 h-3" /> Reviewed
+                                        </span>
+                                        <div className="font-black text-purple-700 text-xs mt-1">
+                                          ⭐ {sub.spPoints}/10 SP Points
+                                        </div>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  <td className="py-3 px-4 text-xs align-top text-center whitespace-nowrap">
+                                    <button 
+                                      onClick={() => setGradingModal({
+                                        isOpen: true,
+                                        userId: intern.userId,
+                                        internshipId: intern.internshipId,
+                                        submissionId: sub._id,
+                                        currentPoints: sub.spPoints !== null && sub.spPoints !== undefined ? String(sub.spPoints) : ""
+                                      })}
+                                      className={`px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition-all ${
+                                        isUnreviewed 
+                                          ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+                                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                      }`}
+                                    >
+                                      {isUnreviewed ? "Grade (0-10 SP)" : "Edit SP Points"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 py-3 text-center bg-white rounded-xl border border-dashed border-slate-200">
+                        No work submitted by this intern yet.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* SP Grading Modal */}
+      {gradingModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 transform transition-all">
+            <h3 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Award SP Points
+            </h3>
+            <p className="text-xs text-slate-500 mb-6">
+              Assign synergy points (0 to 10) for this submission. Once awarded, the "NEW" badge will be cleared.
+            </p>
+
+            <form onSubmit={handleSaveSpPoints} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  SP Points (Out of 10) *
+                </label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="1"
+                    autoFocus
+                    required
+                    className="w-full border-2 border-indigo-200 focus:border-indigo-600 rounded-2xl p-3 text-center text-2xl font-black text-indigo-900 bg-indigo-50/30"
+                    placeholder="e.g. 8"
+                    value={gradingModal.currentPoints}
+                    onChange={(e) => setGradingModal({ ...gradingModal, currentPoints: e.target.value })}
+                  />
+                  <span className="text-lg font-black text-slate-400">/ 10</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setGradingModal({ isOpen: false, userId: null, internshipId: null, submissionId: null, currentPoints: "" })}
+                  className="flex-1 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-sm transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingGrade}
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50"
+                >
+                  {savingGrade ? "Saving..." : "Save & Mark Reviewed"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
