@@ -1,0 +1,15 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading model deepaval/Whisper-Large-v3-Turbo...
+
+--- STT Benchmark Results ---
+
+Traceback (most recent call last):
+  File "/Volumes/Himanshu/github-repos/WEBSITE/voice-benchmark/tests/run_offline_stt.py", line 26, in <module>
+    subprocess.run(["ffmpeg", "-y", "-i", audio_file, "-ar", "16000", "-ac", "1", wav_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 505, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 951, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 1821, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'

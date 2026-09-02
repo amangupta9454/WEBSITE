@@ -1,0 +1,7 @@
+# Pyrefly configuration for voice-benchmark
+# Points to the venv where torch, faster-whisper, numpy, etc. are installed.
+python_interpreter = "./venv/bin/python3"
+
+# Suppress errors from the venv's own source files
+[errors]
+ignore_missing_imports = false

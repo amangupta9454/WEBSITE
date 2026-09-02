@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import Vapi from '@vapi-ai/web';
+import { VoiceProviderFactory } from '../providers/VoiceProviderFactory';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
 import { buildInterviewContext } from '../utils/interviewContextBuilder';
@@ -174,8 +174,8 @@ export function useVapi(interviewData) {
 
     try {
       const key = import.meta.env.VITE_VAPI_PUBLIC_API_KEY || '5195e2cd-7f02-4ec4-9d56-a9ff3360824b';
-      vapiRef.current = new Vapi(key);
-      Logger.info('Vapi Initialized');
+      vapiRef.current = VoiceProviderFactory.create(key);
+      Logger.info('Voice Provider Initialized');
     } catch (e) {
       Logger.error('Vapi Instantiation Failed', e);
       setVapiError(INTERVIEW_ERRORS.UNKNOWN_ERROR);
@@ -382,6 +382,10 @@ export function useVapi(interviewData) {
       backchannelingEnabled: false, // Turn off automatic backchanneling to prevent weird "mhmm" artifacts during tech answers
       firstMessage: `Hi, ready for your interview for ${interviewData.jobTitle}?`,
       endCallFunctionEnabled: true,
+      metadata: {
+        sessionId: interviewData._id || interviewData.sessionId,
+        token: localStorage.getItem('interviewToken') || localStorage.getItem('token') || ''
+      }
     };
 
     try {

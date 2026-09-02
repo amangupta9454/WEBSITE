@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import Vapi from '@vapi-ai/web';
+import { VoiceProviderFactory } from '../providers/VoiceProviderFactory';
 import axios from 'axios';
 import { Logger } from '../utils/logger';
 import { INTERVIEW_ERRORS } from '../constants/errors';
@@ -421,7 +421,7 @@ export function usePanelVapi(interviewData) {
   useEffect(() => {
     if (!interviewData) return;
     const key = import.meta.env.VITE_VAPI_PUBLIC_API_KEY || '5195e2cd-7f02-4ec4-9d56-a9ff3360824b';
-    vapiRef.current = new Vapi(key);
+    vapiRef.current = VoiceProviderFactory.create(key);
     handoffTransportRef.current = new SystemMessageHandoffTransport(vapiRef.current);
 
     const vapi = vapiRef.current;
@@ -545,6 +545,8 @@ export function usePanelVapi(interviewData) {
     if (!micGranted) return;
     
     const squadConfig = buildSquadConfig([]);
+    squadConfig.sessionId = interviewData._id || interviewData.sessionId;
+    squadConfig.token = localStorage.getItem('interviewToken') || localStorage.getItem('token') || '';
     
     try {
       vapiRef.current.start(undefined, undefined, squadConfig);

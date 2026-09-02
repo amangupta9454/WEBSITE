@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Stack Benchmark</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 p-8 font-sans">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h1 class="text-3xl font-black text-gray-800 mb-2">Code-A-Nova: Voice Stack Benchmark</h1>
+        <p class="text-gray-500 mb-8">Isolated Testing Environment for STT, VAD, and TTS.</p>
+
+        <!-- Microhpone Section -->
+        <div class="bg-blue-50 p-6 rounded-lg mb-8 border border-blue-100">
+            <h2 class="text-xl font-bold text-blue-900 mb-4">Phase 4: Live STT & VAD (Microphone Test)</h2>
+            <div class="flex items-center gap-4 mb-6">
+                <button id="btn-start" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded shadow-md transition">
+                    Start Recording
+                </button>
+                <button id="btn-stop" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded shadow-md transition opacity-50 cursor-not-allowed" disabled>
+                    Stop Recording
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                <div class="bg-white p-4 rounded shadow-sm border border-gray-100">
+                    <span class="block text-gray-500 font-bold mb-1">VAD State</span>
+                    <span id="vad-state" class="font-mono text-lg font-black text-gray-400">WAITING</span>
+                </div>
+                <div class="bg-white p-4 rounded shadow-sm border border-gray-100">
+                    <span class="block text-gray-500 font-bold mb-1">Mic Level</span>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mt-2 overflow-hidden">
+                        <div id="mic-level" class="bg-blue-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transcript & Latency Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="border-2 border-gray-100 rounded-lg p-6">
+                <h3 class="font-bold text-gray-700 mb-3 border-b pb-2">Transcription (Faster-Whisper)</h3>
+                <div id="transcript-box" class="h-48 overflow-y-auto bg-gray-50 p-4 rounded font-mono text-sm text-gray-800">
+                    No transcript yet...
+                </div>
+            </div>
+            
+            <div class="border-2 border-gray-100 rounded-lg p-6">
+                <h3 class="font-bold text-gray-700 mb-3 border-b pb-2">Latency Metrics</h3>
+                <ul id="metrics-list" class="space-y-3 font-mono text-sm">
+                    <li class="flex justify-between"><span>Audio Duration:</span> <strong id="m-audio">-</strong></li>
+                    <li class="flex justify-between"><span>STT Processing:</span> <strong id="m-stt">-</strong></li>
+                    <li class="flex justify-between text-blue-600"><span>Real-Time Factor (RTF):</span> <strong id="m-rtf">-</strong></li>
+                    <li class="flex justify-between pt-2 border-t border-gray-200 mt-2"><span>Barge-in Latency:</span> <strong id="m-barge">-</strong></li>
+                    <li class="flex justify-between"><span>TTS Synthesis Time:</span> <strong id="m-tts">-</strong></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Audio Output -->
+        <div class="bg-green-50 p-6 rounded-lg border border-green-100">
+            <h2 class="text-xl font-bold text-green-900 mb-4">Phase 11: End-to-End Voice Loop (Kokoro TTS)</h2>
+            <audio id="tts-audio" controls class="w-full"></audio>
+            <p class="text-sm text-green-700 mt-2">The synthetic response will play automatically when returned.</p>
+        </div>
+
+    </div>
+    
+    <script src="app.js?v=2"></script>
+</body>
+</html>

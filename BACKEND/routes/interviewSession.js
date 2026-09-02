@@ -14,6 +14,7 @@ router.post('/end', authMiddleware, endSession);
 router.post('/process-evaluation/:id', authMiddleware, processEvaluation);
 router.post('/retry-evaluation/:id', authMiddleware, retryEvaluation);
 router.post('/panel-router', authMiddleware, require('../controllers/interviewSessionController').panelRouter);
+router.post('/chat', authMiddleware, require('../controllers/interviewSessionController').generateInterviewChat);
 router.get('/status/:id', authMiddleware, getSessionStatus);
 router.get('/my-sessions', authMiddleware, getUserSessions);
 router.get('/my-credits', authMiddleware, getUserCredits);

@@ -1,0 +1,26 @@
+# Root-level Pyrefly configuration for the WEBSITE monorepo.
+#
+# PURPOSE: Pyrefly was generating hundreds of false "Parse error" and
+# "Cannot find module" errors because it was:
+#   1. Using system Python 3.9 which has NONE of the project packages installed
+#   2. Splitting async WebSocket handler code line-by-line into
+#      /__pyrefly_virtual__/inmemory/ files and checking them out of context
+#
+# This config points pyrefly at the venv that has all packages installed,
+# and restricts analysis to only real source files.
+
+python_interpreter = "./voice-benchmark/venv/bin/python3"
+
+# Only analyse real project Python files — ignore virtual/inmemory paths
+# that pyrefly generates internally for hover/autocomplete analysis.
+[search_path]
+include = [
+    "voice-benchmark",
+    "voice-migration",
+]
+exclude = [
+    "voice-benchmark/venv",
+    "voice-migration/gateway/venv",
+    "**/node_modules",
+    "**/__pycache__",
+]

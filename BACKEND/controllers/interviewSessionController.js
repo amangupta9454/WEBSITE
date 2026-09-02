@@ -1,4 +1,7 @@
 const User = require('../models/User');
+const GroqManager = require('../services/assessment/GroqManager');
+const { buildInterviewContext } = require('../services/interviewContextBuilder');
+const { randomUUID } = require('crypto');
 const InterviewSession = require('../models/InterviewSession');
 const Settings = require('../models/Settings');
 const InterviewConfig = require('../models/InterviewConfig');
@@ -682,5 +685,95 @@ exports.panelRouter = async (req, res) => {
       topic: "Error Recovery",
       reason: "Error fallback" 
     });
+  }
+};
+
+exports.generateInterviewChat = async (req, res) => {
+  const { sessionId, transcript, currentInterviewer, currentStage } = req.body;
+  const userId = req.user.id || req.user.unifiedUserId;
+
+  if (!sessionId || !sessionId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ success: false, message: 'Invalid session ID format' });
+  }
+
+  if (!transcript || !Array.isArray(transcript)) {
+    return res.status(400).json({ success: false, message: 'Invalid transcript array' });
+  }
+
+  // Oversized transcript protection (max 200 exchanges)
+  if (transcript.length > 200) {
+    return res.status(400).json({ success: false, message: 'Transcript size exceeds maximum allowed limit' });
+  }
+
+  try {
+    const session = await InterviewSession.findOne({ _id: sessionId, userId });
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+    if (session.status === 'Completed' || session.status === 'Aborted') {
+      return res.status(400).json({ success: false, message: 'Session is already ended' });
+    }
+
+    let activeInterviewer = currentInterviewer || 'standard';
+    let nextStage = currentStage || 'Introduction';
+
+    if (session.mode === 'Panel') {
+      const routerResult = await panelRouterService.routeConversation(
+        transcript,
+        session.jobTitle,
+        currentStage,
+        ""
+      );
+      activeInterviewer = routerResult.speaker;
+      nextStage = routerResult.nextStage;
+    }
+
+    const { systemPrompt, persona } = buildInterviewContext({
+      mode: session.mode === 'Panel' ? 'panel' : 'standard',
+      interviewerName: activeInterviewer,
+      candidate: {
+        resumeText: session.resumeText || '',
+        jobTitle: session.jobTitle,
+        jobDescription: session.jobDescription || '',
+        experienceYears: session.experienceYears,
+        durationMinutes: session.durationMinutes,
+      },
+      liveState: {
+        recruiterMemory: session.recruiterMemory || {}
+      }
+    });
+
+    // Normalize transcript items: gateway sends { role, transcript } but Groq requires { role, content }
+    const normalizedTranscript = transcript.map(msg => ({
+      role: msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content || msg.transcript || ''
+    }));
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...normalizedTranscript
+    ];
+
+    const payload = {
+      targetModel: "openai/gpt-oss-20b",
+      messages: messages,
+      temperature: 0.65,
+      maxTokens: 600
+    };
+
+    const result = await GroqManager.executeInference(payload);
+
+    res.json({
+      success: true,
+      messageId: randomUUID(),
+      role: "assistant",
+      content: result.rawText,
+      interviewer: activeInterviewer,
+      nextStage: nextStage
+    });
+
+  } catch (error) {
+    console.error('Error generating interview chat:', error);
+    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
 };

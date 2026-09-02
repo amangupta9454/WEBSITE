@@ -1,0 +1,4 @@
+# Pyrefly configuration for the voice-migration gateway
+# Points to the voice-benchmark venv which has all required packages
+# (numpy, torch, fastapi, faster-whisper, aiohttp, groq).
+python_interpreter = "../../../voice-benchmark/venv/bin/python3"
