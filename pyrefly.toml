@@ -1,0 +1,15 @@
+# Pyrefly configuration
+python_interpreter = "./voice-benchmark/venv/bin/python3"
+
+[search_path]
+include = [
+    "voice-benchmark",
+    "voice-migration",
+]
+exclude = [
+    "voice-benchmark/venv",
+    "voice-migration/gateway/venv",
+    "**/node_modules",
+    "**/__pycache__",
+    "/__pyrefly_virtual__/**",
+]
