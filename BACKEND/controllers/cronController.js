@@ -185,9 +185,12 @@ const runWeeklySocialCron = async (req, res) => {
     let emailsSent = 0;
 
     for (const user of users) {
-      // Check if both github and linkedin are missing.
-      // If the user's profile already has both github and linkedin saved, then don't send mail.
-      if (!user.github || !user.linkedin) {
+      const hasGithub = user.github && user.github.trim() !== "" && user.github.trim().toLowerCase() !== "n/a";
+      const hasLinkedin = user.linkedin && user.linkedin.trim() !== "" && user.linkedin.trim().toLowerCase() !== "n/a";
+      
+      // If they have updated at least one valid social link (LinkedIn or GitHub), don't send mail.
+      // This is important because non-coding domains might only have LinkedIn.
+      if (!hasGithub && !hasLinkedin) {
         
         // Ensure they have an active internship (not just an empty array)
         if (user.internships && user.internships.length > 0) {
