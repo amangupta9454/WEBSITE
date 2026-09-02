@@ -41,6 +41,12 @@ import {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
 
+const isFigmaDomain = (domain) => {
+  if (!domain || typeof domain !== 'string') return false;
+  const d = domain.toLowerCase();
+  return d.includes('figma') || d.includes('ui/ux') || d.includes('ui / ux') || d.includes('uiux') || d.includes('ux/ui');
+};
+
 const getResignationStatus = (internship) => {
   if (!internship?.resigned?.isResigned) return { isResigned: false };
   const resignationDate = new Date(internship.resigned.resignationDate);
@@ -156,8 +162,9 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
 
   const handleUpdateLink = async (projectId, assignmentId) => {
     const link = updateLinkInputs[assignmentId];
-    if (!link || !link.startsWith("https://github.com/")) {
-      toast.error("Please enter a valid GitHub repository link.");
+    const isFigma = isFigmaDomain(internship?.domain);
+    if (!link || (!isFigma && !link.startsWith("https://github.com/"))) {
+      toast.error(isFigma ? "Please enter a valid project/design link." : "Please enter a valid GitHub repository link.");
       return;
     }
     if (!window.confirm("Updating the link will deduct 5 SP as penalty and re-evaluate your project. Are you sure?")) return;
@@ -190,8 +197,9 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
 
   const handleV2Submit = async (e) => {
     e.preventDefault();
-    if (!v2SubmitForm.githubLink || !v2SubmitForm.githubLink.startsWith("https://github.com/")) {
-      toast.error("Please enter a valid GitHub repository link.");
+    const isFigma = isFigmaDomain(internship?.domain);
+    if (!v2SubmitForm.githubLink || (!isFigma && !v2SubmitForm.githubLink.startsWith("https://github.com/"))) {
+      toast.error(isFigma ? "Please enter a valid project/design link." : "Please enter a valid GitHub repository link.");
       return;
     }
     
@@ -575,7 +583,7 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                                <div className="flex flex-col sm:flex-row gap-2 w-full mt-1">
                                  <input
                                    type="url"
-                                   placeholder="https://github.com/..."
+                                   placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any link" : "https://github.com/..."}
                                    value={updateLinkInputs[assignmentData._id]}
                                    onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [assignmentData._id]: e.target.value })}
                                    className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full"
@@ -641,11 +649,13 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
             </div>
             <form onSubmit={handleV2Submit} className="p-6 space-y-4">
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-1">GitHub Repository Link *</label>
+                <label className="text-sm font-semibold text-slate-700 block mb-1">
+                  {isFigmaDomain(internship?.domain) ? "Project / Design / Figma Link *" : "GitHub Repository Link *"}
+                </label>
                 <input
                   type="url"
                   required
-                  placeholder="https://github.com/..."
+                  placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any project link" : "https://github.com/..."}
                   value={v2SubmitForm.githubLink}
                   onChange={(e) => setV2SubmitForm({...v2SubmitForm, githubLink: e.target.value})}
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -699,8 +709,9 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
 
   const handleSubmitRepo = async (projectId) => {
     const link = repoInputs[projectId];
-    if (!link || !link.startsWith("https://github.com/")) {
-      toast.error("Please enter a valid GitHub repository link.");
+    const isFigma = isFigmaDomain(internship?.domain);
+    if (!link || (!isFigma && !link.startsWith("https://github.com/"))) {
+      toast.error(isFigma ? "Please enter a valid project/design link." : "Please enter a valid GitHub repository link.");
       return;
     }
     try {
@@ -757,8 +768,9 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
 
   const handleUpdateLink = async (projectId) => {
     const link = updateLinkInputs[projectId];
-    if (!link || !link.startsWith("https://github.com/")) {
-      toast.error("Please enter a valid GitHub repository link.");
+    const isFigma = isFigmaDomain(internship?.domain);
+    if (!link || (!isFigma && !link.startsWith("https://github.com/"))) {
+      toast.error(isFigma ? "Please enter a valid project/design link." : "Please enter a valid GitHub repository link.");
       return;
     }
     if (!window.confirm("Updating the link will deduct 5 SP as penalty and re-evaluate your project. Are you sure?")) return;
@@ -1179,7 +1191,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                            <div className="flex flex-col sm:flex-row gap-2 max-w-lg mt-2">
                              <input
                                type="url"
-                               placeholder="https://github.com/..."
+                               placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any link" : "https://github.com/..."}
                                value={updateLinkInputs[proj.id]}
                                onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [proj.id]: e.target.value })}
                                className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -1202,17 +1214,18 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
                       </div>
                       <div className="w-full">
                         <h5 className="font-bold text-amber-950 text-base mb-1.5">
-                          Link Your GitHub Repository
+                          {isFigmaDomain(internship?.domain) ? "Link Your Project / Design" : "Link Your GitHub Repository"}
                         </h5>
                         <p className="text-sm text-amber-800 leading-relaxed mb-4 font-medium">
-                          Save your Github link here. Once your project is
-                          fully complete, click the "Final Submit Project"
-                          button.
+                          {isFigmaDomain(internship?.domain)
+                            ? "Save your Figma, design, or project link here. Once your project is fully complete, click the \"Final Submit Project\" button."
+                            : "Save your Github link here. Once your project is fully complete, click the \"Final Submit Project\" button."
+                          }
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                           <input
                             type="url"
-                            placeholder="https://github.com/username/repo"
+                            placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any link" : "https://github.com/username/repo"}
                             value={repoInputs[proj.id] !== undefined ? repoInputs[proj.id] : proj.repoLink || ""}
                             onChange={(e) => setRepoInputs({ ...repoInputs, [proj.id]: e.target.value })}
                             className="flex-1 px-4 py-2.5 text-sm font-medium border border-amber-300/60 rounded-xl focus:ring-2 focus:ring-amber-500/50 outline-none bg-white shadow-sm placeholder:text-slate-400"

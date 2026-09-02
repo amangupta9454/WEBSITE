@@ -77,15 +77,31 @@ const rzp = new Razorpay({
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'dummy_key' });
 
-async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null) {
+const isFigmaDomain = (domain) => {
+  if (!domain || typeof domain !== 'string') return false;
+  const d = domain.toLowerCase();
+  return d.includes('figma') || d.includes('ui/ux') || d.includes('ui / ux') || d.includes('uiux') || d.includes('ux/ui');
+};
+
+async function evaluateRepoWithAI(githubLink, projectName, pdfUrl = null, domain = null) {
   try {
     if (!githubLink || githubLink.trim() === '') {
-      return { aiStatus: 'Rejected', aiFeedback: 'No GitHub URL provided.' };
+      return { aiStatus: 'Rejected', aiFeedback: 'No project link provided.' };
     }
+
+    const isFigma = isFigmaDomain(domain) || (typeof githubLink === 'string' && githubLink.toLowerCase().includes('figma.com'));
 
     const regex = /github\.com\/([^/]+)\/([^/]+)/;
     const match = githubLink.match(regex);
     if (!match) {
+      if (isFigma) {
+        return {
+          aiStatus: 'Accepted',
+          aiFeedback: 'Project / Design link submitted successfully for Figma/UI-UX domain.',
+          codeQualityScore: 9,
+          complexityScore: 9
+        };
+      }
       return { aiStatus: 'Rejected', aiFeedback: 'Invalid GitHub URL format.' };
     }
     let [, owner, repo] = match;
@@ -313,7 +329,7 @@ async function processAssignmentsWithAI(assignments, internship, user) {
   let totalPointsToAdd = 0;
   for (let assignment of assignments) {
     if (assignment.github) {
-      const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName);
+      const evaluation = await evaluateRepoWithAI(assignment.github, assignment.projectName, null, internship?.domain);
       assignment.aiStatus = evaluation.aiStatus;
       assignment.aiFeedback = evaluation.aiFeedback;
 
@@ -569,5 +585,6 @@ module.exports = {
   verifyPayment,
   processAssignmentsWithAI,
   evaluateRepoWithAI,
-  sendAIEvaluationEmail
+  sendAIEvaluationEmail,
+  isFigmaDomain
 };

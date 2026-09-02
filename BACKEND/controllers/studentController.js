@@ -16,7 +16,7 @@ const Notification = require("../models/Notification");
 const QuizApplicant = require("../models/QuizApplicant");
 const QuizSponsor = require("../models/QuizSponsor");
 const Certificate = require("../models/Certificate");
-const { evaluateRepoWithAI, sendAIEvaluationEmail } = require("./projectController");
+const { evaluateRepoWithAI, sendAIEvaluationEmail, isFigmaDomain } = require("./projectController");
 const { queueWhatsAppMessage } = require('../utils/whatsappClient');
 
 const getInternshipType = (duration) => {
@@ -464,7 +464,7 @@ const finalSubmitProjectRepo = async (req, res) => {
 
     const project = await SummerProject.findById(projectId);
     const projectName = project ? project.name : 'Summer Project';
-    const evaluation = await evaluateRepoWithAI(internship.assignedRepos[repoIndex].repoLink, projectName, project ? project.pdfUrl : null);
+    const evaluation = await evaluateRepoWithAI(internship.assignedRepos[repoIndex].repoLink, projectName, project ? project.pdfUrl : null, internship.domain);
     
     internship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
     internship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
@@ -614,10 +614,6 @@ const updateProjectLink = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    if (!newRepoLink || !newRepoLink.startsWith('https://github.com/')) {
-      return res.status(400).json({ message: 'Valid GitHub repository link is required' });
-    }
-
     let targetInternship;
     // 1. Prefer explicit internshipId sent from the frontend
     if (req.body.internshipId) {
@@ -636,6 +632,13 @@ const updateProjectLink = async (req, res) => {
       return res.status(404).json({ message: 'Active internship not found' });
     }
 
+    const isFigma = isFigmaDomain(targetInternship.domain);
+    if (!newRepoLink || (!isFigma && !newRepoLink.startsWith('https://github.com/'))) {
+      return res.status(400).json({ 
+        message: isFigma ? 'Valid project or design link is required' : 'Valid GitHub repository link is required' 
+      });
+    }
+
     let projectName = '';
     let previousSP = 0;
 
@@ -647,7 +650,7 @@ const updateProjectLink = async (req, res) => {
       projectName = project ? project.name : 'Summer Project';
       
       targetInternship.assignedRepos[repoIndex].repoLink = newRepoLink;
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, project ? project.pdfUrl : null);
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, project ? project.pdfUrl : null, targetInternship.domain);
       targetInternship.assignedRepos[repoIndex].reviewStatus = evaluation.aiStatus;
       targetInternship.assignedRepos[repoIndex].feedback = evaluation.aiFeedback;
 
@@ -699,7 +702,7 @@ const updateProjectLink = async (req, res) => {
       const monthNum = monthMatch ? parseInt(monthMatch[1]) : 1;
       const normalTask = await NormalTask.findOne({ domain: submission.domain, monthNumber: monthNum });
 
-      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, normalTask ? normalTask.pdfUrl : null);
+      const evaluation = await evaluateRepoWithAI(newRepoLink, projectName, normalTask ? normalTask.pdfUrl : null, submission.domain || targetInternship.domain);
       submission.assignments[assignmentIndex].aiStatus = evaluation.aiStatus;
       submission.assignments[assignmentIndex].aiFeedback = evaluation.aiFeedback;
 

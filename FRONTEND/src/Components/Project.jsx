@@ -5,6 +5,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Loader2, Send, User, Briefcase, MessageSquare, Calendar } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+const isFigmaDomain = (domain) => {
+  if (!domain || typeof domain !== 'string') return false;
+  const d = domain.toLowerCase();
+  return d.includes('figma') || d.includes('ui/ux') || d.includes('ui / ux') || d.includes('uiux') || d.includes('ux/ui');
+};
+
 const Project = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -137,10 +143,15 @@ const Project = () => {
   };
 
   const validateAssignments = () => {
+    const isFigma = isFigmaDomain(formData.domain);
     for (let i = 0; i < formData.assignments.length; i++) {
       const ass = formData.assignments[i];
-      if (!ass.projectName?.trim() || !ass.github?.trim()) {
-        toast.error(`Project Name and GitHub link are required for Assignment ${i + 1}.`);
+      if (!ass.projectName?.trim()) {
+        toast.error(`Project Name is required for Assignment ${i + 1}.`);
+        return false;
+      }
+      if (!ass.github?.trim()) {
+        toast.error(`${isFigma ? 'Project / Design link' : 'GitHub link'} is required for Assignment ${i + 1}.`);
         return false;
       }
     }
@@ -461,7 +472,7 @@ const Project = () => {
 
               <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-8">
                 <p className="text-amber-800 text-sm font-medium">
-                  <strong>Assignment:</strong> Project Name & GitHub Link are mandatory.
+                  <strong>Assignment:</strong> Project Name & {isFigmaDomain(formData.domain) ? 'Project/Design Link (Figma, etc.)' : 'GitHub Link'} are mandatory.
                 </p>
               </div>
 
@@ -500,13 +511,13 @@ const Project = () => {
 
                       <div>
                         <label htmlFor={`github-${index}`} className="block text-slate-700 mb-2 font-semibold text-sm">
-                          GitHub Link <span className="text-red-500">*</span>
+                          {isFigmaDomain(formData.domain) ? 'Project / Design Link (Figma, etc.)' : 'GitHub Link'} <span className="text-red-500">*</span>
                         </label>
                         <input
                           id={`github-${index}`}
                           value={ass.github}
                           onChange={(e) => handleAssignmentChange(index, 'github', e.target.value)}
-                          placeholder="https://github.com/..."
+                          placeholder={isFigmaDomain(formData.domain) ? "https://www.figma.com/... or any project link" : "https://github.com/..."}
                           required
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
                         />
