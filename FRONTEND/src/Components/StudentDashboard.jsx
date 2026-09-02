@@ -40,6 +40,7 @@ import {
   Calendar,
   Sparkles,
   ExternalLink,
+  Flame,
 } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5006';
@@ -1496,21 +1497,46 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {graphicTasks.map(t => (
-              <div key={t._id} className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col justify-between">
+              <div 
+                key={t._id} 
+                className={`p-4 rounded-xl shadow-sm flex flex-col justify-between transition-all ${
+                  t.isUrgent 
+                    ? "bg-gradient-to-br from-rose-50 via-white to-red-50 border-2 border-rose-500 ring-2 ring-rose-200 shadow-rose-100/60" 
+                    : "bg-white border border-indigo-100"
+                }`}
+              >
                 <div>
+                  {t.isUrgent && (
+                    <div className="mb-2">
+                      <span className="bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-sm animate-pulse inline-flex items-center gap-1.5 uppercase tracking-wider">
+                        <Flame className="w-3.5 h-3.5 animate-bounce text-amber-300" />
+                        🚨 URGENT TASK: Sb chodo phle isko kro!
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h4 className="font-bold text-slate-800 text-base">{t.title}</h4>
+                    <h4 className={`text-base font-bold ${t.isUrgent ? "text-rose-950 font-black" : "text-slate-800"}`}>
+                      {t.title}
+                    </h4>
                     {t.deadline && (
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 whitespace-nowrap flex items-center gap-1">
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap flex items-center gap-1 ${
+                        t.isUrgent 
+                          ? "bg-rose-100 text-rose-800 border border-rose-200" 
+                          : "bg-amber-100 text-amber-800"
+                      }`}>
                         <Calendar className="w-3 h-3" /> Due: {new Date(t.deadline).toLocaleDateString()}
                       </span>
                     )}
                   </div>
                   {t.description && (
-                    <p className="text-xs text-slate-600 mb-3 whitespace-pre-line">{t.description}</p>
+                    <p className={`text-xs mb-3 whitespace-pre-line ${t.isUrgent ? "text-rose-900/90 font-semibold" : "text-slate-600"}`}>
+                      {t.description}
+                    </p>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                <div className={`flex flex-wrap items-center justify-between gap-2 pt-2 border-t text-xs ${
+                  t.isUrgent ? "border-rose-200" : "border-slate-100"
+                }`}>
                   <div className="flex items-center gap-3">
                     {t.referenceLink && (
                       <a href={t.referenceLink} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:underline flex items-center gap-1">
@@ -1530,7 +1556,11 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
                       document.getElementById('graphic-submit-form')?.scrollIntoView({ behavior: 'smooth' });
                       toast.info(`Selected task: ${t.title}`);
                     }}
-                    className="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg transition-colors"
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                      t.isUrgent 
+                        ? "bg-rose-600 hover:bg-rose-700 text-white shadow-sm font-black" 
+                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
+                    }`}
                   >
                     Submit for this task
                   </button>
@@ -1557,7 +1587,7 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
                 <option value="">-- General / Custom Submission (No specific task) --</option>
                 {graphicTasks.map(t => (
                   <option key={t._id} value={t._id}>
-                    🎯 {t.title} {t.deadline ? `(Due: ${new Date(t.deadline).toLocaleDateString()})` : ''}
+                    {t.isUrgent ? '🚨 [URGENT] ' : '🎯 '}{t.title} {t.deadline ? `(Due: ${new Date(t.deadline).toLocaleDateString()})` : ''}
                   </option>
                 ))}
               </select>

@@ -10,6 +10,7 @@ const graphicTaskSchema = new mongoose.Schema({
   targetUserName: { type: String },
   targetStudentId: { type: String },
   deadline: { type: Date },
+  isUrgent: { type: Boolean, default: false },
   addedBy: { type: String, default: "Admin" },
   createdAt: { type: Date, default: Date.now }
 });

@@ -13,7 +13,8 @@ import {
   ExternalLink,
   ChevronDown,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Flame
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -36,6 +37,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   const [taskTarget, setTaskTarget] = useState("All");
   const [taskTargetUserId, setTaskTargetUserId] = useState("");
   const [taskDeadline, setTaskDeadline] = useState("");
+  const [taskIsUrgent, setTaskIsUrgent] = useState(false);
   const [assigningTask, setAssigningTask] = useState(false);
 
   // Resource Form State
@@ -109,6 +111,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     formData.append("title", taskTitle);
     formData.append("description", taskDescription);
     formData.append("target", taskTarget);
+    formData.append("isUrgent", taskIsUrgent);
     if (taskTarget === "Specific") {
       formData.append("targetUserId", taskTargetUserId);
     }
@@ -129,6 +132,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       setTaskTarget("All");
       setTaskTargetUserId("");
       setTaskDeadline("");
+      setTaskIsUrgent(false);
       fetchTasks();
     } catch (err) {
       console.error(err);
@@ -445,6 +449,20 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
               />
             </div>
 
+            <div className="md:col-span-2 flex items-center gap-3 p-3.5 bg-rose-50 border border-rose-200 rounded-xl">
+              <input 
+                type="checkbox"
+                id="taskIsUrgent"
+                checked={taskIsUrgent}
+                onChange={e => setTaskIsUrgent(e.target.checked)}
+                className="w-5 h-5 text-rose-600 rounded border-rose-300 focus:ring-rose-500 cursor-pointer"
+              />
+              <label htmlFor="taskIsUrgent" className="text-xs font-bold text-rose-900 flex items-center gap-2 cursor-pointer select-none">
+                <Flame className="w-4 h-4 text-rose-600 animate-bounce" />
+                <span>Mark as <strong>URGENT TASK</strong> ("🚨 Sb chodo phle isko kro" • Top Priority)</span>
+              </label>
+            </div>
+
             {taskTarget === "Specific" && (
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -504,7 +522,14 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                           {new Date(t.createdAt).toLocaleDateString()}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-800">{t.title}</div>
+                          <div className="font-bold text-slate-800 flex items-center gap-2">
+                            {t.isUrgent && (
+                              <span className="bg-rose-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-sm animate-pulse inline-flex items-center gap-1">
+                                <Flame className="w-3 h-3" /> URGENT
+                              </span>
+                            )}
+                            {t.title}
+                          </div>
                           {t.description && (
                             <p className="text-xs text-slate-500 mt-1 max-w-md line-clamp-2">{t.description}</p>
                           )}

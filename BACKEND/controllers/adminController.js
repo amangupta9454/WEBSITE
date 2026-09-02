@@ -2860,6 +2860,7 @@ const GraphicTask = require('../models/GraphicTask');
 const assignGraphicTask = async (req, res) => {
   try {
     const { title, description, referenceLink, target, targetUserId, deadline } = req.body;
+    const isUrgent = req.body.isUrgent === 'true' || req.body.isUrgent === true;
     let fileUrl = "";
 
     if (req.file) {
@@ -2902,6 +2903,7 @@ const assignGraphicTask = async (req, res) => {
       targetUserName: target === 'Specific' ? targetUserName : undefined,
       targetStudentId: target === 'Specific' ? targetStudentId : undefined,
       deadline: deadline ? new Date(deadline) : undefined,
+      isUrgent: isUrgent,
       addedBy: "Admin"
     });
 
@@ -2915,7 +2917,7 @@ const assignGraphicTask = async (req, res) => {
 
 const getGraphicTasks = async (req, res) => {
   try {
-    const tasks = await GraphicTask.find().sort({ createdAt: -1 });
+    const tasks = await GraphicTask.find().sort({ isUrgent: -1, createdAt: -1 });
     res.json({ success: true, tasks });
   } catch (error) {
     console.error("[Admin] Error fetching graphic tasks:", error);

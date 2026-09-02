@@ -242,7 +242,7 @@ const getDashboardInfo = async (req, res) => {
           { target: 'All' },
           { targetUserId: user._id }
         ]
-      }).sort({ createdAt: -1 })
+      }).sort({ isUrgent: -1, createdAt: -1 })
     ]);
 
     res.json({
