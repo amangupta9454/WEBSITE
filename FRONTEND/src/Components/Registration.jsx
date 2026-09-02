@@ -5,7 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Trophy, FileCheck, Target, HeartHandshake, Loader2, Send, Upload, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedSubmitButton } from './animations/AnimatedSubmitButton';
 
 const states = [
@@ -27,6 +27,10 @@ const durations = ['1 Month', '2 Months', '3 Months'];
 
 const Registration = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isDomainLocked, setIsDomainLocked] = useState(false);
+  const [referralCode, setReferralCode] = useState(null);
+  
   const [successData, setSuccessData] = useState(null);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpValue, setOtpValue] = useState("");
@@ -48,6 +52,24 @@ const Registration = () => {
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
   useEffect(() => {
+    // Check URL parameters for pre-selected domain and referral tracker
+    const urlDomain = searchParams.get('domain');
+    const urlRef = searchParams.get('ref');
+    
+    if (urlRef) {
+      setReferralCode(urlRef);
+      localStorage.setItem('referralCode', urlRef);
+    }
+
+    if (urlDomain) {
+      // Find a case-insensitive match for the domain in the allowed list
+      const matchedDomain = domains.find(d => d.toLowerCase() === urlDomain.toLowerCase());
+      if (matchedDomain) {
+        setFormData(prev => ({ ...prev, domain: matchedDomain }));
+        setIsDomainLocked(true);
+      }
+    }
+
     const fetchStatus = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/admin/settings/registration`);
@@ -361,8 +383,11 @@ const Registration = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Program Selection</h3>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Preferred Domain *</label>
-                    <select required name="domain" value={formData.domain} onChange={handleChange} className={inputClasses}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                      <span>Internship Domain <span className="text-rose-500">*</span></span>
+                      {isDomainLocked && <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded flex items-center gap-1">🔒 Locked by Link</span>}
+                    </label>
+                    <select required name="domain" value={formData.domain} onChange={handleChange} disabled={isDomainLocked} className={`${inputClasses} ${isDomainLocked ? 'bg-slate-100 cursor-not-allowed opacity-90' : ''}`}>
                       <option value="" className="bg-white">Select domain</option>
                       {domains.map(d => <option key={d} value={d} className="bg-white">{d}</option>)}
                     </select>

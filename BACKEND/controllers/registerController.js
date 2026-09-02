@@ -146,6 +146,7 @@ const registerInternship = async (req, res) => {
       internshipType: getInternshipType(req.body.duration),
       studentId,
       resume: resumeUrl,
+      referralCode: req.body.referralCode || null,
       appliedAt: new Date(),
     };
 

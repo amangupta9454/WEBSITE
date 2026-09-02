@@ -11,6 +11,7 @@ import {
   Loader2,
   Filter,
   Download,
+  Link,
   CheckCircle,
   Clock,
   User,
@@ -2461,6 +2462,13 @@ const AdminDashboard = () => {
               Interns & Apps
             </button>
             <button
+              onClick={() => setActiveSidebarTab("tracking_links")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "tracking_links" ? "bg-cyan-50 text-cyan-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
+            >
+              <Link className="w-4 h-4" />
+              Tracking Links
+            </button>
+            <button
               onClick={() => setActiveSidebarTab("monthly_tasks")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "monthly_tasks" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
@@ -3645,6 +3653,81 @@ const AdminDashboard = () => {
           })()}
 
           {/* Settings Tab */}
+          {activeSidebarTab === "tracking_links" && (
+            <div className="w-full animate-fade-in bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-800">Domain Tracking Links</h2>
+                <p className="text-sm text-slate-500 mt-1">Generate locked domain links and track conversions.</p>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8">
+                <h3 className="text-sm font-bold text-slate-700 mb-4">Generate Link</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Select Domain</label>
+                    <select id="track-domain" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm">
+                      <option value="">Select a Domain</option>
+                      {['Frontend Development', 'Backend Development', 'Full Stack Development', 'C Programming', 'Python Development', 'Artificial Intelligence', 'Figma or UI/UX', 'Data Science', 'Machine Learning', 'App Development', 'Marketing', 'Video Editor', 'Graphic Designer'].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Tracker ID (Optional)</label>
+                    <input type="text" id="track-id" placeholder="e.g. college_promo_1" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={() => {
+                      const domain = document.getElementById('track-domain').value;
+                      const ref = document.getElementById('track-id').value;
+                      if (!domain) { toast.error("Select a domain"); return; }
+                      const url = `https://code-a-nova.online/internship?domain=${encodeURIComponent(domain)}${ref ? '&ref=' + encodeURIComponent(ref) : ''}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success("Link copied to clipboard!");
+                    }} className="w-full bg-slate-900 text-white p-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors">
+                      Copy Link
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-sm font-bold text-slate-700 mb-4">Tracked Applications</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <th className="p-3">Student / Email</th>
+                        <th className="p-3">Domain</th>
+                        <th className="p-3">Tracker ID</th>
+                        <th className="p-3">Date Applied</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {applications.filter(app => app.referralCode).length > 0 ? (
+                        applications.filter(app => app.referralCode).map(app => (
+                          <tr key={app._id} className="hover:bg-slate-50">
+                            <td className="p-3">
+                              <div className="font-semibold text-slate-800 text-sm">{app.name}</div>
+                              <div className="text-xs text-slate-500">{app.email}</div>
+                            </td>
+                            <td className="p-3 text-sm text-slate-600">{app.domain}</td>
+                            <td className="p-3">
+                              <span className="bg-cyan-50 text-cyan-700 px-2 py-1 rounded text-xs font-bold border border-cyan-100">{app.referralCode}</span>
+                            </td>
+                            <td className="p-3 text-sm text-slate-500">{new Date(app.appliedAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="p-4 text-center text-sm text-slate-500">No applications with tracking codes found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeSidebarTab === "impersonate" && (
             <div className="w-full animate-fade-in">
               <ImpersonateIntern />
