@@ -1281,6 +1281,8 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
   const [linkedinCaption, setLinkedinCaption] = useState("");
   const [instagramCaption, setInstagramCaption] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
   
@@ -1407,34 +1409,82 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
         </div>
       </div>
 
-      <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-r-2xl mb-8">
-        <h3 className="font-bold text-amber-800 text-lg mb-3 flex items-center gap-2">
-          <BookOpen className="w-5 h-5" /> Rules & Guidelines
-        </h3>
-        <ul className="list-disc pl-5 space-y-2 text-amber-900 font-medium">
-          <li><strong>Weekly Work Requirement:</strong> A minimum of 3 posts per week will be required for Instagram and LinkedIn. The same design may be used on both platforms, or separate versions may be created based on the requirements.</li>
-          <li><strong>Notice Period:</strong> A 15-day notice period will be required before leaving the internship.</li>
-          <li><strong>Ownership of Work:</strong> All designs, creatives, templates, source files, and other materials created for us during the internship will be considered work created for the organization.</li>
-          <li><strong>No Reselling or Reusing:</strong> Our designs, creatives, templates, or other work cannot be sold, reused, distributed, or provided to any third party, even after changing the organization’s logo, name, colors, text, or other elements.</li>
-        </ul>
+      {/* Collapsible Rules & Guidelines Dropdown */}
+      <div className="bg-amber-50/60 border border-amber-200 rounded-2xl mb-4 overflow-hidden shadow-sm transition-all">
+        <button
+          type="button"
+          onClick={() => setIsRulesOpen(!isRulesOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-amber-100/50 transition-colors focus:outline-none cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <span className="p-2 bg-amber-500 text-white rounded-xl shadow-sm">
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+            </span>
+            <div>
+              <h3 className="font-bold text-amber-950 text-sm sm:text-base">Rules & Guidelines</h3>
+              <p className="text-xs text-amber-800/80 mt-0.5">Work requirements, notice period, and design ownership policies</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-amber-800 hidden sm:inline">
+              {isRulesOpen ? "Hide" : "View"}
+            </span>
+            <ChevronDown className={`w-5 h-5 text-amber-700 transition-transform duration-300 ${isRulesOpen ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+
+        {isRulesOpen && (
+          <div className="px-5 pb-5 pt-1 border-t border-amber-200/60 animate-fade-in">
+            <ul className="list-disc pl-5 space-y-2 text-xs sm:text-sm text-amber-900 font-medium pt-2">
+              <li><strong>Weekly Work Requirement:</strong> A minimum of 3 posts per week will be required for Instagram and LinkedIn. The same design may be used on both platforms, or separate versions may be created based on the requirements.</li>
+              <li><strong>Notice Period:</strong> A 15-day notice period will be required before leaving the internship.</li>
+              <li><strong>Ownership of Work:</strong> All designs, creatives, templates, source files, and other materials created for us during the internship will be considered work created for the organization.</li>
+              <li><strong>No Reselling or Reusing:</strong> Our designs, creatives, templates, or other work cannot be sold, reused, distributed, or provided to any third party, even after changing the organization’s logo, name, colors, text, or other elements.</li>
+            </ul>
+          </div>
+        )}
       </div>
 
+      {/* Collapsible Resources & Materials Dropdown */}
       {graphicResources && graphicResources.length > 0 && (
-        <div className="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-2xl mb-8">
-          <h3 className="font-bold text-purple-800 text-lg mb-3 flex items-center gap-2">
-            Resources & Materials
-          </h3>
-          <ul className="space-y-3">
-            {graphicResources.map(res => (
-              <li key={res._id} className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="font-semibold text-purple-900">{res.title}</span>
-                <div className="flex gap-3">
-                  {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded hover:bg-purple-200 transition-colors font-medium">View Link</a>}
-                  {res.fileUrl && <a href={res.fileUrl.includes('cloudinary.com') && res.fileUrl.includes('/upload/') ? res.fileUrl.replace('/upload/', '/upload/fl_attachment/') : res.fileUrl} target="_blank" rel="noreferrer" download className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition-colors font-medium">Download File</a>}
-                </div>
-              </li>
-            ))}
-          </ul>
+        <div className="bg-purple-50/60 border border-purple-200 rounded-2xl mb-8 overflow-hidden shadow-sm transition-all">
+          <button
+            type="button"
+            onClick={() => setIsResourcesOpen(!isResourcesOpen)}
+            className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-purple-100/50 transition-colors focus:outline-none cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <span className="p-2 bg-purple-600 text-white rounded-xl shadow-sm">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+              </span>
+              <div>
+                <h3 className="font-bold text-purple-950 text-sm sm:text-base">Resources & Materials</h3>
+                <p className="text-xs text-purple-800/80 mt-0.5">{graphicResources.length} shared resource{graphicResources.length !== 1 ? 's' : ''} available</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-purple-800 hidden sm:inline">
+                {isResourcesOpen ? "Hide" : "View"}
+              </span>
+              <ChevronDown className={`w-5 h-5 text-purple-700 transition-transform duration-300 ${isResourcesOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </button>
+
+          {isResourcesOpen && (
+            <div className="px-5 pb-5 pt-1 border-t border-purple-200/60 animate-fade-in">
+              <ul className="space-y-3 pt-2">
+                {graphicResources.map(res => (
+                  <li key={res._id} className="bg-white p-3.5 rounded-xl border border-purple-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="font-semibold text-purple-900 text-sm">{res.title}</span>
+                    <div className="flex gap-2.5">
+                      {res.link && <a href={res.link} target="_blank" rel="noreferrer" className="text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors font-bold">View Link</a>}
+                      {res.fileUrl && <a href={res.fileUrl.includes('cloudinary.com') && res.fileUrl.includes('/upload/') ? res.fileUrl.replace('/upload/', '/upload/fl_attachment/') : res.fileUrl} target="_blank" rel="noreferrer" download className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors font-bold">Download File</a>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
