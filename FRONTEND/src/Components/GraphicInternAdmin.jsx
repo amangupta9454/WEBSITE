@@ -33,8 +33,6 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   // Task Form State
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [taskReferenceLink, setTaskReferenceLink] = useState("");
-  const [taskFile, setTaskFile] = useState(null);
   const [taskTarget, setTaskTarget] = useState("All");
   const [taskTargetUserId, setTaskTargetUserId] = useState("");
   const [taskDeadline, setTaskDeadline] = useState("");
@@ -110,16 +108,12 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     const formData = new FormData();
     formData.append("title", taskTitle);
     formData.append("description", taskDescription);
-    formData.append("referenceLink", taskReferenceLink);
     formData.append("target", taskTarget);
     if (taskTarget === "Specific") {
       formData.append("targetUserId", taskTargetUserId);
     }
     if (taskDeadline) {
       formData.append("deadline", taskDeadline);
-    }
-    if (taskFile) {
-      formData.append("file", taskFile);
     }
 
     try {
@@ -132,8 +126,6 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       toast.success(taskTarget === "All" ? "Task assigned to all Graphic Designers!" : "Task assigned to selected intern!");
       setTaskTitle("");
       setTaskDescription("");
-      setTaskReferenceLink("");
-      setTaskFile(null);
       setTaskTarget("All");
       setTaskTargetUserId("");
       setTaskDeadline("");
@@ -413,38 +405,14 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Task Instructions / Description
+                Task Description
               </label>
               <textarea 
                 rows="3"
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500" 
                 value={taskDescription} 
                 onChange={e => setTaskDescription(e.target.value)} 
-                placeholder="Detailed instructions, color palette requirements, aspect ratio (1080x1350), copy guidelines, etc."
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Reference / Inspiration Link
-              </label>
-              <input 
-                type="url" 
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500" 
-                value={taskReferenceLink} 
-                onChange={e => setTaskReferenceLink(e.target.value)} 
-                placeholder="https://behance.net/... or Figma / Drive URL" 
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Attach Asset / Brand Kit (File)
-              </label>
-              <input 
-                type="file" 
-                className="w-full border border-slate-200 rounded-xl p-1.5 text-sm bg-white file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700" 
-                onChange={e => setTaskFile(e.target.files[0])} 
+                placeholder="Short instructions, guidelines, or topic notes..."
               />
             </div>
 
@@ -467,7 +435,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Deadline (Optional)
+                Due Date / Deadline
               </label>
               <input 
                 type="date" 
@@ -523,10 +491,9 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                   <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold tracking-wider">
                     <tr>
                       <th className="py-2.5 px-4 border-b text-left">Date</th>
-                      <th className="py-2.5 px-4 border-b text-left">Task Title & Details</th>
+                      <th className="py-2.5 px-4 border-b text-left">Task Title & Description</th>
                       <th className="py-2.5 px-4 border-b text-left">Assigned To</th>
-                      <th className="py-2.5 px-4 border-b text-left">Materials</th>
-                      <th className="py-2.5 px-4 border-b text-left">Deadline</th>
+                      <th className="py-2.5 px-4 border-b text-left">Due Date</th>
                       <th className="py-2.5 px-4 border-b text-center">Action</th>
                     </tr>
                   </thead>
@@ -552,19 +519,6 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                               👤 {t.targetUserName || "Specific Intern"} {t.targetStudentId ? `(${t.targetStudentId})` : ""}
                             </span>
                           )}
-                        </td>
-                        <td className="py-3 px-4 text-xs space-y-1">
-                          {t.referenceLink && (
-                            <a href={t.referenceLink} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
-                              <ExternalLink className="w-3 h-3" /> Ref Link
-                            </a>
-                          )}
-                          {t.fileUrl && (
-                            <a href={t.fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-semibold">
-                              <FileText className="w-3 h-3" /> Attached Asset
-                            </a>
-                          )}
-                          {!t.referenceLink && !t.fileUrl && <span className="text-slate-400">None</span>}
                         </td>
                         <td className="py-3 px-4 text-xs whitespace-nowrap">
                           {t.deadline ? (
