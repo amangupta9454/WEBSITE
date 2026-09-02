@@ -40,7 +40,13 @@ class CredentialEngine {
     // Attempt to resolve real user's name from DB if not provided
     if (!options.candidateName && resultObject.candidateId) {
       try {
-        const user = await User.findOne({ email: resultObject.candidateId }).lean();
+        const isValidObjectId = require('mongoose').isValidObjectId(resultObject.candidateId);
+        const user = await User.findOne({ 
+          $or: [
+            { email: resultObject.candidateId },
+            ...(isValidObjectId ? [{ _id: resultObject.candidateId }] : [])
+          ]
+        }).lean();
         if (user && user.name) {
           options.candidateName = user.name;
         }

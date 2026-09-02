@@ -89,13 +89,41 @@ class PublicVerificationEngine {
         verificationStatus = "Unknown";
       }
 
+      let finalCandidateName = cert.candidateName || cert.snapshot?.candidateName;
+      let finalCandidateEmail = cert.candidateId || cert.snapshot?.candidateId || "Not Available";
+      
+      if (!finalCandidateName || finalCandidateName === "Candidate" || finalCandidateName === "Code-A-Nova Certified Candidate") {
+        try {
+          const mongoose = require("mongoose");
+          const User = require("../../../models/User");
+          const isValid = mongoose.isValidObjectId(cert.candidateId);
+          const userObj = await User.findOne({
+            $or: [
+              { email: cert.candidateId },
+              ...(isValid ? [{ _id: cert.candidateId }] : [])
+            ]
+          }).lean();
+          
+          if (userObj && userObj.name) {
+            finalCandidateName = userObj.name;
+          } else {
+            finalCandidateName = "Code-A-Nova Certified Candidate";
+          }
+          if (userObj && userObj.email) {
+            finalCandidateEmail = userObj.email;
+          }
+        } catch (e) {
+          finalCandidateName = "Code-A-Nova Certified Candidate";
+        }
+      }
+
       // STRICT PRIVACY SHIELD: Construct sanitized public payload
-      // EXCLUDE: email, phone, internal student IDs, marks breakdown, question details, blueprint configurations
+      // EXCLUDE: internal student IDs, marks breakdown, question details, blueprint configurations
       const safePublicResult = {
         certificateId: cert.certificateId || String(cert._id),
-        candidateName: cert.candidateName || cert.snapshot?.candidateName || "Code-A-Nova Certified Candidate",
-        candidateEmail: cert.candidateId || cert.snapshot?.candidateId || "Not Available",
-        assessmentTitle: cert.assessmentTitle || cert.snapshot?.assessmentTitle || "Validated Technical Evaluation",
+        candidateName: finalCandidateName,
+        candidateEmail: finalCandidateEmail,
+        assessmentTitle: cert.assessmentName || cert.snapshot?.assessmentName || cert.assessmentTitle || "Validated Technical Evaluation",
         category: cert.category || cert.snapshot?.category || "Technical Domain",
         subcategory: cert.subcategory || cert.snapshot?.subcategory || "Evaluation",
         percentage: cert.snapshot?.percentage !== undefined ? cert.snapshot.percentage : null,

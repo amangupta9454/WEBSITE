@@ -48,8 +48,6 @@ import {
  * Live AI question synthesis (Groq inference calls) and candidate delivery belong to Phase 5+.
  */
 const AIBlueprintManager = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
   // Navigation & View State
   const [currentView, setCurrentView] = useState("GRID"); // GRID | STUDIO | TEMPLATES
   const [activeStudioTab, setActiveStudioTab] = useState("PROMPT"); // PROMPT | SCHEMA | TEST | ANALYTICS
@@ -115,10 +113,10 @@ const AIBlueprintManager = () => {
   const fetchBlueprints = async (targetPage = page) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints`, {
+      const res = await axios.get(`/api/admin/assessment/blueprints`, {
         params: {
           page: targetPage,
           limit: 15,
@@ -138,7 +136,7 @@ const AIBlueprintManager = () => {
       }
 
       // Simultaneously fetch templates library
-      const tplRes = await axios.get(`${backendUrl}/api/admin/assessment/blueprints`, {
+      const tplRes = await axios.get(`/api/admin/assessment/blueprints`, {
         params: { isTemplate: "true", limit: 50 },
         headers
       });
@@ -147,13 +145,13 @@ const AIBlueprintManager = () => {
       }
 
       // Fetch Subcategories for Clone / Link operations
-      const subRes = await axios.get(`${backendUrl}/api/admin/assessment/subcategories`, { headers });
+      const subRes = await axios.get(`/api/admin/assessment/subcategories`, { headers });
       if (subRes.data.success) {
         setSubcategories(subRes.data.data || []);
       }
 
       // Fetch Phase 4.1 Decoupled Runtime Libraries
-      const libRes = await axios.get(`${backendUrl}/api/admin/assessment/runtime/libraries`, { headers });
+      const libRes = await axios.get(`/api/admin/assessment/runtime/libraries`, { headers });
       if (libRes.data.success && libRes.data.libraries) {
         setRuntimeLibraries(libRes.data.libraries);
       }
@@ -207,7 +205,7 @@ const AIBlueprintManager = () => {
       name: bp?.name || "New Custom Blueprint",
       description: bp?.description || "Production AI Prompt Blueprint governing structured question synthesis.",
       provider: bp?.provider || "Groq",
-      providerModel: bp?.providerModel || "llama-3.1-8b-instant",
+      providerModel: bp?.providerModel || "llama3-70b-8192",
       status: bp?.status || "Active",
       tags: bp?.tags || ["AI", "Custom", "v1"],
       prompt: promptObj,
@@ -234,7 +232,7 @@ const AIBlueprintManager = () => {
       name: "New AI Assessment Blueprint",
       description: "Custom AI Blueprint architecture designed for high-precision technical evaluations.",
       provider: "Groq",
-      providerModel: "llama-3.1-8b-instant",
+      providerModel: "llama3-70b-8192",
       status: "Active",
       tags: ["AI", "Draft", "Custom"],
       activeVersion: 1,
@@ -284,14 +282,14 @@ const AIBlueprintManager = () => {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
       let res;
       if (selectedBlueprint?._id === "new" || !selectedBlueprint?._id) {
-        res = await axios.post(`${backendUrl}/api/admin/assessment/blueprints`, studioForm, { headers });
+        res = await axios.post(`/api/admin/assessment/blueprints`, studioForm, { headers });
       } else {
-        res = await axios.put(`${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}`, studioForm, { headers });
+        res = await axios.put(`/api/admin/assessment/blueprints/${selectedBlueprint._id}`, studioForm, { headers });
       }
 
       if (res.data.success) {
@@ -313,9 +311,9 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id || selectedBlueprint._id === "new") return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axios.post(
-        `${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/versions/${vNo}/activate`,
+        `/api/admin/assessment/blueprints/${selectedBlueprint._id}/versions/${vNo}/activate`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -336,8 +334,8 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id || selectedBlueprint._id === "new") return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/compare`, {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axios.get(`/api/admin/assessment/blueprints/${selectedBlueprint._id}/compare`, {
         params: { v1: compareV1, v2: compareV2 },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -356,9 +354,9 @@ const AIBlueprintManager = () => {
     if (!selectedBlueprint?._id) return;
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await axios.post(
-        `${backendUrl}/api/admin/assessment/blueprints/${selectedBlueprint._id}/clone`,
+        `/api/admin/assessment/blueprints/${selectedBlueprint._id}/clone`,
         { targetSubcategoryId: cloneTargetSubcat || undefined, newName: cloneNewName || undefined },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -379,8 +377,8 @@ const AIBlueprintManager = () => {
   const handleImportJson = async () => {
     try {
       const parsed = JSON.parse(importJsonText);
-      const token = localStorage.getItem("adminToken");
-      const res = await axios.post(`${backendUrl}/api/admin/assessment/blueprints/import`, parsed, {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axios.post(`/api/admin/assessment/blueprints/import`, parsed, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -401,8 +399,8 @@ const AIBlueprintManager = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`${backendUrl}/api/admin/assessment/blueprints/${bp._id}/export`, {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axios.get(`/api/admin/assessment/blueprints/${bp._id}/export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -424,10 +422,10 @@ const AIBlueprintManager = () => {
   const handleRunMockTest = async () => {
     setIsMockRunning(true);
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const targetId = selectedBlueprint?._id || "draft";
       const res = await axios.post(
-        `${backendUrl}/api/admin/assessment/blueprints/${targetId}/test`,
+        `/api/admin/assessment/blueprints/${targetId}/test`,
         { testVariables, draftPrompt: studioForm?.prompt, providerOverride: studioForm?.provider, validationLevel },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -952,7 +950,7 @@ const AIBlueprintManager = () => {
                   value={studioForm.providerModel}
                   onChange={(e) => setStudioForm({ ...studioForm, providerModel: e.target.value })}
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-purple-300 focus:outline-none focus:border-indigo-500"
-                  placeholder="llama-3.1-8b-instant"
+                  placeholder="llama3-70b-8192"
                 />
               </div>
 
@@ -1426,7 +1424,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                         </pre>
                       </div>
                       <div className="bg-slate-900/80 px-6 py-3 border-t border-slate-800 text-[11px] text-slate-400">
-                        Includes compiled instruction with all {"{{ tokens }}"} substituted from variable library.
+                        Includes compiled instruction with all {{ tokens }} substituted from variable library.
                       </div>
                     </div>
 
@@ -1606,7 +1604,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                   <div key={idx} className="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 shadow-md flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{"{{" + v.name + "}}" }</span>
+                        <span className="text-xs font-mono font-black text-amber-400 bg-amber-950/50 px-2 py-1 rounded border border-amber-500/30">{{ "{{" : v.name + "}}" }}</span>
                         <span className="text-[10px] font-bold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded uppercase">{v.category}</span>
                       </div>
                       <h4 className="text-sm font-extrabold text-white mt-3">{v.displayName}</h4>
@@ -1683,7 +1681,7 @@ ${studioForm.outputSchema.schemaDefinitions.map(d => `    "${d.field}": "${d.typ
                       <div className="mt-4 flex flex-wrap gap-1.5 items-center">
                         <span className="text-[10px] font-bold text-slate-400">Tokens Linked:</span>
                         {sec.defaultVariablesUsed.map((t, i) => (
-                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{"{{" + t + "}}" }</span>
+                          <span key={i} className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{{ "{{" : t + "}}" }}</span>
                         ))}
                       </div>
                     )}

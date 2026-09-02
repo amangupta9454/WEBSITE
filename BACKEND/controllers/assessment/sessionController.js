@@ -67,8 +67,14 @@ exports.getSession = async (req, res) => {
     }
 
     // Ensure candidate only reads their own attempt unless they are admin
-    if (req.user?.role !== "admin" && candidateId && details.session.candidateId !== candidateId && details.session.userId?.toString() !== candidateId) {
-      return res.status(403).json({ success: false, error: "SECURITY_UNAUTHORIZED: Forbidden attempt access." });
+    if (req.user?.role !== "admin") {
+      const allowedIds = [req.user?.email, req.user?.id, req.user?.unifiedUserId].filter(Boolean);
+      const isOwner = allowedIds.includes(details.session.candidateId) || 
+                      allowedIds.includes(details.session.userId?.toString());
+      
+      if (!isOwner) {
+        return res.status(403).json({ success: false, error: "SECURITY_UNAUTHORIZED: Forbidden attempt access." });
+      }
     }
 
     // Strip sensitive correct answers from answers array if requested by student before completion

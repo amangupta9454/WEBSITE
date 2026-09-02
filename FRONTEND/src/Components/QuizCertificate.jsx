@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import logo from '../assets/logo.png';
 import founderSign from '../assets/founder-sign.png';
 import amanSign from '../assets/aman-sign.png';
