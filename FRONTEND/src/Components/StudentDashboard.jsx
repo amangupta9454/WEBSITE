@@ -1360,10 +1360,10 @@ const GraphicInternDashboard = ({ internship, graphicResources, onRefresh }) => 
         <>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Design Internship</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Graphic Designer Internship</h2>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-3 sm:mt-2">
             <span className="bg-purple-100 text-purple-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-              {internship.internshipType === "Normal" ? "Normal Intern" : (internship.internshipType || "Graphic Design Intern")}
+              {internship.internshipType === "Normal" ? "Normal Intern" : (internship.internshipType || "Graphic Designer Intern")}
             </span>
             <span className="text-slate-500 text-[11px] sm:text-sm font-medium">
               • ID: {internship.studentId}
@@ -1957,7 +1957,7 @@ const StudentDashboard = () => {
                   const mode = getInternshipMode(internship);
                   return (
                     <div key={internship._id} className="mb-10 animate-fade-in">
-                      {internship.domain === 'Graphic Design' ? (
+                      {internship.domain === 'Graphic Designer' || internship.domain === 'Graphic Design' ? (
                         <GraphicInternDashboard
                           internship={internship}
                           graphicResources={data.graphicResources}

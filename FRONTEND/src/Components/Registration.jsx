@@ -406,7 +406,7 @@ const Registration = () => {
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2 mt-8">Links & Resume</h3>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {formData.domain === 'Video Editing' || formData.domain === 'Graphic Design' ? (
+                  {formData.domain === 'Video Editing' || formData.domain === 'Video Editor' || formData.domain === 'Graphic Designer' || formData.domain === 'Graphic Design' ? (
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Portfolio / Insta / Project URL *</label>
                       <input required name="portfolio" value={formData.portfolio} onChange={handleChange} className={inputClasses} placeholder="https://..." />

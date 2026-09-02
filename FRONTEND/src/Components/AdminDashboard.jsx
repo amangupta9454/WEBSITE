@@ -168,6 +168,8 @@ const AdminDashboard = () => {
         "Machine Learning",
         "App Development",
         "Marketing",
+        "Video Editor",
+        "Graphic Designer",
       ];
       const uniqueDynamicDomains = [
         ...new Set(allApps.map((app) => app.domain)),
@@ -2520,7 +2522,7 @@ const AdminDashboard = () => {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${activeSidebarTab === "graphic_interns" ? "bg-pink-50 text-pink-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
             >
               <FileText className="w-4 h-4" />
-              Graphic Interns
+              Graphic Designers
             </button>
             <button
               onClick={() => setActiveSidebarTab("settings")}

@@ -252,7 +252,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Graphic Designer Submissions & Stipend</h2>
         
         {interns.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No Graphic Design interns found.</p>
+          <p className="text-gray-500 text-center py-4">No Graphic Designer interns found.</p>
         ) : (
           <div className="space-y-8">
             {interns.map((intern) => (

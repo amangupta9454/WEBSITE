@@ -2705,22 +2705,25 @@ const deleteQuiz = async (req, res) => {
 
 const getGraphicInterns = async (req, res) => {
   try {
-    const users = await User.find({ "internships.domain": "Graphic Design" });
+    const users = await User.find({ "internships.domain": { $in: ["Graphic Designer", "Graphic Design"] } });
     const graphicInterns = [];
 
     users.forEach(user => {
       user.internships.forEach(internship => {
-        if (internship.domain === "Graphic Design") {
+        if (internship.domain === "Graphic Designer" || internship.domain === "Graphic Design") {
           graphicInterns.push({
             userId: user._id,
             studentId: internship.studentId,
             name: internship.name,
             email: internship.email,
             mobile: internship.mobile,
+            domain: internship.domain,
             stipendStatus: internship.stipendStatus,
             stipendAmount: internship.stipendAmount,
             graphicSubmissions: internship.graphicSubmissions,
-            internshipId: internship._id
+            internshipId: internship._id,
+            resigned: internship.resigned,
+            rejected: internship.rejected
           });
         }
       });
