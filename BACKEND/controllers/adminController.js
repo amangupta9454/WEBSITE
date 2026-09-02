@@ -108,6 +108,7 @@ const getInternships = async (req, res) => {
           internshipType: app.internshipType || "Normal Intern",
           appliedAt: app.appliedAt,
           downloadedAt: app.downloadedAt,
+          referralCode: app.referralCode,
           startDate: app.startDate,
           endDate: app.endDate,
           totalMonths: app.totalMonths,
