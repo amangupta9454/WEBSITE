@@ -108,6 +108,7 @@ const AdminDashboard = () => {
 
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [newInquiriesCount, setNewInquiriesCount] = useState(0);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [selectedStartDates, setSelectedStartDates] = useState({});
   const navigate = useNavigate();
@@ -125,6 +126,32 @@ const AdminDashboard = () => {
     fetchLeaderboardSetting(token);
     fetchInterviewSetting();
     fetchRecentPayments(token);
+  }, []);
+
+  // Poll for new Contact Inquiries to show indicator badge
+  useEffect(() => {
+    const fetchInquiryBadge = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5006"}/api/contact/inquiries?status=New`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await res.json();
+        if (data.success && data.counts) {
+          setNewInquiriesCount(data.counts.new || 0);
+        }
+      } catch (err) {
+        // silent polling catch
+      }
+    };
+
+    fetchInquiryBadge();
+    const interval = setInterval(fetchInquiryBadge, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -2288,13 +2315,27 @@ const AdminDashboard = () => {
               </button>
               <button
                 onClick={() => setActiveMainTab("email")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                   activeMainTab === "email"
                     ? "bg-white text-indigo-600 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Mail className="w-4 h-4" /> Email & Contact Center
+                <div className="relative flex items-center">
+                  <Mail className="w-4 h-4" />
+                  {newInquiriesCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+                    </span>
+                  )}
+                </div>
+                <span>Email & Contact Center</span>
+                {newInquiriesCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-xs animate-pulse">
+                    {newInquiriesCount} New
+                  </span>
+                )}
               </button>
             </div>
             <div className="flex items-center gap-3">
@@ -2328,7 +2369,7 @@ const AdminDashboard = () => {
         {/* ─── EMAIL CENTER TAB ─── */}
         {activeMainTab === "email" && (
           <div className="w-full">
-            <EmailCenter />
+            <EmailCenter newInquiriesCount={newInquiriesCount} />
           </div>
         )}
 

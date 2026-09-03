@@ -149,6 +149,10 @@ export default function ContactInquiriesTable() {
 
   useEffect(() => {
     fetchInquiries();
+    const interval = setInterval(() => {
+      fetchInquiries();
+    }, 20000);
+    return () => clearInterval(interval);
   }, [statusFilter]);
 
   const handleSearchSubmit = (e) => {
@@ -452,6 +456,32 @@ export default function ContactInquiriesTable() {
         </div>
       </div>
 
+      {/* Real-time Indicator Alert Banner for New Inquiries */}
+      {counts.new > 0 && (
+        <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+            </span>
+            <div>
+              <h4 className="text-xs font-black text-slate-900">
+                {counts.new} New Contact Inquir{counts.new > 1 ? "ies" : "y"} Awaiting Response
+              </h4>
+              <p className="text-[11px] text-slate-600 font-medium">
+                Client submissions received through the website contact desk are waiting for direct response.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusFilter("New")}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-colors whitespace-nowrap cursor-pointer shrink-0"
+          >
+            Filter New ({counts.new})
+          </button>
+        </div>
+      )}
+
       {/* Main Inquiries Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
@@ -490,7 +520,14 @@ export default function ContactInquiriesTable() {
                       className={`hover:bg-slate-50/80 transition-colors ${inq.status === 'New' ? 'bg-blue-50/30' : ''}`}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 whitespace-nowrap">
-                        #{inq.ticketId}
+                        <div className="flex items-center gap-2">
+                          <span>#{inq.ticketId}</span>
+                          {inq.status === 'New' && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black bg-rose-500 text-white shadow-2xs animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" /> NEW
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">

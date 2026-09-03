@@ -4,7 +4,7 @@ import EmailDashboard from "./EmailDashboard";
 import EmailLogsTable from "./EmailLogsTable";
 import ContactInquiriesTable from "./ContactInquiriesTable";
 
-export default function EmailCenter() {
+export default function EmailCenter({ newInquiriesCount = 0 }) {
   const [activeTab, setActiveTab] = useState("contact-forms"); // "contact-forms" | "dashboard" | "logs"
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -92,9 +92,23 @@ export default function EmailCenter() {
         <div className="flex items-center bg-slate-100/80 rounded-xl p-1 gap-1 flex-wrap">
           <button
             onClick={() => setActiveTab("contact-forms")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all cursor-pointer ${activeTab === "contact-forms" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all cursor-pointer ${activeTab === "contact-forms" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
           >
-            <MessageSquareQuote className="w-4 h-4 text-blue-600" /> Contact Inquiries / Forms
+            <div className="relative flex items-center">
+              <MessageSquareQuote className="w-4 h-4 text-blue-600" />
+              {newInquiriesCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                </span>
+              )}
+            </div>
+            <span>Contact Inquiries / Forms</span>
+            {newInquiriesCount > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                {newInquiriesCount} New
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("dashboard")}
