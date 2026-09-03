@@ -21,6 +21,9 @@ import Refund from "./Pages/Refund";
 import Resources from "./Pages/Resources";
 import ResourceDetail from "./Pages/ResourceDetail";
 import NotFound from "./Pages/NotFound";
+import PublicAssessments from "./Pages/PublicAssessments";
+import PublicResumeBuilder from "./Pages/PublicResumeBuilder";
+import PublicMockInterview from "./Pages/PublicMockInterview";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import MyResumes from "./Pages/MyResumes";
 import MyInterviews from "./Pages/MyInterviews";
@@ -133,6 +136,9 @@ function App() {
           />
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
+          <Route path="/assessments" element={<PublicAssessments />} />
+          <Route path="/resume-builder" element={<PublicResumeBuilder />} />
+          <Route path="/mock-interview" element={<PublicMockInterview />} />
           <Route path="/privacy-policy" element={<Privacy />} />
           <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
           <Route path="/refund-policy" element={<Refund />} />

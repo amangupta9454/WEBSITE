@@ -60,9 +60,7 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
-    { name: 'Industries', path: '/industries' },
     { name: 'Our Features', path: '#' },
     { name: 'Internship', path: '/internship' },
     { name: 'Resources', path: '/resources' },
@@ -95,7 +93,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden min-[920px]:flex items-center gap-1.5 min-[1080px]:gap-3 min-[1240px]:gap-5">
+        <nav className="hidden min-[920px]:flex items-center gap-3 min-[1100px]:gap-5 min-[1280px]:gap-7">
           {navLinks.map((link) => {
             if (link.name === 'Our Features') {
               const hasFeatures = featuresConfig.jobPortal || featuresConfig.interview || featuresConfig.resume || featuresConfig.assessment;
@@ -113,10 +111,10 @@ const Navbar = () => {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden py-2"
                       >
-                        {featuresConfig.interview && <Link to={isLoggedIn ? "/my-interviews" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Mock Interview</Link>}
-                        {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Resume Builder</Link>}
+                        {featuresConfig.interview && <Link to={isLoggedIn ? "/my-interviews" : "/mock-interview"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Mock Interview</Link>}
+                        {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/resume-builder"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Resume Builder</Link>}
                         {featuresConfig.jobPortal && <Link to="/jobs" className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Job Portal</Link>}
-                        {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/student-login"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Assessments</Link>}
+                        {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/assessments"} className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">Assessments</Link>}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -258,10 +256,10 @@ const Navbar = () => {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden flex flex-col pl-8 pr-6"
                             >
-                              {featuresConfig.interview && <Link to={isLoggedIn ? "/interview-setup" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Mock Interview</Link>}
-                              {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Resume Builder</Link>}
+                              {featuresConfig.interview && <Link to={isLoggedIn ? "/interview-setup" : "/mock-interview"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Mock Interview</Link>}
+                              {featuresConfig.resume && <Link to={isLoggedIn ? "/my-resumes" : "/resume-builder"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Resume Builder</Link>}
                               {featuresConfig.jobPortal && <Link to="/jobs" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Job Portal</Link>}
-                              {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/student-login"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Assessments</Link>}
+                              {featuresConfig.assessment && <Link to={isLoggedIn ? "/dashboard/assessment" : "/assessments"} onClick={() => setMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">Assessments</Link>}
                             </motion.div>
                           )}
                         </AnimatePresence>
