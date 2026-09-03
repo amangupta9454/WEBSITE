@@ -1,5 +1,47 @@
 const mongoose = require('mongoose');
 
+const messageSchema = new mongoose.Schema({
+  messageId: {
+    type: String,
+    default: () => Math.random().toString(36).substring(2, 11),
+  },
+  sender: {
+    type: String,
+    enum: ['client', 'admin'],
+    required: true,
+  },
+  senderName: {
+    type: String,
+    default: '',
+  },
+  senderEmail: {
+    type: String,
+    default: '',
+  },
+  subject: {
+    type: String,
+    default: '',
+  },
+  body: {
+    type: String,
+    required: true,
+  },
+  sentAt: {
+    type: Date,
+    default: Date.now,
+  },
+  deliveryStatus: {
+    type: String,
+    enum: ['Delivered', 'Sent', 'Received', 'Failed'],
+    default: 'Sent',
+  },
+  source: {
+    type: String,
+    enum: ['web_form', 'admin_panel', 'imap_sync', 'manual_log'],
+    default: 'admin_panel',
+  },
+});
+
 const contactInquirySchema = new mongoose.Schema({
   ticketId: {
     type: Number,
@@ -16,6 +58,7 @@ const contactInquirySchema = new mongoose.Schema({
     required: true,
     trim: true,
     lowercase: true,
+    index: true,
   },
   phone: {
     type: String,
@@ -54,6 +97,10 @@ const contactInquirySchema = new mongoose.Schema({
   },
   resolvedAt: {
     type: Date,
+  },
+  messages: {
+    type: [messageSchema],
+    default: [],
   },
   emailSentToAdmin: {
     type: Boolean,
