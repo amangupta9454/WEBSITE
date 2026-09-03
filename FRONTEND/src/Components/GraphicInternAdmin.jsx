@@ -1037,17 +1037,6 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                         Share Resource
                       </button>
 
-                      {/* Mark Resigned */}
-                      {!intern.resigned?.isResigned && (
-                        <button
-                          onClick={() => handleMarkResigned(intern.userId, intern.internshipId, intern.resigned?.isResigned)}
-                          className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                          Mark Resigned
-                        </button>
-                      )}
-
                       {/* Reject Application */}
                       <button
                         onClick={() => handleRejectInternship(intern.userId, intern.internshipId)}
