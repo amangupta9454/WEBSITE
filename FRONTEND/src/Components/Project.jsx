@@ -55,13 +55,15 @@ const Project = () => {
       setLoadingMonth(true);
 
       try {
-        const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(sid)}`;
+        const targetMonth = location.state?.targetMonth;
+        const queryStr = targetMonth ? `?targetMonth=${targetMonth}` : '';
+        const url = `${import.meta.env.VITE_BACKEND_URL}/api/project/current-month/${encodeURIComponent(sid)}${queryStr}`;
         const res = await axios.get(url);
 
         console.log("Backend response:", res.data);
 
         if (res.data.canSubmit) {
-          setCurrentMonth(location.state?.targetMonth || res.data.currentMonth);
+          setCurrentMonth(targetMonth || res.data.currentMonth);
 
           // Autofill and mark fields as auto-filled (only if not already filled manually)
           const newAutoFilled = { name: false, email: false, domain: false, duration: false };
@@ -191,6 +193,7 @@ const Project = () => {
     try {
       const payload = {
         ...formData,
+        targetMonth: currentMonth || formData.targetMonth || 1,
         assignments: formData.assignments.filter(
           (a) => a.projectName?.trim() || a.github?.trim() || a.hosted?.trim()
         )

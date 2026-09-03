@@ -32,15 +32,46 @@ router.get('/current-month/:studentId', async (req, res) => {
       return res.status(404).json({ message: 'Internship not found for this student' });
     }
 
-    const submittedCount = await ProjectSubmission.countDocuments({ studentId });
-    const maxMonths = parseInt(internship.duration.split(' ')[0]) || 0;
-    const currentMonth = submittedCount + 1;
-
-    const canSubmit = currentMonth <= maxMonths;
+    const submissions = await ProjectSubmission.find({ studentId });
+    const maxMonths = parseInt(internship.duration.split(' ')[0]) || 1;
 
     let hasTwoAssignments = false;
-    if (internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z')) {
+    if (
+      (internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z')) ||
+      (internship.assignedNormalTasks && internship.assignedNormalTasks.length > maxMonths)
+    ) {
       hasTwoAssignments = true;
+    }
+    const tasksPerMonth = hasTwoAssignments ? 2 : 1;
+
+    const reqTargetMonth = req.query.targetMonth ? parseInt(req.query.targetMonth, 10) : null;
+
+    let currentMonth = null;
+    let canSubmit = false;
+
+    if (reqTargetMonth && reqTargetMonth <= maxMonths) {
+      const monthSub = submissions.find(s => s.month === reqTargetMonth);
+      const completedTasksInTarget = monthSub ? (monthSub.assignments?.length || 0) : 0;
+      if (completedTasksInTarget < tasksPerMonth) {
+        currentMonth = reqTargetMonth;
+        canSubmit = true;
+      }
+    }
+
+    if (!canSubmit) {
+      for (let m = 1; m <= maxMonths; m++) {
+        const sub = submissions.find(s => s.month === m);
+        const count = sub ? (sub.assignments?.length || 0) : 0;
+        if (count < tasksPerMonth) {
+          currentMonth = m;
+          canSubmit = true;
+          break;
+        }
+      }
+    }
+
+    if (!currentMonth) {
+      currentMonth = maxMonths + 1;
     }
 
     // NEW: Return student basic info too

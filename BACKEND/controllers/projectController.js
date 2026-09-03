@@ -393,15 +393,34 @@ const submitProject = async (req, res) => {
       return res.status(400).json({ message: 'You can only submit projects within your active internship dates.' });
     }
 
-    const registeredDuration = parseInt(internship.duration.split(' ')[0]);
+    const registeredDuration = parseInt(internship.duration.split(' ')[0]) || 1;
+    const isAug05Batch = (internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z')) ||
+      (internship.assignedNormalTasks && internship.assignedNormalTasks.length > registeredDuration);
+    const tasksPerMonth = isAug05Batch ? 2 : 1;
+    const existingSubmissions = await ProjectSubmission.find({ studentId });
 
-    let currentMonth = req.body.targetMonth;
+    let currentMonth = req.body.targetMonth ? parseInt(req.body.targetMonth, 10) : null;
     if (!currentMonth) {
-      const previousCount = await ProjectSubmission.countDocuments({ studentId });
-      if (previousCount >= registeredDuration) {
+      for (let m = 1; m <= registeredDuration; m++) {
+        const sub = existingSubmissions.find(s => s.month === m);
+        const count = sub ? (sub.assignments?.length || 0) : 0;
+        if (count < tasksPerMonth) {
+          currentMonth = m;
+          break;
+        }
+      }
+      if (!currentMonth) {
         return res.status(400).json({ message: 'All monthly submissions completed' });
       }
-      currentMonth = previousCount + 1;
+    } else {
+      if (currentMonth > registeredDuration) {
+        return res.status(400).json({ message: 'All monthly submissions completed' });
+      }
+      const sub = existingSubmissions.find(s => s.month === currentMonth);
+      const count = sub ? (sub.assignments?.length || 0) : 0;
+      if (count >= tasksPerMonth) {
+        return res.status(400).json({ message: `All tasks for Month ${currentMonth} have already been submitted.` });
+      }
     }
     const paymentRequired = (currentMonth === registeredDuration && !internship.hasPaid);
 
@@ -503,10 +522,21 @@ const verifyPayment = async (req, res) => {
     }
 
     const registeredDuration = parseInt(internship.duration.split(' ')[0]);
-    let currentMonth = formData.targetMonth;
+    let currentMonth = formData.targetMonth ? parseInt(formData.targetMonth, 10) : null;
     if (!currentMonth) {
-      const previousCount = await ProjectSubmission.countDocuments({ studentId });
-      currentMonth = previousCount + 1;
+      const existingSubmissions = await ProjectSubmission.find({ studentId });
+      const isAug05Batch = (internship.startDate && new Date(internship.startDate) >= new Date('2026-08-05T00:00:00.000Z')) ||
+        (internship.assignedNormalTasks && internship.assignedNormalTasks.length > registeredDuration);
+      const tasksPerMonth = isAug05Batch ? 2 : 1;
+      for (let m = 1; m <= registeredDuration; m++) {
+        const sub = existingSubmissions.find(s => s.month === m);
+        const count = sub ? (sub.assignments?.length || 0) : 0;
+        if (count < tasksPerMonth) {
+          currentMonth = m;
+          break;
+        }
+      }
+      if (!currentMonth) currentMonth = registeredDuration;
     }
 
     if (currentMonth !== registeredDuration) {
