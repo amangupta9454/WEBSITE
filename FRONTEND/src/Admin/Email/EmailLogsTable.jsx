@@ -4,6 +4,7 @@ import ViewEmailModal from "./ViewEmailModal";
 
 const CAMPAIGN_OPTIONS = [
   "All",
+  "Contact Inquiry Reply",
   "Internship Offer",
   "Offer Letter",
   "Completion Letter",
@@ -18,7 +19,7 @@ const CAMPAIGN_OPTIONS = [
   "General",
 ];
 
-const SOURCE_OPTIONS = ["All", "Backend API", "Google Apps Script", "Admin Resend"];
+const SOURCE_OPTIONS = ["All", "Backend API", "Google Apps Script", "Admin Resend", "Admin Contact Desk"];
 const STATUS_OPTIONS = ["ALL", "SUCCESS", "FAILED", "PENDING"];
 
 export default function EmailLogsTable({ initialStatusFilter, onResendEmail, resendingId }) {

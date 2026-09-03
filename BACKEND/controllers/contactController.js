@@ -4,8 +4,10 @@ const { sendEmail: sendEmailFallback } = require('../utils/emailService');
 const { ImapFlow } = require('imapflow');
 const { mailConfig } = require('../config/mailConfig');
 
+const emailLogger = require('../services/emailLogger');
+
 // Helper to send email with Hostinger SMTP -> Resend fallback
-const sendMailWithFallback = async ({ to, subject, html, replyTo }) => {
+const sendMailWithFallback = async ({ to, subject, html, replyTo, campaign = 'Contact Inquiry Reply', source = 'Admin Contact Desk', recipientName = '' }) => {
   try {
     const primaryRes = await mailService.sendEmail({
       to,
@@ -13,6 +15,9 @@ const sendMailWithFallback = async ({ to, subject, html, replyTo }) => {
       html,
       from: '"Code-A-Nova" <manager@code-a-nova.online>',
       replyTo: replyTo || "manager@code-a-nova.online",
+      campaign,
+      source,
+      recipientName,
     });
     if (primaryRes && primaryRes.success) {
       return true;
@@ -22,8 +27,31 @@ const sendMailWithFallback = async ({ to, subject, html, replyTo }) => {
   }
 
   try {
-    const fallbackRes = await sendEmailFallback({ to, subject, html, replyTo });
+    const fallbackRes = await sendEmailFallback({ 
+      to, 
+      subject, 
+      html, 
+      replyTo: replyTo || "manager@code-a-nova.online",
+      from: '"Code-A-Nova" <manager@code-a-nova.online>'
+    });
     if (fallbackRes && fallbackRes.success) {
+      try {
+        await emailLogger.logEmail({
+          senderEmail: 'manager@code-a-nova.online',
+          recipientEmail: to,
+          recipientName,
+          subject,
+          html,
+          campaign,
+          status: 'SUCCESS',
+          messageId: fallbackRes.data?.id || `resend_${Date.now()}`,
+          accepted: [to],
+          smtpResponse: '250 Dispatched via Resend API Fallback',
+          source: `${source} (Resend Fallback)`,
+        });
+      } catch (logErr) {
+        console.warn('[Contact] Warning logging Resend email to DB:', logErr.message);
+      }
       return true;
     }
   } catch (fallbackErr) {
@@ -256,6 +284,9 @@ const sendInquiryEmailReply = async (req, res) => {
       subject: emailSubject,
       html: formattedHtml,
       replyTo: "manager@code-a-nova.online",
+      campaign: "Contact Inquiry Reply",
+      source: "Admin Contact Desk",
+      recipientName: inquiry.name,
     });
 
     // 2. Append to this inquiry's dedicated message thread

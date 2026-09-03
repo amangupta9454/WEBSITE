@@ -206,10 +206,32 @@ class MailService {
             replyTo,
           });
           if (resendResult && resendResult.success) {
-            console.log(`[MailService] ✔ Email successfully dispatched via Resend fallback! MessageID: ${resendResult.data?.id}`);
+            const messageId = resendResult.data?.id || `resend_${Date.now()}`;
+            console.log(`[MailService] ✔ Email successfully dispatched via Resend fallback! MessageID: ${messageId}`);
+
+            // Log to centralized Email Center
+            try {
+              await emailLogger.logEmail({
+                senderEmail: from || 'manager@code-a-nova.online',
+                recipientEmail: to,
+                recipientName: recipientName || '',
+                subject,
+                html,
+                text: text || '',
+                campaign: finalCampaign,
+                status: 'SUCCESS',
+                messageId,
+                accepted: [to],
+                smtpResponse: '250 Dispatched via Resend API Fallback',
+                source: `${finalSource} (Resend Fallback)`,
+              });
+            } catch (logErr) {
+              console.warn('[MailService] Failed to record Resend log to DB:', logErr.message);
+            }
+
             return {
               success: true,
-              messageId: resendResult.data?.id || `resend_${Date.now()}`,
+              messageId,
               accepted: [to],
               fallbackUsed: true,
             };
