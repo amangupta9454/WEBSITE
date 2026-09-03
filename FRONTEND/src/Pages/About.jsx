@@ -125,24 +125,39 @@ const values = [
 
 const milestones = [
   {
-    year: "2024",
-    title: "Genesis & Foundational Vision",
-    desc: "Code-A-Nova was established with a singular mission: bridge the gap between high-end digital agency services and accessible student skill building."
+    period: "Jan 2026",
+    badge: "Foundation",
+    title: "Genesis & Company Inception",
+    desc: "Code-A-Nova was officially established with a mission to deliver high-performance enterprise software while bridging the academia-industry gap through practical, hands-on developer training."
   },
   {
-    year: "2025",
-    title: "Rapid Expansion & Enterprise Delivery",
-    desc: "Scaled our product offerings to enterprise ERPs, specialized AI assistants, and launched national campus outreach with over 10,000 community participants."
+    period: "Mar 2026",
+    badge: "Delivery",
+    title: "First Enterprise Deployments & Incubation Cohort",
+    desc: "Delivered our initial suite of custom web apps and bespoke portals. Successfully onboarded our inaugural incubation cohort of student developers across Full-Stack, Backend, and UI/UX."
   },
   {
-    year: "2026 & Beyond",
-    title: "Next-Gen AI & Global Scaling",
-    desc: "Pioneering AI interview assessment platforms, intelligent work-assignment systems, and comprehensive digital transformation for modern businesses."
+    period: "May 2026",
+    badge: "Product",
+    title: "Automated Task & Evaluation Architecture",
+    desc: "Engineered proprietary task distribution pipelines, synergy point grading engines, and real-time review systems to streamline project management and skill attribution at scale."
+  },
+  {
+    period: "Jul 2026",
+    badge: "Scale",
+    title: "MSME Recognition & National Campus Network",
+    desc: "Formally registered under the MSME initiative. Scaled our digital community to 10,000+ participating students, verified certificate holders, and active campus ambassadors across India."
+  },
+  {
+    period: "Sep 2026 & Beyond",
+    badge: "Innovation",
+    title: "AI Ecosystem & Next-Gen Enterprise Platforms",
+    desc: "Rolling out cutting-edge AI assessment terminals, automated code evaluators, and custom cloud ERP systems to power the next wave of high-growth digital businesses."
   }
 ];
 
 const About = () => {
-  const [activeMilestone, setActiveMilestone] = useState(1);
+  const [activeMilestone, setActiveMilestone] = useState(0);
 
   return (
     <MainLayout>
@@ -433,17 +448,20 @@ const About = () => {
                 }`}
               >
                 <div className="flex items-start sm:items-center justify-between gap-4 mb-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span className={`px-3 py-1 rounded-xl text-xs font-black ${
                       activeMilestone === idx ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
                     }`}>
-                      {m.year}
+                      {m.period}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded-md">
+                      {m.badge}
                     </span>
                     <h3 className="text-lg sm:text-xl font-black text-gray-900">{m.title}</h3>
                   </div>
                   <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${activeMilestone === idx ? 'rotate-90 text-blue-600' : ''}`} />
                 </div>
-                <p className="text-sm text-gray-600 font-medium leading-relaxed mt-2 pl-0 sm:pl-16">
+                <p className="text-sm text-gray-600 font-medium leading-relaxed mt-2 pl-0 sm:pl-20">
                   {m.desc}
                 </p>
               </div>
