@@ -260,6 +260,18 @@ exports.assignAmbassador = async (req, res) => {
     user.isAmbassador = true;
     user.ambassadorCode = code;
     user.ambassadorCollege = college || user.ambassadorCollege || "N/A";
+
+    // Set Tenure & Auto End Date
+    const durationMonths = parseInt(req.body.durationMonths || 3, 10);
+    const startDate = req.body.startDate ? new Date(req.body.startDate) : new Date();
+    const endDate = req.body.endDate ? new Date(req.body.endDate) : new Date(startDate);
+    if (!req.body.endDate) {
+      endDate.setMonth(endDate.getMonth() + durationMonths);
+    }
+    user.ambassadorStartDate = startDate;
+    user.ambassadorDurationMonths = durationMonths;
+    user.ambassadorEndDate = endDate;
+
     if (!user.roles) user.roles = ["student"];
     if (!user.roles.includes("campus_ambassador")) user.roles.push("campus_ambassador");
     await user.save();
@@ -333,6 +345,9 @@ exports.assignAmbassador = async (req, res) => {
         ambassadorName: String(user.ambassadorName || ""),
         ambassadorLinkedInPost: String(user.ambassadorLinkedInPost || ""),
         ambassadorCollege: user.ambassadorCollege,
+        ambassadorStartDate: user.ambassadorStartDate,
+        ambassadorDurationMonths: user.ambassadorDurationMonths,
+        ambassadorEndDate: user.ambassadorEndDate,
       },
     });
   } catch (error) {
@@ -420,6 +435,9 @@ exports.getAmbassadors = async (req, res) => {
         mobile: amb.mobile,
         ambassadorCode: amb.ambassadorCode,
         ambassadorCollege: amb.ambassadorCollege || "N/A",
+        ambassadorStartDate: amb.ambassadorStartDate || amb.createdAt || null,
+        ambassadorDurationMonths: amb.ambassadorDurationMonths || 3,
+        ambassadorEndDate: amb.ambassadorEndDate || (amb.ambassadorStartDate ? new Date(new Date(amb.ambassadorStartDate).setMonth(new Date(amb.ambassadorStartDate).getMonth() + (amb.ambassadorDurationMonths || 3))) : (amb.createdAt ? new Date(new Date(amb.createdAt).setMonth(new Date(amb.createdAt).getMonth() + 3)) : null)),
         referralId: refData._id || null,
         isActive: refData ? refData.isActive !== false : true,
         clicks: refData.clicks || 0,
@@ -643,12 +661,19 @@ exports.getStudentAmbassadorStats = async (req, res) => {
       isExistingUserReferred: { $ne: true }
     });
 
+    const duration = user.ambassadorDurationMonths || 3;
+    const start = user.ambassadorStartDate || user.createdAt || new Date();
+    const end = user.ambassadorEndDate || new Date(new Date(start).setMonth(new Date(start).getMonth() + duration));
+
     res.json({
       success: true,
       ambassadorCode: code,
       ambassadorCollege: user.ambassadorCollege || "",
       ambassadorName: user.ambassadorName || user.name || "",
       ambassadorLinkedInPost: user.ambassadorLinkedInPost || "",
+      ambassadorStartDate: user.ambassadorStartDate || user.createdAt || null,
+      ambassadorDurationMonths: duration,
+      ambassadorEndDate: end,
       isActive: refData ? refData.isActive !== false : true,
       clicks: refData?.clicks || 0,
       totalSignups: brandNewUserSignupsCount,
@@ -802,10 +827,18 @@ exports.approveAmbassadorApplication = async (req, res) => {
 
     const code = `AMB-${application.name.split(" ")[0].toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
 
+    const duration = parseInt(req.body.durationMonths || 3, 10);
+    const start = req.body.startDate ? new Date(req.body.startDate) : new Date();
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + duration);
+
     if (user) {
       user.isAmbassador = true;
       user.ambassadorCode = user.ambassadorCode || code;
       user.ambassadorCollege = application.college;
+      user.ambassadorStartDate = user.ambassadorStartDate || start;
+      user.ambassadorDurationMonths = user.ambassadorDurationMonths || duration;
+      user.ambassadorEndDate = user.ambassadorEndDate || end;
       await user.save();
     } else {
       user = new User({
@@ -814,7 +847,10 @@ exports.approveAmbassadorApplication = async (req, res) => {
         mobile: application.mobile,
         isAmbassador: true,
         ambassadorCode: code,
-        ambassadorCollege: application.college
+        ambassadorCollege: application.college,
+        ambassadorStartDate: start,
+        ambassadorDurationMonths: duration,
+        ambassadorEndDate: end
       });
       await user.save();
     }
@@ -991,6 +1027,49 @@ exports.syncAndMergeAmbassadorData = async (user, email) => {
   } catch (error) {
     console.error("[Ambassador Merge] Error syncing ambassador data:", error);
     return user;
+  }
+};
+
+// Admin: Update Campus Ambassador Tenure & Validity Dates
+exports.updateAmbassadorTenure = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, durationMonths, endDate } = req.body;
+
+    const user = await User.findById(id);
+    if (!user || !user.isAmbassador) {
+      return res.status(404).json({ success: false, message: "Campus Ambassador not found" });
+    }
+
+    if (startDate) {
+      user.ambassadorStartDate = new Date(startDate);
+    }
+    if (durationMonths !== undefined) {
+      user.ambassadorDurationMonths = parseInt(durationMonths, 10);
+    }
+
+    if (endDate) {
+      user.ambassadorEndDate = new Date(endDate);
+    } else if (startDate || durationMonths !== undefined) {
+      const baseStart = user.ambassadorStartDate || new Date();
+      const baseMonths = user.ambassadorDurationMonths || 3;
+      const autoEnd = new Date(baseStart);
+      autoEnd.setMonth(autoEnd.getMonth() + baseMonths);
+      user.ambassadorEndDate = autoEnd;
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Ambassador tenure updated successfully",
+      ambassadorStartDate: user.ambassadorStartDate,
+      ambassadorDurationMonths: user.ambassadorDurationMonths,
+      ambassadorEndDate: user.ambassadorEndDate
+    });
+  } catch (err) {
+    console.error("Error updating ambassador tenure:", err);
+    res.status(500).json({ success: false, message: "Server error updating tenure" });
   }
 };
 

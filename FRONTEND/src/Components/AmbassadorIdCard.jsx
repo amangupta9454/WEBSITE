@@ -216,9 +216,9 @@ const AmbassadorIdCard = forwardRef(({ stats, inline = false }, ref) => {
                   <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                     Valid Thru
                   </div>
-                  <div style={{ color: '#cbd5e1', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.05em' }}>
-                    2026
-                  </div>
+                    {stats?.ambassadorEndDate
+                      ? new Date(stats.ambassadorEndDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                      : '2026'}
                 </div>
               </div>
             </div>

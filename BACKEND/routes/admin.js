@@ -68,6 +68,7 @@ const {
   getAmbassadorApplications,
   approveAmbassadorApplication,
   rejectAmbassadorApplication,
+  updateAmbassadorTenure,
 } = require("../controllers/referralController");
 const auth = require("../middleware/auth");
 const { verifyAdmin } = require("../middleware/verifyAdmin");
@@ -91,6 +92,8 @@ router.post("/referrals/track-click", trackClick);
 router.get("/ambassadors", auth, verifyAdmin, getAmbassadors);
 router.post("/ambassadors/assign", auth, verifyAdmin, assignAmbassador);
 router.delete("/ambassador/:id", auth, verifyAdmin, deleteAmbassador);
+router.put("/ambassadors/:id/tenure", auth, verifyAdmin, updateAmbassadorTenure);
+router.post("/ambassadors/:id/tenure", auth, verifyAdmin, updateAmbassadorTenure);
 router.get("/ambassador-applications", auth, verifyAdmin, getAmbassadorApplications);
 router.post("/ambassador-applications/approve/:id", auth, verifyAdmin, approveAmbassadorApplication);
 router.post("/ambassador-applications/reject/:id", auth, verifyAdmin, rejectAmbassadorApplication);

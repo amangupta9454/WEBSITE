@@ -28,6 +28,7 @@ import {
   CheckCircle,
   ExternalLink,
   Clock,
+  Edit2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -60,8 +61,48 @@ const ReferralAdmin = () => {
   const [ambNameInput, setAmbNameInput] = useState("");
   const [ambCodeInput, setAmbCodeInput] = useState("");
   const [ambCollegeInput, setAmbCollegeInput] = useState("");
+  const [ambDurationMonths, setAmbDurationMonths] = useState(3);
+  const [ambStartDate, setAmbStartDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [editingTenureAmbassador, setEditingTenureAmbassador] = useState(null);
+  const [updatingTenure, setUpdatingTenure] = useState(false);
   const [assigningAmb, setAssigningAmb] = useState(false);
   const [expandedAmbassador, setExpandedAmbassador] = useState(null);
+
+  const computedAssignEndDate = useMemo(() => {
+    if (!ambStartDate) return "";
+    const d = new Date(ambStartDate);
+    d.setMonth(d.getMonth() + parseInt(ambDurationMonths || 3, 10));
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  }, [ambStartDate, ambDurationMonths]);
+
+  const handleUpdateTenure = async (e) => {
+    e.preventDefault();
+    if (!editingTenureAmbassador) return;
+    try {
+      setUpdatingTenure(true);
+      const token = localStorage.getItem("adminToken");
+      const apiUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "";
+      const res = await axios.post(
+        `${apiUrl}/api/admin/ambassadors/${editingTenureAmbassador._id}/tenure`,
+        {
+          startDate: editingTenureAmbassador.startDate,
+          durationMonths: editingTenureAmbassador.durationMonths,
+          endDate: editingTenureAmbassador.endDate,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(res.data.message || "Tenure updated successfully!");
+        setEditingTenureAmbassador(null);
+        fetchData();
+      }
+    } catch (err) {
+      console.error("Error updating tenure:", err);
+      toast.error(err.response?.data?.message || "Failed to update tenure");
+    } finally {
+      setUpdatingTenure(false);
+    }
+  };
 
   // Form State for Ambassador Group URL
   const [groupUrlInput, setGroupUrlInput] = useState("");
@@ -242,7 +283,14 @@ const ReferralAdmin = () => {
 
       const res = await axios.post(
         `${apiUrl}/api/admin/ambassadors/assign`,
-        { email: ambEmail, name: ambNameInput, customCode: ambCodeInput, college: ambCollegeInput },
+        { 
+          email: ambEmail, 
+          name: ambNameInput, 
+          customCode: ambCodeInput, 
+          college: ambCollegeInput,
+          startDate: ambStartDate,
+          durationMonths: ambDurationMonths
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -398,15 +446,22 @@ const ReferralAdmin = () => {
 
   const handleDownloadReport = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Ambassador Name,Ambassador Code,College,ID Card Post Link,Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
+    csvContent += "Ambassador Name,Ambassador Code,College,Start Date,End Date,Tenure Months,ID Card Post Link,Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
     
     processedAmbassadors.forEach(amb => {
       const postLink = amb.ambassadorLinkedInPost || "Not Posted";
+      const startDate = amb.ambassadorStartDate ? new Date(amb.ambassadorStartDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+      const endDate = amb.ambassadorEndDate ? new Date(amb.ambassadorEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+      const tenure = amb.ambassadorDurationMonths || 3;
+
       if (!amb.filteredReferredUsers || amb.filteredReferredUsers.length === 0) {
         const row = [
           `"${amb.name || "N/A"}"`,
           `"${amb.ambassadorCode || amb.code || "N/A"}"`,
           `"${amb.ambassadorCollege || "N/A"}"`,
+          `"${startDate}"`,
+          `"${endDate}"`,
+          `"${tenure}"`,
           `"${postLink}"`,
           `"N/A"`,
           `"N/A"`,
@@ -422,6 +477,9 @@ const ReferralAdmin = () => {
             `"${amb.name || "N/A"}"`,
             `"${amb.ambassadorCode || amb.code || "N/A"}"`,
             `"${amb.ambassadorCollege || "N/A"}"`,
+            `"${startDate}"`,
+            `"${endDate}"`,
+            `"${tenure}"`,
             `"${postLink}"`,
             `"${u.name || "N/A"}"`,
             `"${u.email || "N/A"}"`,
@@ -648,6 +706,37 @@ const ReferralAdmin = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-purple-200 mb-1.5">Tenure Duration *</label>
+                <select
+                  value={ambDurationMonths}
+                  onChange={(e) => setAmbDurationMonths(parseInt(e.target.value, 10))}
+                  className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-purple-700/50 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  <option value={1}>1 Month</option>
+                  <option value={2}>2 Months</option>
+                  <option value={3}>3 Months (Default)</option>
+                  <option value={6}>6 Months (Semester)</option>
+                  <option value={12}>12 Months (1 Year)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-purple-200 mb-1.5">Start Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={ambStartDate}
+                  onChange={(e) => setAmbStartDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-purple-700/50 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+                {computedAssignEndDate && (
+                  <p className="text-[11px] text-emerald-300 mt-1.5 flex items-center gap-1 font-medium">
+                    <CheckCircle className="w-3 h-3 inline text-emerald-400 shrink-0" /> Auto End Date: <strong className="text-white">{computedAssignEndDate}</strong>
+                  </p>
+                )}
+              </div>
+
               <div className="md:col-span-2 flex justify-end">
                 <button
                   type="submit"
@@ -758,6 +847,7 @@ const ReferralAdmin = () => {
                     <th className="py-3 px-4">Ambassador Info</th>
                     <th className="py-3 px-4">College</th>
                     <th className="py-3 px-4">Ambassador Code</th>
+                    <th className="py-3 px-4">Tenure & Validity</th>
                     <th className="py-3 px-4">ID Card Post Link</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Clicks</th>
@@ -768,7 +858,7 @@ const ReferralAdmin = () => {
                 <tbody className="divide-y divide-slate-100">
                   {processedAmbassadors.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 italic">
                         No Campus Ambassadors assigned yet. Use the form above to designate a student as an Ambassador!
                       </td>
                     </tr>
@@ -809,6 +899,41 @@ const ReferralAdmin = () => {
                                 >
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <div className="flex flex-col gap-1 text-[11px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[11px]">
+                                    {amb.ambassadorDurationMonths || 3} Mos Tenure
+                                  </span>
+                                  <button
+                                    onClick={() => setEditingTenureAmbassador({
+                                      _id: amb._id,
+                                      name: amb.name,
+                                      startDate: amb.ambassadorStartDate ? new Date(amb.ambassadorStartDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                                      durationMonths: amb.ambassadorDurationMonths || 3,
+                                      endDate: amb.ambassadorEndDate ? new Date(amb.ambassadorEndDate).toISOString().split('T')[0] : '',
+                                    })}
+                                    className="p-1 text-slate-400 hover:text-purple-600 rounded transition-colors"
+                                    title="Edit Tenure & Dates"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="text-slate-500 flex items-center gap-1">
+                                  <span className="text-[10px] text-slate-400">Start:</span>
+                                  <span className="font-medium text-slate-700">
+                                    {amb.ambassadorStartDate ? new Date(amb.ambassadorStartDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                  </span>
+                                </div>
+                                <div className="text-slate-500 flex items-center gap-1">
+                                  <span className="text-[10px] text-slate-400">Ends:</span>
+                                  <span className="font-semibold text-emerald-700">
+                                    {amb.ambassadorEndDate ? new Date(amb.ambassadorEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                  </span>
+                                </div>
                               </div>
                             </td>
 
@@ -896,7 +1021,7 @@ const ReferralAdmin = () => {
                           {/* Expanded Referred Users Sub-Table */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={8} className="bg-purple-50/30 p-4 border-y border-purple-100">
+                              <td colSpan={9} className="bg-purple-50/30 p-4 border-y border-purple-100">
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-center">
                                     <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">
@@ -1099,6 +1224,118 @@ const ReferralAdmin = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Ambassador Tenure Modal */}
+      {editingTenureAmbassador && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-purple-600" />
+                  Edit Ambassador Tenure
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Ambassador: <strong className="text-slate-800">{editingTenureAmbassador.name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingTenureAmbassador(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateTenure} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Start Date (Became Ambassador) *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={editingTenureAmbassador.startDate}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    const d = new Date(newStart);
+                    d.setMonth(d.getMonth() + parseInt(editingTenureAmbassador.durationMonths || 3, 10));
+                    setEditingTenureAmbassador({
+                      ...editingTenureAmbassador,
+                      startDate: newStart,
+                      endDate: d.toISOString().split("T")[0]
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Tenure Duration (Months) *
+                </label>
+                <select
+                  value={editingTenureAmbassador.durationMonths}
+                  onChange={(e) => {
+                    const months = parseInt(e.target.value, 10);
+                    const baseDate = editingTenureAmbassador.startDate ? new Date(editingTenureAmbassador.startDate) : new Date();
+                    const d = new Date(baseDate);
+                    d.setMonth(d.getMonth() + months);
+                    setEditingTenureAmbassador({
+                      ...editingTenureAmbassador,
+                      durationMonths: months,
+                      endDate: d.toISOString().split("T")[0]
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  <option value={1}>1 Month</option>
+                  <option value={2}>2 Months</option>
+                  <option value={3}>3 Months (Standard)</option>
+                  <option value={6}>6 Months (Semester)</option>
+                  <option value={12}>12 Months (1 Year)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  End Date (Auto-Calculated)
+                </label>
+                <input
+                  type="date"
+                  value={editingTenureAmbassador.endDate}
+                  onChange={(e) => setEditingTenureAmbassador({
+                    ...editingTenureAmbassador,
+                    endDate: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-slate-50"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Auto-calculated based on start date and tenure. You can also manually adjust if needed.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingTenureAmbassador(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingTenure}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {updatingTenure ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                  Save Tenure
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

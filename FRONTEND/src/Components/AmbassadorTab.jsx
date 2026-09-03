@@ -192,6 +192,19 @@ const AmbassadorTab = () => {
                 {stats.ambassadorCode}
               </span>
             </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1.5 text-[11px] text-purple-200">
+              <span className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                <Calendar className="w-3 h-3 text-purple-300" />
+                <span>Start: <strong className="text-white">{stats.ambassadorStartDate ? new Date(stats.ambassadorStartDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</strong></span>
+              </span>
+              <span className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                <Calendar className="w-3 h-3 text-emerald-300" />
+                <span>Valid Till: <strong className="text-emerald-300">{stats.ambassadorEndDate ? new Date(stats.ambassadorEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</strong></span>
+              </span>
+              <span className="bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded-md font-bold border border-purple-400/30">
+                Tenure: {stats.ambassadorDurationMonths || 3} Months
+              </span>
+            </div>
           </div>
         </div>
 

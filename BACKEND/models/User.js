@@ -173,6 +173,9 @@ const userSchema = new mongoose.Schema(
     ambassadorCollege: { type: String, default: "" },
     ambassadorName: { type: String, default: "" },
     ambassadorLinkedInPost: { type: String, default: "" },
+    ambassadorStartDate: { type: Date, default: null },
+    ambassadorDurationMonths: { type: Number, default: 3 },
+    ambassadorEndDate: { type: Date, default: null },
   },
   { timestamps: true },
 );
