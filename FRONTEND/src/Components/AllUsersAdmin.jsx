@@ -646,7 +646,7 @@ const AllUsersAdmin = () => {
                                     <div><span className="text-slate-500 text-xs block mb-0.5">Branch</span> <div className="font-bold text-slate-800 truncate" title={app.branch}>{app.branch || "N/A"}</div></div>
                                     <div><span className="text-slate-500 text-xs block mb-0.5">College</span> <div className="font-bold text-slate-800 truncate" title={app.college}>{app.college || "N/A"}</div></div>
                                     <div><span className="text-slate-500 text-xs block mb-0.5">Pass Year</span> <div className="font-bold text-slate-800">{app.passingYear || app.year || "N/A"}</div></div>
-                                    <div><span className="text-slate-500 text-xs block mb-0.5">State</span> <div className="font-bold text-slate-800">{app.state || "N/A"}</div></div>
+                                    <div><span className="text-slate-500 text-xs block mb-0.5">Location</span> <div className="font-bold text-slate-800">{app.state || "N/A"}{app.country && app.country !== "India" ? ` (${app.country})` : ""}</div></div>
                                   </div>
                                 </div>
 

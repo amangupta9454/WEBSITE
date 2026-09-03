@@ -8,13 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedSubmitButton } from './animations/AnimatedSubmitButton';
 
-const states = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand',
-  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
-  'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
-].sort();
+import { countryStatesData, countriesList } from '../data/countryStates';
 
 const domains = [
   'Frontend Development', 'Backend Development', 'Full Stack Development',
@@ -38,7 +32,7 @@ const Registration = () => {
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', whatsapp: '',
-    course: '', branch: '', college: '', state: '', passingYear: '',
+    course: '', branch: '', college: '', country: 'India', state: '', passingYear: '',
     domain: '', duration: '',
     github: '', linkedin: '', portfolio: ''
   });
@@ -90,6 +84,15 @@ const Registration = () => {
   }, []);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleCountryChange = (e) => {
+    const selectedCountry = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      country: selectedCountry,
+      state: '' // Reset state when country changes
+    }));
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -147,8 +150,8 @@ const Registration = () => {
 
         setFormData({
           name: '', email: '', whatsapp: '', course: '', branch: '',
-          college: '', state: '', passingYear: '', domain: '', duration: '',
-          github: '', linkedin: ''
+          college: '', country: 'India', state: '', passingYear: '', domain: '', duration: '',
+          github: '', linkedin: '', portfolio: ''
         });
         setResume(null);
         const fileInput = document.getElementById('resume-upload');
@@ -219,8 +222,8 @@ const Registration = () => {
 
             setFormData({
               name: '', email: '', whatsapp: '', course: '', branch: '',
-              college: '', state: '', passingYear: '', domain: '', duration: '',
-              github: '', linkedin: ''
+              college: '', country: 'India', state: '', passingYear: '', domain: '', duration: '',
+              github: '', linkedin: '', portfolio: ''
             });
             setResume(null);
             const fileInput = document.getElementById('resume-upload');
@@ -369,11 +372,21 @@ const Registration = () => {
                     <input required name="passingYear" value={formData.passingYear} onChange={handleChange} className={inputClasses} placeholder="e.g., 2026" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">State *</label>
-                    <select required name="state" value={formData.state} onChange={handleChange} className={inputClasses}>
-                      <option value="" className="bg-white">Select state</option>
-                      {states.map(s => <option key={s} value={s} className="bg-white">{s}</option>)}
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Country *</label>
+                    <select required name="country" value={formData.country} onChange={handleCountryChange} className={inputClasses}>
+                      {countriesList.map(c => <option key={c} value={c} className="bg-white">{c}</option>)}
                     </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">State / Province *</label>
+                    {countryStatesData[formData.country] && countryStatesData[formData.country].length > 0 ? (
+                      <select required name="state" value={formData.state} onChange={handleChange} className={inputClasses}>
+                        <option value="" className="bg-white">Select state / province</option>
+                        {countryStatesData[formData.country].map(s => <option key={s} value={s} className="bg-white">{s}</option>)}
+                      </select>
+                    ) : (
+                      <input required name="state" value={formData.state} onChange={handleChange} className={inputClasses} placeholder="Enter your state or province name" />
+                    )}
                   </div>
                 </div>
               </div>

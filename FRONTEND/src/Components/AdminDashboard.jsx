@@ -417,6 +417,7 @@ const AdminDashboard = () => {
         Branch: app.branch,
         Year: app.year,
         College: app.college,
+        Country: app.country || "India",
         State: app.state,
         PassingYear: app.passingYear,
         Portfolio: app.portfolio || "N/A",
@@ -442,6 +443,7 @@ const AdminDashboard = () => {
           "Branch",
           "Year",
           "College",
+          "Country",
           "State",
           "PassingYear",
           "Portfolio",
@@ -1369,7 +1371,7 @@ const AdminDashboard = () => {
               <div className="col-span-2">
                 <p className="text-slate-500 mb-1">College</p>
                 <p className="text-slate-700">
-                  {app.college}, {app.state}
+                  {app.college}, {app.state}{app.country && app.country !== "India" ? ` (${app.country})` : ""}
                 </p>
               </div>
               <div>

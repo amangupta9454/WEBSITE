@@ -64,6 +64,7 @@ const userSchema = new mongoose.Schema(
         branch: String,
         year: String,
         college: String,
+        country: { type: String, default: "India" },
         state: String,
         passingYear: String,
         domain: String,
