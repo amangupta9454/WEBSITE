@@ -1,19 +1,23 @@
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
-const FROM_EMAIL = process.env.FROM_EMAIL || 'support@codeanova.com';
+const DEFAULT_FROM = process.env.SMTP_FROM 
+  ? `Code-A-Nova <${process.env.SMTP_FROM}>` 
+  : `Code-A-Nova <manager@code-a-nova.online>`;
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, replyTo, from }) => {
   try {
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY missing. Mock sending email to:", to);
       return { success: true, mock: true };
     }
+    const sender = from || DEFAULT_FROM;
     const data = await resend.emails.send({
-      from: `Code-A-Nova <${FROM_EMAIL}>`,
+      from: sender,
       to,
       subject,
       html,
+      ...(replyTo && { reply_to: replyTo }),
     });
     return { success: true, data };
   } catch (error) {
@@ -27,7 +31,7 @@ const templates = {
     <div style="font-family: sans-serif; max-w-lg mx-auto p-6 bg-white border border-gray-200 rounded-xl">
       <h2>Welcome to Code-A-Nova, ${name}!</h2>
       <p>We are thrilled to have you onboard. Get ready to ace your next technical interview with our AI-powered mock interviews.</p>
-      <a href="https://codeanova.com/student-login" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px;">Start Interviewing</a>
+      <a href="https://code-a-nova.online/student-login" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px;">Start Interviewing</a>
     </div>
   `,
   paymentSuccess: (name, amount, packageId) => `
@@ -38,34 +42,25 @@ const templates = {
       <p>Your credits are now available in your dashboard.</p>
     </div>
   `,
-  interviewCompleted: (name, sessionId) => `
+  referralSuccess: (referrerName, refereeName, credits) => `
     <div style="font-family: sans-serif; max-w-lg mx-auto p-6 bg-white border border-gray-200 rounded-xl">
-      <h2>Your Interview Report is Ready</h2>
-      <p>Hi ${name},</p>
-      <p>Your AI mock interview evaluation has been generated successfully.</p>
-      <a href="https://codeanova.com/dashboard" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px;">View Detailed Feedback</a>
+      <h2>Referral Bonus Earned! 🚀</h2>
+      <p>Hi ${referrerName},</p>
+      <p>Great news! Your friend ${refereeName} just signed up using your referral code.</p>
+      <p>You've earned ${credits} interview credits!</p>
     </div>
   `,
-  supportTicketReceived: (name, ticketId) => `
+  passwordReset: (token) => `
     <div style="font-family: sans-serif; max-w-lg mx-auto p-6 bg-white border border-gray-200 rounded-xl">
-      <h2>Support Request Received - #${ticketId}</h2>
-      <p>Hi ${name},</p>
-      <p>We've received your message and our team is reviewing it. We typically respond within 24 hours.</p>
-      <p>Thank you for reaching out to Code-A-Nova Support!</p>
+      <h2>Password Reset Request</h2>
+      <p>You requested a password reset. Click the link below to set a new password:</p>
+      <a href="https://code-a-nova.online/reset-password?token=${token}" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px;">Reset Password</a>
+      <p style="margin-top: 20px; font-size: 12px; color: #6b7280;">If you didn't request this, you can safely ignore this email.</p>
     </div>
   `,
-  adminSupportAlert: (name, email, subject, issueType, description) => `
-    <div style="font-family: sans-serif; max-w-lg mx-auto p-6 bg-gray-50 border border-gray-200 rounded-xl">
-      <h2>New Support Ticket: ${subject}</h2>
-      <p><strong>From:</strong> ${name} (${email})</p>
-      <p><strong>Type:</strong> ${issueType}</p>
-      <p><strong>Description:</strong></p>
-      <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">${description}</blockquote>
-    </div>
-  `
 };
 
 module.exports = {
   sendEmail,
-  templates
+  templates,
 };

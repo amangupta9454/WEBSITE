@@ -193,8 +193,31 @@ class MailService {
       console.error("SMTP Response / Error:", error.message);
       console.error("==========================================");
 
-      // Logging is now handled centrally by sendSafeEmail to avoid duplicates
-
+      // Automatic fallback to Resend API if SMTP transmission fails
+      if (process.env.RESEND_API_KEY) {
+        try {
+          console.log(`[MailService] 🔄 Attempting Resend API fallback for recipient [${to}]...`);
+          const { sendEmail: resendSend } = require('../utils/emailService');
+          const resendResult = await resendSend({
+            to,
+            subject,
+            html,
+            from,
+            replyTo,
+          });
+          if (resendResult && resendResult.success) {
+            console.log(`[MailService] ✔ Email successfully dispatched via Resend fallback! MessageID: ${resendResult.data?.id}`);
+            return {
+              success: true,
+              messageId: resendResult.data?.id || `resend_${Date.now()}`,
+              accepted: [to],
+              fallbackUsed: true,
+            };
+          }
+        } catch (fallbackError) {
+          console.error("[MailService] ❌ Resend fallback also failed:", fallbackError.message);
+        }
+      }
 
       return {
         success: false,
