@@ -243,25 +243,25 @@ ${formData.description.trim()}
                 </a>
               </div>
 
-              {/* SLA Response Time Card */}
+              {/* Response Commitment Card */}
               <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 mb-3">
                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100">
                     <Clock size={24} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-gray-900">Guaranteed Response SLA</h3>
-                    <p className="text-xs text-indigo-600 font-bold">Fast & Dedicated Turnaround</p>
+                    <h3 className="text-lg font-black text-gray-900">Communication Desk</h3>
+                    <p className="text-xs text-indigo-600 font-bold">Dedicated & Direct Communication</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
                   <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="text-xl font-black text-slate-800">&lt; 2 Hours</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Project Proposals</div>
+                    <div className="text-sm font-black text-slate-800">Project Scoping</div>
+                    <div className="text-[11px] text-slate-500 font-medium mt-1">Direct review by technical leads</div>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="text-xl font-black text-slate-800">&lt; 24 Hours</div>
-                    <div className="text-[11px] text-slate-500 font-medium">Support Tickets</div>
+                    <div className="text-sm font-black text-slate-800">Student Support</div>
+                    <div className="text-[11px] text-slate-500 font-medium mt-1">Direct guidance & query resolution</div>
                   </div>
                 </div>
               </div>
@@ -310,7 +310,7 @@ ${formData.description.trim()}
                     Inquiry Received Successfully!
                   </h2>
                   <p className="text-gray-500 font-medium text-sm sm:text-base max-w-md mx-auto mb-8 leading-relaxed">
-                    Thank you for reaching out to Code-A-Nova. A confirmation has been recorded, and our engineering solutions team will review your brief within 2 to 24 hours.
+                    Thank you for reaching out to Code-A-Nova. A confirmation has been recorded, and our engineering solutions team will review your brief promptly.
                   </p>
                   <button 
                     onClick={() => {

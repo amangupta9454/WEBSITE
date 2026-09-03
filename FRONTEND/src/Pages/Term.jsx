@@ -8,72 +8,87 @@ import { FileText } from "lucide-react";
 const Terms = () => {
   const sections = [
     {
-      title: "1. Acceptance of Terms & Eligibility",
+      title: "1. Acceptance of Terms",
       content: (
         <p>
-          By accessing or using Code-A-Nova's platform, you agree to be bound by these Terms & Conditions. You must be at least 18 years old to use our premium services. By creating an account, you confirm that you are providing accurate and complete information and are responsible for all activities under your account credentials.
+          By browsing or interacting with the Code-A-Nova website (https://code-a-nova.online/) or utilizing any of our software engineering services, student internship portals, or educational resources, you agree to comply with and be bound by these Terms of Service. If you do not agree to these terms, please refrain from using our platform.
         </p>
       )
     },
     {
-      title: "2. AI-Generated Feedback Disclaimer",
+      title: "2. Website Usage & Eligibility",
       content: (
         <p>
-          Our mock interviews are conducted by an Artificial Intelligence system (powered by Vapi and Groq). The feedback, scores, and hiring recommendations generated are <strong>for educational and practice purposes only</strong>. Code-A-Nova does not guarantee that high performance on our platform will result in actual employment offers. AI-generated feedback is subjective and may occasionally contain errors or hallucinations.
+          You must be at least 18 years of age, or have reached the legal age of majority in your jurisdiction, or have parental/guardian consent to use our services. You agree to use the site exclusively for lawful purposes and in accordance with all applicable local, national, and international laws and regulations.
         </p>
       )
     },
     {
-      title: "3. User Responsibilities & Conduct",
+      title: "3. User Accounts & Security",
+      content: (
+        <p>
+          When you create an account to access student dashboards, career tools, or project workspaces, you are responsible for maintaining the confidentiality of your login credentials. You agree to accept responsibility for all activities that occur under your account and must notify us immediately of any unauthorized use or security breach.
+        </p>
+      )
+    },
+    {
+      title: "4. Internship & Student Registration Programs",
+      content: (
+        <p>
+          Registration for Code-A-Nova internship and learning programs is provided to help students gain real-world practical experience. Participants agree to submit original work, adhere to task deadlines, and act ethically. Certificates of completion are issued solely upon meeting the verification criteria and code review benchmarks established by our technical mentors. Code-A-Nova reserves the right to revoke certificates or terminate participation in cases of plagiarism, fraudulent submissions, or code of conduct violations.
+        </p>
+      )
+    },
+    {
+      title: "5. Web & Software Development Services",
+      content: (
+        <p>
+          Commercial engagements for custom website development, ERP solutions, and AI automation are governed by distinct project scopes and milestone schedules agreed upon in writing. Code-A-Nova commits to delivering code according to specified functional requirements. Client deliverables are deployed following milestone approval.
+        </p>
+      )
+    },
+    {
+      title: "6. Intellectual Property Rights",
+      content: (
+        <p>
+          All trademarks, logos, brand assets, proprietary software code, visual designs, and educational articles hosted on Code-A-Nova are the intellectual property of Code-A-Nova, unless otherwise indicated. Users may not copy, reproduce, distribute, or reverse-engineer any portion of the website without prior written authorization.
+        </p>
+      )
+    },
+    {
+      title: "7. User-Submitted Content & Acceptable Use",
       content: (
         <>
-          <p className="mb-4">You agree NOT to use the platform to:</p>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Submit malicious prompts (Prompt Injection) designed to bypass or break the AI's system instructions.</li>
-            <li>Upload resumes containing sensitive personal identifiers (like Social Security Numbers or explicit material).</li>
-            <li>Share, resell, or distribute your account credentials or interview credits to third parties.</li>
-            <li>Reverse engineer, scrape, or attempt to extract the underlying source code or system prompts.</li>
+          <p className="mb-3">You agree not to upload, post, or transmit any content or materials that:</p>
+          <ul className="list-disc pl-6 space-y-1.5">
+            <li>Are unlawful, defamatory, abusive, threatening, or infringing upon intellectual property rights.</li>
+            <li>Contain software viruses, malicious scripts, scrapers, or automated harvesting mechanisms.</li>
+            <li>Attempt to bypass authentication barriers, probe system vulnerabilities, or disrupt server infrastructure.</li>
           </ul>
         </>
       )
     },
     {
-      title: "4. Payments, Credits, & Refunds",
+      title: "8. Disclaimer & Limitation of Liability",
       content: (
         <p>
-          All purchases of interview tokens or unlimited packages are processed securely via Razorpay. Due to the significant computational costs associated with LLM inferencing and real-time audio streaming, <strong>all sales are final and non-refundable</strong> unless required by law. Unused interview credits do not expire as long as your account remains active.
+          Code-A-Nova provides this website, its content, and free online tools on an "as is" and "as available" basis without warranties of any kind, whether express or implied. In no event shall Code-A-Nova, its founders, or team members be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use our platform or reliance on informational resources.
         </p>
       )
     },
     {
-      title: "5. Intellectual Property Rights",
+      title: "9. Service Availability & Modifications",
       content: (
         <p>
-          All platform content, UI designs, code, algorithms, and system architectures are the exclusive intellectual property of Code-A-Nova. However, you retain full ownership of the resumes you upload. By using the service, you grant us a limited, temporary license to process your resume and audio exclusively for the purpose of delivering your interview feedback.
+          We strive to ensure continuous website availability, but do not guarantee uninterrupted uptime. We reserve the right to modify, suspend, or discontinue any feature, page, or service at any time without prior notice.
         </p>
       )
     },
     {
-      title: "6. Limitation of Liability",
+      title: "10. Contact Information",
       content: (
         <p>
-          Code-A-Nova is provided on an "AS IS" basis. To the maximum extent permitted by law, Code-A-Nova and its affiliates shall not be liable for any indirect, incidental, special, or consequential damages, including loss of profits, lost opportunities, or data loss arising from platform downtime, AI errors, or third-party API outages (e.g., Groq or OpenAI).
-        </p>
-      )
-    },
-    {
-      title: "7. Account Termination",
-      content: (
-        <p>
-          We reserve the right to suspend or terminate your account immediately, without prior notice or refund, if you violate these Terms (e.g., attempting prompt injection attacks or committing payment fraud). You may terminate your account at any time by contacting support.
-        </p>
-      )
-    },
-    {
-      title: "8. Contact Information",
-      content: (
-        <p>
-          If you have any questions regarding these Terms & Conditions, please contact us via our Support page or directly at <strong>support@codeanova.com</strong>.
+          For any inquiries or legal notices regarding these Terms of Service, please contact us via email at <strong>codeanova26@gmail.com</strong> or <strong>hr@code-a-nova.online</strong>.
         </p>
       )
     }
@@ -82,12 +97,12 @@ const Terms = () => {
   return (
     <MainLayout>
       <SEO 
-        title="Terms & Conditions | Code-A-Nova"
-        description="Read the terms and conditions governing the use of Code-A-Nova services and website."
+        title="Terms of Service | Code-A-Nova"
+        description="Review the official Terms of Service governing the use of Code-A-Nova's website, development services, and student learning programs."
         canonicalUrl="https://code-a-nova.online/terms"
       />
-      <div className="pt-32 pb-24 bg-[#FAFAFA] dark:bg-gray-900 min-h-screen relative overflow-hidden transition-colors duration-300">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-50 dark:bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="pt-32 pb-24 bg-[#FAFAFA] min-h-screen relative overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-50 rounded-full blur-[100px] pointer-events-none" />
         
         <div className="max-w-4xl mx-auto px-6 relative z-10">
           <motion.div 
@@ -96,30 +111,32 @@ const Terms = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-2xl mb-6 shadow-sm border border-purple-100 dark:border-purple-800">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl mb-6 shadow-sm border border-purple-100">
               <FileText size={32} />
             </div>
-            <h1 className="text-4xl md:text-6xl font-black mb-6 text-gray-900 dark:text-white tracking-tight">Terms & Conditions</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">Effective Date: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            <h1 className="text-4xl md:text-6xl font-black mb-4 text-gray-900 tracking-tight">Terms of Service</h1>
+            <p className="text-gray-500 text-sm md:text-base font-medium">Last Updated: September 2026</p>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 md:p-12 shadow-sm"
+            className="bg-white border border-gray-100 rounded-3xl p-8 md:p-12 shadow-sm"
           >
-            <div className="space-y-12">
-              <div className="prose prose-purple dark:prose-invert max-w-none">
-                {sections.map((sec, idx) => (
-                  <div key={idx} className="mb-10">
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{sec.title}</h3>
-                    <div className="text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
-                      {sec.content}
-                    </div>
+            <div className="space-y-10">
+              <p className="text-gray-600 font-medium leading-relaxed pb-6 border-b border-gray-100">
+                These Terms of Service govern your access to and use of Code-A-Nova's digital properties, software services, and educational programs. Please review them carefully.
+              </p>
+
+              {sections.map((sec, idx) => (
+                <div key={idx} className="space-y-3">
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">{sec.title}</h2>
+                  <div className="text-gray-600 text-sm sm:text-base font-medium leading-relaxed">
+                    {sec.content}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>

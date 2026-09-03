@@ -64,7 +64,10 @@ const Navbar = () => {
     { name: 'Services', path: '/services' },
     { name: 'Industries', path: '/industries' },
     { name: 'Our Features', path: '#' },
-    { name: 'Internship', path: '/internship' }
+    { name: 'Internship', path: '/internship' },
+    { name: 'Resources', path: '/resources' },
+    { name: 'About', path: '/about' },
+    { name: 'Contact', path: '/contact' }
   ];
 
   const studentToken = localStorage.getItem('studentToken');
@@ -92,7 +95,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden min-[920px]:flex items-center gap-8">
+        <nav className="hidden min-[920px]:flex items-center gap-1.5 min-[1080px]:gap-3 min-[1240px]:gap-5">
           {navLinks.map((link) => {
             if (link.name === 'Our Features') {
               const hasFeatures = featuresConfig.jobPortal || featuresConfig.interview || featuresConfig.resume || featuresConfig.assessment;

@@ -18,6 +18,9 @@ import IndustryDetail from "./Pages/IndustryDetail";
 import Privacy from "./Pages/Privacy";
 import Term from "./Pages/Term";
 import Refund from "./Pages/Refund";
+import Resources from "./Pages/Resources";
+import ResourceDetail from "./Pages/ResourceDetail";
+import NotFound from "./Pages/NotFound";
 import UnifiedDashboard from "./Pages/UnifiedDashboard";
 import MyResumes from "./Pages/MyResumes";
 import MyInterviews from "./Pages/MyInterviews";
@@ -128,9 +131,15 @@ function App() {
               </MainLayout>
             }
           />
+          <Route path="/resources" element={<Resources />} />
+          <Route path="/resources/:slug" element={<ResourceDetail />} />
           <Route path="/privacy-policy" element={<Privacy />} />
+          <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
           <Route path="/refund-policy" element={<Refund />} />
+          <Route path="/refund" element={<Navigate to="/refund-policy" replace />} />
           <Route path="/terms" element={<Term />} />
+          <Route path="/terms-of-service" element={<Navigate to="/terms" replace />} />
+          <Route path="/terms-and-conditions" element={<Navigate to="/terms" replace />} />
 
           {/* Admin Pages (No site navbar/footer — they have their own header) */}
           <Route path="/admin-login" element={<AdminLogin />} />
@@ -171,6 +180,9 @@ function App() {
             <Route path="/my-quizzes" element={<ProtectedRoute><StudentQuizzesPage /></ProtectedRoute>} />
             <Route path="/verify" element={<Verify />} />
           </Route>
+
+          {/* Catch-all 404 Not Found */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </InterviewConfigProvider>
     </Router>

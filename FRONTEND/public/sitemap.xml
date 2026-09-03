@@ -11,6 +11,11 @@
   <url><loc>https://code-a-nova.online/registration</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://code-a-nova.online/campus-ambassador</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://code-a-nova.online/leaderboard</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://code-a-nova.online/resources</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://code-a-nova.online/resources/modern-full-stack-web-architecture-2026</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/resources/landing-tech-internships-guide</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/resources/ai-automation-for-modern-business</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://code-a-nova.online/resources/web-performance-and-core-web-vitals</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- Legal Pages -->
   <url><loc>https://code-a-nova.online/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>

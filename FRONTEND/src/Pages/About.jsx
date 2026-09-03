@@ -23,11 +23,11 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const stats = [
-  { number: "50+", label: "Enterprise Projects", desc: "Delivered on schedule" },
-  { number: "10,000+", label: "Talent Ecosystem", desc: "Students & Interns impacted" },
-  { number: "99.9%", label: "System Uptime SLA", desc: "Enterprise cloud hosting" },
-  { number: "5X", label: "Average ROI Growth", desc: "For partnering businesses" },
+const highlights = [
+  { title: "Full-Stack Web", label: "Modern Engineering", desc: "React, Next.js, Node.js & cloud platforms" },
+  { title: "AI Automation", label: "Intelligent Tools", desc: "Custom LLM agents & process pipelines" },
+  { title: "Talent Incubation", label: "Practical Programs", desc: "Hands-on projects & skill verification" },
+  { title: "MSME Registered", label: "Official Enterprise", desc: "Formally registered technology startup" },
 ];
 
 const pillars = [
@@ -146,7 +146,7 @@ const milestones = [
     period: "Jul 2026",
     badge: "Scale",
     title: "National Campus Network & Community Expansion",
-    desc: "Expanded our student ecosystem across universities nationwide, scaling our community to 10,000+ participating students, certified graduates, and active campus ambassadors."
+    desc: "Expanded our student ecosystem across universities nationwide, building an active community of participating students, certified graduates, and campus ambassadors."
   },
   {
     period: "Sep 2026 & Beyond",
@@ -204,20 +204,20 @@ const About = () => {
             Code-A-Nova is a high-growth technology company built to solve complex software problems. We craft cutting-edge web platforms, enterprise ERP systems, and AI automations, while nurturing the next generation of engineers through verified hands-on incubation.
           </motion.p>
 
-          {/* Stats Bar */}
+          {/* Highlights Bar */}
           <motion.div 
             initial="hidden" 
             animate="visible" 
             variants={staggerContainer}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/40"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/40 text-left"
           >
-            {stats.map((stat, i) => (
-              <motion.div key={i} variants={fadeUp} className="text-center p-2">
-                <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 mb-1 tracking-tight">
-                  {stat.number}
+            {highlights.map((item, i) => (
+              <motion.div key={i} variants={fadeUp} className="p-3">
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">{item.label}</span>
+                <h3 className="text-lg font-black text-gray-900 mb-1">
+                  {item.title}
                 </h3>
-                <p className="text-xs sm:text-sm font-bold text-gray-800">{stat.label}</p>
-                <span className="text-[11px] text-gray-400 font-medium block mt-0.5">{stat.desc}</span>
+                <span className="text-xs text-gray-500 font-medium leading-relaxed block">{item.desc}</span>
               </motion.div>
             ))}
           </motion.div>
