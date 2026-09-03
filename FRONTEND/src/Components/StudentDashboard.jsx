@@ -1837,24 +1837,56 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, gr
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap text-sm">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${sub.status === 'Reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {sub.status}
+                    <td className="py-3 px-4 text-sm align-top">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
+                        sub.status === 'Reviewed' 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : sub.status === 'Changes Requested'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {sub.status === 'Changes Requested' ? (
+                          <>
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            Changes Requested
+                          </>
+                        ) : (
+                          sub.status
+                        )}
                       </span>
+
                       {sub.spPoints !== undefined && sub.spPoints !== null && (
-                        <div className="mt-2 text-xs font-black text-purple-700">
+                        <div className="mt-1.5 text-xs font-black text-purple-700">
                           SP Earned: {sub.spPoints}/10
                         </div>
                       )}
+
+                      {sub.feedback && (
+                        <div className="mt-2.5 p-3 bg-rose-50/90 border border-rose-200 rounded-xl text-left max-w-sm whitespace-normal shadow-2xs">
+                          <div className="text-[11px] font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            Admin Feedback / Changes Required:
+                          </div>
+                          <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-normal">
+                            {sub.feedback}
+                          </p>
+                          {sub.feedbackDate && (
+                            <div className="text-[10px] text-slate-400 mt-1.5 font-medium">
+                              Received on {new Date(sub.feedbackDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap text-sm text-center">
-                      {sub.status === 'Pending' && (
+                    <td className="py-3 px-4 whitespace-nowrap text-sm text-center align-top">
+                      {(sub.status === 'Pending' || sub.status === 'Changes Requested') && (
                         <button 
                           onClick={() => handleDeleteSubmission(sub._id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
-                          title="Delete submission"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-bold"
+                          title="Delete submission and re-upload fixed artwork"
                         >
                           <Trash2 className="w-4 h-4" />
+                          <span className="hidden sm:inline">Delete & Re-upload</span>
                         </button>
                       )}
                     </td>

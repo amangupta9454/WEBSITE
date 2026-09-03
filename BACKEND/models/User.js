@@ -115,8 +115,10 @@ const userSchema = new mongoose.Schema(
             taskTitle: { type: String, default: "" },
             taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'GraphicTask' },
             submittedAt: { type: Date, default: Date.now },
-            status: { type: String, enum: ['Pending', 'Reviewed'], default: 'Pending' },
-            spPoints: { type: Number, min: 0, max: 10, default: null }
+            status: { type: String, enum: ['Pending', 'Reviewed', 'Changes Requested'], default: 'Pending' },
+            spPoints: { type: Number, min: 0, max: 10, default: null },
+            feedback: { type: String, default: "" },
+            feedbackDate: { type: Date }
           }
         ],
         alerts: [

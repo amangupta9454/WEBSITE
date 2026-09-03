@@ -2765,9 +2765,9 @@ const updateStipendStatus = async (req, res) => {
 
 const updateGraphicSubmissionStatus = async (req, res) => {
   try {
-    const { userId, internshipId, submissionId, status, spPoints } = req.body;
+    const { userId, internshipId, submissionId, status, spPoints, feedback, sendEmail } = req.body;
 
-    if (!['Pending', 'Reviewed'].includes(status)) {
+    if (!['Pending', 'Reviewed', 'Changes Requested'].includes(status)) {
       return res.status(400).json({ success: false, message: "Invalid status" });
     }
 
@@ -2781,13 +2781,78 @@ const updateGraphicSubmissionStatus = async (req, res) => {
     if (!submission) return res.status(404).json({ success: false, message: "Submission not found" });
 
     submission.status = status;
-    if (spPoints !== undefined) {
+    if (spPoints !== undefined && spPoints !== null && spPoints !== "") {
       submission.spPoints = Number(spPoints);
     }
-    
+    if (feedback !== undefined) {
+      submission.feedback = feedback.trim();
+      submission.feedbackDate = new Date();
+    }
+
+    // Add alert notification for intern
+    if (feedback && feedback.trim()) {
+      if (!internship.alerts) internship.alerts = [];
+      internship.alerts.unshift({
+        message: `Admin feedback on "${submission.taskTitle || 'Graphic Submission'}": ${feedback.trim()}`,
+        type: status === 'Changes Requested' ? "warning" : "info",
+        date: new Date(),
+        isRead: false
+      });
+    }
+
     await user.save();
 
-    res.json({ success: true, message: "Submission status updated successfully" });
+    // Optionally send email specifically to this graphic designer if selected
+    let emailSent = false;
+    if (sendEmail && user.email && feedback && feedback.trim()) {
+      try {
+        const mailOptions = {
+          to: user.email,
+          subject: `Feedback & Updates on your Graphic Design Submission - Code-A-Nova`,
+          html: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <h2 style="color: #4f46e5; margin-top: 0;">🎨 Graphic Design Feedback</h2>
+              <p>Dear <strong>${user.name}</strong>,</p>
+              <p>The Admin team has reviewed your design submission for <strong>"${submission.taskTitle || 'Graphic Design Task'}"</strong>.</p>
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 6px;">
+                <h4 style="margin: 0 0 8px 0; color: #b45309; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">
+                  ${status === 'Changes Requested' ? '⚠️ Changes / Corrections Required:' : '📝 Review Feedback:'}
+                </h4>
+                <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${feedback.trim()}</p>
+              </div>
+
+              ${spPoints !== undefined && spPoints !== null && spPoints !== "" ? `
+                <p style="font-size: 14px; font-weight: bold; color: #059669;">
+                  ⭐ Synergy Points Awarded: ${spPoints}/10 SP
+                </p>
+              ` : ''}
+
+              <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
+                Please log in to your <a href="https://codeanova.com" style="color: #4f46e5; font-weight: bold;">Internship Dashboard</a> to view your submissions and submit updated artwork if changes were requested.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+              <p style="font-size: 12px; color: #94a3b8; margin: 0;">Code-A-Nova Admin Team</p>
+            </div>
+          `,
+          campaign: "Graphic Designer Feedback",
+          source: "Admin Portal",
+          recipientName: user.name
+        };
+        const mailRes = await mailService.sendEmail(mailOptions);
+        emailSent = mailRes?.success || false;
+      } catch (mailError) {
+        console.error("[Admin] Error sending graphic design feedback email:", mailError);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: emailSent 
+        ? "Submission updated & email sent to designer successfully!" 
+        : "Submission status updated successfully!",
+      emailSent 
+    });
   } catch (error) {
     console.error("[Admin] Error updating graphic submission status:", error);
     res.status(500).json({ success: false, message: "Server error updating submission status" });
