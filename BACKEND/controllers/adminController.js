@@ -2407,7 +2407,7 @@ const sendQuizCertificate = async (req, res) => {
     `;
 
     const mailOptions = {
-      from: `"Code-A-Nova" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: `"Code-A-Nova" <${process.env.SMTP_FROM || process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: email,
       subject: isWinner ? `Congratulations! You secured ${result} in ${quizName}` : `Your Certificate for ${quizName} - Code-A-Nova`,
       html: htmlTemplate,
