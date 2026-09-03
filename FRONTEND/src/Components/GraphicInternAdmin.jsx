@@ -51,6 +51,8 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
   const [resourceFile, setResourceFile] = useState(null);
   const [resourceTarget, setResourceTarget] = useState("All");
   const [resourceTargetUserId, setResourceTargetUserId] = useState("");
+  const [resourceRequestId, setResourceRequestId] = useState("");
+  const [resourceRequests, setResourceRequests] = useState([]);
   const [sharingResource, setSharingResource] = useState(false);
 
   // SP Grading Modal
@@ -67,6 +69,7 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     fetchInterns();
     fetchResources();
     fetchTasks();
+    fetchResourceRequests();
   }, []);
 
   const fetchInterns = async () => {
@@ -92,6 +95,17 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       setResources(response.data.resources || []);
     } catch (err) {
       console.error("Error fetching graphic resources:", err);
+    }
+  };
+
+  const fetchResourceRequests = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/admin/graphic-resource-requests`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setResourceRequests(response.data.requests || []);
+    } catch (err) {
+      console.error("Error fetching graphic resource requests:", err);
     }
   };
 
@@ -210,6 +224,9 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
     if (resourceTarget === "Specific") {
       formData.append("targetUserId", resourceTargetUserId);
     }
+    if (resourceRequestId) {
+      formData.append("requestId", resourceRequestId);
+    }
     if (resourceFile) {
       formData.append("file", resourceFile);
     }
@@ -218,13 +235,15 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       await axios.post(`${BACKEND_URL}/api/admin/graphic-resource`, formData, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
-      toast.success("Resource shared successfully!");
+      toast.success(resourceRequestId ? "Resource shared & request fulfilled!" : "Resource shared successfully!");
       setResourceTitle("");
       setResourceLink("");
       setResourceFile(null);
       setResourceTarget("All");
       setResourceTargetUserId("");
+      setResourceRequestId("");
       fetchResources();
+      fetchResourceRequests();
     } catch (err) {
       console.error(err);
       toast.error("Failed to share resource");
@@ -242,8 +261,23 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
       toast.success("Resource deleted successfully");
       fetchResources();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting resource:", err);
       toast.error("Failed to delete resource");
+    }
+  };
+
+  const handleRejectResourceRequest = async (id) => {
+    if (!window.confirm("Are you sure you want to decline this resource request?")) return;
+    try {
+      await axios.put(`${BACKEND_URL}/api/admin/graphic-resource-request/${id}`, 
+        { status: 'Rejected' },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      toast.success("Request marked as declined");
+      fetchResourceRequests();
+    } catch (err) {
+      console.error("Error updating resource request:", err);
+      toast.error("Failed to update request");
     }
   };
 
@@ -630,6 +664,109 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
               {resources.length} Resource{resources.length !== 1 ? 's' : ''}
             </span>
           </div>
+
+          {/* Incoming Intern Resource Requests */}
+          {resourceRequests.length > 0 && (
+            <div className="mb-6 bg-purple-50/70 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-purple-950 text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  Incoming Intern Resource Requests
+                  <span className="bg-purple-200 text-purple-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                    {resourceRequests.filter(r => r.status === 'Pending').length} Pending
+                  </span>
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-purple-100 rounded-lg text-xs">
+                  <thead className="bg-purple-100/50 text-purple-900 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="py-2 px-3 text-left">Date</th>
+                      <th className="py-2 px-3 text-left">Intern</th>
+                      <th className="py-2 px-3 text-left">Requested Item & Notes</th>
+                      <th className="py-2 px-3 text-left">Status</th>
+                      <th className="py-2 px-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-purple-100">
+                    {resourceRequests.map(req => (
+                      <tr key={req._id} className="hover:bg-purple-50/50">
+                        <td className="py-2.5 px-3 whitespace-nowrap text-slate-500">
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-slate-800">{req.userName}</div>
+                          {req.studentId && <div className="text-[10px] text-slate-400 font-mono">{req.studentId}</div>}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-purple-900">{req.title}</div>
+                          {req.description && <div className="text-slate-500 mt-0.5">{req.description}</div>}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            req.status === 'Fulfilled' 
+                              ? 'bg-emerald-100 text-emerald-800' 
+                              : req.status === 'Rejected'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {req.status === 'Fulfilled' ? '✅ Fulfilled' : req.status === 'Rejected' ? '❌ Declined' : '⏳ Pending'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
+                          {req.status === 'Pending' ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setResourceTitle(req.title);
+                                  setResourceTarget("Specific");
+                                  setResourceTargetUserId(req.userId);
+                                  setResourceRequestId(req._id);
+                                  toast.success(`Fulfilling request for ${req.userName}. Add link/file below and click Share.`);
+                                }}
+                                className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-[11px] shadow-2xs transition-all cursor-pointer"
+                              >
+                                Fulfill Request
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRejectResourceRequest(req._id)}
+                                className="px-2 py-1 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 rounded-lg font-medium text-[11px] transition-all cursor-pointer"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {resourceRequestId && (
+            <div className="bg-purple-100 border border-purple-300 text-purple-900 p-3 rounded-xl mb-4 flex items-center justify-between text-xs font-bold">
+              <span>🎯 Fulfilling Request for Intern: "{resourceTitle}"</span>
+              <button 
+                type="button"
+                onClick={() => {
+                  setResourceRequestId("");
+                  setResourceTitle("");
+                  setResourceTarget("All");
+                  setResourceTargetUserId("");
+                }}
+                className="text-purple-700 hover:text-purple-900 underline text-[11px] cursor-pointer"
+              >
+                Cancel Fulfillment
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleShareResource} className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

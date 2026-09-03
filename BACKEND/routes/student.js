@@ -25,8 +25,9 @@ router.get('/ambassador-stats', authMiddleware, requireRole('student', 'campus_a
 router.post('/track-activity', authMiddleware, trackUserActivity);
 router.post('/ambassador-apply', submitAmbassadorApplication);
 router.post('/ambassador-linkedin-post', authMiddleware, requireRole('campus_ambassador', 'admin'), saveAmbassadorLinkedInPost);
-const { submitGraphicDesign } = require('../controllers/studentController');
+const { submitGraphicDesign, requestGraphicResource } = require('../controllers/studentController');
 router.post('/submit-graphic', authMiddleware, requireRole('intern', 'admin'), upload.array('files', 10), submitGraphicDesign);
 router.delete('/graphic-submission/:submissionId', authMiddleware, requireRole('intern', 'admin'), deleteGraphicSubmission);
+router.post('/request-graphic-resource', authMiddleware, requireRole('intern', 'admin'), requestGraphicResource);
 
 module.exports = router;

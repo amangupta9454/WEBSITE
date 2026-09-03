@@ -827,6 +827,8 @@ const {
   uploadGraphicResource, 
   deleteGraphicResource, 
   getGraphicResources, 
+  getGraphicResourceRequests,
+  updateGraphicResourceRequestStatus,
   assignGraphicTask,
   getGraphicTasks,
   deleteGraphicTask,
@@ -842,6 +844,8 @@ router.post('/internship-reject', auth, verifyAdmin, rejectInternship);
 router.post("/graphic-resource", auth, verifyAdmin, upload.single('file'), uploadGraphicResource);
 router.delete("/graphic-resource/:id", auth, verifyAdmin, deleteGraphicResource);
 router.get("/graphic-resources", auth, verifyAdmin, getGraphicResources);
+router.get("/graphic-resource-requests", auth, verifyAdmin, getGraphicResourceRequests);
+router.put("/graphic-resource-request/:id", auth, verifyAdmin, updateGraphicResourceRequestStatus);
 
 router.post("/graphic-task", auth, verifyAdmin, upload.single('file'), assignGraphicTask);
 router.delete("/graphic-task/:id", auth, verifyAdmin, deleteGraphicTask);

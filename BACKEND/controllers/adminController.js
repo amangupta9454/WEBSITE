@@ -2798,7 +2798,7 @@ const GraphicResource = require('../models/GraphicResource');
 
 const uploadGraphicResource = async (req, res) => {
   try {
-    const { title, link, target, targetUserId } = req.body;
+    const { title, link, target, targetUserId, requestId } = req.body;
     let fileUrl = "";
 
     if (req.file) {
@@ -2827,6 +2827,16 @@ const uploadGraphicResource = async (req, res) => {
     });
 
     await newResource.save();
+
+    // If this resource was shared to fulfill an intern's request, update request status
+    if (requestId) {
+      const GraphicResourceRequest = require('../models/GraphicResourceRequest');
+      await GraphicResourceRequest.findByIdAndUpdate(requestId, { 
+        status: 'Fulfilled',
+        adminNote: `Fulfilled with resource: "${title}"`
+      });
+    }
+
     res.json({ success: true, message: "Resource added successfully", resource: newResource });
   } catch (error) {
     console.error("[Admin] Error uploading graphic resource:", error);
@@ -2852,6 +2862,34 @@ const getGraphicResources = async (req, res) => {
   } catch (error) {
     console.error("[Admin] Error fetching graphic resources:", error);
     res.status(500).json({ success: false, message: "Server error fetching resources" });
+  }
+};
+
+const GraphicResourceRequest = require('../models/GraphicResourceRequest');
+
+const getGraphicResourceRequests = async (req, res) => {
+  try {
+    const requests = await GraphicResourceRequest.find().sort({ createdAt: -1 });
+    res.json({ success: true, requests });
+  } catch (error) {
+    console.error("[Admin] Error fetching graphic resource requests:", error);
+    res.status(500).json({ success: false, message: "Server error fetching resource requests" });
+  }
+};
+
+const updateGraphicResourceRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNote } = req.body;
+    const updated = await GraphicResourceRequest.findByIdAndUpdate(
+      id,
+      { status, adminNote: adminNote || "" },
+      { new: true }
+    );
+    res.json({ success: true, message: "Request updated", request: updated });
+  } catch (error) {
+    console.error("[Admin] Error updating resource request:", error);
+    res.status(500).json({ success: false, message: "Server error updating request" });
   }
 };
 
@@ -3041,6 +3079,8 @@ module.exports = {
   uploadGraphicResource,
   deleteGraphicResource,
   getGraphicResources,
+  getGraphicResourceRequests,
+  updateGraphicResourceRequestStatus,
   assignGraphicTask,
   getGraphicTasks,
   deleteGraphicTask,

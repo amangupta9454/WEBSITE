@@ -1274,7 +1274,7 @@ const SummerInternDashboard = ({ internship, onRefresh }) => {
   );
 };
 
-const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, onRefresh }) => {
+const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, graphicResourceRequests, onRefresh }) => {
   const resStatus = getResignationStatus(internship);
   
   const [link, setLink] = useState("");
@@ -1284,7 +1284,39 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestTitle, setRequestTitle] = useState("");
+  const [requestDescription, setRequestDescription] = useState("");
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  const handleRequestResource = async (e) => {
+    e.preventDefault();
+    if (!requestTitle.trim()) {
+      toast.error("Please enter what resource you need.");
+      return;
+    }
+    setSubmittingRequest(true);
+    const token = localStorage.getItem("studentToken");
+    try {
+      await axios.post(`${BACKEND_URL}/api/student/request-graphic-resource`, {
+        title: requestTitle.trim(),
+        description: requestDescription.trim()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Resource requested! Admin will review and share it.");
+      setRequestTitle("");
+      setRequestDescription("");
+      setIsRequestModalOpen(false);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to submit resource request");
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
   
   
   const handleGraphicSubmit = async (e) => {
@@ -1447,32 +1479,47 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
       </div>
 
       {/* Collapsible Resources & Materials Dropdown */}
-      {graphicResources && graphicResources.length > 0 && (
-        <div className="bg-purple-50/60 border border-purple-200 rounded-2xl mb-8 overflow-hidden shadow-sm transition-all">
-          <button
-            type="button"
-            onClick={() => setIsResourcesOpen(!isResourcesOpen)}
-            className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-purple-100/50 transition-colors focus:outline-none cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <span className="p-2 bg-purple-600 text-white rounded-xl shadow-sm">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-              </span>
-              <div>
-                <h3 className="font-bold text-purple-950 text-sm sm:text-base">Resources & Materials</h3>
-                <p className="text-xs text-purple-800/80 mt-0.5">{graphicResources.length} shared resource{graphicResources.length !== 1 ? 's' : ''} available</p>
-              </div>
+      <div className="bg-purple-50/60 border border-purple-200 rounded-2xl mb-8 overflow-hidden shadow-sm transition-all">
+        <button
+          type="button"
+          onClick={() => setIsResourcesOpen(!isResourcesOpen)}
+          className="w-full p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 text-left hover:bg-purple-100/50 transition-colors focus:outline-none cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <span className="p-2 bg-purple-600 text-white rounded-xl shadow-sm">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+            </span>
+            <div>
+              <h3 className="font-bold text-purple-950 text-sm sm:text-base">Resources & Materials</h3>
+              <p className="text-xs text-purple-800/80 mt-0.5">
+                {(graphicResources || []).length} shared resource{(graphicResources || []).length !== 1 ? 's' : ''} available
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-purple-800 hidden sm:inline">
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsRequestModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 bg-white hover:bg-purple-50 active:scale-95 text-purple-700 border border-purple-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-purple-600" />
+              <span>Request Resource</span>
+            </button>
+            <div className="flex items-center gap-1.5 text-purple-800">
+              <span className="text-xs font-bold hidden sm:inline">
                 {isResourcesOpen ? "Hide" : "View"}
               </span>
-              <ChevronDown className={`w-5 h-5 text-purple-700 transition-transform duration-300 ${isResourcesOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isResourcesOpen ? 'rotate-180' : ''}`} />
             </div>
-          </button>
+          </div>
+        </button>
 
-          {isResourcesOpen && (
-            <div className="px-5 pb-5 pt-1 border-t border-purple-200/60 animate-fade-in">
+        {isResourcesOpen && (
+          <div className="px-5 pb-5 pt-1 border-t border-purple-200/60 animate-fade-in space-y-4">
+            {graphicResources && graphicResources.length > 0 ? (
               <ul className="space-y-3 pt-2">
                 {graphicResources.map(res => (
                   <li key={res._id} className="bg-white p-3.5 rounded-xl border border-purple-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1484,8 +1531,101 @@ const GraphicInternDashboard = ({ internship, graphicResources, graphicTasks, on
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <div className="py-4 text-center text-xs text-purple-800/80 bg-white rounded-xl border border-dashed border-purple-200">
+                No materials shared yet. Click <strong>"Request Resource"</strong> above if you need specific logos, brand guidelines, or assets.
+              </div>
+            )}
+
+            {graphicResourceRequests && graphicResourceRequests.length > 0 && (
+              <div className="pt-2 border-t border-purple-200/40">
+                <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider mb-2">
+                  Your Resource Requests ({graphicResourceRequests.length})
+                </h4>
+                <div className="space-y-2">
+                  {graphicResourceRequests.map(req => (
+                    <div key={req._id} className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-bold text-slate-800">{req.title}</div>
+                        {req.description && <div className="text-[11px] text-slate-500 mt-0.5">{req.description}</div>}
+                        <div className="text-[10px] text-slate-400 mt-1">Requested on {new Date(req.createdAt).toLocaleDateString()}</div>
+                      </div>
+                      <div>
+                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          req.status === 'Fulfilled' 
+                            ? 'bg-emerald-100 text-emerald-800' 
+                            : req.status === 'Rejected'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {req.status === 'Fulfilled' ? '✅ Fulfilled' : req.status === 'Rejected' ? '❌ Declined' : '⏳ Pending Admin'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Request Resource Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100">
+            <h3 className="text-xl font-black text-slate-800 mb-1.5 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Request a Resource
+            </h3>
+            <p className="text-xs text-slate-500 mb-5">
+              Let the admin know what design material, font, logo, or assets you need for your work.
+            </p>
+            <form onSubmit={handleRequestResource} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Resource Name / Title *
+                </label>
+                <input 
+                  type="text"
+                  required
+                  autoFocus
+                  value={requestTitle}
+                  onChange={e => setRequestTitle(e.target.value)}
+                  placeholder="e.g. Official Vector Logo, Montserrat Font Pack, Brand Kit"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-slate-800 font-medium placeholder:font-normal"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Details / Notes (Optional)
+                </label>
+                <textarea 
+                  rows="3"
+                  value={requestDescription}
+                  onChange={e => setRequestDescription(e.target.value)}
+                  placeholder="Why do you need this or specific file formats required (e.g. SVG/PNG, TTF font)..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-slate-800 font-medium placeholder:font-normal"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(false)}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRequest}
+                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-md transition-all disabled:opacity-50"
+                >
+                  {submittingRequest ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -2135,6 +2275,7 @@ const StudentDashboard = () => {
                           internship={internship}
                           graphicResources={data.graphicResources}
                           graphicTasks={data.graphicTasks}
+                          graphicResourceRequests={data.graphicResourceRequests}
                           onRefresh={fetchDashboard}
                         />
                       ) : mode === "Summer/Winter Intern" ? (

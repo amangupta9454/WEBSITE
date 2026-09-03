@@ -230,7 +230,8 @@ const getDashboardInfo = async (req, res) => {
 
     const GraphicResource = require('../models/GraphicResource');
     const GraphicTask = require('../models/GraphicTask');
-    const [graphicResources, graphicTasks] = await Promise.all([
+    const GraphicResourceRequest = require('../models/GraphicResourceRequest');
+    const [graphicResources, graphicTasks, graphicResourceRequests] = await Promise.all([
       GraphicResource.find({
         $or: [
           { target: 'All' },
@@ -242,7 +243,8 @@ const getDashboardInfo = async (req, res) => {
           { target: 'All' },
           { targetUserId: user._id }
         ]
-      }).sort({ isUrgent: -1, createdAt: -1 })
+      }).sort({ isUrgent: -1, createdAt: -1 }),
+      GraphicResourceRequest.find({ userId: user._id }).sort({ createdAt: -1 })
     ]);
 
     res.json({
@@ -263,6 +265,7 @@ const getDashboardInfo = async (req, res) => {
       notifications: activeNotifications,
       graphicResources,
       graphicTasks,
+      graphicResourceRequests,
     });
   } catch (error) {
     console.error("[Backend] Get dashboard info error:", error);
@@ -1170,6 +1173,44 @@ const deleteGraphicSubmission = async (req, res) => {
   }
 };
 
+const requestGraphicResource = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title, description } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: "Resource name/title is required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const internObj = user.internships?.find(
+      i => (i.domain === 'Graphic Designer' || i.domain === 'Graphic Design') && !i.rejected?.isRejected
+    );
+
+    const GraphicResourceRequest = require('../models/GraphicResourceRequest');
+    const newRequest = new GraphicResourceRequest({
+      userId: user._id,
+      userName: user.name,
+      studentId: internObj ? internObj.studentId : "",
+      title: title.trim(),
+      description: (description || "").trim(),
+      status: "Pending"
+    });
+
+    await newRequest.save();
+    res.json({ 
+      success: true, 
+      message: "Resource request submitted to Admin successfully!", 
+      request: newRequest 
+    });
+  } catch (error) {
+    console.error("[Student] Error requesting graphic resource:", error);
+    res.status(500).json({ success: false, message: "Server error submitting request" });
+  }
+};
+
 module.exports = {
   getDashboardInfo,
   updateProfile,
@@ -1184,5 +1225,6 @@ module.exports = {
   getMyCertificates,
   getMyQuizzes,
   submitGraphicDesign,
-  deleteGraphicSubmission
+  deleteGraphicSubmission,
+  requestGraphicResource
 };
