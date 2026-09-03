@@ -7,11 +7,12 @@ const { mailConfig } = require('../config/mailConfig');
 // Helper to send email with Hostinger SMTP -> Resend fallback
 const sendMailWithFallback = async ({ to, subject, html, replyTo }) => {
   try {
-    const primaryRes = await mailService.sendCustomEmail({
+    const primaryRes = await mailService.sendEmail({
       to,
       subject,
       html,
-      replyTo,
+      from: '"Code-A-Nova" <manager@code-a-nova.online>',
+      replyTo: replyTo || "manager@code-a-nova.online",
     });
     if (primaryRes && primaryRes.success) {
       return true;
@@ -243,7 +244,7 @@ const sendInquiryEmailReply = async (req, res) => {
           <p style="color: #64748b; font-size: 12px; margin-bottom: 0;">
             Warm regards,<br />
             <strong>The Code-A-Nova Team</strong><br />
-            Website: <a href="https://code-a-nova.online" style="color: #2563eb; text-decoration: none;">code-a-nova.online</a> • Support: <a href="mailto:codeanova26@gmail.com" style="color: #2563eb; text-decoration: none;">codeanova26@gmail.com</a>
+            Website: <a href="https://code-a-nova.online" style="color: #2563eb; text-decoration: none;">code-a-nova.online</a> • Support: <a href="mailto:manager@code-a-nova.online" style="color: #2563eb; text-decoration: none;">manager@code-a-nova.online</a>
           </p>
         </div>
       </div>
@@ -254,14 +255,14 @@ const sendInquiryEmailReply = async (req, res) => {
       to: inquiry.email,
       subject: emailSubject,
       html: formattedHtml,
-      replyTo: "codeanova26@gmail.com",
+      replyTo: "manager@code-a-nova.online",
     });
 
     // 2. Append to this inquiry's dedicated message thread
     inquiry.messages.push({
       sender: 'admin',
       senderName: req.user?.name || 'Code-A-Nova Admin',
-      senderEmail: 'hr@code-a-nova.online',
+      senderEmail: 'manager@code-a-nova.online',
       subject: emailSubject,
       body: body.trim(),
       sentAt: new Date(),
@@ -426,7 +427,7 @@ const logManualMessage = async (req, res) => {
     inquiry.messages.push({
       sender,
       senderName: sender === 'client' ? inquiry.name : (req.user?.name || 'Admin'),
-      senderEmail: sender === 'client' ? inquiry.email : 'hr@code-a-nova.online',
+      senderEmail: sender === 'client' ? inquiry.email : 'manager@code-a-nova.online',
       subject: `Logged ${channel.toUpperCase()} Conversation`,
       body: body.trim(),
       sentAt: new Date(),

@@ -7,8 +7,9 @@ require('dotenv').config();
 
 const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
 const smtpPort = parseInt(process.env.SMTP_PORT, 10) || 465;
-const smtpUser = process.env.SMTP_USER || 'hr@code-a-nova.online';
-const formattedSender = process.env.SMTP_USER ? `"Code-A-Nova" <${process.env.SMTP_USER}>` : '"Code-A-Nova" <hr@code-a-nova.online>';
+const smtpUser = process.env.SMTP_USER || 'manager@code-a-nova.online';
+const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'manager@code-a-nova.online';
+const formattedSender = `"Code-A-Nova" <${senderEmail}>`;
 const smtpPass = process.env.SMTP_PASS || '';
 
 const mailConfig = {

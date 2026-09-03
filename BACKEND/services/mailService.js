@@ -101,8 +101,8 @@ class MailService {
     to,
     subject,
     html,
-    from = `"Code-A-Nova" <${process.env.SMTP_USER}>`,
-    replyTo = process.env.SMTP_USER,
+    from = process.env.SMTP_FROM ? `"Code-A-Nova" <${process.env.SMTP_FROM}>` : `"Code-A-Nova" <${process.env.SMTP_USER || 'manager@code-a-nova.online'}>`,
+    replyTo = process.env.SMTP_REPLY_TO || process.env.SMTP_FROM || process.env.SMTP_USER || 'manager@code-a-nova.online',
     attachments,
     cc,
     bcc,
@@ -299,6 +299,13 @@ class MailService {
       source: "Admin Resend",
       recipientName: log.recipientName,
     });
+  }
+
+  /**
+   * Alias method for backward compatibility
+   */
+  async sendCustomEmail(options) {
+    return this.sendEmail(options);
   }
 }
 
