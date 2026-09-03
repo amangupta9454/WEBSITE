@@ -126,9 +126,9 @@ const values = [
 const milestones = [
   {
     period: "Jan 2026",
-    badge: "Foundation",
-    title: "Genesis & Company Inception",
-    desc: "Code-A-Nova was officially established with a mission to deliver high-performance enterprise software while bridging the academia-industry gap through practical, hands-on developer training."
+    badge: "MSME Registered",
+    title: "Inception & Official MSME Registration",
+    desc: "Code-A-Nova was officially incorporated and recognized as an MSME registered enterprise, founded with a dual mission to deliver high-performance software while bridging the industry-academia gap."
   },
   {
     period: "Mar 2026",
@@ -145,8 +145,8 @@ const milestones = [
   {
     period: "Jul 2026",
     badge: "Scale",
-    title: "MSME Recognition & National Campus Network",
-    desc: "Formally registered under the MSME initiative. Scaled our digital community to 10,000+ participating students, verified certificate holders, and active campus ambassadors across India."
+    title: "National Campus Network & Community Expansion",
+    desc: "Expanded our student ecosystem across universities nationwide, scaling our community to 10,000+ participating students, certified graduates, and active campus ambassadors."
   },
   {
     period: "Sep 2026 & Beyond",
