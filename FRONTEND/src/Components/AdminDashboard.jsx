@@ -150,8 +150,6 @@ const AdminDashboard = () => {
     };
 
     fetchInquiryBadge();
-    const interval = setInterval(fetchInquiryBadge, 20000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

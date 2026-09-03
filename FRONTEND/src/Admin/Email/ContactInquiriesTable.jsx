@@ -149,10 +149,6 @@ export default function ContactInquiriesTable() {
 
   useEffect(() => {
     fetchInquiries();
-    const interval = setInterval(() => {
-      fetchInquiries();
-    }, 20000);
-    return () => clearInterval(interval);
   }, [statusFilter]);
 
   const handleSearchSubmit = (e) => {
