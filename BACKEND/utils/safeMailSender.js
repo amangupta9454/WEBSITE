@@ -32,7 +32,10 @@ async function sendSafeEmail(transporter, mailOptions, campaign = 'General', sou
     }
   }
 
-  const senderEmail = mailOptions.from || (transporter.options.auth ? transporter.options.auth.user : 'Unknown');
+  const senderEmail = (mailOptions.from && !mailOptions.from.includes('hr@code-a-nova.online'))
+    ? mailOptions.from
+    : '"Code-A-Nova" <manager@code-a-nova.online>';
+  mailOptions.from = senderEmail;
 
   // 2. Attempt to send email
   try {

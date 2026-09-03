@@ -120,25 +120,36 @@ class MailService {
         throw new Error("SMTP transporter not initialized.");
       }
 
-      const mailOptions = {
-        from,
-        to,
-        subject,
-        // Plain text fallback
-        text:
-          text ||
-          html
-            .replace(/<style[\s\S]*?<\/style>/gi, "")
-            .replace(/<script[\s\S]*?<\/script>/gi, "")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim(),
-        html,
-        replyTo,
-        ...(cc && { cc }),
-        ...(bcc && { bcc }),
-        ...(attachments && { attachments }),
-      };
+    // Strictly enforce manager@code-a-nova.online as outgoing sender (never hr@code-a-nova.online)
+    let effectiveFrom = from;
+    if (!effectiveFrom || effectiveFrom.includes('hr@code-a-nova.online')) {
+      effectiveFrom = process.env.SMTP_FROM ? `"Code-A-Nova" <${process.env.SMTP_FROM}>` : '"Code-A-Nova" <manager@code-a-nova.online>';
+    }
+
+    let effectiveReplyTo = replyTo;
+    if (!effectiveReplyTo || effectiveReplyTo.includes('hr@code-a-nova.online')) {
+      effectiveReplyTo = process.env.SMTP_REPLY_TO || process.env.SMTP_FROM || 'manager@code-a-nova.online';
+    }
+
+    const mailOptions = {
+      from: effectiveFrom,
+      to,
+      subject,
+      // Plain text fallback
+      text:
+        text ||
+        html
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim(),
+      html,
+      replyTo: effectiveReplyTo,
+      ...(cc && { cc }),
+      ...(bcc && { bcc }),
+      ...(attachments && { attachments }),
+    };
 
       const finalCampaign = campaign || 'General';
       const finalSource = source || 'Google Apps Script';
@@ -202,8 +213,8 @@ class MailService {
             to,
             subject,
             html,
-            from,
-            replyTo,
+            from: effectiveFrom,
+            replyTo: effectiveReplyTo,
           });
           if (resendResult && resendResult.success) {
             const messageId = resendResult.data?.id || `resend_${Date.now()}`;
@@ -212,7 +223,7 @@ class MailService {
             // Log to centralized Email Center
             try {
               await emailLogger.logEmail({
-                senderEmail: from || 'manager@code-a-nova.online',
+                senderEmail: 'manager@code-a-nova.online',
                 recipientEmail: to,
                 recipientName: recipientName || '',
                 subject,
