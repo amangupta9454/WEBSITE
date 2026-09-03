@@ -25,6 +25,9 @@ import {
   ChevronDown,
   AlertTriangle,
   X,
+  CheckCircle,
+  ExternalLink,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -395,22 +398,40 @@ const ReferralAdmin = () => {
 
   const handleDownloadReport = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Ambassador Name,Ambassador Code,Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
+    csvContent += "Ambassador Name,Ambassador Code,College,ID Card Post Link,Student Name,Student Email,Phone Number,Applied Features,Joined Date\n";
     
     processedAmbassadors.forEach(amb => {
-      amb.filteredReferredUsers.forEach(u => {
-        const joinedDate = u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+      const postLink = amb.ambassadorLinkedInPost || "Not Posted";
+      if (!amb.filteredReferredUsers || amb.filteredReferredUsers.length === 0) {
         const row = [
-          `"${amb.name}"`,
-          `"${amb.code}"`,
-          `"${u.name}"`,
-          `"${u.email}"`,
-          `"${u.mobile || "N/A"}"`,
-          `"${u.appliedFeatures || "N/A"}"`,
-          `"${joinedDate}"`
+          `"${amb.name || "N/A"}"`,
+          `"${amb.ambassadorCode || amb.code || "N/A"}"`,
+          `"${amb.ambassadorCollege || "N/A"}"`,
+          `"${postLink}"`,
+          `"N/A"`,
+          `"N/A"`,
+          `"N/A"`,
+          `"No signups yet"`,
+          `"N/A"`
         ];
         csvContent += row.join(",") + "\n";
-      });
+      } else {
+        amb.filteredReferredUsers.forEach(u => {
+          const joinedDate = u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A";
+          const row = [
+            `"${amb.name || "N/A"}"`,
+            `"${amb.ambassadorCode || amb.code || "N/A"}"`,
+            `"${amb.ambassadorCollege || "N/A"}"`,
+            `"${postLink}"`,
+            `"${u.name || "N/A"}"`,
+            `"${u.email || "N/A"}"`,
+            `"${u.mobile || "N/A"}"`,
+            `"${u.appliedFeatures || "N/A"}"`,
+            `"${joinedDate}"`
+          ];
+          csvContent += row.join(",") + "\n";
+        });
+      }
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -519,15 +540,27 @@ const ReferralAdmin = () => {
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Campus Ambassadors</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Ambassadors</span>
             <div className="text-3xl font-black text-purple-600 mt-1">{activeAmbassadorsCount}</div>
           </div>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
             <GraduationCap className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">ID Cards Posted</span>
+            <div className="text-3xl font-black text-blue-600 mt-1">
+              {processedAmbassadors.filter(a => !!a.ambassadorLinkedInPost).length}
+            </div>
+          </div>
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+            <CheckCircle className="w-6 h-6" />
           </div>
         </div>
 
@@ -725,6 +758,7 @@ const ReferralAdmin = () => {
                     <th className="py-3 px-4">Ambassador Info</th>
                     <th className="py-3 px-4">College</th>
                     <th className="py-3 px-4">Ambassador Code</th>
+                    <th className="py-3 px-4">ID Card Post Link</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Clicks</th>
                     <th className="py-3 px-4">Conversions / Signups</th>
@@ -734,7 +768,7 @@ const ReferralAdmin = () => {
                 <tbody className="divide-y divide-slate-100">
                   {processedAmbassadors.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                      <td colSpan={8} className="py-8 text-center text-slate-400 italic">
                         No Campus Ambassadors assigned yet. Use the form above to designate a student as an Ambassador!
                       </td>
                     </tr>
@@ -776,6 +810,33 @@ const ReferralAdmin = () => {
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
                               </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              {amb.ambassadorLinkedInPost ? (
+                                <div className="flex flex-col gap-1 items-start">
+                                  <a
+                                    href={amb.ambassadorLinkedInPost}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-all shadow-2xs group"
+                                    title={amb.ambassadorLinkedInPost}
+                                  >
+                                    <svg className="w-3.5 h-3.5 fill-current text-[#0A66C2] shrink-0" viewBox="0 0 24 24">
+                                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                    </svg>
+                                    <span className="truncate max-w-[120px]">View Post</span>
+                                    <ExternalLink className="w-3 h-3 text-blue-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                                  </a>
+                                  <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3 text-emerald-500 inline shrink-0" /> Posted
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-xs font-medium">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" /> Not Posted
+                                </span>
+                              )}
                             </td>
 
                             <td className="py-3.5 px-4">
@@ -835,7 +896,7 @@ const ReferralAdmin = () => {
                           {/* Expanded Referred Users Sub-Table */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={7} className="bg-purple-50/30 p-4 border-y border-purple-100">
+                              <td colSpan={8} className="bg-purple-50/30 p-4 border-y border-purple-100">
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-center">
                                     <h4 className="font-bold text-slate-900 text-xs flex items-center gap-2">

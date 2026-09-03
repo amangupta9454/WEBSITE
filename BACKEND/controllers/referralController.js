@@ -424,6 +424,7 @@ exports.getAmbassadors = async (req, res) => {
         isActive: refData ? refData.isActive !== false : true,
         clicks: refData.clicks || 0,
         usesCount: referredUsers.length,
+        ambassadorLinkedInPost: amb.ambassadorLinkedInPost || "",
         referredUsers: referredUsers.map((u) => {
           let appliedLabel = u.referredFeature;
           if (!appliedLabel) {
@@ -707,7 +708,8 @@ exports.saveAmbassadorLinkedInPost = async (req, res) => {
       return res.status(400).json({ success: false, message: "LinkedIn URL is required" });
     }
 
-    const user = await User.findById(req.user._id);
+    const userId = req.user?.id || req.user?._id || req.user?.userId || req.user?.unifiedUserId;
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -716,10 +718,10 @@ exports.saveAmbassadorLinkedInPost = async (req, res) => {
       return res.status(403).json({ success: false, message: "Only ambassadors can save LinkedIn post" });
     }
 
-    user.ambassadorLinkedInPost = linkedInUrl;
+    user.ambassadorLinkedInPost = linkedInUrl.trim();
     await user.save();
 
-    res.json({ success: true, message: "LinkedIn post saved successfully" });
+    res.json({ success: true, message: "LinkedIn post saved successfully", ambassadorLinkedInPost: user.ambassadorLinkedInPost });
   } catch (err) {
     console.error("Error saving LinkedIn post:", err);
     res.status(500).json({ success: false, message: "Server error" });

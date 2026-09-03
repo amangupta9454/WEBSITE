@@ -202,6 +202,23 @@ const AmbassadorTab = () => {
           >
             <Download className="w-3.5 h-3.5" /> Download ID Card
           </button>
+          {stats?.ambassadorLinkedInPost ? (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 w-full md:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all border border-blue-500/50 shrink-0 shadow-sm"
+              title="View or update your LinkedIn ID Card post link"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Post Link Added (Update)
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 w-full md:w-auto px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-all border border-amber-400/50 shrink-0 shadow-sm animate-pulse"
+              title="Post your ID card on LinkedIn and submit link"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Submit Post Link
+            </button>
+          )}
           <button
             onClick={fetchAmbassadorStats}
             className="flex items-center justify-center gap-1.5 w-full md:w-auto px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-all border border-white/10 shrink-0"
