@@ -17,6 +17,11 @@ const contactInquirySchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   },
+  phone: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   subject: {
     type: String,
     required: true,
@@ -32,8 +37,23 @@ const contactInquirySchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['New', 'In Review', 'Resolved', 'Closed'],
+    enum: ['New', 'Contacted', 'In Progress', 'In Review', 'Resolved', 'Closed'],
     default: 'New',
+    index: true,
+  },
+  adminNotes: {
+    type: String,
+    default: '',
+  },
+  contactedAt: {
+    type: Date,
+  },
+  contactedBy: {
+    type: String,
+    default: '',
+  },
+  resolvedAt: {
+    type: Date,
   },
   emailSentToAdmin: {
     type: Boolean,
@@ -46,6 +66,7 @@ const contactInquirySchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+    index: true,
   },
 });
 

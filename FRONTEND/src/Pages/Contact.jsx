@@ -126,6 +126,7 @@ ${formData.description.trim()}
     const payload = {
       name: formData.name.trim(),
       email: formData.email.trim(),
+      phone: formData.phone ? formData.phone.trim() : "",
       subject: formData.subject.trim() || `${INQUIRY_TYPES.find(t => t.id === selectedType)?.label || "General"} Inquiry from ${formData.name}`,
       issueType: selectedType === "project" 
         ? "New Project Proposal" 

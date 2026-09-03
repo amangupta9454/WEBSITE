@@ -2294,7 +2294,7 @@ const AdminDashboard = () => {
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <Mail className="w-4 h-4" /> Email Center
+                <Mail className="w-4 h-4" /> Email & Contact Center
               </button>
             </div>
             <div className="flex items-center gap-3">

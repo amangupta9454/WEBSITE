@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, ListFilter, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { BarChart3, ListFilter, ShieldCheck, CheckCircle2, AlertCircle, MessageSquareQuote } from "lucide-react";
 import EmailDashboard from "./EmailDashboard";
 import EmailLogsTable from "./EmailLogsTable";
+import ContactInquiriesTable from "./ContactInquiriesTable";
 
 export default function EmailCenter() {
-  const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard" | "logs"
+  const [activeTab, setActiveTab] = useState("contact-forms"); // "contact-forms" | "dashboard" | "logs"
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -15,7 +16,7 @@ export default function EmailCenter() {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/email/logs/analytics`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5006"}/api/email/logs/analytics`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -45,7 +46,7 @@ export default function EmailCenter() {
     setResendingId(logId);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/email/resend/${logId}`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5006"}/api/email/resend/${logId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -88,16 +89,22 @@ export default function EmailCenter() {
 
       {/* Sub-Module Tab Navigation Bar */}
       <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center bg-slate-100/80 rounded-xl p-1 gap-1">
+        <div className="flex items-center bg-slate-100/80 rounded-xl p-1 gap-1 flex-wrap">
+          <button
+            onClick={() => setActiveTab("contact-forms")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all cursor-pointer ${activeTab === "contact-forms" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+          >
+            <MessageSquareQuote className="w-4 h-4 text-blue-600" /> Contact Inquiries / Forms
+          </button>
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all ${activeTab === "dashboard" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all cursor-pointer ${activeTab === "dashboard" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
           >
             <BarChart3 className="w-4 h-4 text-indigo-600" /> Email Dashboard & KPIs
           </button>
           <button
             onClick={() => setActiveTab("logs")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all ${activeTab === "logs" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-black transition-all cursor-pointer ${activeTab === "logs" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
           >
             <ListFilter className="w-4 h-4 text-emerald-600" /> Historical Audit Logs
           </button>
@@ -105,11 +112,15 @@ export default function EmailCenter() {
 
         <div className="px-4 py-2 flex items-center gap-2 text-xs font-bold text-slate-500">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Single Source of Truth • Active Hostinger SMTP Integration</span>
+          <span>Admin Command Center • Instant Submissions Sync</span>
         </div>
       </div>
 
       {/* Render selected module tab */}
+      {activeTab === "contact-forms" && (
+        <ContactInquiriesTable />
+      )}
+
       {activeTab === "dashboard" && (
         <EmailDashboard
           analytics={analytics}
