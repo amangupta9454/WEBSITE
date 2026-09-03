@@ -1037,15 +1037,6 @@ const GraphicInternAdmin = ({ BACKEND_URL, authToken }) => {
                         Share Resource
                       </button>
 
-                      {/* Reject Application */}
-                      <button
-                        onClick={() => handleRejectInternship(intern.userId, intern.internshipId)}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
-                      >
-                        <UserX className="w-3.5 h-3.5" />
-                        Reject
-                      </button>
-
                       {/* Stipend Controller */}
                       <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
                         <label className="text-xs font-bold text-slate-600">Stipend:</label>
