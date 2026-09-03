@@ -168,18 +168,21 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
   };
 
   const handleUpdateLink = async (projectId, assignmentId) => {
-    const link = updateLinkInputs[assignmentId];
+    const editData = updateLinkInputs[assignmentId];
+    const link = typeof editData === "string" ? editData : editData?.link;
+    const name = typeof editData === "object" ? editData?.name : "";
+
     const isFigma = isFigmaDomain(internship?.domain);
     if (!link || (!isFigma && !link.startsWith("https://github.com/"))) {
       toast.error(isFigma ? "Please enter a valid project/design link." : "Please enter a valid GitHub repository link.");
       return;
     }
-    if (!window.confirm("Updating the link will deduct 5 SP as penalty and re-evaluate your project. Are you sure?")) return;
+    if (!window.confirm("Updating the project details will deduct 5 SP as penalty and re-evaluate your project with AI. Are you sure?")) return;
     
     try {
       setUpdatingLinkProjectId(assignmentId);
       const token = localStorage.getItem("studentToken");
-      await axios.post(
+      const res = await axios.post(
         `${BACKEND_URL}/api/student/update-project-link`,
         {
           internshipId: internship._id,
@@ -187,16 +190,19 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
           projectId: projectId,
           assignmentId: assignmentId,
           newRepoLink: link,
+          newProjectName: name,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      toast.success("Project link updated and evaluated successfully!");
-      setUpdateLinkInputs({...updateLinkInputs, [assignmentId]: ''});
+      toast.success(res.data?.message || "Project link and details updated and evaluated successfully!");
+      const copy = { ...updateLinkInputs };
+      delete copy[assignmentId];
+      setUpdateLinkInputs(copy);
       if (onRefresh) onRefresh();
     } catch (err) {
-      toast.error("Failed to update project link.");
+      toast.error(err.response?.data?.message || "Failed to update project details.");
     } finally {
       setUpdatingLinkProjectId(null);
     }
@@ -580,29 +586,86 @@ const NormalInternDashboard = ({ internship, onRefresh, v2Projects = [] }) => {
                           
                           <div className="mt-3 border-t border-slate-200 pt-3">
                             <button 
-                              onClick={() => setUpdateLinkInputs({...updateLinkInputs, [assignmentData._id]: assignmentData.github})}
-                              className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors mb-2"
+                              onClick={() => {
+                                const aId = assignmentData._id || assignmentData.id;
+                                setUpdateLinkInputs({
+                                  ...updateLinkInputs,
+                                  [aId]: {
+                                    link: assignmentData.github || "",
+                                    name: assignmentData.projectName || ""
+                                  }
+                                });
+                              }}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-800 underline transition-colors mb-2 cursor-pointer"
                             >
-                              Update Project Link (Warning: -5 SP Penalty)
+                              Update Project Link & Name (Warning: -5 SP Penalty)
                             </button>
                             
-                            {updateLinkInputs[assignmentData._id] !== undefined && (
-                               <div className="flex flex-col sm:flex-row gap-2 w-full mt-1">
-                                 <input
-                                   type="url"
-                                   placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any link" : "https://github.com/..."}
-                                   value={updateLinkInputs[assignmentData._id]}
-                                   onChange={(e) => setUpdateLinkInputs({ ...updateLinkInputs, [assignmentData._id]: e.target.value })}
-                                   className="flex-1 px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full"
-                                 />
-                                 <button
-                                   onClick={() => handleUpdateLink(monthSubmission._id, assignmentData._id)}
-                                   disabled={updatingLinkProjectId === assignmentData._id}
-                                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
-                                 >
-                                   {updatingLinkProjectId === assignmentData._id ? "Updating..." : "Update"}
-                                 </button>
-                               </div>
+                            {updateLinkInputs[assignmentData._id || assignmentData.id] !== undefined && (
+                              <div className="flex flex-col gap-2.5 w-full mt-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">Project Name / Title</label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. MediScan - Medical Image Classification System"
+                                    value={updateLinkInputs[assignmentData._id || assignmentData.id]?.name ?? assignmentData.projectName}
+                                    onChange={(e) => {
+                                      const aId = assignmentData._id || assignmentData.id;
+                                      setUpdateLinkInputs({
+                                        ...updateLinkInputs,
+                                        [aId]: {
+                                          ...(updateLinkInputs[aId] || {}),
+                                          name: e.target.value
+                                        }
+                                      });
+                                    }}
+                                    className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                                    {isFigmaDomain(internship?.domain) ? "Design / Project Link" : "GitHub Repository Link"}
+                                  </label>
+                                  <input
+                                    type="url"
+                                    placeholder={isFigmaDomain(internship?.domain) ? "https://www.figma.com/... or any link" : "https://github.com/..."}
+                                    value={updateLinkInputs[assignmentData._id || assignmentData.id]?.link ?? assignmentData.github}
+                                    onChange={(e) => {
+                                      const aId = assignmentData._id || assignmentData.id;
+                                      setUpdateLinkInputs({
+                                        ...updateLinkInputs,
+                                        [aId]: {
+                                          ...(updateLinkInputs[aId] || {}),
+                                          link: e.target.value
+                                        }
+                                      });
+                                    }}
+                                    className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const aId = assignmentData._id || assignmentData.id;
+                                      const copy = { ...updateLinkInputs };
+                                      delete copy[aId];
+                                      setUpdateLinkInputs(copy);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateLink(monthSubmission?._id || monthSubmission?.id, assignmentData._id || assignmentData.id)}
+                                    disabled={updatingLinkProjectId === (assignmentData._id || assignmentData.id)}
+                                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 shrink-0 cursor-pointer shadow-sm"
+                                  >
+                                    {updatingLinkProjectId === (assignmentData._id || assignmentData.id) ? "Updating & Evaluating..." : "Save & Re-evaluate"}
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>

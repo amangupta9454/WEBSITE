@@ -192,6 +192,7 @@ const getDashboardInfo = async (req, res) => {
         daysElapsed,
         globalRank,
         submissions: submissions.map((sub) => ({
+          _id: sub._id,
           id: sub._id,
           month: sub.month,
           submittedAt: sub.submittedAt,
@@ -694,9 +695,21 @@ const updateProjectLink = async (req, res) => {
       await user.save();
 
     } else {
-      const submission = await ProjectSubmission.findById(projectId);
+      let submission = null;
+      if (projectId) {
+        submission = await ProjectSubmission.findById(projectId).catch(() => null);
+      }
+      if (!submission && assignmentId) {
+        submission = await ProjectSubmission.findOne({ 'assignments._id': assignmentId }).catch(() => null);
+      }
+      if (!submission && targetInternship?.studentId) {
+        submission = await ProjectSubmission.findOne({
+          studentId: targetInternship.studentId,
+          'assignments._id': assignmentId
+        }).catch(() => null);
+      }
       if (!submission) {
-        return res.status(404).json({ message: 'Submission not found' });
+        return res.status(404).json({ message: 'Submission record not found' });
       }
 
       // Verify the submission belongs to this user by matching their email or studentId
@@ -714,7 +727,12 @@ const updateProjectLink = async (req, res) => {
       const assignmentIndex = submission.assignments.findIndex(a => a._id.toString() === assignmentId);
       if (assignmentIndex === -1) return res.status(404).json({ message: 'Assignment not found' });
 
-      projectName = submission.assignments[assignmentIndex].projectName;
+      if (req.body.newProjectName && req.body.newProjectName.trim()) {
+        projectName = req.body.newProjectName.trim();
+        submission.assignments[assignmentIndex].projectName = projectName;
+      } else {
+        projectName = submission.assignments[assignmentIndex].projectName;
+      }
       previousSP = submission.assignments[assignmentIndex].spAwarded || 0;
       submission.assignments[assignmentIndex].github = newRepoLink;
 
