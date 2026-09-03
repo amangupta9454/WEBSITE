@@ -21,6 +21,10 @@ router.get('/logs/:id', auth, verifyAdmin, emailLogController.getLogById);
 // POST /api/email/resend/:id
 router.post('/resend/:id', auth, verifyAdmin, emailResendLimiter, emailLogController.resendEmail);
 
+// Reset Circuit Breaker
+// POST /api/email/circuit-breaker/reset
+router.post('/circuit-breaker/reset', auth, verifyAdmin, emailLogController.resetCircuitBreaker);
+
 // Delete historical record
 // DELETE /api/email/logs/:id
 router.delete('/logs/:id', auth, verifyAdmin, emailLogController.deleteLog);

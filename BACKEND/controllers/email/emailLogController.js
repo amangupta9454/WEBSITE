@@ -275,3 +275,19 @@ exports.deleteLog = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error deleting email log.' });
   }
 };
+
+// 6. Reset Circuit Breaker
+exports.resetCircuitBreaker = async (req, res) => {
+  try {
+    const CircuitBreaker = require('../../models/email/CircuitBreaker');
+    await CircuitBreaker.updateOne(
+      { serviceName: 'email' },
+      { $set: { isTripped: false, consecutiveFailures: 0, trippedAt: null } },
+      { upsert: true }
+    );
+    return res.status(200).json({ success: true, message: 'Circuit breaker has been successfully reset.' });
+  } catch (error) {
+    console.error('[EmailLogController] Error resetting circuit breaker:', error);
+    return res.status(500).json({ success: false, message: 'Failed to reset circuit breaker.' });
+  }
+};

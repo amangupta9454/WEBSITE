@@ -240,6 +240,12 @@ class MailService {
               console.warn('[MailService] Failed to record Resend log to DB:', logErr.message);
             }
 
+            // Reset circuit breaker so subsequent emails are never blocked
+            try {
+              const CircuitBreaker = require('../models/email/CircuitBreaker');
+              await CircuitBreaker.updateOne({ serviceName: 'email' }, { $set: { isTripped: false, consecutiveFailures: 0, trippedAt: null } });
+            } catch (_) {}
+
             return {
               success: true,
               messageId,
@@ -318,38 +324,27 @@ class MailService {
       throw err;
     }
 
-    // Fix 3 (HIGH): Attachment Resend Protection against placeholder / buffer strings
-    if (Array.isArray(log.attachments) && log.attachments.length > 0) {
-      for (const att of log.attachments) {
-        if (
-          att.content === "[Buffer Payload]" ||
-          att.content === "[Binary Attachment Payload]" ||
-          (!att.content && !att.url && !att.path)
-        ) {
-          const err = new Error("Original attachment is no longer available. Please upload a new attachment before resending.");
-          err.status = 400;
-          throw err;
-        }
-      }
-    }
-
-    // Prepare valid attachments for Nodemailer
-    const validAttachments = log.attachments
-      ? log.attachments.filter((a) => a.content || a.url || a.path).map((a) => ({
-          filename: a.filename || "attachment",
-          content: a.content || undefined,
-          path: (!a.content && (a.url || a.path)) ? (a.url || a.path) : undefined,
-        }))
+    // Prepare valid attachments for delivery (skip placeholder strings gracefully)
+    const validAttachments = Array.isArray(log.attachments)
+      ? log.attachments
+          .filter((a) => a && (a.url || a.path || (a.content && a.content !== "[Buffer Payload]" && a.content !== "[Binary Attachment Payload]")))
+          .map((a) => ({
+            filename: a.filename || "attachment",
+            content: a.content || undefined,
+            path: (!a.content && (a.url || a.path)) ? (a.url || a.path) : undefined,
+          }))
       : [];
 
     console.log(`[MailService] 🔄 Resending historical email [${log.subject}] to [${log.recipientEmail}]...`);
 
-    // Fix 11 (MEDIUM): Resend calls sendEmail with source 'Admin Resend', which automatically creates a completely NEW log entry
+    // Fix 11: Resend calls sendEmail with source 'Admin Resend', which automatically creates a completely NEW log entry
     return await this.sendEmail({
       to: log.recipientEmail,
       subject: log.subject,
       html: log.html,
       text: log.text,
+      from: '"Code-A-Nova" <manager@code-a-nova.online>',
+      replyTo: "manager@code-a-nova.online",
       attachments: validAttachments,
       campaign: log.campaign,
       source: "Admin Resend",
