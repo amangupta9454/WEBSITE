@@ -425,23 +425,30 @@ export default function HackathonPortal() {
         throw new Error(orderRes.data?.message || "Failed to create payment order");
       }
 
-      const { orderId, amount, currency, key, teamName } = orderRes.data;
+      const { order, key, team } = orderRes.data;
+      const orderId = order?.id || orderRes.data.orderId;
+      const amountInPaise = order?.amount || orderRes.data.amountInPaise || (orderRes.data.amount ? Math.round(orderRes.data.amount * 100) : 4900);
+      const teamName = team?.teamName || orderRes.data.teamName || userTeam?.teamName || "Hackathon Team";
+
+      if (!orderId) {
+        throw new Error("Unable to obtain payment order from gateway. Please try again.");
+      }
 
       if (typeof window.Razorpay === "undefined") {
         throw new Error("Razorpay SDK is not loaded. Please verify your connection and try again.");
       }
 
       const options = {
-        key: key,
-        amount: amount,
-        currency: currency,
+        key: key || orderRes.data.key,
+        amount: amountInPaise,
+        currency: order?.currency || orderRes.data.currency || "INR",
         name: "Code-A-Nova Hackathon",
         description: `Team Participation Fee — ${teamName}`,
         order_id: orderId,
         prefill: {
-          name: userTeam.leader?.name || "",
-          email: userTeam.leader?.email || "",
-          contact: userTeam.leader?.phone || "",
+          name: userTeam?.leader?.name || team?.leaderName || "",
+          email: userTeam?.leader?.email || team?.leaderEmail || "",
+          contact: userTeam?.leader?.phone || userTeam?.leader?.mobile || team?.leaderMobile || "",
         },
         theme: {
           color: "#6366f1",

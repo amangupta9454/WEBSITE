@@ -1396,9 +1396,12 @@ exports.createPaymentOrder = async (req, res) => {
     res.status(200).json({
       success: true,
       order,
+      orderId: order.id,
       key: process.env.RAZORPAY_KEY_ID,
       amount,
+      amountInPaise: order.amount,
       currency: 'INR',
+      teamName: team.teamName,
       team: {
         teamId: team.teamId,
         teamName: team.teamName,
