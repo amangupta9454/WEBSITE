@@ -163,11 +163,14 @@ const hackathonCertificateSchema = new mongoose.Schema(
   }
 );
 
-// Compound index to prevent duplicate certificate creation for the same recipient, hackathon, type, and active version
+// Indexes for verification lookups, operational filtering, and uniqueness
 hackathonCertificateSchema.index(
   { hackathonId: 1, recipientEmail: 1, type: 1, version: 1 },
   { unique: true }
 );
+hackathonCertificateSchema.index({ hackathonId: 1, status: 1, isRevoked: 1 });
+hackathonCertificateSchema.index({ hackathonId: 1, teamId: 1 });
+hackathonCertificateSchema.index({ createdAt: -1 });
 
 module.exports =
   mongoose.models.HackathonCertificate ||

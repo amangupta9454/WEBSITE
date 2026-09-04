@@ -106,9 +106,8 @@ emailLogSchema.index({ campaign: 1, createdAt: -1 });
 emailLogSchema.index({ recipientEmail: 1, createdAt: -1 });
 emailLogSchema.index({ source: 1, createdAt: -1 });
 
-// Fix 8 (MEDIUM): Performance indexes to accelerate keyword searching without full collection document scans
+// Performance indexes to accelerate keyword searching without full collection document scans
 emailLogSchema.index({ subject: 1 });
 emailLogSchema.index({ recipientName: 1 });
-emailLogSchema.index({ messageId: 1 });
 
 module.exports = mongoose.models.EmailLog || mongoose.model('EmailLog', emailLogSchema);

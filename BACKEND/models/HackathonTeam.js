@@ -277,7 +277,12 @@ const hackathonTeamSchema = new mongoose.Schema(
   }
 );
 
-// Index for quick lookup of member email
+// Indexes for quick lookup and high-performance operations
 hackathonTeamSchema.index({ 'members.email': 1 });
+hackathonTeamSchema.index({ hackathonId: 1, status: 1 });
+hackathonTeamSchema.index({ hackathonId: 1, paymentStatus: 1 });
+hackathonTeamSchema.index({ hackathonId: 1, track: 1 });
+hackathonTeamSchema.index({ isDeleted: 1, status: 1 });
+hackathonTeamSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('HackathonTeam', hackathonTeamSchema);

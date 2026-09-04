@@ -96,6 +96,9 @@ export default function TeamDetailDrawer({
   const [reopenReason, setReopenReason] = useState("");
   const [reopeningEvaluation, setReopeningEvaluation] = useState(false);
 
+  // Phase 9: Team 360 Lifecycle state
+  const [team360, setTeam360] = useState(null);
+
   const getAdminToken = () => {
     return localStorage.getItem("adminToken") || localStorage.getItem("token");
   };
@@ -147,6 +150,18 @@ export default function TeamDetailDrawer({
         }
       } catch (evalErr) {
         setEditorialEvaluations([]);
+      }
+
+      // Fetch Phase 9 Team 360 overview
+      try {
+        const t360Res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/team-360/${teamId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (t360Res.data?.success) {
+          setTeam360(t360Res.data.team360);
+        }
+      } catch (t360Err) {
+        setTeam360(null);
       }
     } catch (err) {
       console.error("fetchTeamDetails error:", err);
@@ -490,6 +505,153 @@ export default function TeamDetailDrawer({
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* ─── PHASE 9: TEAM 360 LIFECYCLE JOURNEY STEPPER ─── */}
+            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 border border-indigo-500/20 shadow-lg space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    <Layers className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-black tracking-tight">Team 360° Operational Journey</h3>
+                    <p className="text-[10px] text-indigo-200/70">
+                      End-to-end hackathon lifecycle from Unstop import to prize fulfillment
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/10 text-cyan-300 border border-white/10">
+                  {team?.status}
+                </span>
+              </div>
+
+              {/* Lifecycle Progress Stepper */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 pt-1">
+                {(
+                  team360?.lifecycleJourney || [
+                    { step: 1, key: "REGISTRATION", label: "Registration", status: "COMPLETED", detail: "Registered" },
+                    {
+                      step: 2,
+                      key: "SHORTLISTING",
+                      label: "Screening",
+                      status: team?.status === "SHORTLISTED" ? "COMPLETED" : team?.status === "REJECTED" ? "REJECTED" : "IN_PROGRESS",
+                      detail: team?.status,
+                    },
+                    {
+                      step: 3,
+                      key: "PAYMENT",
+                      label: "₹49 Payment",
+                      status: team?.paymentStatus === "PAID" ? "COMPLETED" : "PENDING",
+                      detail: team?.paymentStatus,
+                    },
+                    {
+                      step: 4,
+                      key: "SUBMISSION",
+                      label: "Submission",
+                      status: submission?.isLocked ? "COMPLETED" : submission ? "IN_PROGRESS" : "PENDING",
+                      detail: submission?.isLocked ? "Locked" : "Pending",
+                    },
+                    {
+                      step: 5,
+                      key: "EVALUATION",
+                      label: "Judging",
+                      status: editorialEvaluations.length > 0 ? "COMPLETED" : "PENDING",
+                      detail: `${editorialEvaluations.length} Reviews`,
+                    },
+                    {
+                      step: 6,
+                      key: "RESULTS",
+                      label: "Results",
+                      status: team360?.result ? "COMPLETED" : "PENDING",
+                      detail: team360?.result ? `Rank #${team360.result.rank}` : "Pending",
+                    },
+                    {
+                      step: 7,
+                      key: "FULFILLMENT",
+                      label: "Fulfillment",
+                      status: team360?.certificates?.length > 0 ? "COMPLETED" : "PENDING",
+                      detail: team360?.certificates?.length > 0 ? "Cert Issued" : "Pending",
+                    },
+                  ]
+                ).map((milestone, idx) => {
+                  const isDone = milestone.status === "COMPLETED";
+                  const isCurrent = milestone.status === "IN_PROGRESS" || milestone.status === "CURRENT";
+                  const isRejected = milestone.status === "REJECTED";
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all ${
+                        isDone
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+                          : isRejected
+                          ? "bg-rose-500/10 border-rose-500/30 text-rose-200"
+                          : isCurrent
+                          ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                          : "bg-white/5 border-white/10 text-slate-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase opacity-60">Step {idx + 1}</span>
+                        {isDone ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : isRejected ? (
+                          <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                        ) : isCurrent ? (
+                          <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full border border-slate-600" />
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <div className="text-[11px] font-bold text-white leading-tight truncate">
+                          {milestone.label}
+                        </div>
+                        <div className="text-[9px] opacity-80 mt-0.5 truncate">{milestone.detail}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Team 360 Highlights Summary */}
+              {(team360?.result || team360?.certificates?.length > 0 || team360?.prize) && (
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  {team360?.result && (
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-400" />
+                      <span>
+                        Official Rank: <strong className="text-white">#{team360.result.rank}</strong>
+                        {team360.result.isWinner && (
+                          <span className="ml-1.5 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-extrabold text-[10px]">
+                            {team360.result.winnerTitle || "WINNER"}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {team360?.certificates?.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>
+                        Certificates Issued:{" "}
+                        <strong className="text-white">{team360.certificates.length}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {team360?.prize && (
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-purple-400" />
+                      <span>
+                        Prize: <strong className="text-white">{team360.prize.prizeTitle}</strong> (
+                        {team360.prize.status})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Quick Action Banner: Shortlist / Reject / Current Lifecycle */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">

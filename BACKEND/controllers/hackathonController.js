@@ -20,6 +20,8 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const unstopParserService = require('../services/unstopParserService');
 const hackathonEmailService = require('../services/hackathonEmailService');
+const hackathonOpsService = require('../services/hackathonOpsService');
+const { validateHackathonConfig } = require('../services/hackathonConfigService');
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
@@ -355,8 +357,8 @@ exports.updateAdminSettings = async (req, res) => {
  */
 exports.getAdminAuditLogs = async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 20), 100);
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -369,9 +371,40 @@ exports.getAdminAuditLogs = async (req, res) => {
     if (req.query.role) {
       filter.role = req.query.role;
     }
+    if (req.query.actor) {
+      const actorRegex = new RegExp(hackathonOpsService.escapeRegex(req.query.actor.trim()), 'i');
+      filter.$or = [{ actorName: actorRegex }, { actorEmail: actorRegex }, { actorId: req.query.actor.trim() }];
+    }
+    if (req.query.teamId) {
+      filter.targetId = req.query.teamId.trim().toUpperCase();
+    }
+    if (req.query.startDate || req.query.endDate) {
+      const dateFilter = {};
+      if (req.query.startDate) {
+        const start = new Date(req.query.startDate);
+        if (!isNaN(start.getTime())) dateFilter.$gte = start;
+      }
+      if (req.query.endDate) {
+        const end = new Date(req.query.endDate);
+        if (!isNaN(end.getTime())) dateFilter.$lte = end;
+      }
+      if (Object.keys(dateFilter).length > 0) {
+        filter.createdAt = dateFilter;
+      }
+    }
+    if (req.query.search) {
+      const sRegex = new RegExp(hackathonOpsService.escapeRegex(req.query.search.trim()), 'i');
+      filter.$or = [
+        { action: sRegex },
+        { actorName: sRegex },
+        { actorEmail: sRegex },
+        { targetId: sRegex },
+        { reason: sRegex },
+      ];
+    }
 
     const [logs, total] = await Promise.all([
-      HackathonAuditLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      HackathonAuditLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       HackathonAuditLog.countDocuments(filter),
     ]);
 
@@ -382,7 +415,7 @@ exports.getAdminAuditLogs = async (req, res) => {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
       },
     });
   } catch (error) {
@@ -5771,6 +5804,162 @@ exports.getParticipantMyPrizes = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch participant prizes.' });
   }
 };
+
+/**
+ * 76. Public: Hackathon Health Status
+ * GET /api/hackathon/health
+ */
+exports.getPublicHealth = async (req, res) => {
+  try {
+    const isDbConnected = mongoose.connection.readyState === 1;
+    res.status(200).json({
+      success: true,
+      status: isDbConnected ? 'HEALTHY' : 'DEGRADED',
+      database: isDbConnected ? 'CONNECTED' : 'DISCONNECTED',
+      timestamp: new Date().toISOString(),
+      service: 'Code-A-Nova Hackathon Engine',
+      version: '1.0.0-phase9',
+    });
+  } catch (error) {
+    console.error('getPublicHealth Error:', error);
+    res.status(500).json({ success: false, status: 'ERROR', message: 'Health probe failed.' });
+  }
+};
+
+/**
+ * 77. Admin: Complete Operational Health Assessment
+ * GET /api/hackathon/admin/health
+ */
+exports.getAdminHealth = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const health = await hackathonOpsService.getHackathonHealth(hackathonId);
+    res.status(200).json(health);
+  } catch (error) {
+    console.error('getAdminHealth Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve operational health summary.', error: error.message });
+  }
+};
+
+/**
+ * 78. Admin: Real-Time Operational Alerts
+ * GET /api/hackathon/admin/alerts
+ */
+exports.getAdminAlerts = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const alerts = await hackathonOpsService.getOperationalAlerts(hackathonId);
+    res.status(200).json(alerts);
+  } catch (error) {
+    console.error('getAdminAlerts Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch operational alerts.', error: error.message });
+  }
+};
+
+/**
+ * 79. Admin: Email Delivery & Failure Analytics
+ * GET /api/hackathon/admin/email-stats
+ */
+exports.getAdminEmailStats = async (req, res) => {
+  try {
+    const stats = await hackathonOpsService.getEmailStatsSummary();
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error('getAdminEmailStats Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch email statistics.', error: error.message });
+  }
+};
+
+/**
+ * 80. Admin: Security Events & Sensitive Actions Summary
+ * GET /api/hackathon/admin/security-summary
+ */
+exports.getAdminSecuritySummary = async (req, res) => {
+  try {
+    const summary = await hackathonOpsService.getSecurityEventsSummary();
+    res.status(200).json(summary);
+  } catch (error) {
+    console.error('getAdminSecuritySummary Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch security summary.', error: error.message });
+  }
+};
+
+/**
+ * 81. Admin: Controlled Data Export (CSV)
+ * GET /api/hackathon/admin/export/:resource
+ */
+exports.exportAdminResource = async (req, res) => {
+  try {
+    const { resource } = req.params;
+    const actor = {
+      id: req.user?._id || req.user?.id || 'admin',
+      name: req.user?.name || 'Admin User',
+      email: req.user?.email || '',
+    };
+
+    const csvContent = await hackathonOpsService.exportResourceAsCsv(resource, req.query, actor);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="hackathon-${resource}-${Date.now()}.csv"`);
+    res.status(200).send(csvContent);
+  } catch (error) {
+    console.error('exportAdminResource Error:', error);
+    if (error.message && error.message.includes('Forbidden resource export')) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: 'Failed to generate dataset export.', error: error.message });
+  }
+};
+
+/**
+ * 82. Admin: Operational Quick Search
+ * GET /api/hackathon/admin/search
+ */
+exports.operationalSearch = async (req, res) => {
+  try {
+    const { q, hackathonId } = req.query;
+    if (!q || typeof q !== 'string' || q.trim().length === 0) {
+      return res.status(200).json({
+        success: true,
+        query: '',
+        results: {
+          teams: [],
+          submissions: [],
+          certificates: [],
+          judges: [],
+          sponsors: [],
+        },
+      });
+    }
+
+    const searchResults = await hackathonOpsService.operationalSearch(q, hackathonId);
+    res.status(200).json(searchResults);
+  } catch (error) {
+    console.error('operationalSearch Error:', error);
+    res.status(500).json({ success: false, message: 'Operational search failed.', error: error.message });
+  }
+};
+
+/**
+ * 83. Admin: Team 360 Full Lifecycle Journey
+ * GET /api/hackathon/admin/team-360/:teamId
+ */
+exports.getAdminTeam360 = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { hackathonId } = req.query;
+
+    const team360 = await hackathonOpsService.getTeam360(teamId, hackathonId);
+    res.status(200).json({ success: true, team360, ...team360 });
+  } catch (error) {
+    console.error('getAdminTeam360 Error:', error);
+    if (error.message && error.message.includes('not found')) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: 'Failed to fetch team 360 details.', error: error.message });
+  }
+};
+
 
 
 

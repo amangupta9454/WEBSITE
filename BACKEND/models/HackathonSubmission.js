@@ -132,4 +132,9 @@ const hackathonSubmissionSchema = new mongoose.Schema(
   }
 );
 
+// Compound indexes for judging assignment and submission statistics lookups
+hackathonSubmissionSchema.index({ hackathonId: 1, status: 1 });
+hackathonSubmissionSchema.index({ hackathonId: 1, isLocked: 1 });
+hackathonSubmissionSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('HackathonSubmission', hackathonSubmissionSchema);

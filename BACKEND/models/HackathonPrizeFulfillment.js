@@ -98,6 +98,8 @@ const hackathonPrizeFulfillmentSchema = new mongoose.Schema(
 );
 
 hackathonPrizeFulfillmentSchema.index({ hackathonId: 1, teamId: 1, prizeId: 1 }, { unique: true });
+hackathonPrizeFulfillmentSchema.index({ hackathonId: 1, status: 1 });
+hackathonPrizeFulfillmentSchema.index({ createdAt: -1 });
 
 module.exports =
   mongoose.models.HackathonPrizeFulfillment ||

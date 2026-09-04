@@ -89,12 +89,25 @@ const {
   updateAdminPrizeFulfillment,
   notifyAdminPrizeFulfillment,
   getParticipantMyPrizes,
+  getPublicHealth,
+  getAdminHealth,
+  getAdminAlerts,
+  getAdminEmailStats,
+  getAdminSecuritySummary,
+  exportAdminResource,
+  operationalSearch,
+  getAdminTeam360,
 } = require('../controllers/hackathonController');
+const {
+  hackathonPublicLimiter,
+  hackathonExportLimiter,
+} = require('../middleware/hackathonLimiter');
 
 /**
  * Public Routes
  */
 router.get('/info', getPublicHackathonInfo);
+router.get('/health', hackathonPublicLimiter, getPublicHealth);
 
 /**
  * Participant Protected Routes (Reuses existing Student/User JWT authentication)
@@ -233,6 +246,17 @@ router.get('/admin/prize-fulfillments', auth, verifyAdmin, getAdminPrizeFulfillm
 router.post('/admin/prize-fulfillments', auth, verifyAdmin, createAdminPrizeFulfillment);
 router.put('/admin/prize-fulfillments/:id', auth, verifyAdmin, updateAdminPrizeFulfillment);
 router.post('/admin/prize-fulfillments/:id/notify', auth, verifyAdmin, notifyAdminPrizeFulfillment);
+
+// ==========================================
+// Phase 9: Operations, Health & Analytics
+// ==========================================
+router.get('/admin/health', auth, verifyAdmin, getAdminHealth);
+router.get('/admin/alerts', auth, verifyAdmin, getAdminAlerts);
+router.get('/admin/email-stats', auth, verifyAdmin, getAdminEmailStats);
+router.get('/admin/security-summary', auth, verifyAdmin, getAdminSecuritySummary);
+router.get('/admin/export/:resource', auth, verifyAdmin, hackathonExportLimiter, exportAdminResource);
+router.get('/admin/search', auth, verifyAdmin, operationalSearch);
+router.get('/admin/team-360/:teamId', auth, verifyAdmin, getAdminTeam360);
 
 module.exports = router;
 

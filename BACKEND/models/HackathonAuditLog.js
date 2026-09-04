@@ -119,4 +119,12 @@ hackathonAuditLogSchema.statics.log = async function ({
   }
 };
 
+// Compound performance indexes for ultra-fast admin filtering, timeline lookups, and security analysis
+hackathonAuditLogSchema.index({ createdAt: -1 });
+hackathonAuditLogSchema.index({ targetEntity: 1, createdAt: -1 });
+hackathonAuditLogSchema.index({ role: 1, createdAt: -1 });
+hackathonAuditLogSchema.index({ actorId: 1, createdAt: -1 });
+hackathonAuditLogSchema.index({ action: 1, createdAt: -1 });
+hackathonAuditLogSchema.index({ targetId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('HackathonAuditLog', hackathonAuditLogSchema);
