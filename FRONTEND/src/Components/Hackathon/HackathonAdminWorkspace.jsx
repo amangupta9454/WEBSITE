@@ -106,15 +106,20 @@ export default function HackathonAdminWorkspace() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTeamForDelete, setSelectedTeamForDelete] = useState(null);
 
-  const fetchTeams = async (page = 1) => {
+  const fetchTeams = async (page = 1, overrideFilters = null) => {
     try {
       setLoadingTeams(true);
       const token = getAdminToken();
-      let url = `${BACKEND_URL}/api/hackathon/admin/teams?page=${page}&limit=15`;
-      if (teamsSearch) url += `&search=${encodeURIComponent(teamsSearch)}`;
-      if (teamsStatusFilter) url += `&status=${encodeURIComponent(teamsStatusFilter)}`;
-      if (teamsTrackFilter) url += `&track=${encodeURIComponent(teamsTrackFilter)}`;
-      if (teamsPaymentFilter) url += `&paymentStatus=${encodeURIComponent(teamsPaymentFilter)}`;
+      let url = `${BACKEND_URL}/api/hackathon/admin/teams?page=${page}&limit=50`;
+      const search = overrideFilters && overrideFilters.search !== undefined ? overrideFilters.search : teamsSearch;
+      const status = overrideFilters && overrideFilters.status !== undefined ? overrideFilters.status : teamsStatusFilter;
+      const track = overrideFilters && overrideFilters.track !== undefined ? overrideFilters.track : teamsTrackFilter;
+      const payment = overrideFilters && overrideFilters.paymentStatus !== undefined ? overrideFilters.paymentStatus : teamsPaymentFilter;
+
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      if (status) url += `&status=${encodeURIComponent(status)}`;
+      if (track) url += `&track=${encodeURIComponent(track)}`;
+      if (payment) url += `&paymentStatus=${encodeURIComponent(payment)}`;
 
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -1339,7 +1344,7 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "editorial") {
       fetchEditorialMembers();
       fetchAssignments();
-      fetchTeams(1);
+      fetchTeams(1, { search: "", status: "", track: "", paymentStatus: "" });
     }
     if (activeTab === "judging") {
       fetchEvaluations();
@@ -3530,10 +3535,10 @@ export default function HackathonAdminWorkspace() {
                 >
                   <option value="">-- Choose Eligible Team --</option>
                   {teams
-                    .filter((t) => ["CONFIRMED", "SUBMITTED", "UNDER_EVALUATION", "EVALUATED"].includes(t.status))
+                    .filter((t) => !["REJECTED", "DISQUALIFIED"].includes(t.status))
                     .map((team) => (
                       <option key={team._id} value={team.teamId}>
-                        {team.teamId} — {team.teamName} ({team.track}) [{team.status}]
+                        {team.teamId} — {team.teamName} ({team.track || "General"}) [{team.status}]
                       </option>
                     ))}
                 </select>

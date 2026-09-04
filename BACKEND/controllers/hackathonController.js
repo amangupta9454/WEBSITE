@@ -2980,8 +2980,8 @@ exports.createAdminEditorialAssignment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Eligible hackathon team not found.' });
     }
 
-    // Eligibility check: Team must be confirmed
-    const eligibleStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED'];
+    // Eligibility check: Team must be confirmed or submitted
+    const eligibleStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED', 'RESULT_PUBLISHED', 'SHORTLISTED'];
     if (!eligibleStatuses.includes(team.status)) {
       return res.status(400).json({
         success: false,
@@ -2990,7 +2990,9 @@ exports.createAdminEditorialAssignment = async (req, res) => {
     }
 
     // Must have a valid submission
-    const submission = await HackathonSubmission.findOne({ team: team._id });
+    const submission = await HackathonSubmission.findOne({
+      $or: [{ team: team._id }, { teamId: team.teamId }],
+    });
     if (!submission || submission.status === 'NOT_STARTED') {
       return res.status(400).json({
         success: false,
