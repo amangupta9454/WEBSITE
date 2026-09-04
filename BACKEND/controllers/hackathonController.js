@@ -4441,13 +4441,16 @@ exports.publishAdminResults = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No results found to publish.' });
     }
 
-    // Require results to be APPROVED before publishing
-    const approvedCount = results.filter((r) => ['APPROVED', 'PUBLISHED', 'LOCKED'].includes(r.resultStatus)).length;
-    if (shouldPublish && approvedCount === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Results must be approved by an administrator before they can be officially published.',
-      });
+    // Check for unresolved ties in top 3 positions before publishing
+    if (shouldPublish) {
+      const topTies = results.filter((r) => r.rankingStatus === 'TIE' && r.rank && r.rank <= 3);
+      if (topTies.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot publish results: Unresolved ties detected in podium ranks (1-3). Please resolve ties before publishing.',
+          tiedTeams: topTies.map((t) => ({ teamId: t.teamId, score: t.finalScore, rank: t.rank })),
+        });
+      }
     }
 
     const now = new Date();
@@ -4466,6 +4469,10 @@ exports.publishAdminResults = async (req, res) => {
         resDoc.resultStatus = resDoc.resultStatus === 'LOCKED' ? 'LOCKED' : 'PUBLISHED';
         resDoc.publishedAt = now;
         resDoc.publishedBy = actorName;
+        if (!resDoc.approvedBy) {
+          resDoc.approvedBy = actorName;
+          resDoc.approvedAt = now;
+        }
       }
       resDoc.history.push({
         action: shouldPublish ? 'RESULT_PUBLISHED' : 'RESULT_UNPUBLISHED',
@@ -4556,6 +4563,10 @@ exports.lockAdminResults = async (req, res) => {
       resDoc.lockedAt = now;
       resDoc.lockedBy = actorName;
       resDoc.lockReason = lockReason;
+      if (!resDoc.approvedBy) {
+        resDoc.approvedBy = actorName;
+        resDoc.approvedAt = now;
+      }
       resDoc.history.push({
         action: 'RESULT_LOCKED',
         actor: actorName,
