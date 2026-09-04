@@ -756,6 +756,32 @@ export default function HackathonAdminWorkspace() {
   const [revocationReasonInput, setRevocationReasonInput] = useState("");
   const [revokingCertificate, setRevokingCertificate] = useState(false);
   const [selectedCertForView, setSelectedCertForView] = useState(null);
+  const [loadingCertHtml, setLoadingCertHtml] = useState(false);
+
+  const handleOpenViewCert = async (cert) => {
+    setSelectedCertForView(cert);
+    if (!cert?.htmlContent) {
+      setLoadingCertHtml(true);
+      try {
+        const token = getAdminToken();
+        const id = cert.certificateId || cert._id || cert.certificateNumber;
+        const res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/certificates/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success && res.data.certificate?.htmlContent) {
+          setSelectedCertForView((prev) => ({
+            ...prev,
+            ...res.data.certificate,
+            htmlContent: res.data.certificate.htmlContent,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load certificate detail:", err);
+      } finally {
+        setLoadingCertHtml(false);
+      }
+    }
+  };
 
   const fetchCertificates = async (page = 1) => {
     try {
@@ -5162,7 +5188,7 @@ export default function HackathonAdminWorkspace() {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               type="button"
-                              onClick={() => setSelectedCertForView(cert)}
+                              onClick={() => handleOpenViewCert(cert)}
                               className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
                               title="View & Print Certificate"
                             >
@@ -5755,16 +5781,30 @@ export default function HackathonAdminWorkspace() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  disabled={loadingCertHtml}
                   onClick={() => {
                     const printWindow = window.open("", "_blank");
                     if (printWindow) {
-                      printWindow.document.write(selectedCertForView.htmlContent);
+                      if (selectedCertForView.htmlContent) {
+                        printWindow.document.write(selectedCertForView.htmlContent);
+                      } else {
+                        printWindow.document.write(`
+                          <!DOCTYPE html><html><head><title>Certificate - ${selectedCertForView.certificateNumber}</title></head>
+                          <body style="font-family: sans-serif; text-align: center; padding: 40px;">
+                            <h2>Code-A-Nova Hackathon 2026</h2>
+                            <h3>${selectedCertForView.award || 'Certificate of Recognition'}</h3>
+                            <h1>${selectedCertForView.recipientName}</h1>
+                            <p>Track: ${selectedCertForView.track || 'General'}</p>
+                            <p>Certificate No: ${selectedCertForView.certificateNumber}</p>
+                          </body></html>
+                        `);
+                      }
                       printWindow.document.close();
                       printWindow.focus();
                       setTimeout(() => printWindow.print(), 250);
                     }
                   }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print / PDF
                 </button>
@@ -5778,12 +5818,41 @@ export default function HackathonAdminWorkspace() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
-              <iframe
-                title="Certificate Preview"
-                srcDoc={selectedCertForView.htmlContent}
-                className="w-full h-[550px] rounded-lg border-0 bg-white"
-              />
+            <div className="flex-1 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-2 min-h-[500px] flex items-center justify-center">
+              {loadingCertHtml ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-500">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                  <span className="text-sm font-semibold">Generating Certificate Preview...</span>
+                </div>
+              ) : selectedCertForView.htmlContent ? (
+                <iframe
+                  title="Certificate Preview"
+                  srcDoc={selectedCertForView.htmlContent}
+                  className="w-full h-[550px] rounded-lg border-0 bg-white"
+                />
+              ) : (
+                <div className="w-full max-w-2xl bg-white p-8 rounded-xl border-4 border-slate-900 shadow-xl text-center space-y-4 my-4">
+                  <div className="text-xs font-black uppercase tracking-widest text-indigo-600">
+                    Code-A-Nova National Hackathon 2026
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 font-serif italic">
+                    {selectedCertForView.award || "Official Certificate"}
+                  </div>
+                  <div className="text-xs text-slate-500">This credential is proudly presented to</div>
+                  <div className="text-3xl font-black text-slate-900 border-b-2 border-slate-200 inline-block px-8 pb-2">
+                    {selectedCertForView.recipientName}
+                  </div>
+                  <div className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed pt-2">
+                    For technical excellence and participation in the{" "}
+                    <strong>{selectedCertForView.track || "General"}</strong> track with project{" "}
+                    <strong>"{selectedCertForView.projectName || selectedCertForView.team?.name || "Hackathon Project"}"</strong>.
+                  </div>
+                  <div className="pt-4 border-t border-slate-200 flex justify-between items-center text-[10px] text-slate-500 font-mono">
+                    <span>Certificate No: {selectedCertForView.certificateNumber}</span>
+                    <span>Status: {selectedCertForView.status || "ISSUED"}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

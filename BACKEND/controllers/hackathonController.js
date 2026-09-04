@@ -4884,9 +4884,8 @@ exports.getAdminCertificates = async (req, res) => {
       filter.$and = [{ $or: searchOr }];
     }
 
-    const [certificates, total, counts] = await Promise.all([
+    const [certificatesRaw, total, counts] = await Promise.all([
       HackathonCertificate.find(filter)
-        .select('-htmlContent')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -4914,6 +4913,30 @@ exports.getAdminCertificates = async (req, res) => {
       revoked: 0,
       winners: 0,
     };
+
+    const clientUrl = process.env.CLIENT_URL || 'https://code-a-nova.online';
+    const certificates = certificatesRaw.map((c) => {
+      if (!c.htmlContent) {
+        try {
+          c.htmlContent = hackathonCertificateService.buildCertificateHtml({
+            certificateNumber: c.certificateNumber,
+            verificationCode: c.verificationCode,
+            recipientName: c.recipientName,
+            recipientRole: c.recipientRole,
+            award: c.award,
+            type: c.type,
+            rank: c.rank,
+            projectName: c.projectName,
+            track: c.track,
+            issueDate: c.issuedAt || c.createdAt,
+            clientUrl,
+          });
+        } catch (err) {
+          console.error('buildCertificateHtml Error for cert:', c.certificateNumber, err);
+        }
+      }
+      return c;
+    });
 
     res.status(200).json({
       success: true,
@@ -5161,6 +5184,27 @@ exports.getAdminCertificateDetail = async (req, res) => {
 
     if (!cert) {
       return res.status(404).json({ success: false, message: 'Certificate not found.' });
+    }
+
+    if (!cert.htmlContent) {
+      try {
+        cert.htmlContent = hackathonCertificateService.buildCertificateHtml({
+          certificateNumber: cert.certificateNumber,
+          verificationCode: cert.verificationCode,
+          recipientName: cert.recipientName,
+          recipientRole: cert.recipientRole,
+          award: cert.award,
+          type: cert.type,
+          rank: cert.rank,
+          projectName: cert.projectName,
+          track: cert.track,
+          issueDate: cert.issuedAt || cert.createdAt,
+          clientUrl: process.env.CLIENT_URL || 'https://code-a-nova.online',
+        });
+        await cert.save().catch(() => {});
+      } catch (err) {
+        console.error('buildCertificateHtml Error in getAdminCertificateDetail:', err);
+      }
     }
 
     res.status(200).json({ success: true, certificate: cert });
