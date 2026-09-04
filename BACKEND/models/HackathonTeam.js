@@ -81,6 +81,12 @@ const evaluationSchema = new mongoose.Schema(
 
 const hackathonTeamSchema = new mongoose.Schema(
   {
+    hackathonId: {
+      type: String,
+      default: 'can-hackathon-2026',
+      trim: true,
+      index: true,
+    },
     teamId: {
       type: String,
       required: true,

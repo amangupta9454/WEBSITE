@@ -35,6 +35,7 @@ const hackathonAuditLogSchema = new mongoose.Schema(
         'HackathonEditorialMember',
         'HackathonEditorialAssignment',
         'HackathonEditorialEvaluation',
+        'HackathonResult',
         'Evaluation',
         'General',
       ],

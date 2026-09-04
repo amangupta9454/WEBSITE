@@ -38,6 +38,10 @@ import {
   UserCheck,
   UserX,
   KeyRound,
+  RotateCcw,
+  Medal,
+  Check,
+  X,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -431,7 +435,292 @@ export default function HackathonAdminWorkspace() {
     }
   };
 
-  // Settings Form State
+  // ==========================================
+  // PHASE 7: RESULTS & WINNERS STATE & HANDLERS
+  // ==========================================
+  const [results, setResults] = useState([]);
+  const [resultsSummary, setResultsSummary] = useState({
+    total: 0,
+    eligible: 0,
+    pending: 0,
+    ineligible: 0,
+    ties: 0,
+    approved: 0,
+    published: 0,
+    locked: 0,
+  });
+  const [resultsSetting, setResultsSetting] = useState({
+    isResultsPublished: false,
+    resultsLocked: false,
+    resultsLockedAt: null,
+    resultsLockedBy: null,
+    winnerCategories: [],
+  });
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [calculatingResults, setCalculatingResults] = useState(false);
+  const [resultsSearch, setResultsSearch] = useState("");
+  const [resultsTrackFilter, setResultsTrackFilter] = useState("ALL");
+  const [resultsStatusFilter, setResultsStatusFilter] = useState("ALL");
+
+  // Inspection Drawer
+  const [selectedResultDrilldown, setSelectedResultDrilldown] = useState(null);
+
+  // Winner Assignment Modal State
+  const [winnerModalResult, setWinnerModalResult] = useState(null);
+  const [winnerCategoryInput, setWinnerCategoryInput] = useState("");
+  const [winnerPrizeInput, setWinnerPrizeInput] = useState("");
+  const [isWinnerInput, setIsWinnerInput] = useState(false);
+  const [isRunnerUpInput, setIsRunnerUpInput] = useState(false);
+  const [savingWinner, setSavingWinner] = useState(false);
+
+  // Tie Resolution Modal State
+  const [showTieModal, setShowTieModal] = useState(false);
+  const [tieOrders, setTieOrders] = useState([]);
+  const [tieBreakReason, setTieBreakReason] = useState("");
+  const [resolvingTie, setResolvingTie] = useState(false);
+
+  // Approval & Lock & Reopen Modals
+  const [showApproveResultsModal, setShowApproveResultsModal] = useState(false);
+  const [approvingResults, setApprovingResults] = useState(false);
+  const [showLockResultsModal, setShowLockResultsModal] = useState(false);
+  const [confirmLockChecked, setConfirmLockChecked] = useState(false);
+  const [lockResultsReason, setLockResultsReason] = useState("");
+  const [lockingResults, setLockingResults] = useState(false);
+  const [showReopenResultsModal, setShowReopenResultsModal] = useState(false);
+  const [reopenResultsReason, setReopenResultsReason] = useState("");
+  const [reopeningResults, setReopeningResults] = useState(false);
+  const [publishingResults, setPublishingResults] = useState(false);
+
+  const fetchResults = async () => {
+    try {
+      setLoadingResults(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/results?`;
+      if (resultsTrackFilter && resultsTrackFilter !== "ALL") {
+        url += `&track=${encodeURIComponent(resultsTrackFilter)}`;
+      }
+      if (resultsStatusFilter && resultsStatusFilter !== "ALL") {
+        url += `&status=${encodeURIComponent(resultsStatusFilter)}`;
+      }
+      if (resultsSearch && resultsSearch.trim()) {
+        url += `&search=${encodeURIComponent(resultsSearch.trim())}`;
+      }
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setResults(res.data.results || []);
+        setResultsSummary(res.data.summary || {});
+        if (res.data.setting) {
+          setResultsSetting(res.data.setting);
+        }
+      }
+    } catch (err) {
+      console.error("fetchResults error:", err);
+      toast.error(err.response?.data?.message || "Failed to load results");
+    } finally {
+      setLoadingResults(false);
+    }
+  };
+
+  const handleCalculateResults = async () => {
+    try {
+      setCalculatingResults(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/calculate`,
+        { hackathonId: "can-hackathon-2026" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message || "Results calculated successfully!");
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to calculate results.");
+    } finally {
+      setCalculatingResults(false);
+    }
+  };
+
+  const handleOpenWinnerModal = (item) => {
+    setWinnerModalResult(item);
+    setWinnerCategoryInput(item.category || "");
+    setWinnerPrizeInput(item.prize || "");
+    setIsWinnerInput(item.isWinner || false);
+    setIsRunnerUpInput(item.isRunnerUp || false);
+  };
+
+  const handleSaveWinnerAssignment = async (e) => {
+    e.preventDefault();
+    if (!winnerModalResult) return;
+    try {
+      setSavingWinner(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/${winnerModalResult.teamId}/assign-winner`,
+        {
+          hackathonId: "can-hackathon-2026",
+          category: winnerCategoryInput || null,
+          prize: winnerPrizeInput || null,
+          isWinner: isWinnerInput,
+          isRunnerUp: isRunnerUpInput,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(`Winner category assigned to ${winnerModalResult.teamName}`);
+        setWinnerModalResult(null);
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to assign winner.");
+    } finally {
+      setSavingWinner(false);
+    }
+  };
+
+  const handleOpenTieModal = () => {
+    const tiedTeams = results
+      .filter((r) => r.rankingStatus === "TIE")
+      .map((r) => ({ teamId: r.teamId, teamName: r.teamName, rank: r.rank || 1, finalScore: r.finalScore }));
+    setTieOrders(tiedTeams);
+    setTieBreakReason("");
+    setShowTieModal(true);
+  };
+
+  const handleResolveTieSubmit = async (e) => {
+    e.preventDefault();
+    if (!tieBreakReason.trim()) {
+      toast.error("Please provide an administrative tie-break reason.");
+      return;
+    }
+    try {
+      setResolvingTie(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/resolve-tie`,
+        {
+          hackathonId: "can-hackathon-2026",
+          teamOrders: tieOrders.map((t) => ({ teamId: t.teamId, rank: Number(t.rank) })),
+          tieBreakReason: tieBreakReason.trim(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Tie successfully resolved!");
+        setShowTieModal(false);
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resolve tie.");
+    } finally {
+      setResolvingTie(false);
+    }
+  };
+
+  const handleApproveResultsSubmit = async () => {
+    try {
+      setApprovingResults(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/approve`,
+        { hackathonId: "can-hackathon-2026" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Official results approved!");
+        setShowApproveResultsModal(false);
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to approve results.");
+    } finally {
+      setApprovingResults(false);
+    }
+  };
+
+  const handlePublishResultsToggle = async (shouldPublish) => {
+    try {
+      setPublishingResults(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/publish`,
+        { hackathonId: "can-hackathon-2026", publish: shouldPublish },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message);
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update publication status.");
+    } finally {
+      setPublishingResults(false);
+    }
+  };
+
+  const handleLockResultsSubmit = async (e) => {
+    e.preventDefault();
+    if (!confirmLockChecked) {
+      toast.error("Please check the confirmation box to lock results.");
+      return;
+    }
+    try {
+      setLockingResults(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/lock`,
+        {
+          hackathonId: "can-hackathon-2026",
+          confirmLock: true,
+          reason: lockResultsReason || "Official results locked by admin.",
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Official results locked permanently!");
+        setShowLockResultsModal(false);
+        setConfirmLockChecked(false);
+        setLockResultsReason("");
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to lock results.");
+    } finally {
+      setLockingResults(false);
+    }
+  };
+
+  const handleReopenResultsSubmit = async (e) => {
+    e.preventDefault();
+    if (!reopenResultsReason.trim()) {
+      toast.error("A mandatory reason is required to unlock official results.");
+      return;
+    }
+    try {
+      setReopeningResults(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/results/reopen`,
+        {
+          hackathonId: "can-hackathon-2026",
+          reason: reopenResultsReason.trim(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Results unlocked for revisions!");
+        setShowReopenResultsModal(false);
+        setReopenResultsReason("");
+        fetchResults();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to reopen results.");
+    } finally {
+      setReopeningResults(false);
+    }
+  };
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     tagline: "",
@@ -539,6 +828,9 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "judging") {
       fetchEvaluations();
     }
+    if (activeTab === "results") {
+      fetchResults();
+    }
   }, [
     activeTab,
     teamsStatusFilter,
@@ -547,6 +839,8 @@ export default function HackathonAdminWorkspace() {
     submissionsTrackFilter,
     evaluationsTrackFilter,
     evaluationsStatusFilter,
+    resultsTrackFilter,
+    resultsStatusFilter,
   ]);
 
   const handleSaveSettings = async (e) => {
@@ -674,7 +968,7 @@ export default function HackathonAdminWorkspace() {
               badge: stats.finalSubmissions > 0 ? `${stats.finalSubmissions} Submissions` : "Active",
             },
             { id: "judging", label: "Judging & Evaluations", icon: Sparkles, badge: aggregatedResults.length > 0 ? `${aggregatedResults.length} Evaluated` : "Active" },
-            { id: "results", label: "Results", icon: Trophy, badge: "Phase 11" },
+            { id: "results", label: "Results", icon: Trophy, badge: resultsSummary.total > 0 ? `${resultsSummary.total} Ranked` : "Official" },
             { id: "certificates", label: "Certificates", icon: CheckCircle2, badge: "Phase 12" },
             { id: "settings", label: "Settings", icon: SettingsIcon, badge: "Active" },
             { id: "audit_logs", label: "Audit Logs", icon: ShieldAlert, badge: "Active" },
@@ -2582,15 +2876,885 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
+      {/* ─── TAB: RESULTS & WINNERS (Phase 7) ─── */}
+      {activeTab === "results" && (
+        <div className="space-y-6">
+          {/* Top Header Card */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-500" />
+                  <h2 className="text-base font-black text-slate-900">
+                    Official Hackathon Results & Winner Management
+                  </h2>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    Phase 7 Official
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Server-side deterministic aggregation, ranking, tie resolution, and winner category allocation based on finalized editorial evaluations.
+                </p>
+              </div>
+
+              {/* Action Buttons Toolbar */}
+              <div className="flex items-center flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleCalculateResults}
+                  disabled={calculatingResults || resultsSetting.resultsLocked}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer disabled:opacity-50"
+                  title={resultsSetting.resultsLocked ? "Results are locked. Unlock to recalculate." : "Calculate/Recalculate scores from finalized evaluations"}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${calculatingResults ? "animate-spin" : ""}`} />
+                  {calculatingResults ? "Calculating..." : results.length > 0 ? "Recalculate Results" : "Calculate Results"}
+                </button>
+
+                {resultsSummary.ties > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleOpenTieModal}
+                    disabled={resultsSetting.resultsLocked}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors cursor-pointer"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                    Resolve Ties ({resultsSummary.ties})
+                  </button>
+                )}
+
+                {!resultsSetting.resultsLocked && (
+                  <button
+                    type="button"
+                    onClick={() => setShowApproveResultsModal(true)}
+                    disabled={results.length === 0 || resultsSummary.ties > 0}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 transition-colors cursor-pointer disabled:opacity-50"
+                    title={resultsSummary.ties > 0 ? "Resolve ties before approval" : "Approve calculated rankings"}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Approve Results
+                  </button>
+                )}
+
+                {/* Publish Toggle */}
+                <button
+                  type="button"
+                  onClick={() => handlePublishResultsToggle(!resultsSetting.isResultsPublished)}
+                  disabled={publishingResults || results.length === 0}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 ${
+                    resultsSetting.isResultsPublished
+                      ? "text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200"
+                      : "text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200"
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {publishingResults
+                    ? "Updating..."
+                    : resultsSetting.isResultsPublished
+                    ? "Unpublish Results"
+                    : "Publish Official Results"}
+                </button>
+
+                {/* Lock / Unlock */}
+                {resultsSetting.resultsLocked ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowReopenResultsModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors cursor-pointer"
+                  >
+                    <Unlock className="w-3.5 h-3.5 text-amber-700" />
+                    Unlock Results
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowLockResultsModal(true)}
+                    disabled={results.length === 0}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-800 bg-slate-900 hover:bg-slate-800 text-white transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    Lock Results Permanently
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Total Considered
+                </span>
+                <span className="text-xl font-black text-slate-900">{resultsSummary.total || 0}</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                  Eligible & Ranked
+                </span>
+                <span className="text-xl font-black text-emerald-700">{resultsSummary.eligible || 0}</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">
+                  Pending Judging
+                </span>
+                <span className="text-xl font-black text-amber-700">{resultsSummary.pending || 0}</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">
+                  Ineligible Teams
+                </span>
+                <span className="text-xl font-black text-rose-700">{resultsSummary.ineligible || 0}</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-purple-50/50 border border-purple-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 block">
+                  Ties Detected
+                </span>
+                <span className="text-xl font-black text-purple-700">{resultsSummary.ties || 0}</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-indigo-50/50 border border-indigo-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                  Official Status
+                </span>
+                <span className="text-xs font-black uppercase text-indigo-800 flex items-center gap-1 mt-1">
+                  {resultsSetting.resultsLocked ? (
+                    <>
+                      <Lock className="w-3 h-3 text-rose-600" /> LOCKED
+                    </>
+                  ) : resultsSetting.isResultsPublished ? (
+                    <>
+                      <Globe className="w-3 h-3 text-emerald-600" /> PUBLISHED
+                    </>
+                  ) : resultsSummary.approved > 0 ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> APPROVED
+                    </>
+                  ) : results.length > 0 ? (
+                    <>
+                      <Clock className="w-3 h-3 text-amber-600" /> CALCULATED
+                    </>
+                  ) : (
+                    "NOT CALCULATED"
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="relative w-full md:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search team, ID, or award..."
+                value={resultsSearch}
+                onChange={(e) => setResultsSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchResults()}
+                className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center flex-wrap gap-2 w-full md:w-auto">
+              <select
+                value={resultsStatusFilter}
+                onChange={(e) => setResultsStatusFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl text-xs border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="READY">Ready & Eligible</option>
+                <option value="PENDING_EVALUATIONS">Pending Judging</option>
+                <option value="TIE">Ties Detected</option>
+                <option value="INELIGIBLE">Ineligible</option>
+              </select>
+
+              <select
+                value={resultsTrackFilter}
+                onChange={(e) => setResultsTrackFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl text-xs border border-slate-200 bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="ALL">All Tracks</option>
+                <option value="AI & Machine Learning">AI & ML</option>
+                <option value="Web3 & Decentralized Tech">Web3</option>
+                <option value="Full Stack & Cloud Native">Full Stack</option>
+                <option value="Open Innovation & Social Good">Open Innovation</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={fetchResults}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                title="Refresh results table"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingResults ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Results Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {loadingResults ? (
+              <div className="p-12 text-center text-xs text-slate-400">Loading official results...</div>
+            ) : results.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <Trophy className="w-10 h-10 text-slate-300 mx-auto" />
+                <p className="text-sm font-bold text-slate-700">No results calculated yet.</p>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Click the <strong>Calculate Results</strong> button above to aggregate finalized editorial evaluations.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCalculateResults}
+                  disabled={calculatingResults}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${calculatingResults ? "animate-spin" : ""}`} />
+                  Calculate Results Now
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50/80 text-slate-700 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
+                    <tr>
+                      <th className="p-3.5">Rank</th>
+                      <th className="p-3.5">Team & Project</th>
+                      <th className="p-3.5">Track</th>
+                      <th className="p-3.5">Final Score</th>
+                      <th className="p-3.5">Judging Progress</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Award / Category</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {results.map((item) => {
+                      const isPodium = item.rank && item.rank <= 3;
+                      const podiumBg =
+                        item.rank === 1
+                          ? "bg-amber-50/40"
+                          : item.rank === 2
+                          ? "bg-slate-100/40"
+                          : item.rank === 3
+                          ? "bg-amber-100/20"
+                          : "";
+
+                      return (
+                        <tr key={item._id} className={`hover:bg-slate-50/80 transition-colors ${podiumBg}`}>
+                          {/* Rank */}
+                          <td className="p-3.5 font-bold">
+                            {item.rank ? (
+                              <div className="flex items-center gap-1.5">
+                                {item.rank === 1 ? (
+                                  <span className="w-6 h-6 rounded-full bg-amber-400 text-white font-black text-xs flex items-center justify-center shadow-sm">
+                                    1
+                                  </span>
+                                ) : item.rank === 2 ? (
+                                  <span className="w-6 h-6 rounded-full bg-slate-300 text-slate-800 font-black text-xs flex items-center justify-center shadow-sm">
+                                    2
+                                  </span>
+                                ) : item.rank === 3 ? (
+                                  <span className="w-6 h-6 rounded-full bg-amber-600 text-white font-black text-xs flex items-center justify-center shadow-sm">
+                                    3
+                                  </span>
+                                ) : (
+                                  <span className="font-mono text-slate-600 font-black px-1.5">
+                                    #{item.rank}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-300 font-mono">—</span>
+                            )}
+                          </td>
+
+                          {/* Team Name */}
+                          <td className="p-3.5">
+                            <div className="font-black text-slate-900">{item.teamName}</div>
+                            <div className="font-mono text-[10px] text-indigo-600 font-bold">{item.teamId}</div>
+                            {item.submissionId?.projectName && (
+                              <div className="text-[11px] text-slate-500 italic truncate max-w-xs">
+                                {item.submissionId.projectName}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Track */}
+                          <td className="p-3.5 text-slate-600 font-medium whitespace-nowrap">
+                            {item.track}
+                          </td>
+
+                          {/* Final Score */}
+                          <td className="p-3.5 whitespace-nowrap">
+                            <span className="text-sm font-black text-slate-900">
+                              {item.finalScore.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">Avg score</span>
+                          </td>
+
+                          {/* Judging Progress */}
+                          <td className="p-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  item.pendingJudgeCount === 0 && item.finalizedJudgeCount > 0
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {item.finalizedJudgeCount} / {item.judgeCount} Finalized
+                              </span>
+                            </div>
+                            {item.pendingJudgeCount > 0 && (
+                              <span className="text-[10px] text-amber-600 block mt-0.5">
+                                {item.pendingJudgeCount} pending
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3.5 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                item.rankingStatus === "READY"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  : item.rankingStatus === "TIE"
+                                  ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                  : item.rankingStatus === "PENDING_EVALUATIONS"
+                                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                  : "bg-rose-100 text-rose-800 border border-rose-200"
+                              }`}
+                              title={item.statusReason}
+                            >
+                              {item.rankingStatus}
+                            </span>
+                            {item.statusReason && (
+                              <span className="text-[10px] text-slate-400 block truncate max-w-xs mt-0.5">
+                                {item.statusReason}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Category / Prize */}
+                          <td className="p-3.5">
+                            {item.category ? (
+                              <div className="space-y-0.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200">
+                                  <Award className="w-3 h-3 text-amber-600" />
+                                  {item.category}
+                                </span>
+                                {item.prize && (
+                                  <span className="text-[10px] text-slate-500 block truncate max-w-xs">
+                                    {item.prize}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">No award</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-3.5 text-right whitespace-nowrap space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedResultDrilldown(item)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"
+                              title="Inspect judge scores and submission drilldown"
+                            >
+                              Drill-down
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenWinnerModal(item)}
+                              disabled={resultsSetting.resultsLocked}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer disabled:opacity-40"
+                              title="Assign Winner Award or Category"
+                            >
+                              Assign Award
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Score Drill-Down Modal (Read-Only Inspection) */}
+      {selectedResultDrilldown && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  Score Drill-down: {selectedResultDrilldown.teamName}
+                </h3>
+                <p className="text-xs text-slate-400 font-mono">{selectedResultDrilldown.teamId} • {selectedResultDrilldown.track}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedResultDrilldown(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Score Summary Box */}
+            <div className="grid grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Official Rank</span>
+                <span className="text-lg font-black text-slate-900">
+                  {selectedResultDrilldown.rank ? `#${selectedResultDrilldown.rank}` : "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Final Score (Avg)</span>
+                <span className="text-lg font-black text-indigo-600">
+                  {selectedResultDrilldown.finalScore.toFixed(2)} pts
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Judges</span>
+                <span className="text-lg font-black text-slate-900">
+                  {selectedResultDrilldown.finalizedJudgeCount} / {selectedResultDrilldown.judgeCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Judge-wise Breakdown */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Judge-wise Finalized Scores ({selectedResultDrilldown.scoreSnapshot?.length || 0})
+              </h4>
+
+              {(!selectedResultDrilldown.scoreSnapshot || selectedResultDrilldown.scoreSnapshot.length === 0) ? (
+                <p className="text-xs text-slate-400 italic">No finalized judge score snapshots recorded.</p>
+              ) : (
+                <div className="space-y-3">
+                  {selectedResultDrilldown.scoreSnapshot.map((ev, idx) => (
+                    <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                            {ev.judgeName?.slice(0, 1) || "J"}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 block">{ev.judgeName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{ev.judgeEmail}</span>
+                          </div>
+                        </div>
+                        <span className="text-sm font-black text-slate-900">
+                          {ev.totalScore} <span className="text-[10px] text-slate-400 font-normal">pts</span>
+                        </span>
+                      </div>
+
+                      {/* Criteria */}
+                      {ev.criteriaScores && ev.criteriaScores.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          {ev.criteriaScores.map((crit, cIdx) => (
+                            <div key={cIdx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                              <span className="text-slate-600 truncate font-medium">{crit.criterionName}</span>
+                              <span className="font-bold text-slate-900">
+                                {crit.score} <span className="text-slate-400 font-normal">/ {crit.maxScore}</span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Judge Comments */}
+                      {ev.comments && (
+                        <div className="pt-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                            Judge Feedback:
+                          </span>
+                          <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1 whitespace-pre-wrap">
+                            {ev.comments}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedResultDrilldown(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Winner Assignment Modal */}
+      {winnerModalResult && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-500" />
+                Assign Award: {winnerModalResult.teamName}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setWinnerModalResult(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveWinnerAssignment} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Award / Winner Category
+                </label>
+                <select
+                  value={winnerCategoryInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setWinnerCategoryInput(val);
+                    if (val === "Winner (1st Place)") {
+                      setWinnerPrizeInput("₹15,000 + Certificate + Trophy");
+                      setIsWinnerInput(true);
+                      setIsRunnerUpInput(false);
+                    } else if (val === "1st Runner Up (2nd Place)") {
+                      setWinnerPrizeInput("₹10,000 + Certificate");
+                      setIsWinnerInput(false);
+                      setIsRunnerUpInput(true);
+                    } else if (val === "2nd Runner Up (3rd Place)") {
+                      setWinnerPrizeInput("₹5,000 + Certificate");
+                      setIsWinnerInput(false);
+                      setIsRunnerUpInput(true);
+                    } else if (!val) {
+                      setWinnerPrizeInput("");
+                      setIsWinnerInput(false);
+                      setIsRunnerUpInput(false);
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">None (Standard Ranking)</option>
+                  <option value="Winner (1st Place)">Winner (1st Place)</option>
+                  <option value="1st Runner Up (2nd Place)">1st Runner Up (2nd Place)</option>
+                  <option value="2nd Runner Up (3rd Place)">2nd Runner Up (3rd Place)</option>
+                  <option value="Best Innovation Award">Best Innovation Award</option>
+                  <option value="Best Technical Implementation">Best Technical Implementation</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Prize / Recognition Text
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. ₹15,000 + Trophy"
+                  value={winnerPrizeInput}
+                  onChange={(e) => setWinnerPrizeInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-4 pt-1">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isWinnerInput}
+                    onChange={(e) => setIsWinnerInput(e.target.checked)}
+                    className="rounded text-amber-500 focus:ring-amber-500"
+                  />
+                  Mark as Overall Winner
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRunnerUpInput}
+                    onChange={(e) => setIsRunnerUpInput(e.target.checked)}
+                    className="rounded text-amber-500 focus:ring-amber-500"
+                  />
+                  Mark as Runner-Up
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setWinnerModalResult(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingWinner}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {savingWinner ? "Saving..." : "Save Award Assignment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Tie Resolution Modal */}
+      {showTieModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-500" />
+                Resolve Ranking Ties
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowTieModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Multiple teams have identical final scores. Set their official designated rank ordering and specify the administrative rationale.
+            </p>
+
+            <form onSubmit={handleResolveTieSubmit} className="space-y-4">
+              <div className="space-y-2">
+                {tieOrders.map((t, idx) => (
+                  <div key={t.teamId} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">{t.teamName}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{t.teamId} • Score: {t.finalScore?.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-slate-500 font-semibold">Rank:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={t.rank}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setTieOrders((prev) =>
+                            prev.map((item, i) => (i === idx ? { ...item, rank: val } : item))
+                          );
+                        }}
+                        className="w-16 px-2.5 py-1 text-xs border border-slate-200 rounded-lg text-center font-bold"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Administrative Tie-Break Reason <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="State rule or justification (e.g., Higher Technical Complexity score, unanimous panel vote)..."
+                  value={tieBreakReason}
+                  onChange={(e) => setTieBreakReason(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowTieModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resolvingTie || !tieBreakReason.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {resolvingTie ? "Resolving..." : "Confirm Tie Resolution"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Results Modal */}
+      {showApproveResultsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 text-emerald-600">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center font-bold">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Approve Official Results</h3>
+                <p className="text-xs text-slate-500">Freeze ranking snapshot and mark as APPROVED</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Are you sure you want to approve official rankings for {results.length} teams? This freezes the calculation snapshot and authorizes publication.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowApproveResultsModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={approvingResults}
+                onClick={handleApproveResultsSubmit}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {approvingResults ? "Approving..." : "Confirm Approval"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lock Results Modal */}
+      {showLockResultsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center font-bold">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Lock Official Results Permanently</h3>
+                <p className="text-xs text-slate-500">Prevent any further modifications or recalculation</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Locking official results makes rankings, winner categories, and score snapshots completely immutable.
+            </p>
+
+            <form onSubmit={handleLockResultsSubmit} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Locking Reason / Context (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Winners announced at official closing ceremony."
+                  value={lockResultsReason}
+                  onChange={(e) => setLockResultsReason(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+
+              <label className="flex items-start gap-2 text-xs font-semibold text-slate-700 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  required
+                  checked={confirmLockChecked}
+                  onChange={(e) => setConfirmLockChecked(e.target.checked)}
+                  className="rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                />
+                <span>I confirm that these results are final and should be permanently locked.</span>
+              </label>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowLockResultsModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={lockingResults || !confirmLockChecked}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {lockingResults ? "Locking..." : "Confirm & Lock Results"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reopen Results Modal */}
+      {showReopenResultsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center font-bold">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Unlock Official Results</h3>
+                <p className="text-xs text-slate-500">Allow administrative edits and recalculation</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleReopenResultsSubmit} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Administrative Reopening Reason <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="State mandatory reason for reopening locked results (e.g. sponsor added special category award, calculation revision)..."
+                  value={reopenResultsReason}
+                  onChange={(e) => setReopenResultsReason(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowReopenResultsModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reopeningResults || !reopenResultsReason.trim()}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {reopeningResults ? "Unlocking..." : "Confirm & Unlock"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ─── PLACEHOLDER TABS (Scheduled for Later Phases) ─── */}
-      {["results", "certificates"].includes(activeTab) && (
+      {activeTab === "certificates" && (
         <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
             <Info className="w-8 h-8" />
           </div>
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-xl font-black text-slate-900 capitalize">
-              {activeTab.replace("_", " ")} Module
+              Certificates Module
             </h2>
             <p className="text-xs text-slate-500">
               This module is scheduled for development in accordance with the sequential phases outlined in{" "}

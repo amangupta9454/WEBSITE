@@ -56,6 +56,7 @@ import StudentExperiencePlatform from "./Pages/AssessmentPortal/StudentExperienc
 import PublicVerificationPage from "./Admin/Assessment/PublicVerificationPage";
 import AssessmentTerminal from "./Pages/AssessmentPortal/AssessmentTerminal";
 import HackathonPortal from "./Pages/Hackathon/HackathonPortal";
+import PublicResultsPage from "./Pages/Hackathon/PublicResultsPage";
 import EditorialLogin from "./Pages/Hackathon/Editorial/EditorialLogin";
 import EditorialDashboard from "./Pages/Hackathon/Editorial/EditorialDashboard";
 
@@ -140,8 +141,9 @@ function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
           <Route path="/assessments" element={<PublicAssessments />} />
-          <Route path="/hackathon" element={<HackathonPortal />} />
-          <Route path="/hackathon/*" element={<HackathonPortal />} />
+          {/* Phase 7: Hackathon Public Results & Leaderboard */}
+          <Route path="/hackathon/results" element={<PublicResultsPage />} />
+          <Route path="/results" element={<Navigate to="/hackathon/results" replace />} />
 
           {/* Phase 6: Hackathon Editorial / Judge Portal */}
           <Route path="/editorial-login" element={<Navigate to="/editorial/login" replace />} />
@@ -149,6 +151,9 @@ function App() {
           <Route path="/editorial" element={<EditorialDashboard />} />
           <Route path="/hackathon/editorial/login" element={<EditorialLogin />} />
           <Route path="/hackathon/editorial" element={<EditorialDashboard />} />
+
+          <Route path="/hackathon" element={<HackathonPortal />} />
+          <Route path="/hackathon/*" element={<HackathonPortal />} />
           <Route path="/resume-builder" element={<PublicResumeBuilder />} />
           <Route path="/mock-interview" element={<PublicMockInterview />} />
           <Route path="/privacy-policy" element={<Privacy />} />

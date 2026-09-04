@@ -55,6 +55,17 @@ const {
   auditEditorialLinkClick,
   saveEditorialEvaluationDraft,
   finalizeEditorialEvaluation,
+  calculateAdminResults,
+  getAdminResults,
+  getAdminResultDetail,
+  resolveAdminResultTie,
+  assignAdminResultWinner,
+  approveAdminResults,
+  publishAdminResults,
+  lockAdminResults,
+  reopenAdminResults,
+  getParticipantMyResult,
+  getPublicResults,
 } = require('../controllers/hackathonController');
 
 /**
@@ -143,6 +154,23 @@ router.get('/editorial/projects/:teamId', auth, verifyEditorial, getEditorialPro
 router.post('/editorial/projects/:teamId/audit-link-click', auth, verifyEditorial, auditEditorialLinkClick);
 router.post('/editorial/projects/:teamId/evaluation/draft', auth, verifyEditorial, saveEditorialEvaluationDraft);
 router.post('/editorial/projects/:teamId/evaluation/finalize', auth, verifyEditorial, finalizeEditorialEvaluation);
+
+/**
+ * Phase 7: Results, Winner Management & Public Leaderboard
+ */
+router.get('/results/my-result', auth, getParticipantMyResult);
+router.get('/public/results', getPublicResults);
+
+// Admin Results Endpoints
+router.post('/admin/results/calculate', auth, verifyAdmin, calculateAdminResults);
+router.get('/admin/results', auth, verifyAdmin, getAdminResults);
+router.get('/admin/results/:teamId', auth, verifyAdmin, getAdminResultDetail);
+router.post('/admin/results/resolve-tie', auth, verifyAdmin, resolveAdminResultTie);
+router.post('/admin/results/:teamId/assign-winner', auth, verifyAdmin, assignAdminResultWinner);
+router.post('/admin/results/approve', auth, verifyAdmin, approveAdminResults);
+router.post('/admin/results/publish', auth, verifyAdmin, publishAdminResults);
+router.post('/admin/results/lock', auth, verifyAdmin, lockAdminResults);
+router.post('/admin/results/reopen', auth, verifyAdmin, reopenAdminResults);
 
 module.exports = router;
 
