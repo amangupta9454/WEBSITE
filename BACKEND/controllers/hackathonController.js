@@ -4725,13 +4725,35 @@ exports.getParticipantMyResult = async (req, res) => {
       });
     }
 
+    // Check if there is an active fulfillment or configured prize for this team to keep prize string synchronized
+    const fulfillment = await HackathonPrizeFulfillment.findOne({
+      $or: [{ team: team._id }, { teamId: team.teamId }],
+      status: { $ne: 'CANCELLED' },
+    })
+      .populate('prizeId', 'name amount currency')
+      .lean();
+
+    let effectivePrize = result.prize;
+    if (fulfillment) {
+      const pAmt = fulfillment.amount || fulfillment.prizeId?.amount;
+      const pCurr = fulfillment.currency === 'INR' || !fulfillment.currency ? '₹' : fulfillment.currency;
+      if (pAmt) {
+        effectivePrize = `${pCurr}${Number(pAmt).toLocaleString()} + Certificate + Trophy`;
+      } else if (fulfillment.prizeId?.name) {
+        effectivePrize = `${fulfillment.prizeId.name} + Certificate + Trophy`;
+      }
+      if (effectivePrize && effectivePrize !== result.prize) {
+        await HackathonResult.updateOne({ _id: result._id }, { prize: effectivePrize }).catch(() => {});
+      }
+    }
+
     const resultObj = {
       teamName: result.teamName,
       track: result.track,
       rank: result.rank,
       finalScore: result.finalScore,
       category: result.category,
-      prize: result.prize,
+      prize: effectivePrize,
       isWinner: result.isWinner,
       isRunnerUp: result.isRunnerUp,
       publishedAt: result.publishedAt,
@@ -4793,30 +4815,53 @@ exports.getPublicResults = async (req, res) => {
     }
 
     // Fetch published results, populate submission & team info
-    const results = await HackathonResult.find(resultFilter)
-      .populate('submissionId', 'projectName')
-      .populate('team', 'teamName teamId track finalSubmission initialIdea')
-      .sort({ rank: 1, finalScore: -1 })
-      .lean();
+    const [results, fulfillments] = await Promise.all([
+      HackathonResult.find(resultFilter)
+        .populate('submissionId', 'projectName')
+        .populate('team', 'teamName teamId track finalSubmission initialIdea')
+        .sort({ rank: 1, finalScore: -1 })
+        .lean(),
+      HackathonPrizeFulfillment.find({ status: { $ne: 'CANCELLED' } })
+        .populate('prizeId', 'name amount currency')
+        .lean(),
+    ]);
 
-    const formatItem = (r) => ({
-      rank: r.rank,
-      teamName: r.teamName || r.team?.teamName || 'Team',
-      teamId: r.teamId || r.team?.teamId,
-      projectName:
-        r.submissionId?.projectName ||
-        r.team?.finalSubmission?.projectTitle ||
-        r.team?.initialIdea?.title ||
-        'Project Submission',
-      track: r.track || r.team?.track || 'General Track',
-      category:
-        r.category ||
-        (r.rank === 1 ? 'Winner' : r.rank === 2 ? '1st Runner Up' : r.rank === 3 ? '2nd Runner Up' : ''),
-      prize: r.prize || '',
-      finalScore: r.finalScore,
-      isWinner: r.isWinner,
-      isRunnerUp: r.isRunnerUp,
-    });
+    const fulfillmentMap = new Map();
+    for (const f of fulfillments) {
+      if (f.teamId) fulfillmentMap.set(f.teamId, f);
+    }
+
+    const formatItem = (r) => {
+      const ful = fulfillmentMap.get(r.teamId);
+      let prizeStr = r.prize || '';
+      if (ful) {
+        const pAmt = ful.amount || ful.prizeId?.amount;
+        const pCurr = ful.currency === 'INR' || !ful.currency ? '₹' : ful.currency;
+        if (pAmt) {
+          prizeStr = `${pCurr}${Number(pAmt).toLocaleString()} + Certificate + Trophy`;
+        } else if (ful.prizeId?.name) {
+          prizeStr = `${ful.prizeId.name} + Certificate + Trophy`;
+        }
+      }
+      return {
+        rank: r.rank,
+        teamName: r.teamName || r.team?.teamName || 'Team',
+        teamId: r.teamId || r.team?.teamId,
+        projectName:
+          r.submissionId?.projectName ||
+          r.team?.finalSubmission?.projectTitle ||
+          r.team?.initialIdea?.title ||
+          'Project Submission',
+        track: r.track || r.team?.track || 'General Track',
+        category:
+          r.category ||
+          (r.rank === 1 ? 'Winner' : r.rank === 2 ? '1st Runner Up' : r.rank === 3 ? '2nd Runner Up' : ''),
+        prize: prizeStr,
+        finalScore: r.finalScore,
+        isWinner: r.isWinner,
+        isRunnerUp: r.isRunnerUp,
+      };
+    };
 
     const podiumWinners = results
       .filter((r) => r.isWinner || r.category || (r.rank && r.rank <= 3))

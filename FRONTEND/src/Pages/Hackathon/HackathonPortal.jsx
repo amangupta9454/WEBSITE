@@ -528,6 +528,10 @@ export default function HackathonPortal() {
   };
 
   const participantResult = myResultData?.result || (myResultData?.rank !== undefined ? myResultData : null);
+  const activePrizeText =
+    myPrizes && myPrizes.length > 0 && myPrizes[0].amount
+      ? `₹${Number(myPrizes[0].amount).toLocaleString()} + Certificate + Trophy`
+      : (participantResult?.prize || "Certificate of Excellence");
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative overflow-hidden">
@@ -795,11 +799,11 @@ export default function HackathonPortal() {
                       {Number(participantResult.finalScore || 0).toFixed(2)} / 100
                     </span>
                   </span>
-                  {participantResult.prize && (
+                  {activePrizeText && (
                     <>
                       <span className="text-slate-600">•</span>
                       <span className="text-emerald-400 font-semibold truncate max-w-[260px]">
-                        🎁 {participantResult.prize}
+                        🎁 {activePrizeText}
                       </span>
                     </>
                   )}
@@ -891,7 +895,7 @@ export default function HackathonPortal() {
                     <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                       <div className="text-[10px] uppercase font-bold text-slate-400">Prize Package</div>
                       <div className="text-sm sm:text-base font-black text-emerald-400 truncate">
-                        {participantResult.prize || "Certificate of Excellence"}
+                        {activePrizeText}
                       </div>
                       <div className="text-[10px] text-slate-500">Merit Recognition</div>
                     </div>
