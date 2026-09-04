@@ -5001,7 +5001,13 @@ exports.generateAdminCertificates = async (req, res) => {
 exports.emailAdminCertificate = async (req, res) => {
   try {
     const { id } = req.params;
-    const cert = await HackathonCertificate.findById(id);
+    const cert = await HackathonCertificate.findOne({
+      $or: [
+        { certificateId: id },
+        { certificateNumber: id },
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+      ],
+    });
 
     if (!cert) {
       return res.status(404).json({ success: false, message: 'Certificate not found.' });
@@ -5014,6 +5020,9 @@ exports.emailAdminCertificate = async (req, res) => {
       });
     }
 
+    if (!cert.emailStatus) {
+      cert.emailStatus = { sent: false, attempts: 0 };
+    }
     cert.emailStatus.attempts = (cert.emailStatus.attempts || 0) + 1;
 
     const emailRes = await hackathonEmailService.sendCertificateEmail({
