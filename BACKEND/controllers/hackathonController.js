@@ -5411,9 +5411,18 @@ exports.createAdminPrize = async (req, res) => {
     }
 
     let sponsorName = '';
-    if (sponsorId && mongoose.isValidObjectId(sponsorId)) {
-      const spon = await HackathonSponsor.findById(sponsorId).lean();
-      if (spon) sponsorName = spon.name;
+    let resolvedSponsorId = null;
+    if (sponsorId) {
+      const spon = await HackathonSponsor.findOne({
+        $or: [
+          { sponsorId },
+          ...(mongoose.isValidObjectId(sponsorId) ? [{ _id: sponsorId }] : []),
+        ],
+      }).lean();
+      if (spon) {
+        sponsorName = spon.name;
+        resolvedSponsorId = spon._id;
+      }
     }
 
     const prizeId = `PRIZE-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
@@ -5426,7 +5435,7 @@ exports.createAdminPrize = async (req, res) => {
       description: description || '',
       amount: Number(amount) || 0,
       currency: currency || 'INR',
-      sponsorId: sponsorId && mongoose.isValidObjectId(sponsorId) ? sponsorId : null,
+      sponsorId: resolvedSponsorId,
       sponsorNameSnapshot: sponsorName,
       quantity: Number(quantity) || 1,
       eligibility: eligibility || '',
@@ -5461,7 +5470,12 @@ exports.createAdminPrize = async (req, res) => {
 exports.updateAdminPrize = async (req, res) => {
   try {
     const { id } = req.params;
-    const prize = await HackathonPrize.findById(id);
+    const prize = await HackathonPrize.findOne({
+      $or: [
+        { prizeId: id },
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+      ],
+    });
 
     if (!prize) {
       return res.status(404).json({ success: false, message: 'Prize not found.' });
@@ -5482,10 +5496,20 @@ exports.updateAdminPrize = async (req, res) => {
     if (req.body.status) prize.status = req.body.status;
 
     if (req.body.sponsorId !== undefined) {
-      if (req.body.sponsorId && mongoose.isValidObjectId(req.body.sponsorId)) {
-        prize.sponsorId = req.body.sponsorId;
-        const spon = await HackathonSponsor.findById(req.body.sponsorId).lean();
-        if (spon) prize.sponsorNameSnapshot = spon.name;
+      if (req.body.sponsorId) {
+        const spon = await HackathonSponsor.findOne({
+          $or: [
+            { sponsorId: req.body.sponsorId },
+            ...(mongoose.isValidObjectId(req.body.sponsorId) ? [{ _id: req.body.sponsorId }] : []),
+          ],
+        }).lean();
+        if (spon) {
+          prize.sponsorId = spon._id;
+          prize.sponsorNameSnapshot = spon.name;
+        } else {
+          prize.sponsorId = null;
+          prize.sponsorNameSnapshot = '';
+        }
       } else {
         prize.sponsorId = null;
         prize.sponsorNameSnapshot = '';
@@ -5521,7 +5545,12 @@ exports.updateAdminPrize = async (req, res) => {
 exports.deleteAdminPrize = async (req, res) => {
   try {
     const { id } = req.params;
-    const prize = await HackathonPrize.findById(id);
+    const prize = await HackathonPrize.findOne({
+      $or: [
+        { prizeId: id },
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+      ],
+    });
 
     if (!prize) {
       return res.status(404).json({ success: false, message: 'Prize not found.' });
@@ -5647,7 +5676,12 @@ exports.createAdminSponsor = async (req, res) => {
 exports.updateAdminSponsor = async (req, res) => {
   try {
     const { id } = req.params;
-    const sponsor = await HackathonSponsor.findById(id).select('+contactName +contactEmail +contactPhone');
+    const sponsor = await HackathonSponsor.findOne({
+      $or: [
+        { sponsorId: id },
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+      ],
+    }).select('+contactName +contactEmail +contactPhone');
 
     if (!sponsor) {
       return res.status(404).json({ success: false, message: 'Sponsor not found.' });
@@ -5696,7 +5730,12 @@ exports.updateAdminSponsor = async (req, res) => {
 exports.deleteAdminSponsor = async (req, res) => {
   try {
     const { id } = req.params;
-    const sponsor = await HackathonSponsor.findById(id);
+    const sponsor = await HackathonSponsor.findOne({
+      $or: [
+        { sponsorId: id },
+        ...(mongoose.isValidObjectId(id) ? [{ _id: id }] : []),
+      ],
+    });
 
     if (!sponsor) {
       return res.status(404).json({ success: false, message: 'Sponsor not found.' });
@@ -5881,7 +5920,12 @@ exports.createAdminPrizeFulfillment = async (req, res) => {
 
     const [team, prize, result] = await Promise.all([
       HackathonTeam.findOne({ teamId, hackathonId }),
-      HackathonPrize.findById(prizeId),
+      HackathonPrize.findOne({
+        $or: [
+          { prizeId },
+          ...(mongoose.isValidObjectId(prizeId) ? [{ _id: prizeId }] : []),
+        ],
+      }),
       HackathonResult.findOne({ teamId, hackathonId }),
     ]);
 

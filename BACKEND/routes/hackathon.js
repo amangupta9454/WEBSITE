@@ -236,12 +236,14 @@ router.get('/admin/certificates/:id', auth, verifyAdmin, getAdminCertificateDeta
 router.get('/admin/prizes', auth, verifyAdmin, getAdminPrizes);
 router.post('/admin/prizes', auth, verifyAdmin, createAdminPrize);
 router.put('/admin/prizes/:id', auth, verifyAdmin, updateAdminPrize);
+router.patch('/admin/prizes/:id', auth, verifyAdmin, updateAdminPrize);
 router.delete('/admin/prizes/:id', auth, verifyAdmin, deleteAdminPrize);
 
 // Admin Sponsors Endpoints
 router.get('/admin/sponsors', auth, verifyAdmin, getAdminSponsors);
 router.post('/admin/sponsors', auth, verifyAdmin, createAdminSponsor);
 router.put('/admin/sponsors/:id', auth, verifyAdmin, updateAdminSponsor);
+router.patch('/admin/sponsors/:id', auth, verifyAdmin, updateAdminSponsor);
 router.delete('/admin/sponsors/:id', auth, verifyAdmin, deleteAdminSponsor);
 
 // Admin Prize Fulfillment Endpoints
