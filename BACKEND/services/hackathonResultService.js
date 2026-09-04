@@ -15,7 +15,10 @@ class HackathonResultService {
    */
   static async calculateResults({ hackathonId = 'can-hackathon-2026', actorId, actorName, actorEmail, req }) {
     // 1. Verify hackathon settings & lock status
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (setting?.resultsLocked) {
       throw new Error('Official results are locked and cannot be recalculated without explicit administrative reopening.');
     }
@@ -339,7 +342,10 @@ class HackathonResultService {
       throw new Error('Administrative tie-break reason is mandatory.');
     }
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (setting?.resultsLocked) {
       throw new Error('Results are locked and tie cannot be modified.');
     }

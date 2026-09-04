@@ -4135,7 +4135,10 @@ exports.getAdminResults = async (req, res) => {
       locked: allResults.filter((r) => r.isLocked).length,
     };
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true }).lean();
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId }).lean()) ||
+      (await HackathonSetting.findOne().lean()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId)).toObject();
 
     res.status(200).json({
       success: true,
@@ -4235,7 +4238,10 @@ exports.assignAdminResultWinner = async (req, res) => {
     const { category, prize, isWinner = false, isRunnerUp = false } = req.body;
     const hackathonId = req.body.hackathonId || 'can-hackathon-2026';
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (setting?.resultsLocked) {
       return res.status(400).json({ success: false, message: 'Results are locked and winner assignments cannot be modified.' });
     }
@@ -4329,7 +4335,10 @@ exports.approveAdminResults = async (req, res) => {
   try {
     const hackathonId = req.body.hackathonId || 'can-hackathon-2026';
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (setting?.resultsLocked) {
       return res.status(400).json({ success: false, message: 'Results are locked.' });
     }
@@ -4415,7 +4424,10 @@ exports.publishAdminResults = async (req, res) => {
     const hackathonId = req.body.hackathonId || 'can-hackathon-2026';
     const shouldPublish = req.body.publish !== false; // default true
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (!setting) {
       return res.status(404).json({ success: false, message: 'Hackathon settings not found.' });
     }
@@ -4516,7 +4528,10 @@ exports.lockAdminResults = async (req, res) => {
       });
     }
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (!setting) {
       return res.status(404).json({ success: false, message: 'Settings not found.' });
     }
@@ -4595,7 +4610,10 @@ exports.reopenAdminResults = async (req, res) => {
       });
     }
 
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true });
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId })) ||
+      (await HackathonSetting.findOne()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId));
     if (!setting) {
       return res.status(404).json({ success: false, message: 'Settings not found.' });
     }
@@ -4723,7 +4741,10 @@ exports.getParticipantMyResult = async (req, res) => {
 exports.getPublicResults = async (req, res) => {
   try {
     const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
-    const setting = await HackathonSetting.findOne({ hackathonId, isActive: true }).lean();
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId }).lean()) ||
+      (await HackathonSetting.findOne().lean()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId)).toObject();
 
     if (!setting?.isResultsPublished) {
       return res.status(200).json({
