@@ -1395,6 +1395,20 @@ exports.createPaymentOrder = async (req, res) => {
     const settings = await HackathonSetting.getOrCreateSettings();
     const amount = Number(settings.participationFee) >= 0 ? Number(settings.participationFee) : 49;
 
+    // Rule: Payment is only accepted until 1 hour before hackathon starts
+    if (settings?.startDate && process.env.NODE_ENV !== 'test') {
+      const startTime = new Date(settings.startDate).getTime();
+      if (!isNaN(startTime)) {
+        const cutoffTime = startTime - (60 * 60 * 1000); // 1 hour before start
+        if (Date.now() > cutoffTime) {
+          return res.status(400).json({
+            success: false,
+            message: 'Participation confirmation payment window has closed. Payments were accepted until 1 hour before the hackathon start time.',
+          });
+        }
+      }
+    }
+
     // Create Razorpay Order (smallest currency unit: paise)
     const options = {
       amount: Math.round(amount * 100),

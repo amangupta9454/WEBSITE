@@ -1919,6 +1919,9 @@ export default function HackathonAdminWorkspace() {
                     onChange={(e) => setSettingsForm({ ...settingsForm, startDate: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-xl text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Confirmation payment closes automatically 1 hour before this start time.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">End Date & Time</label>

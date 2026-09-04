@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -261,6 +261,19 @@ export default function HackathonPortal() {
     return () => clearInterval(interval);
   }, [settings?.submissionDeadline]);
 
+  // Confirmation deadline: exactly 1 hour before hackathon start
+  const confirmationDeadline = useMemo(() => {
+    if (!settings?.startDate) return null;
+    const startMs = new Date(settings.startDate).getTime();
+    if (isNaN(startMs)) return null;
+    return new Date(startMs - 60 * 60 * 1000);
+  }, [settings?.startDate]);
+
+  const isConfirmationExpired = useMemo(() => {
+    if (!confirmationDeadline) return false;
+    return Date.now() > confirmationDeadline.getTime();
+  }, [confirmationDeadline]);
+
   // Live dynamic event start countdown timer
   useEffect(() => {
     if (!settings?.startDate && !settings?.submissionDeadline) return;
@@ -404,6 +417,10 @@ export default function HackathonPortal() {
   };
 
   const handlePayConfirmation = async () => {
+    if (isConfirmationExpired) {
+      alert("Participation confirmation payment window has closed. Payments were accepted until 1 hour before the hackathon start time.");
+      return;
+    }
     if (!isLeader) {
       alert("Only the Team Leader can complete the participation fee payment.");
       return;
@@ -733,6 +750,39 @@ export default function HackathonPortal() {
                         </span>
                         . Once confirmed, you will instantly unlock the official WhatsApp group and finalist briefings.
                       </p>
+
+                      {confirmationDeadline && (
+                        <div
+                          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border ${
+                            isConfirmationExpired
+                              ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                              : "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                          }`}
+                        >
+                          {isConfirmationExpired ? (
+                            <Lock className="w-3.5 h-3.5 text-rose-400" />
+                          ) : (
+                            <Clock className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                          <span>
+                            {isConfirmationExpired
+                              ? `Confirmation Closed: Ended ${confirmationDeadline.toLocaleDateString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                })} at ${confirmationDeadline.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })} (1 hr before hackathon start)`
+                              : `Confirmation Closes: ${confirmationDeadline.toLocaleDateString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                })} at ${confirmationDeadline.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })} (1 hour before hackathon start)`}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="shrink-0 flex flex-col items-start lg:items-end gap-2">
@@ -740,13 +790,18 @@ export default function HackathonPortal() {
                         <>
                           <button
                             onClick={handlePayConfirmation}
-                            disabled={paymentLoading}
+                            disabled={paymentLoading || isConfirmationExpired}
                             className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-black bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 hover:from-emerald-400 hover:to-cyan-300 text-slate-950 shadow-xl shadow-emerald-500/25 transition-all hover:scale-102 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {paymentLoading ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
                                 <span>Processing Payment...</span>
+                              </>
+                            ) : isConfirmationExpired ? (
+                              <>
+                                <Lock className="w-4 h-4" />
+                                <span>CONFIRMATION CLOSED</span>
                               </>
                             ) : (
                               <>
@@ -756,7 +811,9 @@ export default function HackathonPortal() {
                             )}
                           </button>
                           <span className="text-[11px] text-slate-400 font-medium">
-                            ₹{settings?.participationFee ?? 49} per team (one payment confirms all members).
+                            {isConfirmationExpired
+                              ? "Window closed: confirmation was open until 1 hour before start."
+                              : `₹${settings?.participationFee ?? 49} per team (one payment confirms all members).`}
                           </span>
                         </>
                       ) : (
