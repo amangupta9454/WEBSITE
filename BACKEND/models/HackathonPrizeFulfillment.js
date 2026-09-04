@@ -57,7 +57,7 @@ const hackathonPrizeFulfillmentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'VERIFICATION_REQUIRED', 'PROCESSING', 'FULFILLED', 'FAILED', 'CANCELLED'],
+      enum: ['PENDING', 'VERIFICATION_REQUIRED', 'PROCESSING', 'FULFILLED', 'COMPLETED', 'FAILED', 'CANCELLED'],
       default: 'PENDING',
       index: true,
     },

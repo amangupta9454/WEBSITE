@@ -5904,12 +5904,22 @@ exports.createAdminPrizeFulfillment = async (req, res) => {
 exports.updateAdminPrizeFulfillment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, transactionReference, notes, voucherCodeMasked } = req.body;
+    let { status, transactionReference, notes, voucherCodeMasked } = req.body;
 
-    const fulfillment = await HackathonPrizeFulfillment.findById(id).select('+transactionReference');
+    let fulfillment = null;
+    if (mongoose.isValidObjectId(id)) {
+      fulfillment = await HackathonPrizeFulfillment.findById(id).select('+transactionReference');
+    }
+    if (!fulfillment) {
+      fulfillment = await HackathonPrizeFulfillment.findOne({ fulfillmentId: id }).select('+transactionReference');
+    }
+
     if (!fulfillment) {
       return res.status(404).json({ success: false, message: 'Prize fulfillment record not found.' });
     }
+
+    // Normalize COMPLETED to FULFILLED for consistent fulfillment status
+    if (status === 'COMPLETED') status = 'FULFILLED';
 
     const previousStatus = fulfillment.status;
     if (status) fulfillment.status = status;
@@ -5954,9 +5964,17 @@ exports.updateAdminPrizeFulfillment = async (req, res) => {
 exports.notifyAdminPrizeFulfillment = async (req, res) => {
   try {
     const { id } = req.params;
-    const fulfillment = await HackathonPrizeFulfillment.findById(id)
-      .populate('prizeId', 'name amount currency')
-      .populate('resultId', 'category rank');
+    let fulfillment = null;
+    if (mongoose.isValidObjectId(id)) {
+      fulfillment = await HackathonPrizeFulfillment.findById(id)
+        .populate('prizeId', 'name amount currency')
+        .populate('resultId', 'category rank');
+    }
+    if (!fulfillment) {
+      fulfillment = await HackathonPrizeFulfillment.findOne({ fulfillmentId: id })
+        .populate('prizeId', 'name amount currency')
+        .populate('resultId', 'category rank');
+    }
 
     if (!fulfillment) {
       return res.status(404).json({ success: false, message: 'Prize fulfillment not found.' });

@@ -248,6 +248,7 @@ router.delete('/admin/sponsors/:id', auth, verifyAdmin, deleteAdminSponsor);
 router.get('/admin/prize-fulfillments', auth, verifyAdmin, getAdminPrizeFulfillments);
 router.post('/admin/prize-fulfillments', auth, verifyAdmin, createAdminPrizeFulfillment);
 router.put('/admin/prize-fulfillments/:id', auth, verifyAdmin, updateAdminPrizeFulfillment);
+router.patch('/admin/prize-fulfillments/:id', auth, verifyAdmin, updateAdminPrizeFulfillment);
 router.post('/admin/prize-fulfillments/:id/notify', auth, verifyAdmin, notifyAdminPrizeFulfillment);
 
 // ==========================================
