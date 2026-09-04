@@ -5296,7 +5296,7 @@ export default function HackathonAdminWorkspace() {
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
               <span className="text-xs font-semibold text-slate-500">Completed Payouts</span>
               <p className="text-2xl font-black text-emerald-600 mt-1">
-                {prizeFulfillments.filter((f) => f.status === "COMPLETED").length}
+                {prizeFulfillments.filter((f) => f.status === "COMPLETED" || f.status === "FULFILLED").length}
               </p>
             </div>
           </div>
@@ -5434,14 +5434,16 @@ export default function HackathonAdminWorkspace() {
                       {prizeFulfillments.map((ful) => (
                         <tr key={ful.fulfillmentId} className="hover:bg-slate-50/70 transition-colors">
                           <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{ful.team?.name || "Team"}</div>
+                            <div className="font-bold text-slate-900">{ful.team?.teamName || ful.team?.name || "Team"}</div>
                             <div className="text-[10px] text-slate-400 font-mono">{ful.teamId}</div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-black text-amber-600">
                               {ful.currency === "INR" ? "₹" : ful.currency} {ful.amount?.toLocaleString()}
                             </div>
-                            <div className="text-[10px] text-slate-500 font-medium">ID: {ful.prizeId}</div>
+                            <div className="text-[10px] text-slate-500 font-medium">
+                              Prize: {typeof ful.prizeId === "object" ? (ful.prizeId?.name || ful.prizeId?.category) : (ful.prizeId || "Prize")}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-semibold text-slate-800">{ful.recipient?.name || "Team Leader"}</div>
@@ -5455,7 +5457,7 @@ export default function HackathonAdminWorkspace() {
                           <td className="py-3 px-4">
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                ful.status === "COMPLETED"
+                                ful.status === "COMPLETED" || ful.status === "FULFILLED"
                                   ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                                   : ful.status === "PROCESSING"
                                   ? "bg-blue-100 text-blue-800 border border-blue-300"

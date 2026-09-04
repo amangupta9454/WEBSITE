@@ -5695,8 +5695,109 @@ exports.getPublicSponsors = async (req, res) => {
 exports.getAdminPrizeFulfillments = async (req, res) => {
   try {
     const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
-    const filter = { hackathonId };
+    const filter = {};
+    if (hackathonId && hackathonId !== 'can-hackathon-2026') {
+      filter.hackathonId = hackathonId;
+    } else {
+      filter.$or = [
+        { hackathonId: 'can-hackathon-2026' },
+        { hackathonId: { $exists: false } },
+        { hackathonId: null },
+      ];
+    }
     if (req.query.status) filter.status = req.query.status;
+
+    // Auto-sync: Check if there are official winner results who don't have a prize fulfillment record yet
+    const [existingFulfillments, winnerResults, prizes] = await Promise.all([
+      HackathonPrizeFulfillment.find(filter).lean(),
+      HackathonResult.find({
+        $or: [
+          { hackathonId: 'can-hackathon-2026' },
+          { hackathonId: { $exists: false } },
+          { hackathonId: null },
+        ],
+        resultStatus: { $in: ['APPROVED', 'PUBLISHED', 'LOCKED'] },
+        $or: [
+          { isWinner: true },
+          { isRunnerUp: true },
+          { category: { $ne: null } },
+          { rank: { $in: [1, 2, 3] } },
+        ],
+      })
+        .populate('team')
+        .lean(),
+      HackathonPrize.find({
+        $or: [
+          { hackathonId: 'can-hackathon-2026' },
+          { hackathonId: { $exists: false } },
+          { hackathonId: null },
+        ],
+      }).lean(),
+    ]);
+
+    // If any winner is missing a fulfillment record, auto-create it
+    for (const w of winnerResults) {
+      const alreadyCreated = existingFulfillments.some(
+        (f) => String(f.resultId) === String(w._id) || f.teamId === w.teamId
+      );
+      if (!alreadyCreated && w.team) {
+        // Find best matching prize
+        let matchedPrize = null;
+        if (w.rank === 1 || w.isWinner) {
+          matchedPrize =
+            prizes.find(
+              (p) =>
+                p.category?.toUpperCase().includes('WINNER') ||
+                p.name?.toLowerCase().includes('winner') ||
+                p.category === 'WINNER_1ST'
+            ) || prizes.sort((a, b) => (b.amount || 0) - (a.amount || 0))[0];
+        } else if (w.rank === 2) {
+          matchedPrize =
+            prizes.find(
+              (p) =>
+                p.category?.toUpperCase().includes('2ND') ||
+                p.name?.includes('2') ||
+                p.category === 'RUNNER_UP_2ND'
+            ) || prizes.sort((a, b) => (b.amount || 0) - (a.amount || 0))[1];
+        } else if (w.rank === 3) {
+          matchedPrize =
+            prizes.find(
+              (p) =>
+                p.category?.toUpperCase().includes('3RD') ||
+                p.name?.includes('3') ||
+                p.category === 'RUNNER_UP_3RD'
+            ) || prizes.sort((a, b) => (b.amount || 0) - (a.amount || 0))[2];
+        } else if (w.category) {
+          matchedPrize = prizes.find(
+            (p) => p.category === w.category || p.name?.toLowerCase().includes(w.category.toLowerCase())
+          );
+        }
+
+        if (matchedPrize) {
+          const fulfillmentId = `FULF-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+          const newFulfillment = await HackathonPrizeFulfillment.create({
+            hackathonId: w.hackathonId || 'can-hackathon-2026',
+            fulfillmentId,
+            prizeId: matchedPrize._id,
+            resultId: w._id,
+            teamId: w.teamId,
+            team: w.team?._id || w.team,
+            recipient: {
+              name: w.team?.leader?.name || w.teamName,
+              email: w.team?.leader?.email || '',
+              mobile: w.team?.leader?.mobile || w.team?.leader?.phone || '',
+              college: w.team?.leader?.college || '',
+            },
+            fulfillmentMethod: matchedPrize.fulfillmentMethod || 'BANK_TRANSFER',
+            amount: matchedPrize.amount || 0,
+            currency: matchedPrize.currency || 'INR',
+            status: 'PENDING',
+            notes: `Auto-mapped for ${w.category || (w.rank ? `Rank #${w.rank}` : 'Winner')}`,
+          });
+          existingFulfillments.push(newFulfillment.toObject());
+        }
+      }
+    }
 
     const fulfillments = await HackathonPrizeFulfillment.find(filter)
       .select('+transactionReference')
