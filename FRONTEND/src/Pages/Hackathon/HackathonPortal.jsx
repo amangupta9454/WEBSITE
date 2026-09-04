@@ -95,7 +95,8 @@ export default function HackathonPortal() {
     if (!token) return;
     try {
       setLoadingSubmission(true);
-      const res = await axios.get(`${BACKEND_URL}/api/hackathon/submission/my-submission`, {
+      const teamIdParam = userTeam?.teamId ? `?teamId=${encodeURIComponent(userTeam.teamId)}` : "";
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/submission/my-submission${teamIdParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data?.success && res.data.submission) {
@@ -298,6 +299,7 @@ export default function HackathonPortal() {
       const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
 
       const payload = {
+        teamId: userTeam?.teamId,
         projectName: submissionForm.projectName,
         projectDescription: submissionForm.projectDescription,
         problemStatement: submissionForm.problemStatement,
@@ -343,6 +345,7 @@ export default function HackathonPortal() {
       const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
 
       const payload = {
+        teamId: userTeam?.teamId,
         projectName: submissionForm.projectName,
         projectDescription: submissionForm.projectDescription,
         problemStatement: submissionForm.problemStatement,

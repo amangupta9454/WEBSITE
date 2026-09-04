@@ -100,7 +100,8 @@ exports.googleLogin = async (req, res) => {
       id: user._id,
       userId: user._id, 
       unifiedUserId: user._id, 
-      unifiedRole: role 
+      unifiedRole: role,
+      email: user.email,
     };
 
     const token = jwt.sign(

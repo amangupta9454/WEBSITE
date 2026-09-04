@@ -98,58 +98,115 @@ exports.getPublicHackathonInfo = async (req, res) => {
 };
 
 /**
+ * Shared Helper: Resolve Authenticated Participant and Associated Hackathon Team
+ * Handles:
+ *  - Token with email OR token without email (fetches from User model via userId/id/unifiedUserId)
+ *  - Matching by leader.userId, members.userId, leader.email, members.email
+ *  - Optional explicit teamId param/body validation
+ *  - Auto-linking leader.userId in DB if team was imported with email only
+ */
+async function resolveParticipantTeam(req, explicitTeamId = null) {
+  const userId = req.user?._id || req.user?.id || req.user?.unifiedUserId || req.user?.userId;
+  let userEmail = req.user?.email ? req.user.email.toLowerCase().trim() : null;
+
+  if (!userEmail && userId) {
+    const user = await User.findById(userId).select('email name');
+    if (user?.email) {
+      userEmail = user.email.toLowerCase().trim();
+      req.user.email = userEmail;
+      if (!req.user.name && user.name) req.user.name = user.name;
+    }
+  }
+
+  if (!userId && !userEmail) {
+    return { errorStatus: 401, errorMessage: 'Authentication required. Please log in.' };
+  }
+
+  const targetTeamId = explicitTeamId || req.body?.teamId || req.query?.teamId;
+  let team = null;
+
+  if (targetTeamId) {
+    const candidate = await HackathonTeam.findOne({
+      isDeleted: { $ne: true },
+      $or: [{ teamId: targetTeamId }, { _id: mongoose.isValidObjectId(targetTeamId) ? targetTeamId : null }],
+    });
+    if (candidate) {
+      const isLeaderCheck =
+        (userId && candidate.leader?.userId && String(candidate.leader.userId) === String(userId)) ||
+        (userEmail && candidate.leader?.email && candidate.leader.email.toLowerCase() === userEmail);
+      const isMemberCheck =
+        (userId && candidate.members?.some((m) => m.userId && String(m.userId) === String(userId))) ||
+        (userEmail && candidate.members?.some((m) => m.email && m.email.toLowerCase() === userEmail));
+
+      if (isLeaderCheck || isMemberCheck) {
+        team = candidate;
+      }
+    }
+  }
+
+  if (!team) {
+    const query = {
+      isDeleted: { $ne: true },
+      $or: [],
+    };
+    if (userId) {
+      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
+    }
+    if (userEmail) {
+      query.$or.push({ 'leader.email': userEmail }, { 'members.email': userEmail });
+    }
+    team = await HackathonTeam.findOne(query);
+  }
+
+  if (!team) {
+    return { errorStatus: 404, errorMessage: 'No hackathon team registered or linked to your account.' };
+  }
+
+  // Auto-link leader/member userId if missing
+  let modified = false;
+  if (userId && userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail && !team.leader.userId) {
+    team.leader.userId = userId;
+    modified = true;
+  }
+  if (userId && userEmail && team.members?.length > 0) {
+    team.members.forEach((m) => {
+      if (m.email && m.email.toLowerCase() === userEmail && !m.userId) {
+        m.userId = userId;
+        modified = true;
+      }
+    });
+  }
+  if (modified) {
+    await team.save().catch(() => {});
+  }
+
+  const isLeader =
+    (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
+    (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail);
+
+  return { userId, userEmail, team, isLeader };
+}
+
+/**
  * 2. Get Authenticated Participant's Team Data
  * Strict security: Only returns the team that the authenticated user belongs to.
  */
 exports.getMyTeam = async (req, res) => {
   try {
-    const userId = req.user?.id || req.user?.unifiedUserId || req.user?.userId;
-    let userEmail = req.user?.email;
-
-    if (!userEmail && userId) {
-      const user = await User.findById(userId).select('email name');
-      if (user) {
-        userEmail = user.email;
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      if (resolved.errorStatus === 404) {
+        return res.status(200).json({
+          success: true,
+          hasTeam: false,
+          team: null,
+          message: 'No team registered for the current user.',
+        });
       }
+      return res.status(resolved.errorStatus).json({ success: false, message: resolved.errorMessage });
     }
 
-    if (!userEmail && !userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Missing user authentication session.',
-      });
-    }
-
-    const query = {
-      isDeleted: { $ne: true },
-      $or: [],
-    };
-
-    if (userId) {
-      query.$or.push({ 'leader.userId': userId });
-      query.$or.push({ 'members.userId': userId });
-    }
-
-    if (userEmail) {
-      const normalizedEmail = userEmail.toLowerCase().trim();
-      query.$or.push({ 'leader.email': normalizedEmail });
-      query.$or.push({ 'members.email': normalizedEmail });
-    }
-
-    const team = await HackathonTeam.findOne(query);
-
-    if (!team) {
-      return res.status(200).json({
-        success: true,
-        hasTeam: false,
-        team: null,
-        message: 'No team registered for the current user.',
-      });
-    }
-
-    const isLeader =
-      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
-      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+    const { team, isLeader, userId, userEmail } = resolved;
 
     const settings = await HackathonSetting.getOrCreateSettings();
 
@@ -1847,37 +1904,12 @@ exports.handlePaymentWebhook = async (req, res) => {
  */
 exports.getMySubmission = async (req, res) => {
   try {
-    const userId = req.user?._id || req.user?.id;
-    const userEmail = req.user?.email;
-
-    if (!userId && !userEmail) {
-      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      return res.status(resolved.errorStatus).json({ success: false, message: resolved.errorMessage });
     }
 
-    // Locate active team
-    const query = {
-      isDeleted: { $ne: true },
-      $or: [],
-    };
-    if (userId) {
-      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
-    }
-    if (userEmail) {
-      const normalizedEmail = userEmail.toLowerCase().trim();
-      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
-    }
-
-    const team = await HackathonTeam.findOne(query);
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'No team registered or linked to your account.',
-      });
-    }
-
-    const isLeader =
-      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
-      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+    const { team, isLeader, userId, userEmail } = resolved;
 
     // Step 4: Only teams with status = CONFIRMED (or SUBMISSION_PENDING/SUBMITTED) can access
     const allowedStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED'];
@@ -1954,35 +1986,14 @@ exports.getMySubmission = async (req, res) => {
  */
 exports.saveSubmissionDraft = async (req, res) => {
   try {
-    const userId = req.user?._id || req.user?.id;
-    const userEmail = req.user?.email;
-
-    if (!userId && !userEmail) {
-      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      return res.status(resolved.errorStatus).json({ success: false, message: resolved.errorMessage });
     }
 
-    const query = {
-      isDeleted: { $ne: true },
-      $or: [],
-    };
-    if (userId) {
-      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
-    }
-    if (userEmail) {
-      const normalizedEmail = userEmail.toLowerCase().trim();
-      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
-    }
-
-    const team = await HackathonTeam.findOne(query);
-    if (!team) {
-      return res.status(404).json({ success: false, message: 'Team not found.' });
-    }
+    const { team, isLeader, userId, userEmail } = resolved;
 
     // Step 5: Team Ownership - Only Leader can create/edit draft
-    const isLeader =
-      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
-      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
-
     if (!isLeader) {
       return res.status(403).json({
         success: false,
@@ -2153,35 +2164,14 @@ exports.saveSubmissionDraft = async (req, res) => {
  */
 exports.finalSubmitProject = async (req, res) => {
   try {
-    const userId = req.user?._id || req.user?.id;
-    const userEmail = req.user?.email;
-
-    if (!userId && !userEmail) {
-      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      return res.status(resolved.errorStatus).json({ success: false, message: resolved.errorMessage });
     }
 
-    const query = {
-      isDeleted: { $ne: true },
-      $or: [],
-    };
-    if (userId) {
-      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
-    }
-    if (userEmail) {
-      const normalizedEmail = userEmail.toLowerCase().trim();
-      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
-    }
-
-    const team = await HackathonTeam.findOne(query);
-    if (!team) {
-      return res.status(404).json({ success: false, message: 'Team not found.' });
-    }
+    const { team, isLeader, userId, userEmail } = resolved;
 
     // Step 5: Team Ownership - Leader only
-    const isLeader =
-      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
-      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
-
     if (!isLeader) {
       return res.status(403).json({
         success: false,
@@ -4642,22 +4632,12 @@ exports.reopenAdminResults = async (req, res) => {
  */
 exports.getParticipantMyResult = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
-    const userEmail = req.user.email?.toLowerCase().trim();
-
-    const team = await HackathonTeam.findOne({
-      isDeleted: { $ne: true },
-      $or: [
-        { 'leader.userId': userId },
-        { 'leader.email': userEmail },
-        { 'members.userId': userId },
-        { 'members.email': userEmail },
-      ],
-    }).lean();
-
-    if (!team) {
-      return res.status(404).json({ success: false, message: 'You are not enrolled in any hackathon team.' });
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      return res.status(resolved.errorStatus).json({ success: false, message: resolved.errorMessage });
     }
+
+    const { team } = resolved;
 
     const setting = await HackathonSetting.findOne({ hackathonId: team.hackathonId || 'can-hackathon-2026' }).lean();
 
@@ -5101,11 +5081,17 @@ exports.getAdminCertificateDetail = async (req, res) => {
  */
 exports.getParticipantMyCertificates = async (req, res) => {
   try {
-    if (!req.user || !req.user.email) {
-      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    const userId = req.user?._id || req.user?.id || req.user?.unifiedUserId || req.user?.userId;
+    let userEmail = req.user?.email ? req.user.email.toLowerCase().trim() : null;
+
+    if (!userEmail && userId) {
+      const user = await User.findById(userId).select('email name');
+      if (user?.email) userEmail = user.email.toLowerCase().trim();
     }
 
-    const userEmail = req.user.email.toLowerCase().trim();
+    if (!userEmail) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
     const certificates = await HackathonCertificate.find({
       recipientEmail: userEmail,
       isRevoked: false,
@@ -5822,23 +5808,13 @@ exports.notifyAdminPrizeFulfillment = async (req, res) => {
  */
 exports.getParticipantMyPrizes = async (req, res) => {
   try {
-    if (!req.user || !req.user.email) {
-      return res.status(401).json({ success: false, message: 'Authentication required.' });
-    }
-
-    const userEmail = req.user.email.toLowerCase().trim();
-    // Find team where user is leader or member
-    const team = await HackathonTeam.findOne({
-      $or: [
-        { 'leader.email': { $regex: `^${userEmail}$`, $options: 'i' } },
-        { 'members.email': { $regex: `^${userEmail}$`, $options: 'i' } },
-      ],
-      isDeleted: false,
-    });
-
-    if (!team) {
+    const resolved = await resolveParticipantTeam(req);
+    if (resolved.errorStatus) {
+      // If user has no team or not logged in, return empty prizes gracefully
       return res.status(200).json({ success: true, prizes: [] });
     }
+
+    const { team } = resolved;
 
     const fulfillments = await HackathonPrizeFulfillment.find({ teamId: team.teamId })
       .select('-transactionReference') // Strictly exclude sensitive transaction / UTR info
