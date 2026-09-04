@@ -45,6 +45,7 @@ const adminAssessmentRoutes   = require("./routes/assessment/adminAssessment");
 const studentAssessmentRoutes = require("./routes/assessment/studentAssessment");
 const publicAssessmentRoutes  = require("./routes/assessment/publicAssessment");
 const auditLogRoutes = require("./routes/auditLogRoutes");
+const hackathonRoutes         = require("./routes/hackathon");
 require("./scripts/v2NotificationsCron");
 
 // Global cached connection (very important for serverless!)
@@ -166,6 +167,7 @@ app.use("/api/admin/assessment", auth, adminAssessmentRoutes);
 app.use("/api/assessment",       studentAssessmentRoutes);
 app.use("/api/public/assessment",publicAssessmentRoutes);
 app.use("/api/admin/audit-logs", auditLogRoutes);
+app.use("/api/hackathon", hackathonRoutes);
 
 // Production Health Endpoint
 app.get("/healthz", async (req, res) => {

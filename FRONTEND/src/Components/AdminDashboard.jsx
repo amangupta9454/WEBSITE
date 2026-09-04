@@ -60,6 +60,7 @@ import AssessmentDashboard from "../Admin/Assessment/AssessmentDashboard";
 import EmailCenter from "../Admin/Email/EmailCenter";
 import QuizUsersAdmin from "./QuizUsersAdmin";
 import AuditLogsAdmin from "./AuditLogsAdmin";
+import HackathonAdminWorkspace from "./Hackathon/HackathonAdminWorkspace";
 import { Bell, Settings, Zap, Database, Share2, Check, BrainCircuit, ClipboardList } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -2337,6 +2338,16 @@ const AdminDashboard = () => {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveMainTab("hackathon")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                  activeMainTab === "hackathon"
+                    ? "bg-slate-900 text-amber-300 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Trophy className="w-4 h-4 text-amber-400" /> Hackathon
+              </button>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -2370,6 +2381,13 @@ const AdminDashboard = () => {
         {activeMainTab === "email" && (
           <div className="w-full">
             <EmailCenter newInquiriesCount={newInquiriesCount} />
+          </div>
+        )}
+
+        {/* ─── HACKATHON WORKSPACE TAB ─── */}
+        {activeMainTab === "hackathon" && (
+          <div className="w-full">
+            <HackathonAdminWorkspace />
           </div>
         )}
 

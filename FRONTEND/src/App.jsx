@@ -55,6 +55,7 @@ import CampusAmbassadorApply from "./Pages/CampusAmbassadorApply";
 import StudentExperiencePlatform from "./Pages/AssessmentPortal/StudentExperiencePlatform";
 import PublicVerificationPage from "./Admin/Assessment/PublicVerificationPage";
 import AssessmentTerminal from "./Pages/AssessmentPortal/AssessmentTerminal";
+import HackathonPortal from "./Pages/Hackathon/HackathonPortal";
 
 import ReferralTracker from "./Components/ReferralTracker";
 
@@ -137,6 +138,8 @@ function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
           <Route path="/assessments" element={<PublicAssessments />} />
+          <Route path="/hackathon" element={<HackathonPortal />} />
+          <Route path="/hackathon/*" element={<HackathonPortal />} />
           <Route path="/resume-builder" element={<PublicResumeBuilder />} />
           <Route path="/mock-interview" element={<PublicMockInterview />} />
           <Route path="/privacy-policy" element={<Privacy />} />

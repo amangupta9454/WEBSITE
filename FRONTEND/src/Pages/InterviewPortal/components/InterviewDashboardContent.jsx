@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw, GraduationCap, Award, Trophy } from "lucide-react";
+import { PlayCircle, Clock, CheckCircle, Video, Tag, Settings, X, Star, Briefcase, Loader2, FileText, Sparkles, User, RefreshCw, GraduationCap, Award, Trophy, Flame } from "lucide-react";
 import BuyTokensModal from "./BuyTokensModal";
 import ProfileSettingsModal from "../../../Components/ProfileSettingsModal";
 import axios from "axios";
@@ -779,6 +779,26 @@ export default function InterviewDashboardContent({ credits, isUnlimited, interv
           </div>
           <h2 className="font-bold text-slate-800 text-[11px] sm:text-base leading-tight mb-0.5 sm:mb-1 relative z-10">Quizzes</h2>
           <p className="text-[9px] sm:text-xs text-slate-500 relative z-10 leading-tight">Live quizzes & past scores.</p>
+        </div>
+
+        {/* Code-A-Nova Hackathon Card */}
+        <div 
+          className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-indigo-700/60 shadow-sm shadow-indigo-900/30 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/20 cursor-pointer relative overflow-hidden group transition-all duration-300 text-white"
+          onClick={() => navigate('/hackathon')}
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none group-hover:scale-125 transition-transform duration-500 text-amber-400">
+            <Flame className="w-12 h-12 sm:w-20 sm:h-20" />
+          </div>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-indigo-500/20 text-amber-400 border border-indigo-400/30 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-4 relative z-10">
+            <Flame className="w-4 h-4 sm:w-6 sm:h-6" />
+          </div>
+          <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1 relative z-10">
+            <h2 className="font-black text-white text-[11px] sm:text-base leading-tight">Hackathon</h2>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              Live
+            </span>
+          </div>
+          <p className="text-[9px] sm:text-xs text-indigo-200/80 relative z-10 leading-tight">National 2026 Portal →</p>
         </div>
 
         {/* Certificates Card (ALWAYS AT THE VERY END) */}
