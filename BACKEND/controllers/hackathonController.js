@@ -1925,8 +1925,16 @@ exports.getMySubmission = async (req, res) => {
 
     const { team, isLeader, userId, userEmail } = resolved;
 
-    // Step 4: Only teams with status = CONFIRMED (or SUBMISSION_PENDING/SUBMITTED) can access
-    const allowedStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED'];
+    // Step 4: Access project submission portal for confirmed/submitted teams
+    const allowedStatuses = [
+      'CONFIRMED',
+      'SUBMISSION_PENDING',
+      'SUBMITTED',
+      'UNDER_EVALUATION',
+      'EVALUATED',
+      'RESULT_PUBLISHED',
+      'SHORTLISTED',
+    ];
     if (!allowedStatuses.includes(team.status)) {
       return res.status(403).json({
         success: false,
@@ -1941,7 +1949,9 @@ exports.getMySubmission = async (req, res) => {
     const isDeadlinePassed = settings.submissionDeadline ? serverTime > new Date(settings.submissionDeadline) : false;
 
     // Retrieve or initialize submission document
-    let submission = await HackathonSubmission.findOne({ team: team._id });
+    let submission = await HackathonSubmission.findOne({
+      $or: [{ team: team._id }, { teamId: team.teamId }],
+    });
     if (!submission) {
       submission = {
         hackathonId: settings.hackathonId || 'can-hackathon-2026',
