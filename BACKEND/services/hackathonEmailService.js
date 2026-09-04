@@ -203,7 +203,129 @@ class HackathonEmailService {
       source: 'Hackathon Phase 6 System',
     });
   }
+
+  /**
+   * Sends certificate notification email with verification link
+   */
+  async sendCertificateEmail({ email, name, award, certificateNumber, verificationUrl, downloadUrl }) {
+    if (!email) return { success: false, error: 'Recipient email required' };
+
+    const clientUrl = process.env.CLIENT_URL || 'https://code-a-nova.online';
+    const effectiveVerifyUrl = verificationUrl || `${clientUrl}/hackathon/certificate/verify/${certificateNumber}`;
+    const effectiveDownloadUrl = downloadUrl || `${clientUrl}/hackathon#team-status`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Code-A-Nova Hackathon Certificate is Ready 🎉</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%); padding: 36px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background-color: #f59e0b; color: #0f172a; font-size: 11px; font-weight: 900; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+    .content { padding: 32px 28px; line-height: 1.6; color: #334155; }
+    .cert-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0; }
+    .cta-btn { display: inline-block; background: #4f46e5; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 800; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Official Credential</div>
+      <h1 style="margin:0;font-size:22px;">Your Hackathon Certificate is Ready!</h1>
+      <p style="margin:8px 0 0;font-size:13px;opacity:0.9;">Code-A-Nova National Hackathon 2026</p>
+    </div>
+    <div class="content">
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>Congratulations on your participation and achievement in the Code-A-Nova National Hackathon! Your official verifiable certificate has been issued by the organizing committee.</p>
+      <div class="cert-box">
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Award / Recognition:</strong> ${award}</p>
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Certificate Number:</strong> ${certificateNumber}</p>
+        <p style="margin:0;font-size:12px;color:#475569;">You can view, download, or verify this credential online at any time.</p>
+      </div>
+      <div style="text-align:center;margin:30px 0;">
+        <a href="${effectiveDownloadUrl}" class="cta-btn">Access My Certificate</a>
+      </div>
+      <p style="font-size:12px;color:#64748b;text-align:center;">
+        Public Verification Link: <br/>
+        <a href="${effectiveVerifyUrl}" style="color:#4f46e5;">${effectiveVerifyUrl}</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await mailService.sendEmail({
+      to: email,
+      subject: `Your Code-A-Nova Hackathon Certificate is Ready 🎉 (${certificateNumber})`,
+      html,
+      recipientName: name,
+      campaign: 'Hackathon Certificate Delivery',
+      source: 'Hackathon Phase 8 System',
+    });
+  }
+
+  /**
+   * Sends prize fulfillment update notification
+   */
+  async sendPrizeFulfillmentEmail({ email, name, award, prizeName, fulfillmentStatus, message }) {
+    if (!email) return { success: false, error: 'Recipient email required' };
+
+    const clientUrl = process.env.CLIENT_URL || 'https://code-a-nova.online';
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Code-A-Nova Hackathon — Prize Fulfillment Update</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #065f46 0%, #047857 100%); padding: 36px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background-color: #10b981; color: #ffffff; font-size: 11px; font-weight: 900; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+    .content { padding: 32px 28px; line-height: 1.6; color: #334155; }
+    .status-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Prize Department</div>
+      <h1 style="margin:0;font-size:22px;">Prize Fulfillment Update</h1>
+      <p style="margin:8px 0 0;font-size:13px;opacity:0.9;">Code-A-Nova National Hackathon 2026</p>
+    </div>
+    <div class="content">
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>We are writing with an update regarding your team's prize fulfillment for your award in the Code-A-Nova Hackathon.</p>
+      <div class="status-box">
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Award:</strong> ${award}</p>
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Prize:</strong> ${prizeName}</p>
+        <p style="margin:0;font-size:13px;color:#047857;"><strong>Fulfillment Status:</strong> ${fulfillmentStatus}</p>
+      </div>
+      ${message ? `<p style="font-size:13px;color:#1e293b;">${message}</p>` : ''}
+      <p style="font-size:12px;color:#64748b;">If you need assistance or have questions, you may view your status in the hackathon portal.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${clientUrl}/hackathon#team-status" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:bold;font-size:13px;">
+          View Hackathon Portal
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await mailService.sendEmail({
+      to: email,
+      subject: `Code-A-Nova Hackathon — Prize Fulfillment Update: ${prizeName}`,
+      html,
+      recipientName: name,
+      campaign: 'Hackathon Prize Fulfillment Notification',
+      source: 'Hackathon Phase 8 System',
+    });
+  }
 }
 
 module.exports = new HackathonEmailService();
-

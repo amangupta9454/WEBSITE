@@ -42,6 +42,12 @@ import {
   Medal,
   Check,
   X,
+  Mail,
+  Printer,
+  Download,
+  Gift,
+  Tag,
+  Building,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -721,6 +727,392 @@ export default function HackathonAdminWorkspace() {
       setReopeningResults(false);
     }
   };
+
+  // ─── PHASE 8: CERTIFICATES STATE & HANDLERS ───
+  const [certificates, setCertificates] = useState([]);
+  const [loadingCertificates, setLoadingCertificates] = useState(false);
+  const [certificatesPage, setCertificatesPage] = useState(1);
+  const [certificatesTotalPages, setCertificatesTotalPages] = useState(1);
+  const [certificatesTotal, setCertificatesTotal] = useState(0);
+  const [certificatesSearch, setCertificatesSearch] = useState("");
+  const [certificatesTypeFilter, setCertificatesTypeFilter] = useState("ALL");
+  const [certificatesStatusFilter, setCertificatesStatusFilter] = useState("ALL");
+  const [generatingCertificates, setGeneratingCertificates] = useState(false);
+  const [emailingCertificates, setEmailingCertificates] = useState(false);
+  const [selectedCertForRevoke, setSelectedCertForRevoke] = useState(null);
+  const [revocationReasonInput, setRevocationReasonInput] = useState("");
+  const [revokingCertificate, setRevokingCertificate] = useState(false);
+  const [selectedCertForView, setSelectedCertForView] = useState(null);
+
+  const fetchCertificates = async (page = 1) => {
+    try {
+      setLoadingCertificates(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/certificates?page=${page}&limit=15`;
+      if (certificatesSearch) url += `&search=${encodeURIComponent(certificatesSearch)}`;
+      if (certificatesTypeFilter && certificatesTypeFilter !== "ALL") {
+        url += `&type=${encodeURIComponent(certificatesTypeFilter)}`;
+      }
+      if (certificatesStatusFilter && certificatesStatusFilter !== "ALL") {
+        url += `&status=${encodeURIComponent(certificatesStatusFilter)}`;
+      }
+      const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data?.success) {
+        setCertificates(res.data.certificates || []);
+        setCertificatesPage(res.data.pagination?.page || 1);
+        setCertificatesTotalPages(res.data.pagination?.totalPages || 1);
+        setCertificatesTotal(res.data.pagination?.total || 0);
+      }
+    } catch (err) {
+      console.error("fetchCertificates error:", err);
+    } finally {
+      setLoadingCertificates(false);
+    }
+  };
+
+  const handleGenerateCertificates = async () => {
+    if (!window.confirm("Generate certificates for all eligible participants based on finalized Phase 7 results? Existing valid certificates will be safely skipped.")) {
+      return;
+    }
+    try {
+      setGeneratingCertificates(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/certificates/generate`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message || `Generated ${res.data.generatedCount} certificates successfully!`);
+        fetchCertificates(1);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to generate certificates");
+    } finally {
+      setGeneratingCertificates(false);
+    }
+  };
+
+  const handleBulkEmailCertificates = async () => {
+    if (!window.confirm("Send email with download and verification links to all active certificates that have not yet been emailed?")) {
+      return;
+    }
+    try {
+      setEmailingCertificates(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/certificates/email-bulk`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message || `Bulk dispatched ${res.data.sentCount} certificate emails!`);
+        fetchCertificates(certificatesPage);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to dispatch certificate emails");
+    } finally {
+      setEmailingCertificates(false);
+    }
+  };
+
+  const handleEmailSingleCertificate = async (certificateId) => {
+    try {
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/certificates/${certificateId}/email`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Certificate email dispatched successfully!");
+        fetchCertificates(certificatesPage);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to dispatch email");
+    }
+  };
+
+  const handleRevokeCertificateSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedCertForRevoke) return;
+    if (!revocationReasonInput.trim()) {
+      toast.error("Please state an administrative reason for revocation.");
+      return;
+    }
+    try {
+      setRevokingCertificate(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/certificates/${selectedCertForRevoke.certificateId}/revoke`,
+        { reason: revocationReasonInput.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Certificate marked as REVOKED.");
+        setSelectedCertForRevoke(null);
+        setRevocationReasonInput("");
+        fetchCertificates(certificatesPage);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to revoke certificate");
+    } finally {
+      setRevokingCertificate(false);
+    }
+  };
+
+  // ─── PHASE 8: PRIZES & SPONSORS STATE & HANDLERS ───
+  const [prizes, setPrizes] = useState([]);
+  const [loadingPrizes, setLoadingPrizes] = useState(false);
+  const [showPrizeModal, setShowPrizeModal] = useState(false);
+  const [prizeFormMode, setPrizeFormMode] = useState("create");
+  const [selectedPrizeForForm, setSelectedPrizeForForm] = useState(null);
+  const [prizeFormData, setPrizeFormData] = useState({
+    name: "",
+    category: "WINNER_1ST",
+    description: "",
+    amount: 0,
+    currency: "INR",
+    sponsorId: "",
+    quantity: 1,
+    eligibility: "WINNER",
+    trackRestriction: "",
+    rankRestriction: 1,
+    fulfillmentMethod: "BANK_TRANSFER",
+    status: "ACTIVE",
+  });
+  const [savingPrize, setSavingPrize] = useState(false);
+
+  const [sponsors, setSponsors] = useState([]);
+  const [loadingSponsors, setLoadingSponsors] = useState(false);
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [sponsorFormMode, setSponsorFormMode] = useState("create");
+  const [selectedSponsorForForm, setSelectedSponsorForForm] = useState(null);
+  const [sponsorFormData, setSponsorFormData] = useState({
+    name: "",
+    logoUrl: "",
+    websiteUrl: "",
+    description: "",
+    tier: "SILVER",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
+    benefits: [],
+    active: true,
+    displayOrder: 0,
+  });
+  const [newBenefitInput, setNewBenefitInput] = useState("");
+  const [savingSponsor, setSavingSponsor] = useState(false);
+
+  const [prizeFulfillments, setPrizeFulfillments] = useState([]);
+  const [loadingFulfillments, setLoadingFulfillments] = useState(false);
+  const [selectedFulfillmentForEdit, setSelectedFulfillmentForEdit] = useState(null);
+  const [fulfillmentStatusInput, setFulfillmentStatusInput] = useState("PENDING");
+  const [fulfillmentTxRefInput, setFulfillmentTxRefInput] = useState("");
+  const [fulfillmentVoucherInput, setFulfillmentVoucherInput] = useState("");
+  const [fulfillmentNotesInput, setFulfillmentNotesInput] = useState("");
+  const [savingFulfillment, setSavingFulfillment] = useState(false);
+  const [notifyingFulfillmentId, setNotifyingFulfillmentId] = useState(null);
+
+  const fetchPrizes = async () => {
+    try {
+      setLoadingPrizes(true);
+      const token = getAdminToken();
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/prizes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setPrizes(res.data.prizes || []);
+      }
+    } catch (err) {
+      console.error("fetchPrizes error:", err);
+    } finally {
+      setLoadingPrizes(false);
+    }
+  };
+
+  const handleSavePrize = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingPrize(true);
+      const token = getAdminToken();
+      if (prizeFormMode === "create") {
+        const res = await axios.post(`${BACKEND_URL}/api/hackathon/admin/prizes`, prizeFormData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success) {
+          toast.success("Prize created successfully!");
+          setShowPrizeModal(false);
+          fetchPrizes();
+        }
+      } else {
+        const res = await axios.put(
+          `${BACKEND_URL}/api/hackathon/admin/prizes/${selectedPrizeForForm.prizeId}`,
+          prizeFormData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data?.success) {
+          toast.success("Prize updated successfully!");
+          setShowPrizeModal(false);
+          fetchPrizes();
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save prize");
+    } finally {
+      setSavingPrize(false);
+    }
+  };
+
+  const handleDeletePrize = async (prizeId) => {
+    if (!window.confirm("Are you sure you want to delete this prize? If fulfillments exist, deletion will be rejected.")) {
+      return;
+    }
+    try {
+      const token = getAdminToken();
+      const res = await axios.delete(`${BACKEND_URL}/api/hackathon/admin/prizes/${prizeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        toast.success("Prize deleted successfully!");
+        fetchPrizes();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete prize");
+    }
+  };
+
+  const fetchSponsors = async () => {
+    try {
+      setLoadingSponsors(true);
+      const token = getAdminToken();
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/sponsors`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setSponsors(res.data.sponsors || []);
+      }
+    } catch (err) {
+      console.error("fetchSponsors error:", err);
+    } finally {
+      setLoadingSponsors(false);
+    }
+  };
+
+  const handleSaveSponsor = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingSponsor(true);
+      const token = getAdminToken();
+      if (sponsorFormMode === "create") {
+        const res = await axios.post(`${BACKEND_URL}/api/hackathon/admin/sponsors`, sponsorFormData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success) {
+          toast.success("Sponsor created successfully!");
+          setShowSponsorModal(false);
+          fetchSponsors();
+        }
+      } else {
+        const res = await axios.put(
+          `${BACKEND_URL}/api/hackathon/admin/sponsors/${selectedSponsorForForm.sponsorId}`,
+          sponsorFormData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data?.success) {
+          toast.success("Sponsor updated successfully!");
+          setShowSponsorModal(false);
+          fetchSponsors();
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save sponsor");
+    } finally {
+      setSavingSponsor(false);
+    }
+  };
+
+  const handleDeleteSponsor = async (sponsorId) => {
+    if (!window.confirm("Are you sure you want to delete this sponsor?")) return;
+    try {
+      const token = getAdminToken();
+      const res = await axios.delete(`${BACKEND_URL}/api/hackathon/admin/sponsors/${sponsorId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        toast.success("Sponsor deleted successfully!");
+        fetchSponsors();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete sponsor");
+    }
+  };
+
+  const fetchPrizeFulfillments = async () => {
+    try {
+      setLoadingFulfillments(true);
+      const token = getAdminToken();
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/prize-fulfillments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setPrizeFulfillments(res.data.fulfillments || []);
+      }
+    } catch (err) {
+      console.error("fetchPrizeFulfillments error:", err);
+    } finally {
+      setLoadingFulfillments(false);
+    }
+  };
+
+  const handleSaveFulfillment = async (e) => {
+    e.preventDefault();
+    if (!selectedFulfillmentForEdit) return;
+    try {
+      setSavingFulfillment(true);
+      const token = getAdminToken();
+      const res = await axios.patch(
+        `${BACKEND_URL}/api/hackathon/admin/prize-fulfillments/${selectedFulfillmentForEdit.fulfillmentId}`,
+        {
+          status: fulfillmentStatusInput,
+          transactionReference: fulfillmentTxRefInput,
+          voucherCodeMasked: fulfillmentVoucherInput,
+          notes: fulfillmentNotesInput,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Fulfillment status updated successfully!");
+        setSelectedFulfillmentForEdit(null);
+        fetchPrizeFulfillments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update fulfillment");
+    } finally {
+      setSavingFulfillment(false);
+    }
+  };
+
+  const handleNotifyFulfillment = async (fulfillmentId) => {
+    try {
+      setNotifyingFulfillmentId(fulfillmentId);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/prize-fulfillments/${fulfillmentId}/notify`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Winner prize notification dispatched via email!");
+        fetchPrizeFulfillments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to notify winner");
+    } finally {
+      setNotifyingFulfillmentId(null);
+    }
+  };
+
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     tagline: "",
@@ -831,6 +1223,17 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "results") {
       fetchResults();
     }
+    if (activeTab === "certificates") {
+      fetchCertificates(1);
+    }
+    if (activeTab === "prizes") {
+      fetchPrizes();
+      fetchPrizeFulfillments();
+      fetchSponsors();
+    }
+    if (activeTab === "sponsors") {
+      fetchSponsors();
+    }
   }, [
     activeTab,
     teamsStatusFilter,
@@ -841,6 +1244,8 @@ export default function HackathonAdminWorkspace() {
     evaluationsStatusFilter,
     resultsTrackFilter,
     resultsStatusFilter,
+    certificatesTypeFilter,
+    certificatesStatusFilter,
   ]);
 
   const handleSaveSettings = async (e) => {
@@ -969,7 +1374,9 @@ export default function HackathonAdminWorkspace() {
             },
             { id: "judging", label: "Judging & Evaluations", icon: Sparkles, badge: aggregatedResults.length > 0 ? `${aggregatedResults.length} Evaluated` : "Active" },
             { id: "results", label: "Results", icon: Trophy, badge: resultsSummary.total > 0 ? `${resultsSummary.total} Ranked` : "Official" },
-            { id: "certificates", label: "Certificates", icon: CheckCircle2, badge: "Phase 12" },
+            { id: "certificates", label: "Certificates", icon: CheckCircle2, badge: certificatesTotal > 0 ? `${certificatesTotal} Issued` : "Active" },
+            { id: "prizes", label: "Prizes & Fulfillment", icon: Medal, badge: prizeFulfillments.length > 0 ? `${prizeFulfillments.length} Pipeline` : "Active" },
+            { id: "sponsors", label: "Sponsors", icon: Sparkles, badge: sponsors.length > 0 ? `${sponsors.length} Partners` : "Active" },
             { id: "settings", label: "Settings", icon: SettingsIcon, badge: "Active" },
             { id: "audit_logs", label: "Audit Logs", icon: ShieldAlert, badge: "Active" },
           ].map((tab) => {
@@ -3746,28 +4153,1352 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
-      {/* ─── PLACEHOLDER TABS (Scheduled for Later Phases) ─── */}
+      {/* ─── PHASE 8: CERTIFICATES TAB ─── */}
       {activeTab === "certificates" && (
-        <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
-            <Info className="w-8 h-8" />
+        <div className="space-y-6">
+          {/* Header & Main Actions */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Phase 8 Active
+                </span>
+                <span className="text-xs text-slate-500 font-medium">Cryptographic Credential Engine</span>
+              </div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                Official Hackathon Certificates
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Deterministic numbering (<code className="bg-slate-100 text-indigo-600 px-1 py-0.5 rounded font-mono">CAN-2026-XXXXXX</code>), SHA-256 verification tokens, and public authentication.
+              </p>
+            </div>
+            <div className="flex items-center flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={handleGenerateCertificates}
+                disabled={generatingCertificates}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Award className="w-4 h-4" />
+                {generatingCertificates ? "Generating..." : "Generate All Eligible"}
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkEmailCertificates}
+                disabled={emailingCertificates}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                {emailingCertificates ? "Dispatching..." : "Bulk Email Active"}
+              </button>
+            </div>
           </div>
-          <div className="max-w-md mx-auto space-y-2">
-            <h2 className="text-xl font-black text-slate-900 capitalize">
-              Certificates Module
-            </h2>
-            <p className="text-xs text-slate-500">
-              This module is scheduled for development in accordance with the sequential phases outlined in{" "}
-              <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-semibold">
-                docs/Hackathon_PRD.md
-              </code>
-              .
-            </p>
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Total Issued</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">{certificatesTotal}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Active & Valid</span>
+              <p className="text-2xl font-black text-emerald-600 mt-1">
+                {certificates.filter((c) => !c.isRevoked).length}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Email Delivered</span>
+              <p className="text-2xl font-black text-indigo-600 mt-1">
+                {certificates.filter((c) => c.emailStatus === "SENT").length}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Revoked</span>
+              <p className="text-2xl font-black text-rose-600 mt-1">
+                {certificates.filter((c) => c.isRevoked).length}
+              </p>
+            </div>
           </div>
-          <div className="pt-2">
-            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
-              Foundation Active • Scheduled in Next Phase
-            </span>
+
+          {/* Search, Filter & Toolbar */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search certificate #, recipient name, email, or team..."
+                value={certificatesSearch}
+                onChange={(e) => setCertificatesSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchCertificates(1)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={certificatesTypeFilter}
+                onChange={(e) => setCertificatesTypeFilter(e.target.value)}
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+              >
+                <option value="ALL">All Award Types</option>
+                <option value="WINNER">Winner (1st Place)</option>
+                <option value="RUNNER_UP">Runner-Up</option>
+                <option value="SPECIAL_RECOGNITION">Special Recognition</option>
+                <option value="PARTICIPATION">Participation</option>
+              </select>
+              <select
+                value={certificatesStatusFilter}
+                onChange={(e) => setCertificatesStatusFilter(e.target.value)}
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="ACTIVE">Active Only</option>
+                <option value="REVOKED">Revoked Only</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => fetchCertificates(1)}
+                className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all cursor-pointer"
+                title="Refresh Certificates"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingCertificates ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Certificates Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {loadingCertificates ? (
+              <div className="p-12 text-center text-slate-400">
+                <RefreshCw className="w-8 h-8 mx-auto animate-spin mb-2" />
+                <p className="text-xs font-semibold">Loading certificates registry...</p>
+              </div>
+            ) : certificates.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 space-y-2">
+                <Award className="w-10 h-10 mx-auto text-slate-300" />
+                <p className="text-sm font-bold text-slate-700">No certificates found</p>
+                <p className="text-xs">Click "Generate All Eligible" to create certificates from finalized Phase 7 results.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 uppercase font-black tracking-wider text-[10px] border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Serial & Code</th>
+                      <th className="py-3 px-4">Recipient</th>
+                      <th className="py-3 px-4">Team & Track</th>
+                      <th className="py-3 px-4">Type & Award</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Email</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {certificates.map((cert) => (
+                      <tr key={cert._id || cert.certificateId} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-mono font-bold text-indigo-600">{cert.certificateNumber}</div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono text-[10px] text-slate-400">{cert.verificationCode}</span>
+                            <a
+                              href={`/hackathon/certificate/verify/${cert.verificationCode}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-400 hover:text-indigo-600 transition-colors"
+                              title="Verify Publicly"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{cert.recipientName}</div>
+                          <div className="text-[11px] text-slate-500">{cert.recipientEmail}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {cert.recipientRole} • {cert.recipientCollege || "College N/A"}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-800">{cert.team?.name || "Team"}</div>
+                          <div className="text-[10px] text-slate-500">{cert.track || "General"}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              cert.type === "WINNER"
+                                ? "bg-amber-100 text-amber-800 border border-amber-300"
+                                : cert.type === "RUNNER_UP"
+                                ? "bg-purple-100 text-purple-800 border border-purple-300"
+                                : cert.type === "SPECIAL_RECOGNITION"
+                                ? "bg-blue-100 text-blue-800 border border-blue-300"
+                                : "bg-slate-100 text-slate-700 border border-slate-200"
+                            }`}
+                          >
+                            {cert.type?.replace("_", " ")}
+                          </span>
+                          {cert.award && (
+                            <div className="text-[10px] font-medium text-slate-600 mt-1 truncate max-w-[140px]">
+                              {cert.award}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {cert.isRevoked ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <ShieldAlert className="w-3 h-3" /> REVOKED
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check className="w-3 h-3" /> ACTIVE
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              cert.emailStatus === "SENT"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : cert.emailStatus === "FAILED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-slate-100 text-slate-600 border border-slate-200"
+                            }`}
+                          >
+                            <Mail className="w-3 h-3" /> {cert.emailStatus || "NOT_SENT"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCertForView(cert)}
+                              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                              title="View & Print Certificate"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEmailSingleCertificate(cert.certificateId)}
+                              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                              title="Dispatch Email"
+                            >
+                              <Send className="w-3.5 h-3.5 text-emerald-600" />
+                            </button>
+                            {!cert.isRevoked && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCertForRevoke(cert);
+                                  setRevocationReasonInput("");
+                                }}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                                title="Revoke Certificate"
+                              >
+                                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {certificatesTotalPages > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Page {certificatesPage} of {certificatesTotalPages} ({certificatesTotal} total certificates)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={certificatesPage <= 1}
+                    onClick={() => fetchCertificates(certificatesPage - 1)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={certificatesPage >= certificatesTotalPages}
+                    onClick={() => fetchCertificates(certificatesPage + 1)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── PHASE 8: PRIZES & FULFILLMENT TAB ─── */}
+      {activeTab === "prizes" && (
+        <div className="space-y-8">
+          {/* Header & Main Actions */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                  <Medal className="w-3.5 h-3.5" /> Phase 8 Active
+                </span>
+                <span className="text-xs text-slate-500 font-medium">Prize Pool & Fulfillment Pipeline</span>
+              </div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                Prize Fulfillment & Distribution
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Configure reward pools, connect corporate sponsors, track winner payouts, and maintain bank/voucher audit trails.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPrizeFormMode("create");
+                setSelectedPrizeForForm(null);
+                setPrizeFormData({
+                  name: "",
+                  category: "WINNER_1ST",
+                  description: "",
+                  amount: 0,
+                  currency: "INR",
+                  sponsorId: "",
+                  quantity: 1,
+                  eligibility: "WINNER",
+                  trackRestriction: "",
+                  rankRestriction: 1,
+                  fulfillmentMethod: "BANK_TRANSFER",
+                  status: "ACTIVE",
+                });
+                setShowPrizeModal(true);
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-md flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Prize
+            </button>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Configured Prizes</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">{prizes.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Total Pool Value</span>
+              <p className="text-2xl font-black text-amber-600 mt-1">
+                ₹{prizes.reduce((acc, p) => acc + (p.amount || 0) * (p.quantity || 1), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Pending Fulfillments</span>
+              <p className="text-2xl font-black text-indigo-600 mt-1">
+                {prizeFulfillments.filter((f) => f.status === "PENDING").length}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Completed Payouts</span>
+              <p className="text-2xl font-black text-emerald-600 mt-1">
+                {prizeFulfillments.filter((f) => f.status === "COMPLETED").length}
+              </p>
+            </div>
+          </div>
+
+          {/* Section: Configured Prizes Grid */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <Gift className="w-4 h-4 text-amber-500" /> Configured Prize Catalogue ({prizes.length})
+              </h3>
+            </div>
+
+            {loadingPrizes ? (
+              <div className="p-8 text-center text-slate-400">
+                <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-1" />
+                <p className="text-xs">Loading prize configuration...</p>
+              </div>
+            ) : prizes.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-400 space-y-2">
+                <Gift className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-bold text-slate-700">No prizes created yet</p>
+                <p className="text-[11px]">Click "Add New Prize" to set up awards, amounts, and sponsor backing.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {prizes.map((pz) => (
+                  <div key={pz.prizeId} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {pz.category?.replace("_", " ")}
+                        </span>
+                        <span className="text-base font-black text-amber-600">
+                          {pz.currency === "INR" ? "₹" : pz.currency} {pz.amount?.toLocaleString()}
+                        </span>
+                      </div>
+                      <h4 className="font-black text-slate-900 text-sm">{pz.name}</h4>
+                      {pz.description && (
+                        <p className="text-xs text-slate-500 line-clamp-2">{pz.description}</p>
+                      )}
+                      <div className="pt-1 flex flex-wrap gap-1.5 text-[10px] text-slate-500">
+                        {pz.sponsorNameSnapshot && (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-slate-700">
+                            Sponsor: {pz.sponsorNameSnapshot}
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-slate-700">
+                          Method: {pz.fulfillmentMethod}
+                        </span>
+                        {pz.trackRestriction && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold border border-amber-200">
+                            Track: {pz.trackRestriction}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrizeFormMode("edit");
+                          setSelectedPrizeForForm(pz);
+                          setPrizeFormData({
+                            name: pz.name,
+                            category: pz.category,
+                            description: pz.description || "",
+                            amount: pz.amount,
+                            currency: pz.currency || "INR",
+                            sponsorId: pz.sponsorId || "",
+                            quantity: pz.quantity || 1,
+                            eligibility: pz.eligibility || "WINNER",
+                            trackRestriction: pz.trackRestriction || "",
+                            rankRestriction: pz.rankRestriction || 1,
+                            fulfillmentMethod: pz.fulfillmentMethod || "BANK_TRANSFER",
+                            status: pz.status || "ACTIVE",
+                          });
+                          setShowPrizeModal(true);
+                        }}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                        title="Edit Prize"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePrize(pz.prizeId)}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                        title="Delete Prize"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Section: Fulfillment Pipeline */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-indigo-600" /> Prize Fulfillment Pipeline ({prizeFulfillments.length})
+              </h3>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              {loadingFulfillments ? (
+                <div className="p-8 text-center text-slate-400">
+                  <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-1" />
+                  <p className="text-xs">Loading fulfillment tracker...</p>
+                </div>
+              ) : prizeFulfillments.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-2">
+                  <Medal className="w-8 h-8 mx-auto text-slate-300" />
+                  <p className="text-xs font-bold text-slate-700">No prize fulfillments recorded</p>
+                  <p className="text-[11px]">When winners are assigned in the Results tab, fulfillment records are created automatically.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-600 uppercase font-black tracking-wider text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Winner & Team</th>
+                        <th className="py-3 px-4">Prize & Amount</th>
+                        <th className="py-3 px-4">Recipient</th>
+                        <th className="py-3 px-4">Method</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Audit / TxRef</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {prizeFulfillments.map((ful) => (
+                        <tr key={ful.fulfillmentId} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{ful.team?.name || "Team"}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{ful.teamId}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-black text-amber-600">
+                              {ful.currency === "INR" ? "₹" : ful.currency} {ful.amount?.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium">ID: {ful.prizeId}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-800">{ful.recipient?.name || "Team Leader"}</div>
+                            <div className="text-[11px] text-slate-500">{ful.recipient?.email}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              {ful.fulfillmentMethod}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                ful.status === "COMPLETED"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                  : ful.status === "PROCESSING"
+                                  ? "bg-blue-100 text-blue-800 border border-blue-300"
+                                  : ful.status === "FAILED"
+                                  ? "bg-rose-100 text-rose-800 border border-rose-300"
+                                  : "bg-amber-100 text-amber-800 border border-amber-300"
+                              }`}
+                            >
+                              {ful.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {ful.transactionReference ? (
+                              <span className="font-mono text-[10px] text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                                {ful.transactionReference}
+                              </span>
+                            ) : ful.voucherCodeMasked ? (
+                              <span className="font-mono text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                {ful.voucherCodeMasked}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">No Reference</span>
+                            )}
+                            {ful.notes && <div className="text-[10px] text-slate-500 mt-0.5">{ful.notes}</div>}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFulfillmentForEdit(ful);
+                                  setFulfillmentStatusInput(ful.status);
+                                  setFulfillmentTxRefInput(ful.transactionReference || "");
+                                  setFulfillmentVoucherInput(ful.voucherCodeMasked || "");
+                                  setFulfillmentNotesInput(ful.notes || "");
+                                }}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                                title="Update Status & Payout Proof"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleNotifyFulfillment(ful.fulfillmentId)}
+                                disabled={notifyingFulfillmentId === ful.fulfillmentId}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer disabled:opacity-40"
+                                title="Send Winner Email Notification"
+                              >
+                                <Mail className="w-3.5 h-3.5 text-emerald-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── PHASE 8: SPONSORS TAB ─── */}
+      {activeTab === "sponsors" && (
+        <div className="space-y-6">
+          {/* Header & Main Actions */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" /> Phase 8 Active
+                </span>
+                <span className="text-xs text-slate-500 font-medium">Corporate Partnership Directory</span>
+              </div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                Hackathon Sponsors & Partners
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Manage tiered brand placements (<code className="bg-slate-100 text-purple-600 px-1 py-0.5 rounded font-mono">TITLE, PLATINUM, GOLD, SILVER, COMMUNITY</code>), benefits, and confidential contact directory.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSponsorFormMode("create");
+                setSelectedSponsorForForm(null);
+                setSponsorFormData({
+                  name: "",
+                  logoUrl: "",
+                  websiteUrl: "",
+                  description: "",
+                  tier: "SILVER",
+                  contactName: "",
+                  contactEmail: "",
+                  contactPhone: "",
+                  benefits: [],
+                  active: true,
+                  displayOrder: 0,
+                });
+                setNewBenefitInput("");
+                setShowSponsorModal(true);
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-md flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Sponsor
+            </button>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Total Partners</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">{sponsors.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Active Sponsors</span>
+              <p className="text-2xl font-black text-emerald-600 mt-1">
+                {sponsors.filter((s) => s.active).length}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Title & Platinum</span>
+              <p className="text-2xl font-black text-purple-600 mt-1">
+                {sponsors.filter((s) => ["TITLE", "PLATINUM"].includes(s.tier)).length}
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500">Gold & Silver</span>
+              <p className="text-2xl font-black text-amber-600 mt-1">
+                {sponsors.filter((s) => ["GOLD", "SILVER"].includes(s.tier)).length}
+              </p>
+            </div>
+          </div>
+
+          {/* Sponsors Cards Grid */}
+          {loadingSponsors ? (
+            <div className="p-12 text-center text-slate-400">
+              <RefreshCw className="w-8 h-8 mx-auto animate-spin mb-2" />
+              <p className="text-xs font-semibold">Loading sponsors registry...</p>
+            </div>
+          ) : sponsors.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center text-slate-400 space-y-2">
+              <Building className="w-10 h-10 mx-auto text-slate-300" />
+              <p className="text-sm font-bold text-slate-700">No sponsors registered</p>
+              <p className="text-xs">Click "Add New Sponsor" to register corporate partners and showcase logos.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {sponsors.map((sp) => (
+                <div key={sp.sponsorId} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          sp.tier === "TITLE"
+                            ? "bg-purple-100 text-purple-800 border border-purple-300"
+                            : sp.tier === "PLATINUM"
+                            ? "bg-indigo-100 text-indigo-800 border border-indigo-300"
+                            : sp.tier === "GOLD"
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : sp.tier === "SILVER"
+                            ? "bg-slate-100 text-slate-800 border border-slate-300"
+                            : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        }`}
+                      >
+                        {sp.tier} Partner
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          sp.active
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-slate-100 text-slate-500 border border-slate-200"
+                        }`}
+                      >
+                        {sp.active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {sp.logoUrl ? (
+                        <img
+                          src={sp.logoUrl}
+                          alt={sp.name}
+                          className="w-12 h-12 object-contain rounded-xl border border-slate-100 p-1 bg-slate-50"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-base border border-purple-100">
+                          {sp.name?.slice(0, 2)?.toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-black text-slate-900 text-base">{sp.name}</h4>
+                        {sp.websiteUrl && (
+                          <a
+                            href={sp.websiteUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-purple-600 hover:underline flex items-center gap-1 mt-0.5"
+                          >
+                            <Globe className="w-3 h-3" /> Visit Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {sp.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2">{sp.description}</p>
+                    )}
+
+                    {sp.benefits && sp.benefits.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {sp.benefits.map((b, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-700 font-medium">
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Confidential Contact Details for Admin */}
+                    {(sp.contactName || sp.contactEmail || sp.contactPhone) && (
+                      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 space-y-0.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">
+                          Internal POC
+                        </span>
+                        {sp.contactName && <div className="font-bold text-slate-800">{sp.contactName}</div>}
+                        {sp.contactEmail && <div>{sp.contactEmail}</div>}
+                        {sp.contactPhone && <div>{sp.contactPhone}</div>}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSponsorFormMode("edit");
+                        setSelectedSponsorForForm(sp);
+                        setSponsorFormData({
+                          name: sp.name,
+                          logoUrl: sp.logoUrl || "",
+                          websiteUrl: sp.websiteUrl || "",
+                          description: sp.description || "",
+                          tier: sp.tier || "SILVER",
+                          contactName: sp.contactName || "",
+                          contactEmail: sp.contactEmail || "",
+                          contactPhone: sp.contactPhone || "",
+                          benefits: sp.benefits || [],
+                          active: sp.active ?? true,
+                          displayOrder: sp.displayOrder || 0,
+                        });
+                        setNewBenefitInput("");
+                        setShowSponsorModal(true);
+                      }}
+                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                      title="Edit Sponsor"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-purple-600" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSponsor(sp.sponsorId)}
+                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                      title="Delete Sponsor"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── MODAL: VIEW & PRINT CERTIFICATE ─── */}
+      {selectedCertForView && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-indigo-600" />
+                  Certificate: {selectedCertForView.certificateNumber}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Issued to {selectedCertForView.recipientName} ({selectedCertForView.recipientEmail})
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const printWindow = window.open("", "_blank");
+                    if (printWindow) {
+                      printWindow.document.write(selectedCertForView.htmlContent);
+                      printWindow.document.close();
+                      printWindow.focus();
+                      setTimeout(() => printWindow.print(), 250);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print / PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCertForView(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
+              <iframe
+                title="Certificate Preview"
+                srcDoc={selectedCertForView.htmlContent}
+                className="w-full h-[550px] rounded-lg border-0 bg-white"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: REVOKE CERTIFICATE ─── */}
+      {selectedCertForRevoke && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+                Revoke Certificate
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedCertForRevoke(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+              <div className="font-bold">Serial: {selectedCertForRevoke.certificateNumber}</div>
+              <div>Recipient: {selectedCertForRevoke.recipientName} ({selectedCertForRevoke.recipientEmail})</div>
+              <div>Team: {selectedCertForRevoke.team?.name || "Team"}</div>
+              <p className="text-[11px] text-rose-700 pt-1">
+                Warning: Revocation is irreversible. The public verification page will display this certificate as permanently invalidated.
+              </p>
+            </div>
+
+            <form onSubmit={handleRevokeCertificateSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Revocation Rationale / Justification <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Disqualified due to plagiarism / code submission violation..."
+                  value={revocationReasonInput}
+                  onChange={(e) => setRevocationReasonInput(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCertForRevoke(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={revokingCertificate}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {revokingCertificate ? "Revoking..." : "Confirm Revocation"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: CREATE / EDIT PRIZE ─── */}
+      {showPrizeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Medal className="w-4 h-4 text-amber-500" />
+                {prizeFormMode === "create" ? "Add New Hackathon Prize" : "Edit Prize Configuration"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPrizeModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePrize} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Prize Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 1st Place Overall Champion"
+                  value={prizeFormData.name}
+                  onChange={(e) => setPrizeFormData((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Category</label>
+                  <select
+                    value={prizeFormData.category}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, category: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="WINNER_1ST">Winner (1st Place)</option>
+                    <option value="RUNNER_UP_2ND">Runner-Up (2nd Place)</option>
+                    <option value="RUNNER_UP_3RD">2nd Runner-Up (3rd Place)</option>
+                    <option value="SPECIAL_TRACK">Special Track Award</option>
+                    <option value="CONSOLATION">Consolation Prize</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Reward Value (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={prizeFormData.amount}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, amount: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Fulfillment Method</label>
+                  <select
+                    value={prizeFormData.fulfillmentMethod}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, fulfillmentMethod: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="BANK_TRANSFER">Direct Bank Transfer</option>
+                    <option value="UPI">UPI Payout</option>
+                    <option value="VOUCHER">Digital Voucher / Coupon</option>
+                    <option value="SWAG_PHYSICAL">Physical Swag / Kit</option>
+                    <option value="CERTIFICATE_ONLY">Certificate Only</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Sponsor Allocation</label>
+                  <select
+                    value={prizeFormData.sponsorId}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, sponsorId: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Organizer Direct (No Sponsor)</option>
+                    {sponsors.map((sp) => (
+                      <option key={sp.sponsorId} value={sp.sponsorId}>
+                        {sp.name} ({sp.tier})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Track Restriction (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. AI / Machine Learning"
+                    value={prizeFormData.trackRestriction}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, trackRestriction: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Rank Restriction</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={prizeFormData.rankRestriction}
+                    onChange={(e) => setPrizeFormData((p) => ({ ...p, rankRestriction: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Prize Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Details of the prize package, cloud credits, gadgets, or trophies..."
+                  value={prizeFormData.description}
+                  onChange={(e) => setPrizeFormData((p) => ({ ...p, description: e.target.value }))}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowPrizeModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPrize}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {savingPrize ? "Saving..." : "Save Prize"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: UPDATE FULFILLMENT STATUS ─── */}
+      {selectedFulfillmentForEdit && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-indigo-600" />
+                Update Fulfillment: {selectedFulfillmentForEdit.team?.name || "Team"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedFulfillmentForEdit(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFulfillment} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Fulfillment Status</label>
+                <select
+                  value={fulfillmentStatusInput}
+                  onChange={(e) => setFulfillmentStatusInput(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="PENDING">PENDING (Awaiting Banking Info)</option>
+                  <option value="PROCESSING">PROCESSING (Transfer Initiated)</option>
+                  <option value="COMPLETED">COMPLETED (Delivered & Verified)</option>
+                  <option value="FAILED">FAILED (Invalid Account / Returned)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Bank UTR / Transaction Reference
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. UTR1234567890 / IMPS-987654"
+                  value={fulfillmentTxRefInput}
+                  onChange={(e) => setFulfillmentTxRefInput(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Masked Voucher Code (if voucher reward)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. AWS-XXXX-YYYY-1234"
+                  value={fulfillmentVoucherInput}
+                  onChange={(e) => setFulfillmentVoucherInput(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Administrative Notes</label>
+                <textarea
+                  rows={2}
+                  placeholder="Internal audit notes, receipt link, or payment proof notes..."
+                  value={fulfillmentNotesInput}
+                  onChange={(e) => setFulfillmentNotesInput(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFulfillmentForEdit(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingFulfillment}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {savingFulfillment ? "Updating..." : "Update Status"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: CREATE / EDIT SPONSOR ─── */}
+      {showSponsorModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                {sponsorFormMode === "create" ? "Add Corporate Sponsor" : "Edit Sponsor Details"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowSponsorModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSponsor} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Company / Organization Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Acme Cloud Systems"
+                  value={sponsorFormData.name}
+                  onChange={(e) => setSponsorFormData((s) => ({ ...s, name: e.target.value }))}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Sponsorship Tier</label>
+                  <select
+                    value={sponsorFormData.tier}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, tier: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="TITLE">TITLE Partner</option>
+                    <option value="PLATINUM">PLATINUM Partner</option>
+                    <option value="GOLD">GOLD Partner</option>
+                    <option value="SILVER">SILVER Partner</option>
+                    <option value="COMMUNITY">COMMUNITY Partner</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Display Priority Order</label>
+                  <input
+                    type="number"
+                    value={sponsorFormData.displayOrder}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, displayOrder: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Logo URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://.../logo.png"
+                    value={sponsorFormData.logoUrl}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, logoUrl: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Website URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://acme.com"
+                    value={sponsorFormData.websiteUrl}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, websiteUrl: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Description / Tagline</label>
+                <textarea
+                  rows={2}
+                  placeholder="Empowering developers with state-of-the-art APIs..."
+                  value={sponsorFormData.description}
+                  onChange={(e) => setSponsorFormData((s) => ({ ...s, description: e.target.value }))}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              {/* Benefits Tag Input */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Sponsor Deliverables / Benefits</label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. Logo on T-Shirt, Keynote Speech, Hiring Pipeline"
+                    value={newBenefitInput}
+                    onChange={(e) => setNewBenefitInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (newBenefitInput.trim()) {
+                          setSponsorFormData((s) => ({ ...s, benefits: [...s.benefits, newBenefitInput.trim()] }));
+                          setNewBenefitInput("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newBenefitInput.trim()) {
+                        setSponsorFormData((s) => ({ ...s, benefits: [...s.benefits, newBenefitInput.trim()] }));
+                        setNewBenefitInput("");
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                  >
+                    Add
+                  </button>
+                </div>
+                {sponsorFormData.benefits?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {sponsorFormData.benefits.map((ben, bIdx) => (
+                      <span key={bIdx} className="px-2 py-0.5 rounded-md text-[10px] bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1 font-semibold">
+                        {ben}
+                        <button
+                          type="button"
+                          onClick={() => setSponsorFormData((s) => ({ ...s, benefits: s.benefits.filter((_, i) => i !== bIdx) }))}
+                          className="hover:text-rose-600 cursor-pointer"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Confidential POC Details */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <span className="text-[10px] font-bold uppercase text-slate-500 block tracking-wider">
+                  Confidential Contact (Admin View Only)
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Contact Name"
+                    value={sponsorFormData.contactName}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, contactName: e.target.value }))}
+                    className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={sponsorFormData.contactEmail}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, contactEmail: e.target.value }))}
+                    className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone"
+                    value={sponsorFormData.contactPhone}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, contactPhone: e.target.value }))}
+                    className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sponsorFormData.active}
+                    onChange={(e) => setSponsorFormData((s) => ({ ...s, active: e.target.checked }))}
+                    className="rounded text-purple-600 focus:ring-purple-500"
+                  />
+                  Publish Sponsor Publicly on Portal
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSponsorModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSponsor}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {savingSponsor ? "Saving..." : "Save Sponsor"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

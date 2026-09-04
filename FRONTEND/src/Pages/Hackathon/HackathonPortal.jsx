@@ -40,6 +40,8 @@ import {
   Rocket,
   Edit2,
   Medal,
+  Download,
+  Gift,
 } from "lucide-react";
 import SEO from "../../Components/SEO";
 
@@ -142,6 +144,48 @@ export default function HackathonPortal() {
     }
   };
 
+  // Phase 8: Participant Certificates & Prizes State
+  const [myCertificates, setMyCertificates] = useState([]);
+  const [loadingCertificates, setLoadingCertificates] = useState(false);
+  const [myPrizes, setMyPrizes] = useState([]);
+  const [loadingPrizes, setLoadingPrizes] = useState(false);
+
+  const fetchMyCertificates = async () => {
+    const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+    if (!token) return;
+    try {
+      setLoadingCertificates(true);
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/certificates/my-certificates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setMyCertificates(res.data.certificates || []);
+      }
+    } catch (err) {
+      console.log("Certificates fetch check:", err.response?.data?.message);
+    } finally {
+      setLoadingCertificates(false);
+    }
+  };
+
+  const fetchMyPrizes = async () => {
+    const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+    if (!token) return;
+    try {
+      setLoadingPrizes(true);
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/prizes/my-prizes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setMyPrizes(res.data.prizes || []);
+      }
+    } catch (err) {
+      console.log("Prizes fetch check:", err.response?.data?.message);
+    } finally {
+      setLoadingPrizes(false);
+    }
+  };
+
   // Check auth and fetch data
   useEffect(() => {
     const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
@@ -167,10 +211,12 @@ export default function HackathonPortal() {
               setUserTeam(t);
               setIsLeader(teamRes.data.isLeader);
 
-              // If confirmed/submitted, fetch submission details & results
-              if (["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED"].includes(t.status)) {
+              // If confirmed/submitted, fetch submission details, results, certificates & prizes
+              if (["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED", "RESULT_PUBLISHED"].includes(t.status)) {
                 fetchSubmissionData();
                 fetchMyResult();
+                fetchMyCertificates();
+                fetchMyPrizes();
               }
             }
           } catch (teamErr) {
@@ -1090,6 +1136,133 @@ export default function HackathonPortal() {
                   </Link>
                 </div>
               ) : null}
+
+              {/* ─── PHASE 8: PRIZE FULFILLMENT PIPELINE (If Won Prize) ─── */}
+              {myPrizes.length > 0 && (
+                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-emerald-950/30 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                          <Gift className="w-3.5 h-3.5" /> Prize Fulfillment
+                        </span>
+                      </div>
+                      <h4 className="text-xl font-black text-white">Award & Reward Package</h4>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myPrizes.map((p, idx) => (
+                      <div key={idx} className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs font-bold text-slate-400">{p.award}</span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              p.status === 'FULFILLED'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : p.status === 'PROCESSING'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                            }`}
+                          >
+                            {p.status === 'FULFILLED' ? '✓ Dispatched & Fulfilled' : p.status}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-lg font-black text-white">{p.prizeName}</div>
+                          {p.sponsorName && (
+                            <div className="text-xs text-indigo-400 font-semibold">
+                              Sponsored by {p.sponsorName}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+                          <span className="text-slate-400">Value / Package:</span>
+                          <span className="font-mono font-black text-emerald-400 text-sm">
+                            {p.currency} {p.amount ? p.amount.toLocaleString() : 'Merit Package'}
+                          </span>
+                        </div>
+                        {p.voucherCodeMasked && (
+                          <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs flex justify-between items-center">
+                            <span className="text-slate-400">Voucher / Code:</span>
+                            <span className="font-mono font-bold text-white">{p.voucherCodeMasked}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ─── PHASE 8: OFFICIAL CERTIFICATES (PRD Section 43) ─── */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-cyan-400" /> Official Credentials
+                      </span>
+                    </div>
+                    <h4 className="text-xl sm:text-2xl font-black text-white">Hackathon Certificates</h4>
+                    <p className="text-xs text-slate-400 max-w-xl">
+                      Verifiable digital credentials certifying your achievement, technical demonstration, and national standing.
+                    </p>
+                  </div>
+                </div>
+
+                {myCertificates.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myCertificates.map((cert, idx) => (
+                      <div
+                        key={idx}
+                        className="p-5 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-800 space-y-4 hover:border-slate-700 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {cert.type}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-slate-400">
+                            {cert.certificateNumber}
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-base font-black text-white">{cert.award}</div>
+                          <div className="text-xs text-slate-400">Issued to {cert.recipientName}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Track: {cert.track} • {new Date(cert.issuedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                          <a
+                            href={`${BACKEND_URL}/api/hackathon/certificates/${cert.certificateNumber}/download?format=html`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-md transition-all cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" /> View / Download
+                          </a>
+                          <Link
+                            to={`/hackathon/certificate/verify/${cert.verificationCode}`}
+                            className="inline-flex items-center justify-center gap-1 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Verify
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 text-center space-y-2">
+                    <Award className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
+                    <div className="text-sm font-bold text-white">Your certificate will be available within 7 days</div>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Official credentials are synthesized following jury evaluations and result locking. Once issued, you will be able to view, print, and verify your credential here.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Leader & Members Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

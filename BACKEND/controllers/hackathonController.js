@@ -10,7 +10,12 @@ const HackathonEditorialMember = require('../models/HackathonEditorialMember');
 const HackathonEditorialAssignment = require('../models/HackathonEditorialAssignment');
 const HackathonEditorialEvaluation = require('../models/HackathonEditorialEvaluation');
 const HackathonResult = require('../models/HackathonResult');
+const HackathonCertificate = require('../models/HackathonCertificate');
+const HackathonPrize = require('../models/HackathonPrize');
+const HackathonSponsor = require('../models/HackathonSponsor');
+const HackathonPrizeFulfillment = require('../models/HackathonPrizeFulfillment');
 const hackathonResultService = require('../services/hackathonResultService');
+const hackathonCertificateService = require('../services/hackathonCertificateService');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const unstopParserService = require('../services/unstopParserService');
@@ -4677,6 +4682,1096 @@ exports.getPublicResults = async (req, res) => {
     });
   }
 };
+
+// ============================================================================
+// PHASE 8 — CERTIFICATES, PRIZE FULFILLMENT & SPONSOR MANAGEMENT
+// ============================================================================
+
+/**
+ * 53. Admin: List Certificates
+ * GET /api/hackathon/admin/certificates
+ */
+exports.getAdminCertificates = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const filter = { hackathonId };
+    if (req.query.type) filter.type = req.query.type;
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.search) {
+      const q = req.query.search.trim();
+      filter.$or = [
+        { recipientName: { $regex: q, $options: 'i' } },
+        { recipientEmail: { $regex: q, $options: 'i' } },
+        { certificateNumber: { $regex: q, $options: 'i' } },
+        { award: { $regex: q, $options: 'i' } },
+        { projectName: { $regex: q, $options: 'i' } },
+      ];
+    }
+
+    const [certificates, total, counts] = await Promise.all([
+      HackathonCertificate.find(filter)
+        .select('-htmlContent')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      HackathonCertificate.countDocuments(filter),
+      HackathonCertificate.aggregate([
+        { $match: { hackathonId } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            issued: { $sum: { $cond: [{ $eq: ['$status', 'ISSUED'] }, 1, 0] } },
+            delivered: { $sum: { $cond: [{ $eq: ['$status', 'DELIVERED'] }, 1, 0] } },
+            revoked: { $sum: { $cond: ['$isRevoked', 1, 0] } },
+            winners: { $sum: { $cond: [{ $in: ['$type', ['WINNER', 'RUNNER_UP', 'SPECIAL_AWARD']] }, 1, 0] } },
+          },
+        },
+      ]),
+    ]);
+
+    const summary = counts[0] || {
+      total: 0,
+      issued: 0,
+      delivered: 0,
+      revoked: 0,
+      winners: 0,
+    };
+
+    res.status(200).json({
+      success: true,
+      certificates,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+      summary,
+    });
+  } catch (error) {
+    console.error('getAdminCertificates Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch certificates.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 54. Admin: Generate All Eligible Certificates
+ * POST /api/hackathon/admin/certificates/generate-bulk
+ */
+exports.generateAdminCertificates = async (req, res) => {
+  try {
+    const hackathonId = req.body.hackathonId || 'can-hackathon-2026';
+    const adminId = req.user?._id || req.user?.id;
+    const actorDetails = {
+      id: String(adminId || 'admin'),
+      name: req.user?.name || 'Admin',
+      email: req.user?.email || '',
+    };
+
+    const result = await hackathonCertificateService.generateAllEligibleCertificates({
+      hackathonId,
+      adminId,
+      actorDetails,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Certificates processed successfully. Generated: ${result.generatedCount}, Skipped: ${result.skippedCount}`,
+      data: result,
+    });
+  } catch (error) {
+    console.error('generateAdminCertificates Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate certificates.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 55. Admin: Email Single Certificate
+ * POST /api/hackathon/admin/certificates/:id/email
+ */
+exports.emailAdminCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cert = await HackathonCertificate.findById(id);
+
+    if (!cert) {
+      return res.status(404).json({ success: false, message: 'Certificate not found.' });
+    }
+
+    if (cert.isRevoked) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot email a revoked certificate.',
+      });
+    }
+
+    cert.emailStatus.attempts = (cert.emailStatus.attempts || 0) + 1;
+
+    const emailRes = await hackathonEmailService.sendCertificateEmail({
+      email: cert.recipientEmail,
+      name: cert.recipientName,
+      award: cert.award,
+      certificateNumber: cert.certificateNumber,
+      verificationUrl: cert.verificationUrl,
+      downloadUrl: `${process.env.CLIENT_URL || 'https://code-a-nova.online'}/hackathon#team-status`,
+    });
+
+    if (emailRes.success) {
+      cert.emailStatus.sent = true;
+      cert.emailStatus.sentAt = new Date();
+      cert.emailStatus.messageId = emailRes.messageId || '';
+      cert.emailStatus.error = '';
+      cert.status = 'DELIVERED';
+      await cert.save();
+
+      await HackathonAuditLog.create({
+        actorId: String(req.user?._id || req.user?.id || 'admin'),
+        actorName: req.user?.name || 'Admin',
+        actorEmail: req.user?.email || '',
+        role: 'admin',
+        action: 'CERTIFICATE_EMAILED',
+        targetEntity: 'HackathonCertificate',
+        targetId: cert.certificateNumber,
+        newState: { recipientEmail: cert.recipientEmail, sentAt: cert.emailStatus.sentAt },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Certificate emailed to ${cert.recipientEmail}.`,
+        emailStatus: cert.emailStatus,
+      });
+    } else {
+      cert.emailStatus.error = emailRes.error || 'Failed to dispatch email';
+      await cert.save();
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send certificate email.',
+        error: emailRes.error,
+      });
+    }
+  } catch (error) {
+    console.error('emailAdminCertificate Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to email certificate.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 56. Admin: Bulk Email Certificates
+ * POST /api/hackathon/admin/certificates/email-bulk
+ */
+exports.emailBulkAdminCertificates = async (req, res) => {
+  try {
+    const hackathonId = req.body.hackathonId || 'can-hackathon-2026';
+    const limit = Math.min(50, parseInt(req.body.limit) || 20);
+
+    const pendingCerts = await HackathonCertificate.find({
+      hackathonId,
+      'emailStatus.sent': false,
+      isRevoked: false,
+    }).limit(limit);
+
+    let sentCount = 0;
+    let failCount = 0;
+
+    for (const cert of pendingCerts) {
+      cert.emailStatus.attempts = (cert.emailStatus.attempts || 0) + 1;
+      const sendRes = await hackathonEmailService.sendCertificateEmail({
+        email: cert.recipientEmail,
+        name: cert.recipientName,
+        award: cert.award,
+        certificateNumber: cert.certificateNumber,
+        verificationUrl: cert.verificationUrl,
+      });
+
+      if (sendRes.success) {
+        cert.emailStatus.sent = true;
+        cert.emailStatus.sentAt = new Date();
+        cert.emailStatus.messageId = sendRes.messageId || '';
+        cert.status = 'DELIVERED';
+        sentCount++;
+      } else {
+        cert.emailStatus.error = sendRes.error || 'Delivery failed';
+        failCount++;
+      }
+      await cert.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Batch email complete. Sent: ${sentCount}, Failed: ${failCount}`,
+      sentCount,
+      failCount,
+      processed: pendingCerts.length,
+    });
+  } catch (error) {
+    console.error('emailBulkAdminCertificates Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to bulk email certificates.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 57. Admin: Revoke Certificate
+ * POST /api/hackathon/admin/certificates/:id/revoke
+ */
+exports.revokeAdminCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'A mandatory revocation reason must be provided.',
+      });
+    }
+
+    const adminId = req.user?._id || req.user?.id;
+    const actorDetails = {
+      id: String(adminId || 'admin'),
+      name: req.user?.name || 'Admin',
+      email: req.user?.email || '',
+    };
+
+    const result = await hackathonCertificateService.revokeCertificate({
+      certificateId: id,
+      reason,
+      adminId,
+      actorDetails,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Certificate revoked successfully.',
+      certificate: result.certificate,
+    });
+  } catch (error) {
+    console.error('revokeAdminCertificate Error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to revoke certificate.',
+    });
+  }
+};
+
+/**
+ * 58. Admin: Get Certificate Detail
+ * GET /api/hackathon/admin/certificates/:id
+ */
+exports.getAdminCertificateDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cert = await HackathonCertificate.findOne({
+      $or: [{ _id: mongoose.isValidObjectId(id) ? id : null }, { certificateNumber: id }, { certificateId: id }],
+    }).populate('team', 'teamName leader members track');
+
+    if (!cert) {
+      return res.status(404).json({ success: false, message: 'Certificate not found.' });
+    }
+
+    res.status(200).json({ success: true, certificate: cert });
+  } catch (error) {
+    console.error('getAdminCertificateDetail Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch certificate detail.' });
+  }
+};
+
+/**
+ * 59. Participant: Get My Certificates
+ * GET /api/hackathon/certificates/my-certificates
+ */
+exports.getParticipantMyCertificates = async (req, res) => {
+  try {
+    if (!req.user || !req.user.email) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    const userEmail = req.user.email.toLowerCase().trim();
+    const certificates = await HackathonCertificate.find({
+      recipientEmail: userEmail,
+      isRevoked: false,
+    })
+      .select('-htmlContent')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      certificates,
+    });
+  } catch (error) {
+    console.error('getParticipantMyCertificates Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch participant certificates.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 60. Participant / Admin: Download Certificate
+ * GET /api/hackathon/certificates/:id/download
+ */
+exports.downloadCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cert = await HackathonCertificate.findOne({
+      $or: [{ _id: mongoose.isValidObjectId(id) ? id : null }, { certificateNumber: id }, { certificateId: id }],
+    });
+
+    if (!cert) {
+      return res.status(404).json({ success: false, message: 'Certificate not found.' });
+    }
+
+    // Security Check: Must be admin OR the certificate recipient
+    const isAdmin = !!(req.admin || req.user?.role === 'admin');
+    const userEmail = req.user?.email ? req.user.email.toLowerCase().trim() : '';
+
+    if (!isAdmin && userEmail !== cert.recipientEmail.toLowerCase().trim()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You are not authorized to access this certificate.',
+      });
+    }
+
+    if (cert.isRevoked && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'This certificate has been revoked and is unavailable for download.',
+      });
+    }
+
+    cert.downloadCount = (cert.downloadCount || 0) + 1;
+    await cert.save();
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'anonymous'),
+      actorName: req.user?.name || cert.recipientName,
+      actorEmail: userEmail,
+      role: isAdmin ? 'admin' : 'participant',
+      action: 'CERTIFICATE_DOWNLOADED',
+      targetEntity: 'HackathonCertificate',
+      targetId: cert.certificateNumber,
+      newState: { downloadCount: cert.downloadCount },
+    });
+
+    // If client requested HTML directly (e.g. for print view)
+    if (req.query.format === 'html') {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(cert.htmlContent);
+    }
+
+    res.status(200).json({
+      success: true,
+      certificate: {
+        certificateNumber: cert.certificateNumber,
+        recipientName: cert.recipientName,
+        award: cert.award,
+        htmlContent: cert.htmlContent,
+        verificationUrl: cert.verificationUrl,
+      },
+    });
+  } catch (error) {
+    console.error('downloadCertificate Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download certificate.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 61. Public: Verify Certificate
+ * GET /api/hackathon/certificates/verify/:verificationCode
+ */
+exports.verifyPublicCertificate = async (req, res) => {
+  try {
+    const { verificationCode } = req.params;
+    const result = await hackathonCertificateService.verifyCertificate(verificationCode);
+
+    if (!result.isValid && !result.isRevoked) {
+      return res.status(404).json({
+        success: false,
+        isValid: false,
+        message: result.message || 'Invalid verification code.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('verifyPublicCertificate Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying certificate.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 62. Admin: List Prizes
+ * GET /api/hackathon/admin/prizes
+ */
+exports.getAdminPrizes = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const prizes = await HackathonPrize.find({ hackathonId })
+      .populate('sponsorId', 'name tier logoUrl')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, prizes });
+  } catch (error) {
+    console.error('getAdminPrizes Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch prizes.' });
+  }
+};
+
+/**
+ * 63. Admin: Create Prize
+ * POST /api/hackathon/admin/prizes
+ */
+exports.createAdminPrize = async (req, res) => {
+  try {
+    const {
+      name,
+      category,
+      description,
+      amount,
+      currency,
+      sponsorId,
+      quantity,
+      eligibility,
+      trackRestriction,
+      rankRestriction,
+      fulfillmentMethod,
+      hackathonId = 'can-hackathon-2026',
+    } = req.body;
+
+    if (!name || !category) {
+      return res.status(400).json({ success: false, message: 'Prize name and category are required.' });
+    }
+
+    let sponsorName = '';
+    if (sponsorId && mongoose.isValidObjectId(sponsorId)) {
+      const spon = await HackathonSponsor.findById(sponsorId).lean();
+      if (spon) sponsorName = spon.name;
+    }
+
+    const prizeId = `PRIZE-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+    const prize = await HackathonPrize.create({
+      hackathonId,
+      prizeId,
+      name: name.trim(),
+      category: category.trim(),
+      description: description || '',
+      amount: Number(amount) || 0,
+      currency: currency || 'INR',
+      sponsorId: sponsorId && mongoose.isValidObjectId(sponsorId) ? sponsorId : null,
+      sponsorNameSnapshot: sponsorName,
+      quantity: Number(quantity) || 1,
+      eligibility: eligibility || '',
+      trackRestriction: trackRestriction || 'ALL',
+      rankRestriction: rankRestriction ? Number(rankRestriction) : null,
+      fulfillmentMethod: fulfillmentMethod || 'BANK_TRANSFER',
+      createdBy: req.user?._id || req.user?.id || null,
+    });
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'PRIZE_CREATED',
+      targetEntity: 'HackathonPrize',
+      targetId: prize.prizeId,
+      newState: { name: prize.name, amount: prize.amount, category: prize.category },
+    });
+
+    res.status(201).json({ success: true, message: 'Prize created successfully.', prize });
+  } catch (error) {
+    console.error('createAdminPrize Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create prize.', error: error.message });
+  }
+};
+
+/**
+ * 64. Admin: Update Prize
+ * PUT /api/hackathon/admin/prizes/:id
+ */
+exports.updateAdminPrize = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prize = await HackathonPrize.findById(id);
+
+    if (!prize) {
+      return res.status(404).json({ success: false, message: 'Prize not found.' });
+    }
+
+    const previousState = prize.toObject();
+
+    if (req.body.name) prize.name = req.body.name.trim();
+    if (req.body.category) prize.category = req.body.category.trim();
+    if (req.body.description !== undefined) prize.description = req.body.description;
+    if (req.body.amount !== undefined) prize.amount = Number(req.body.amount);
+    if (req.body.currency) prize.currency = req.body.currency;
+    if (req.body.quantity !== undefined) prize.quantity = Number(req.body.quantity);
+    if (req.body.eligibility !== undefined) prize.eligibility = req.body.eligibility;
+    if (req.body.trackRestriction) prize.trackRestriction = req.body.trackRestriction;
+    if (req.body.rankRestriction !== undefined) prize.rankRestriction = req.body.rankRestriction ? Number(req.body.rankRestriction) : null;
+    if (req.body.fulfillmentMethod) prize.fulfillmentMethod = req.body.fulfillmentMethod;
+    if (req.body.status) prize.status = req.body.status;
+
+    if (req.body.sponsorId !== undefined) {
+      if (req.body.sponsorId && mongoose.isValidObjectId(req.body.sponsorId)) {
+        prize.sponsorId = req.body.sponsorId;
+        const spon = await HackathonSponsor.findById(req.body.sponsorId).lean();
+        if (spon) prize.sponsorNameSnapshot = spon.name;
+      } else {
+        prize.sponsorId = null;
+        prize.sponsorNameSnapshot = '';
+      }
+    }
+
+    prize.updatedBy = req.user?._id || req.user?.id || null;
+    await prize.save();
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'PRIZE_UPDATED',
+      targetEntity: 'HackathonPrize',
+      targetId: prize.prizeId,
+      previousState: { name: previousState.name, amount: previousState.amount },
+      newState: { name: prize.name, amount: prize.amount },
+    });
+
+    res.status(200).json({ success: true, message: 'Prize updated successfully.', prize });
+  } catch (error) {
+    console.error('updateAdminPrize Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update prize.', error: error.message });
+  }
+};
+
+/**
+ * 65. Admin: Delete Prize
+ * DELETE /api/hackathon/admin/prizes/:id
+ */
+exports.deleteAdminPrize = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prize = await HackathonPrize.findById(id);
+
+    if (!prize) {
+      return res.status(404).json({ success: false, message: 'Prize not found.' });
+    }
+
+    // Safety check: Prevent deletion if fulfillments are linked to this prize
+    const activeFulfillments = await HackathonPrizeFulfillment.countDocuments({ prizeId: prize._id });
+    if (activeFulfillments > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete prize: ${activeFulfillments} prize fulfillment record(s) are mapped to it. Please archive the prize instead.`,
+      });
+    }
+
+    await HackathonPrize.deleteOne({ _id: prize._id });
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'PRIZE_DELETED',
+      targetEntity: 'HackathonPrize',
+      targetId: prize.prizeId,
+      previousState: { name: prize.name, amount: prize.amount },
+    });
+
+    res.status(200).json({ success: true, message: 'Prize deleted successfully.' });
+  } catch (error) {
+    console.error('deleteAdminPrize Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete prize.', error: error.message });
+  }
+};
+
+/**
+ * 66. Admin: List Sponsors
+ * GET /api/hackathon/admin/sponsors
+ */
+exports.getAdminSponsors = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const sponsors = await HackathonSponsor.find({ hackathonId })
+      .select('+contactName +contactEmail +contactPhone')
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, sponsors });
+  } catch (error) {
+    console.error('getAdminSponsors Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch sponsors.' });
+  }
+};
+
+/**
+ * 67. Admin: Create Sponsor
+ * POST /api/hackathon/admin/sponsors
+ */
+exports.createAdminSponsor = async (req, res) => {
+  try {
+    const {
+      name,
+      logoUrl,
+      websiteUrl,
+      description,
+      tier,
+      contactName,
+      contactEmail,
+      contactPhone,
+      benefits,
+      active = true,
+      displayOrder = 0,
+      hackathonId = 'can-hackathon-2026',
+    } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Sponsor name is required.' });
+    }
+
+    if (logoUrl) validateSafeUrl(logoUrl, 'Logo URL');
+    if (websiteUrl) validateSafeUrl(websiteUrl, 'Website URL');
+
+    const sponsorId = `SPON-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+    const sponsor = await HackathonSponsor.create({
+      hackathonId,
+      sponsorId,
+      name: name.trim(),
+      logoUrl: logoUrl ? logoUrl.trim() : '',
+      websiteUrl: websiteUrl ? websiteUrl.trim() : '',
+      description: description || '',
+      tier: tier || 'COMMUNITY',
+      contactName: contactName || '',
+      contactEmail: contactEmail ? contactEmail.trim().toLowerCase() : '',
+      contactPhone: contactPhone || '',
+      benefits: Array.isArray(benefits) ? benefits : [],
+      active: active !== false,
+      displayOrder: Number(displayOrder) || 0,
+      createdBy: req.user?._id || req.user?.id || null,
+    });
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'SPONSOR_CREATED',
+      targetEntity: 'HackathonSponsor',
+      targetId: sponsor.sponsorId,
+      newState: { name: sponsor.name, tier: sponsor.tier },
+    });
+
+    res.status(201).json({ success: true, message: 'Sponsor created successfully.', sponsor });
+  } catch (error) {
+    console.error('createAdminSponsor Error:', error);
+    res.status(400).json({ success: false, message: error.message || 'Failed to create sponsor.' });
+  }
+};
+
+/**
+ * 68. Admin: Update Sponsor
+ * PUT /api/hackathon/admin/sponsors/:id
+ */
+exports.updateAdminSponsor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sponsor = await HackathonSponsor.findById(id).select('+contactName +contactEmail +contactPhone');
+
+    if (!sponsor) {
+      return res.status(404).json({ success: false, message: 'Sponsor not found.' });
+    }
+
+    if (req.body.logoUrl) validateSafeUrl(req.body.logoUrl, 'Logo URL');
+    if (req.body.websiteUrl) validateSafeUrl(req.body.websiteUrl, 'Website URL');
+
+    if (req.body.name) sponsor.name = req.body.name.trim();
+    if (req.body.logoUrl !== undefined) sponsor.logoUrl = req.body.logoUrl.trim();
+    if (req.body.websiteUrl !== undefined) sponsor.websiteUrl = req.body.websiteUrl.trim();
+    if (req.body.description !== undefined) sponsor.description = req.body.description;
+    if (req.body.tier) sponsor.tier = req.body.tier;
+    if (req.body.contactName !== undefined) sponsor.contactName = req.body.contactName;
+    if (req.body.contactEmail !== undefined) sponsor.contactEmail = req.body.contactEmail.trim().toLowerCase();
+    if (req.body.contactPhone !== undefined) sponsor.contactPhone = req.body.contactPhone;
+    if (req.body.benefits) sponsor.benefits = req.body.benefits;
+    if (req.body.active !== undefined) sponsor.active = req.body.active;
+    if (req.body.displayOrder !== undefined) sponsor.displayOrder = Number(req.body.displayOrder);
+
+    sponsor.updatedBy = req.user?._id || req.user?.id || null;
+    await sponsor.save();
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'SPONSOR_UPDATED',
+      targetEntity: 'HackathonSponsor',
+      targetId: sponsor.sponsorId,
+      newState: { name: sponsor.name, tier: sponsor.tier, active: sponsor.active },
+    });
+
+    res.status(200).json({ success: true, message: 'Sponsor updated successfully.', sponsor });
+  } catch (error) {
+    console.error('updateAdminSponsor Error:', error);
+    res.status(400).json({ success: false, message: error.message || 'Failed to update sponsor.' });
+  }
+};
+
+/**
+ * 69. Admin: Delete Sponsor
+ * DELETE /api/hackathon/admin/sponsors/:id
+ */
+exports.deleteAdminSponsor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sponsor = await HackathonSponsor.findById(id);
+
+    if (!sponsor) {
+      return res.status(404).json({ success: false, message: 'Sponsor not found.' });
+    }
+
+    sponsor.active = false;
+    await sponsor.save();
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'SPONSOR_DEACTIVATED',
+      targetEntity: 'HackathonSponsor',
+      targetId: sponsor.sponsorId,
+    });
+
+    res.status(200).json({ success: true, message: 'Sponsor deactivated successfully.' });
+  } catch (error) {
+    console.error('deleteAdminSponsor Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to deactivate sponsor.' });
+  }
+};
+
+/**
+ * 70. Public: List Active Sponsors (Sanitized)
+ * GET /api/hackathon/public/sponsors
+ */
+exports.getPublicSponsors = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const sponsors = await HackathonSponsor.find({ hackathonId, active: true })
+      .select('sponsorId name logoUrl websiteUrl description tier benefits displayOrder')
+      .sort({ displayOrder: 1, createdAt: 1 })
+      .lean();
+
+    res.status(200).json({ success: true, sponsors });
+  } catch (error) {
+    console.error('getPublicSponsors Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch public sponsors.' });
+  }
+};
+
+/**
+ * 71. Admin: List Prize Fulfillments
+ * GET /api/hackathon/admin/prize-fulfillments
+ */
+exports.getAdminPrizeFulfillments = async (req, res) => {
+  try {
+    const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
+    const filter = { hackathonId };
+    if (req.query.status) filter.status = req.query.status;
+
+    const fulfillments = await HackathonPrizeFulfillment.find(filter)
+      .select('+transactionReference')
+      .populate('prizeId', 'name category amount currency fulfillmentMethod sponsorNameSnapshot')
+      .populate('resultId', 'rank category finalScore')
+      .populate('team', 'teamName leader track')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, fulfillments });
+  } catch (error) {
+    console.error('getAdminPrizeFulfillments Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch prize fulfillments.' });
+  }
+};
+
+/**
+ * 72. Admin: Map Prize to Official Result Winner
+ * POST /api/hackathon/admin/prize-fulfillments
+ */
+exports.createAdminPrizeFulfillment = async (req, res) => {
+  try {
+    const { teamId, prizeId, hackathonId = 'can-hackathon-2026', notes } = req.body;
+
+    if (!teamId || !prizeId) {
+      return res.status(400).json({ success: false, message: 'teamId and prizeId are required.' });
+    }
+
+    const [team, prize, result] = await Promise.all([
+      HackathonTeam.findOne({ teamId, hackathonId }),
+      HackathonPrize.findById(prizeId),
+      HackathonResult.findOne({ teamId, hackathonId }),
+    ]);
+
+    if (!team) return res.status(404).json({ success: false, message: 'Team not found.' });
+    if (!prize) return res.status(404).json({ success: false, message: 'Prize not found.' });
+    if (!result) return res.status(404).json({ success: false, message: 'Result not found for this team.' });
+
+    // Result must be approved or published
+    if (!['APPROVED', 'PUBLISHED', 'LOCKED'].includes(result.resultStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Prize fulfillment requires official results to be approved, published, or locked.',
+      });
+    }
+
+    // Check for duplicate fulfillment mapping
+    const existing = await HackathonPrizeFulfillment.findOne({ hackathonId, teamId, prizeId: prize._id });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'This prize is already mapped to this team.',
+      });
+    }
+
+    const fulfillmentId = `FULF-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+    const fulfillment = await HackathonPrizeFulfillment.create({
+      hackathonId,
+      fulfillmentId,
+      prizeId: prize._id,
+      resultId: result._id,
+      teamId: team.teamId,
+      team: team._id,
+      recipient: {
+        name: team.leader?.name || team.teamName,
+        email: team.leader?.email || '',
+        mobile: team.leader?.mobile || '',
+        college: team.leader?.college || '',
+      },
+      fulfillmentMethod: prize.fulfillmentMethod || 'BANK_TRANSFER',
+      amount: prize.amount || 0,
+      currency: prize.currency || 'INR',
+      status: 'PENDING',
+      notes: notes || '',
+    });
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'PRIZE_FULFILLMENT_CREATED',
+      targetEntity: 'HackathonPrizeFulfillment',
+      targetId: fulfillment.fulfillmentId,
+      newState: { teamId, prizeName: prize.name, amount: prize.amount },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Prize mapped to team successfully.',
+      fulfillment,
+    });
+  } catch (error) {
+    console.error('createAdminPrizeFulfillment Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to assign prize.', error: error.message });
+  }
+};
+
+/**
+ * 73. Admin: Update Prize Fulfillment Status & Reference
+ * PUT /api/hackathon/admin/prize-fulfillments/:id
+ */
+exports.updateAdminPrizeFulfillment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, transactionReference, notes, voucherCodeMasked } = req.body;
+
+    const fulfillment = await HackathonPrizeFulfillment.findById(id).select('+transactionReference');
+    if (!fulfillment) {
+      return res.status(404).json({ success: false, message: 'Prize fulfillment record not found.' });
+    }
+
+    const previousStatus = fulfillment.status;
+    if (status) fulfillment.status = status;
+    if (transactionReference !== undefined) fulfillment.transactionReference = transactionReference.trim();
+    if (notes !== undefined) fulfillment.notes = notes;
+    if (voucherCodeMasked !== undefined) fulfillment.voucherCodeMasked = voucherCodeMasked;
+
+    if (status === 'FULFILLED') {
+      fulfillment.fulfilledAt = new Date();
+      fulfillment.fulfilledBy = req.user?._id || req.user?.id || null;
+    }
+
+    await fulfillment.save();
+
+    await HackathonAuditLog.create({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Admin',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: status === 'FULFILLED' ? 'PRIZE_FULFILLED' : 'PRIZE_FULFILLMENT_UPDATED',
+      targetEntity: 'HackathonPrizeFulfillment',
+      targetId: fulfillment.fulfillmentId,
+      previousState: { status: previousStatus },
+      newState: { status: fulfillment.status, fulfilledAt: fulfillment.fulfilledAt },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Prize fulfillment status updated to ${fulfillment.status}.`,
+      fulfillment,
+    });
+  } catch (error) {
+    console.error('updateAdminPrizeFulfillment Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update prize fulfillment.' });
+  }
+};
+
+/**
+ * 74. Admin: Notify Winner on Prize Fulfillment
+ * POST /api/hackathon/admin/prize-fulfillments/:id/notify
+ */
+exports.notifyAdminPrizeFulfillment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fulfillment = await HackathonPrizeFulfillment.findById(id)
+      .populate('prizeId', 'name amount currency')
+      .populate('resultId', 'category rank');
+
+    if (!fulfillment) {
+      return res.status(404).json({ success: false, message: 'Prize fulfillment not found.' });
+    }
+
+    const recipientEmail = fulfillment.recipient?.email;
+    if (!recipientEmail) {
+      return res.status(400).json({ success: false, message: 'Recipient email is missing.' });
+    }
+
+    const sendRes = await hackathonEmailService.sendPrizeFulfillmentEmail({
+      email: recipientEmail,
+      name: fulfillment.recipient?.name || 'Winner',
+      award: fulfillment.resultId?.category || `Rank #${fulfillment.resultId?.rank}`,
+      prizeName: fulfillment.prizeId?.name || 'Hackathon Prize',
+      fulfillmentStatus: fulfillment.status,
+      message: req.body.customMessage || `Your prize of ${fulfillment.currency} ${fulfillment.amount} is currently ${fulfillment.status}.`,
+    });
+
+    if (sendRes.success) {
+      fulfillment.emailNotified = true;
+      fulfillment.notifiedAt = new Date();
+      await fulfillment.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Fulfillment notification sent to ${recipientEmail}.`,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to dispatch email.',
+        error: sendRes.error,
+      });
+    }
+  } catch (error) {
+    console.error('notifyAdminPrizeFulfillment Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to notify winner.' });
+  }
+};
+
+/**
+ * 75. Participant: Get My Team's Prizes
+ * GET /api/hackathon/prizes/my-prizes
+ */
+exports.getParticipantMyPrizes = async (req, res) => {
+  try {
+    if (!req.user || !req.user.email) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    const userEmail = req.user.email.toLowerCase().trim();
+    // Find team where user is leader or member
+    const team = await HackathonTeam.findOne({
+      $or: [
+        { 'leader.email': { $regex: `^${userEmail}$`, $options: 'i' } },
+        { 'members.email': { $regex: `^${userEmail}$`, $options: 'i' } },
+      ],
+      isDeleted: false,
+    });
+
+    if (!team) {
+      return res.status(200).json({ success: true, prizes: [] });
+    }
+
+    const fulfillments = await HackathonPrizeFulfillment.find({ teamId: team.teamId })
+      .select('-transactionReference') // Strictly exclude sensitive transaction / UTR info
+      .populate('prizeId', 'name category amount currency fulfillmentMethod sponsorNameSnapshot description')
+      .populate('resultId', 'rank category')
+      .lean();
+
+    const sanitizedPrizes = fulfillments.map((f) => ({
+      fulfillmentId: f.fulfillmentId,
+      award: f.resultId?.category || (f.resultId?.rank ? `Rank #${f.resultId.rank}` : 'Prize Winner'),
+      prizeName: f.prizeId?.name || 'Prize',
+      sponsorName: f.prizeId?.sponsorNameSnapshot || '',
+      amount: f.amount,
+      currency: f.currency,
+      fulfillmentMethod: f.fulfillmentMethod,
+      status: f.status,
+      fulfilledAt: f.fulfilledAt,
+      voucherCodeMasked: f.voucherCodeMasked,
+    }));
+
+    res.status(200).json({
+      success: true,
+      prizes: sanitizedPrizes,
+    });
+  } catch (error) {
+    console.error('getParticipantMyPrizes Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch participant prizes.' });
+  }
+};
+
 
 
 

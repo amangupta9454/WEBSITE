@@ -57,6 +57,7 @@ import PublicVerificationPage from "./Admin/Assessment/PublicVerificationPage";
 import AssessmentTerminal from "./Pages/AssessmentPortal/AssessmentTerminal";
 import HackathonPortal from "./Pages/Hackathon/HackathonPortal";
 import PublicResultsPage from "./Pages/Hackathon/PublicResultsPage";
+import PublicCertificateVerificationPage from "./Pages/Hackathon/PublicCertificateVerificationPage";
 import EditorialLogin from "./Pages/Hackathon/Editorial/EditorialLogin";
 import EditorialDashboard from "./Pages/Hackathon/Editorial/EditorialDashboard";
 
@@ -141,6 +142,12 @@ function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/resources/:slug" element={<ResourceDetail />} />
           <Route path="/assessments" element={<PublicAssessments />} />
+          {/* Phase 8: Hackathon Certificate Verification */}
+          <Route path="/hackathon/certificate/verify/:verificationCode" element={<PublicCertificateVerificationPage />} />
+          <Route path="/hackathon/certificate/verify" element={<PublicCertificateVerificationPage />} />
+          <Route path="/hackathon/verify/:verificationCode" element={<PublicCertificateVerificationPage />} />
+          <Route path="/hackathon/verify" element={<PublicCertificateVerificationPage />} />
+
           {/* Phase 7: Hackathon Public Results & Leaderboard */}
           <Route path="/hackathon/results" element={<PublicResultsPage />} />
           <Route path="/results" element={<Navigate to="/hackathon/results" replace />} />

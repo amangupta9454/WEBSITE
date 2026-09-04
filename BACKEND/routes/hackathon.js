@@ -66,6 +66,29 @@ const {
   reopenAdminResults,
   getParticipantMyResult,
   getPublicResults,
+  getAdminCertificates,
+  generateAdminCertificates,
+  emailAdminCertificate,
+  emailBulkAdminCertificates,
+  revokeAdminCertificate,
+  getAdminCertificateDetail,
+  getParticipantMyCertificates,
+  downloadCertificate,
+  verifyPublicCertificate,
+  getAdminPrizes,
+  createAdminPrize,
+  updateAdminPrize,
+  deleteAdminPrize,
+  getAdminSponsors,
+  createAdminSponsor,
+  updateAdminSponsor,
+  deleteAdminSponsor,
+  getPublicSponsors,
+  getAdminPrizeFulfillments,
+  createAdminPrizeFulfillment,
+  updateAdminPrizeFulfillment,
+  notifyAdminPrizeFulfillment,
+  getParticipantMyPrizes,
 } = require('../controllers/hackathonController');
 
 /**
@@ -171,6 +194,45 @@ router.post('/admin/results/approve', auth, verifyAdmin, approveAdminResults);
 router.post('/admin/results/publish', auth, verifyAdmin, publishAdminResults);
 router.post('/admin/results/lock', auth, verifyAdmin, lockAdminResults);
 router.post('/admin/results/reopen', auth, verifyAdmin, reopenAdminResults);
+
+// ==========================================
+// Phase 8: Certificates, Prizes & Sponsors
+// ==========================================
+
+// Public Endpoints
+router.get('/certificates/verify/:verificationCode', verifyPublicCertificate);
+router.get('/public/sponsors', getPublicSponsors);
+
+// Participant Endpoints
+router.get('/certificates/my-certificates', auth, getParticipantMyCertificates);
+router.get('/certificates/:id/download', auth, downloadCertificate);
+router.get('/prizes/my-prizes', auth, getParticipantMyPrizes);
+
+// Admin Certificates Endpoints
+router.get('/admin/certificates', auth, verifyAdmin, getAdminCertificates);
+router.post('/admin/certificates/generate-bulk', auth, verifyAdmin, generateAdminCertificates);
+router.post('/admin/certificates/email-bulk', auth, verifyAdmin, emailBulkAdminCertificates);
+router.post('/admin/certificates/:id/email', auth, verifyAdmin, emailAdminCertificate);
+router.post('/admin/certificates/:id/revoke', auth, verifyAdmin, revokeAdminCertificate);
+router.get('/admin/certificates/:id', auth, verifyAdmin, getAdminCertificateDetail);
+
+// Admin Prizes Endpoints
+router.get('/admin/prizes', auth, verifyAdmin, getAdminPrizes);
+router.post('/admin/prizes', auth, verifyAdmin, createAdminPrize);
+router.put('/admin/prizes/:id', auth, verifyAdmin, updateAdminPrize);
+router.delete('/admin/prizes/:id', auth, verifyAdmin, deleteAdminPrize);
+
+// Admin Sponsors Endpoints
+router.get('/admin/sponsors', auth, verifyAdmin, getAdminSponsors);
+router.post('/admin/sponsors', auth, verifyAdmin, createAdminSponsor);
+router.put('/admin/sponsors/:id', auth, verifyAdmin, updateAdminSponsor);
+router.delete('/admin/sponsors/:id', auth, verifyAdmin, deleteAdminSponsor);
+
+// Admin Prize Fulfillment Endpoints
+router.get('/admin/prize-fulfillments', auth, verifyAdmin, getAdminPrizeFulfillments);
+router.post('/admin/prize-fulfillments', auth, verifyAdmin, createAdminPrizeFulfillment);
+router.put('/admin/prize-fulfillments/:id', auth, verifyAdmin, updateAdminPrizeFulfillment);
+router.post('/admin/prize-fulfillments/:id/notify', auth, verifyAdmin, notifyAdminPrizeFulfillment);
 
 module.exports = router;
 
