@@ -27,7 +27,17 @@ const hackathonAuditLogSchema = new mongoose.Schema(
     targetEntity: {
       type: String,
       required: true,
-      enum: ['HackathonSetting', 'HackathonTeam', 'HackathonPayment', 'HackathonSubmission', 'Evaluation', 'General'],
+      enum: [
+        'HackathonSetting',
+        'HackathonTeam',
+        'HackathonPayment',
+        'HackathonSubmission',
+        'HackathonEditorialMember',
+        'HackathonEditorialAssignment',
+        'HackathonEditorialEvaluation',
+        'Evaluation',
+        'General',
+      ],
       default: 'General',
       index: true,
     },

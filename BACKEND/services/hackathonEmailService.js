@@ -143,6 +143,67 @@ class HackathonEmailService {
       source: 'Hackathon Phase 4 System',
     });
   }
+
+  /**
+   * Generates and sends a welcome notification to newly provisioned editorial members.
+   * NOTE: Never includes plaintext password. Instructs user to use admin-provided initial credential
+   * and change password on first login.
+   */
+  async sendEditorialWelcomeEmail({ email, name, loginUrl }) {
+    if (!email) return { success: false, error: 'Recipient email required' };
+
+    const effectiveLoginUrl = loginUrl || `${process.env.CLIENT_URL || 'https://code-a-nova.online'}/editorial/login`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Code-A-Nova Hackathon Editorial Panel Invitation</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 36px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background-color: #6366f1; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+    .content { padding: 32px 28px; line-height: 1.6; color: #334155; }
+    .cred-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0; }
+    .cta-btn { display: inline-block; background: #4f46e5; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 800; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Official Editorial Panel</div>
+      <h1 style="margin:0;font-size:22px;">Welcome to Code-A-Nova Hackathon</h1>
+      <p style="margin:8px 0 0;font-size:13px;opacity:0.8;">Editorial & Evaluation Workspace</p>
+    </div>
+    <div class="content">
+      <p>Dear <strong>${name}</strong>,</p>
+      <p>You have been officially provisioned as an Editorial / Judge member for the <strong>Code-A-Nova National Hackathon</strong>.</p>
+      <div class="cred-box">
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Login Email:</strong> ${email}</p>
+        <p style="margin:0 0 8px 0;font-size:13px;"><strong>Initial Password:</strong> As configured by Hackathon Administrators</p>
+        <p style="margin:0;font-size:12px;color:#dc2626;"><strong>Security Notice:</strong> You will be prompted to update your password immediately upon your first login.</p>
+      </div>
+      <div style="text-align:center;margin:30px 0;">
+        <a href="${effectiveLoginUrl}" class="cta-btn">Access Editorial Dashboard</a>
+      </div>
+      <p style="font-size:12px;color:#64748b;">If you have any questions or require credentials assistance, please contact the hackathon organizing committee.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    return await mailService.sendEmail({
+      to: email,
+      subject: 'Code-A-Nova Hackathon — Editorial Panel Invitation & Workspace Access',
+      html,
+      recipientName: name,
+      campaign: 'Hackathon Editorial Invitation',
+      source: 'Hackathon Phase 6 System',
+    });
+  }
 }
 
 module.exports = new HackathonEmailService();
+

@@ -33,9 +33,11 @@ import {
   Github,
   Globe,
   Linkedin,
-  Video,
   Unlock,
   Lock,
+  UserCheck,
+  UserX,
+  KeyRound,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -174,6 +176,261 @@ export default function HackathonAdminWorkspace() {
     }
   };
 
+  // ─── PHASE 6: EDITORIAL & JUDGES MANAGEMENT STATE ───
+  const [editorialMembers, setEditorialMembers] = useState([]);
+  const [loadingEditorialMembers, setLoadingEditorialMembers] = useState(false);
+  const [editorialSearch, setEditorialSearch] = useState("");
+
+  const [showCreateJudgeModal, setShowCreateJudgeModal] = useState(false);
+  const [createJudgeForm, setCreateJudgeForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    isActive: true,
+  });
+  const [creatingJudge, setCreatingJudge] = useState(false);
+
+  const [showResetJudgeModal, setShowResetJudgeModal] = useState(false);
+  const [selectedJudgeForReset, setSelectedJudgeForReset] = useState(null);
+  const [resetJudgePasswordForm, setResetJudgePasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [resettingJudgePassword, setResettingJudgePassword] = useState(false);
+
+  const fetchEditorialMembers = async () => {
+    try {
+      setLoadingEditorialMembers(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/editorial-members`;
+      if (editorialSearch) url += `?search=${encodeURIComponent(editorialSearch)}`;
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setEditorialMembers(res.data.members || []);
+      }
+    } catch (err) {
+      console.error("fetchEditorialMembers error:", err);
+    } finally {
+      setLoadingEditorialMembers(false);
+    }
+  };
+
+  const handleCreateJudge = async (e) => {
+    e.preventDefault();
+    if (!createJudgeForm.name || !createJudgeForm.email || !createJudgeForm.password) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    if (createJudgeForm.password !== createJudgeForm.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    try {
+      setCreatingJudge(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-members`,
+        createJudgeForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Editorial Judge created successfully!");
+        setShowCreateJudgeModal(false);
+        setCreateJudgeForm({ name: "", email: "", password: "", confirmPassword: "", isActive: true });
+        fetchEditorialMembers();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create judge.");
+    } finally {
+      setCreatingJudge(false);
+    }
+  };
+
+  const handleToggleJudgeActive = async (judge) => {
+    try {
+      const token = getAdminToken();
+      const res = await axios.put(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-members/${judge._id}`,
+        { isActive: !judge.isActive },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(`Judge account ${!judge.isActive ? "activated" : "deactivated"} successfully.`);
+        fetchEditorialMembers();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update judge status.");
+    }
+  };
+
+  const handleResetJudgePassword = async (e) => {
+    e.preventDefault();
+    if (resetJudgePasswordForm.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+    if (resetJudgePasswordForm.newPassword !== resetJudgePasswordForm.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    try {
+      setResettingJudgePassword(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-members/${selectedJudgeForReset._id}/reset-password`,
+        resetJudgePasswordForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Password reset successfully. Judge must change it on first login.");
+        setShowResetJudgeModal(false);
+        setResetJudgePasswordForm({ newPassword: "", confirmPassword: "" });
+        setSelectedJudgeForReset(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to reset password.");
+    } finally {
+      setResettingJudgePassword(false);
+    }
+  };
+
+  // ─── ASSIGNMENTS MANAGEMENT STATE ───
+  const [assignments, setAssignments] = useState([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [assignForm, setAssignForm] = useState({
+    teamId: "",
+    editorialMemberId: "",
+    notes: "",
+  });
+  const [assigningJudge, setAssigningJudge] = useState(false);
+
+  const fetchAssignments = async () => {
+    try {
+      setLoadingAssignments(true);
+      const token = getAdminToken();
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/admin/editorial-assignments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setAssignments(res.data.assignments || []);
+      }
+    } catch (err) {
+      console.error("fetchAssignments error:", err);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  const handleCreateAssignment = async (e) => {
+    e.preventDefault();
+    if (!assignForm.teamId || !assignForm.editorialMemberId) {
+      toast.error("Please select both a team and a judge.");
+      return;
+    }
+    try {
+      setAssigningJudge(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-assignments`,
+        assignForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Project assigned to judge successfully!");
+        setAssignForm({ teamId: "", editorialMemberId: "", notes: "" });
+        fetchAssignments();
+        fetchEditorialMembers();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to assign project.");
+    } finally {
+      setAssigningJudge(false);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!window.confirm("Are you sure you want to remove this judge assignment?")) return;
+    try {
+      const token = getAdminToken();
+      const res = await axios.delete(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-assignments/${assignmentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Assignment removed successfully.");
+        fetchAssignments();
+        fetchEditorialMembers();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove assignment.");
+    }
+  };
+
+  // ─── JUDGING & EVALUATIONS STATE ───
+  const [evaluations, setEvaluations] = useState([]);
+  const [aggregatedResults, setAggregatedResults] = useState([]);
+  const [loadingEvaluations, setLoadingEvaluations] = useState(false);
+  const [evaluationsTrackFilter, setEvaluationsTrackFilter] = useState("ALL");
+  const [evaluationsStatusFilter, setEvaluationsStatusFilter] = useState("ALL");
+
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [selectedEvaluationToReopen, setSelectedEvaluationToReopen] = useState(null);
+  const [reopenReasonText, setReopenReasonText] = useState("");
+  const [reopeningEvaluation, setReopeningEvaluation] = useState(false);
+
+  const fetchEvaluations = async () => {
+    try {
+      setLoadingEvaluations(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/editorial-evaluations?`;
+      if (evaluationsTrackFilter && evaluationsTrackFilter !== "ALL") {
+        url += `&track=${encodeURIComponent(evaluationsTrackFilter)}`;
+      }
+      if (evaluationsStatusFilter && evaluationsStatusFilter !== "ALL") {
+        url += `&status=${encodeURIComponent(evaluationsStatusFilter)}`;
+      }
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setEvaluations(res.data.evaluations || []);
+        setAggregatedResults(res.data.aggregatedResults || []);
+      }
+    } catch (err) {
+      console.error("fetchEvaluations error:", err);
+    } finally {
+      setLoadingEvaluations(false);
+    }
+  };
+
+  const handleReopenEvaluation = async (e) => {
+    e.preventDefault();
+    if (!selectedEvaluationToReopen) return;
+    try {
+      setReopeningEvaluation(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/editorial-evaluations/${selectedEvaluationToReopen._id}/reopen`,
+        { reason: reopenReasonText || "Admin reopened evaluation for review" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Evaluation reopened successfully. Judge can now edit scores.");
+        setShowReopenModal(false);
+        setSelectedEvaluationToReopen(null);
+        setReopenReasonText("");
+        fetchEvaluations();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to reopen evaluation.");
+    } finally {
+      setReopeningEvaluation(false);
+    }
+  };
+
   // Settings Form State
   const [settingsForm, setSettingsForm] = useState({
     name: "",
@@ -274,7 +531,23 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "submissions") {
       fetchSubmissions(1);
     }
-  }, [activeTab, teamsStatusFilter, teamsTrackFilter, submissionsStatusFilter, submissionsTrackFilter]);
+    if (activeTab === "editorial") {
+      fetchEditorialMembers();
+      fetchAssignments();
+      fetchTeams(1);
+    }
+    if (activeTab === "judging") {
+      fetchEvaluations();
+    }
+  }, [
+    activeTab,
+    teamsStatusFilter,
+    teamsTrackFilter,
+    submissionsStatusFilter,
+    submissionsTrackFilter,
+    evaluationsTrackFilter,
+    evaluationsStatusFilter,
+  ]);
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -393,14 +666,14 @@ export default function HackathonAdminWorkspace() {
           {[
             { id: "overview", label: "Overview", icon: Layers, badge: null },
             { id: "teams", label: "Teams", icon: Users, badge: stats.totalTeams > 0 ? `${stats.totalTeams} Teams` : "Active" },
-            { id: "editorial", label: "Editorial & Judges", icon: Award, badge: "Phase 9" },
+            { id: "editorial", label: "Editorial & Judges", icon: Award, badge: editorialMembers.length > 0 ? `${editorialMembers.length} Judges` : "Active" },
             {
               id: "submissions",
               label: "Submissions",
               icon: FileText,
               badge: stats.finalSubmissions > 0 ? `${stats.finalSubmissions} Submissions` : "Active",
             },
-            { id: "judging", label: "Judging", icon: Sparkles, badge: "Phase 10" },
+            { id: "judging", label: "Judging & Evaluations", icon: Sparkles, badge: aggregatedResults.length > 0 ? `${aggregatedResults.length} Evaluated` : "Active" },
             { id: "results", label: "Results", icon: Trophy, badge: "Phase 11" },
             { id: "certificates", label: "Certificates", icon: CheckCircle2, badge: "Phase 12" },
             { id: "settings", label: "Settings", icon: SettingsIcon, badge: "Active" },
@@ -1612,8 +1885,705 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
+      {/* ─── PHASE 6: EDITORIAL & JUDGES MANAGEMENT TAB ─── */}
+      {activeTab === "editorial" && (
+        <div className="space-y-8">
+          {/* Section A: Editorial Members */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-extrabold text-slate-900">Editorial & Judge Accounts</h2>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {editorialMembers.length} Provisioned
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Manage independent judging accounts. Passwords are encrypted; initial credentials require first-login update.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={editorialSearch}
+                    onChange={(e) => setEditorialSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchEditorialMembers()}
+                    placeholder="Search judges..."
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowCreateJudgeModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all whitespace-nowrap cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Judge</span>
+                </button>
+              </div>
+            </div>
+
+            {loadingEditorialMembers ? (
+              <div className="py-12 text-center">
+                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-xs text-slate-500">Loading judges...</p>
+              </div>
+            ) : editorialMembers.length === 0 ? (
+              <div className="p-12 text-center">
+                <Award className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-slate-700">No Editorial Accounts Provisioned</h3>
+                <p className="text-xs text-slate-400 mt-1 mb-4">
+                  Click "Add Judge" to create official judge credentials for the hackathon.
+                </p>
+                <button
+                  onClick={() => setShowCreateJudgeModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-sm cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create First Judge</span>
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Judge Name</th>
+                      <th className="py-3.5 px-4">Login Email</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
+                      <th className="py-3.5 px-4 text-center">Assigned Projects</th>
+                      <th className="py-3.5 px-4 text-center">Finalized</th>
+                      <th className="py-3.5 px-4">Last Login</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    {editorialMembers.map((member) => (
+                      <tr key={member._id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                            {member.name.charAt(0)}
+                          </div>
+                          <span>{member.name}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">{member.email}</td>
+                        <td className="py-3.5 px-4 text-center">
+                          {member.isActive ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                              <UserX className="w-3 h-3" />
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-extrabold text-slate-800">
+                          {member.assignedTeamsCount || 0}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-extrabold text-emerald-600">
+                          {member.completedEvaluationsCount || 0}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                          {member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleString() : "Never"}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedJudgeForReset(member);
+                                setShowResetJudgeModal(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                              title="Reset initial password"
+                            >
+                              Reset Password
+                            </button>
+                            <button
+                              onClick={() => handleToggleJudgeActive(member)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                                member.isActive
+                                  ? "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              }`}
+                            >
+                              {member.isActive ? "Deactivate" : "Activate"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Section B: Judge Project Assignments */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="border-b border-slate-200 pb-4">
+              <h2 className="text-base font-extrabold text-slate-900">Project Evaluation Assignments</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Assign eligible confirmed & submitted hackathon teams to judges. Multiple judges can evaluate each project independently.
+              </p>
+            </div>
+
+            {/* Assignment Form */}
+            <form
+              onSubmit={handleCreateAssignment}
+              className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-end"
+            >
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Select Submitted Team
+                </label>
+                <select
+                  value={assignForm.teamId}
+                  onChange={(e) => setAssignForm({ ...assignForm, teamId: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">-- Choose Eligible Team --</option>
+                  {teams
+                    .filter((t) => ["CONFIRMED", "SUBMITTED", "UNDER_EVALUATION", "EVALUATED"].includes(t.status))
+                    .map((team) => (
+                      <option key={team._id} value={team.teamId}>
+                        {team.teamId} — {team.teamName} ({team.track}) [{team.status}]
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Select Judge
+                </label>
+                <select
+                  value={assignForm.editorialMemberId}
+                  onChange={(e) => setAssignForm({ ...assignForm, editorialMemberId: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">-- Choose Active Judge --</option>
+                  {editorialMembers
+                    .filter((m) => m.isActive)
+                    .map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} ({m.email})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={assignForm.notes}
+                  onChange={(e) => setAssignForm({ ...assignForm, notes: e.target.value })}
+                  placeholder="e.g. Track lead reviewer"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={assigningJudge}
+                className="w-full md:w-auto px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all whitespace-nowrap cursor-pointer disabled:opacity-50"
+              >
+                {assigningJudge ? "Assigning..." : "Assign Project"}
+              </button>
+            </form>
+
+            {/* Assignments Table */}
+            {loadingAssignments ? (
+              <div className="py-8 text-center">
+                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-xs text-slate-500">Loading assignments...</p>
+              </div>
+            ) : assignments.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl">
+                <p className="text-xs text-slate-400">No project assignments created yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">Team</th>
+                      <th className="py-3 px-4">Track</th>
+                      <th className="py-3 px-4">Assigned Judge</th>
+                      <th className="py-3 px-4 text-center">Evaluation Status</th>
+                      <th className="py-3 px-4 text-center">Total Score</th>
+                      <th className="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    {assignments.map((assignment) => (
+                      <tr key={assignment._id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4 font-bold text-slate-900">
+                          {assignment.team?.teamName || assignment.teamId}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600">{assignment.team?.track || "General"}</td>
+                        <td className="py-3 px-4">
+                          <span className="font-semibold text-slate-900">
+                            {assignment.editorialMember?.name || "Judge"}
+                          </span>
+                          <span className="block text-[10px] text-slate-400">
+                            {assignment.editorialMember?.email}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {assignment.evaluation?.status === "FINALIZED" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Finalized
+                            </span>
+                          ) : assignment.evaluation?.status === "IN_PROGRESS" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              In Progress
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                              Not Started
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-900">
+                          {assignment.evaluation?.status === "FINALIZED"
+                            ? `${assignment.evaluation.totalScore} / 100`
+                            : "—"}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteAssignment(assignment._id)}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          >
+                            Unassign
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── PHASE 6: JUDGING & EVALUATIONS TAB ─── */}
+      {activeTab === "judging" && (
+        <div className="space-y-8">
+          {/* Header & Filter Controls */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900">Judging Progress & Score Aggregations</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Compare independent judge evaluations, track average scores, inspect criteria feedback, and reopen evaluations if needed.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <select
+                  value={evaluationsTrackFilter}
+                  onChange={(e) => setEvaluationsTrackFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="ALL">All Tracks</option>
+                  <option value="AI & Machine Learning">AI & Machine Learning</option>
+                  <option value="Web3 & Decentralized Tech">Web3 & Decentralized Tech</option>
+                  <option value="Full Stack & Cloud Native">Full Stack & Cloud Native</option>
+                  <option value="Open Innovation & Social Good">Open Innovation & Social Good</option>
+                </select>
+
+                <select
+                  value={evaluationsStatusFilter}
+                  onChange={(e) => setEvaluationsStatusFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="FINALIZED">Finalized Only</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="REOPENED">Reopened</option>
+                </select>
+
+                <button
+                  onClick={fetchEvaluations}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
+                  title="Refresh evaluations"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingEvaluations ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Aggregated Score Ranking Summary */}
+            <div className="pt-6">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-500" />
+                Aggregated Leaderboard Foundation (Average of Finalized Judge Scores)
+              </h3>
+
+              {loadingEvaluations ? (
+                <div className="py-8 text-center">
+                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-slate-500">Calculating aggregations...</p>
+                </div>
+              ) : aggregatedResults.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl">
+                  <p className="text-xs text-slate-400">No project evaluations submitted yet.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="py-3 px-4 text-center">Rank</th>
+                        <th className="py-3 px-4">Team Name</th>
+                        <th className="py-3 px-4">Track</th>
+                        <th className="py-3 px-4 text-center">Judges Completed</th>
+                        <th className="py-3 px-4 text-center">Average Final Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                      {aggregatedResults.map((item, index) => (
+                        <tr key={item.teamId} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 text-center font-extrabold">
+                            {index === 0 ? (
+                              <span className="inline-block w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold leading-6">
+                                1
+                              </span>
+                            ) : index === 1 ? (
+                              <span className="inline-block w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold leading-6">
+                                2
+                              </span>
+                            ) : index === 2 ? (
+                              <span className="inline-block w-6 h-6 rounded-full bg-amber-600/20 text-amber-800 text-xs font-bold leading-6">
+                                3
+                              </span>
+                            ) : (
+                              `#${index + 1}`
+                            )}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-900">
+                            {item.teamName} <span className="text-[10px] text-slate-400 font-normal">({item.teamId})</span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-600">{item.track}</td>
+                          <td className="py-3 px-4 text-center font-semibold">
+                            {item.finalizedCount} / {item.evaluations.length} Judges
+                          </td>
+                          <td className="py-3 px-4 text-center font-extrabold text-sm text-indigo-700">
+                            {item.finalizedCount > 0 ? `${item.averageScore} / 100` : "Pending"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section 2: Individual Judge Evaluation Detail Cards */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900">Judge-by-Judge Evaluation Breakdown</h3>
+            <p className="text-xs text-slate-500">
+              Inspect criteria-wise scoring, judge remarks, and reopen finalized evaluations for re-scoring.
+            </p>
+
+            <div className="space-y-4 pt-2">
+              {evaluations.map((evaluation) => (
+                <div
+                  key={evaluation._id}
+                  className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900">
+                          {evaluation.team?.teamName || evaluation.teamId}
+                        </span>
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {evaluation.team?.track}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Evaluated by: <strong className="text-slate-800">{evaluation.editorialMember?.name}</strong>{" "}
+                        ({evaluation.editorialMember?.email})
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-black text-indigo-600 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-xs">
+                        {evaluation.totalScore} / 100
+                      </span>
+
+                      {evaluation.status === "FINALIZED" ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Locked
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                          {evaluation.status}
+                        </span>
+                      )}
+
+                      {evaluation.status === "FINALIZED" && (
+                        <button
+                          onClick={() => {
+                            setSelectedEvaluationToReopen(evaluation);
+                            setShowReopenModal(true);
+                          }}
+                          className="px-3 py-1 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors cursor-pointer"
+                        >
+                          Reopen
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Criteria Breakdown Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    {(evaluation.scores || []).map((scoreItem) => (
+                      <div
+                        key={scoreItem.criterion}
+                        className="bg-white p-2.5 rounded-xl border border-slate-200 text-center"
+                      >
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                          {scoreItem.criterion}
+                        </p>
+                        <p className="text-sm font-black text-slate-900 mt-1">
+                          {scoreItem.score} <span className="text-slate-400 text-xs font-normal">/ {scoreItem.maxScore}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Comments */}
+                  {evaluation.comments && (
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
+                      <p className="font-bold text-slate-500 uppercase text-[10px] tracking-wider mb-1">Judge Comments:</p>
+                      <p className="text-slate-700 italic">"{evaluation.comments}"</p>
+                    </div>
+                  )}
+
+                  <div className="text-[10px] text-slate-400 flex items-center justify-between">
+                    <span>Version: {evaluation.version || 1}</span>
+                    <span>
+                      {evaluation.finalizedAt ? `Finalized: ${new Date(evaluation.finalizedAt).toLocaleString()}` : `Updated: ${new Date(evaluation.updatedAt).toLocaleString()}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: CREATE JUDGE ACCOUNT ─── */}
+      {showCreateJudgeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl relative">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Award className="w-4 h-4 text-indigo-600" />
+                Provision New Editorial Judge
+              </h3>
+              <button
+                onClick={() => setShowCreateJudgeModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateJudge} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Judge Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={createJudgeForm.name}
+                  onChange={(e) => setCreateJudgeForm({ ...createJudgeForm, name: e.target.value })}
+                  placeholder="e.g. Dr. Sarah Connor"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Login Email</label>
+                <input
+                  type="email"
+                  required
+                  value={createJudgeForm.email}
+                  onChange={(e) => setCreateJudgeForm({ ...createJudgeForm, email: e.target.value })}
+                  placeholder="e.g. judge@code-a-nova.online"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Initial Password (min 6 chars)</label>
+                <input
+                  type="password"
+                  required
+                  value={createJudgeForm.password}
+                  onChange={(e) => setCreateJudgeForm({ ...createJudgeForm, password: e.target.value })}
+                  placeholder="••••••••••••"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Confirm Initial Password</label>
+                <input
+                  type="password"
+                  required
+                  value={createJudgeForm.confirmPassword}
+                  onChange={(e) => setCreateJudgeForm({ ...createJudgeForm, confirmPassword: e.target.value })}
+                  placeholder="••••••••••••"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateJudgeModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingJudge}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {creatingJudge ? "Creating..." : "Create Judge Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: RESET JUDGE PASSWORD ─── */}
+      {showResetJudgeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl relative">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-900">
+                Reset Password for {selectedJudgeForReset?.name}
+              </h3>
+              <button
+                onClick={() => setShowResetJudgeModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleResetJudgePassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">New Password (min 6 chars)</label>
+                <input
+                  type="password"
+                  required
+                  value={resetJudgePasswordForm.newPassword}
+                  onChange={(e) => setResetJudgePasswordForm({ ...resetJudgePasswordForm, newPassword: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  required
+                  value={resetJudgePasswordForm.confirmPassword}
+                  onChange={(e) => setResetJudgePasswordForm({ ...resetJudgePasswordForm, confirmPassword: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetJudgeModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resettingJudgePassword}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {resettingJudgePassword ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: ADMIN REOPEN EVALUATION ─── */}
+      {showReopenModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl relative">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-900">Reopen Finalized Evaluation</h3>
+              <button onClick={() => setShowReopenModal(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReopenEvaluation} className="space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Reopening this evaluation will unlock it and allow Judge{" "}
+                <strong>{selectedEvaluationToReopen?.editorialMember?.name}</strong> to adjust and re-submit scores.
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Reason for Reopening</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={reopenReasonText}
+                  onChange={(e) => setReopenReasonText(e.target.value)}
+                  placeholder="e.g. Tie-break reconsideration or technical adjustment requested."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReopenModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reopeningEvaluation}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {reopeningEvaluation ? "Reopening..." : "Confirm Reopen"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ─── PLACEHOLDER TABS (Scheduled for Later Phases) ─── */}
-      {["editorial", "judging", "results", "certificates"].includes(activeTab) && (
+      {["results", "certificates"].includes(activeTab) && (
         <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
             <Info className="w-8 h-8" />

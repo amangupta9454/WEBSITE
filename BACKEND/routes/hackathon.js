@@ -8,6 +8,7 @@ const upload = multer({
 
 const auth = require('../middleware/auth');
 const { verifyAdmin } = require('../middleware/verifyAdmin');
+const { verifyEditorial } = require('../middleware/verifyEditorial');
 
 const {
   getPublicHackathonInfo,
@@ -35,6 +36,25 @@ const {
   getAdminSubmissions,
   getAdminSubmissionByTeamId,
   unlockAdminSubmission,
+  getAdminEditorialMembers,
+  createAdminEditorialMember,
+  updateAdminEditorialMember,
+  resetAdminEditorialMemberPassword,
+  getAdminEditorialAssignments,
+  createAdminEditorialAssignment,
+  deleteAdminEditorialAssignment,
+  getAdminEditorialEvaluations,
+  reopenAdminEditorialEvaluation,
+  editorialLogin,
+  editorialLogout,
+  getEditorialMe,
+  changeEditorialPassword,
+  getEditorialDashboard,
+  getEditorialProjects,
+  getEditorialProjectDetail,
+  auditEditorialLinkClick,
+  saveEditorialEvaluationDraft,
+  finalizeEditorialEvaluation,
 } = require('../controllers/hackathonController');
 
 /**
@@ -94,5 +114,36 @@ router.post('/admin/teams/:id/resend-shortlist-email', auth, verifyAdmin, resend
 router.post('/admin/unstop/preview', auth, verifyAdmin, upload.single('excelFile'), previewUnstopExcel);
 router.post('/admin/unstop/commit', auth, verifyAdmin, commitUnstopImport);
 
+/**
+ * Phase 6: Admin Editorial & Evaluation Management Routes
+ */
+router.get('/admin/editorial-members', auth, verifyAdmin, getAdminEditorialMembers);
+router.post('/admin/editorial-members', auth, verifyAdmin, createAdminEditorialMember);
+router.put('/admin/editorial-members/:id', auth, verifyAdmin, updateAdminEditorialMember);
+router.post('/admin/editorial-members/:id/reset-password', auth, verifyAdmin, resetAdminEditorialMemberPassword);
+
+router.get('/admin/editorial-assignments', auth, verifyAdmin, getAdminEditorialAssignments);
+router.post('/admin/editorial-assignments', auth, verifyAdmin, createAdminEditorialAssignment);
+router.delete('/admin/editorial-assignments/:id', auth, verifyAdmin, deleteAdminEditorialAssignment);
+
+router.get('/admin/editorial-evaluations', auth, verifyAdmin, getAdminEditorialEvaluations);
+router.post('/admin/editorial-evaluations/:id/reopen', auth, verifyAdmin, reopenAdminEditorialEvaluation);
+
+/**
+ * Phase 6: Editorial / Judge Portal Routes
+ */
+router.post('/editorial/login', editorialLogin);
+router.post('/editorial/logout', auth, verifyEditorial, editorialLogout);
+router.get('/editorial/me', auth, verifyEditorial, getEditorialMe);
+router.put('/editorial/password', auth, verifyEditorial, changeEditorialPassword);
+
+router.get('/editorial/dashboard', auth, verifyEditorial, getEditorialDashboard);
+router.get('/editorial/projects', auth, verifyEditorial, getEditorialProjects);
+router.get('/editorial/projects/:teamId', auth, verifyEditorial, getEditorialProjectDetail);
+router.post('/editorial/projects/:teamId/audit-link-click', auth, verifyEditorial, auditEditorialLinkClick);
+router.post('/editorial/projects/:teamId/evaluation/draft', auth, verifyEditorial, saveEditorialEvaluationDraft);
+router.post('/editorial/projects/:teamId/evaluation/finalize', auth, verifyEditorial, finalizeEditorialEvaluation);
+
 module.exports = router;
+
 

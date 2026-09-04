@@ -6,7 +6,11 @@ const HackathonTeam = require('../models/HackathonTeam');
 const HackathonPayment = require('../models/HackathonPayment');
 const HackathonSubmission = require('../models/HackathonSubmission');
 const HackathonAuditLog = require('../models/HackathonAuditLog');
+const HackathonEditorialMember = require('../models/HackathonEditorialMember');
+const HackathonEditorialAssignment = require('../models/HackathonEditorialAssignment');
+const HackathonEditorialEvaluation = require('../models/HackathonEditorialEvaluation');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const unstopParserService = require('../services/unstopParserService');
 const hackathonEmailService = require('../services/hackathonEmailService');
 
@@ -2491,6 +2495,1449 @@ exports.unlockAdminSubmission = async (req, res) => {
     });
   }
 };
+
+// ==========================================================
+// PHASE 6: EDITORIAL / JUDGE MANAGEMENT & EVALUATION CONTROLLERS
+// ==========================================================
+
+/**
+ * 29. Admin Get Editorial Members
+ * GET /api/hackathon/admin/editorial-members
+ */
+exports.getAdminEditorialMembers = async (req, res) => {
+  try {
+    const { search, isActive } = req.query;
+    const query = { hackathonId: 'can-hackathon-2026' };
+
+    if (isActive !== undefined && isActive !== '') {
+      query.isActive = isActive === 'true';
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [{ name: searchRegex }, { email: searchRegex }];
+    }
+
+    const members = await HackathonEditorialMember.find(query).sort({ createdAt: -1 }).lean();
+
+    // Enrich with assignment and finalized counts
+    const enrichedMembers = await Promise.all(
+      members.map(async (member) => {
+        const assignedTeamsCount = await HackathonEditorialAssignment.countDocuments({
+          editorialMember: member._id,
+          status: 'ACTIVE',
+        });
+        const completedEvaluationsCount = await HackathonEditorialEvaluation.countDocuments({
+          editorialMember: member._id,
+          status: 'FINALIZED',
+        });
+        return {
+          ...member,
+          assignedTeamsCount,
+          completedEvaluationsCount,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      members: enrichedMembers,
+    });
+  } catch (error) {
+    console.error('getAdminEditorialMembers Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch editorial members.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 30. Admin Create Editorial Member
+ * POST /api/hackathon/admin/editorial-members
+ */
+exports.createAdminEditorialMember = async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword, isActive } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name is required.' });
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Initial password must be at least 6 characters long.' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Password and Confirm Password do not match.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await HackathonEditorialMember.findOne({
+      email: cleanEmail,
+      hackathonId: 'can-hackathon-2026',
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'An editorial member with this email already exists.',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const member = await HackathonEditorialMember.create({
+      hackathonId: 'can-hackathon-2026',
+      name: name.trim(),
+      email: cleanEmail,
+      passwordHash,
+      role: 'editorial',
+      isActive: isActive !== false,
+      mustChangePassword: true,
+      createdBy: req.user?.email || 'admin',
+    });
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'EDITORIAL_ACCOUNT_CREATED',
+      targetEntity: 'HackathonEditorialMember',
+      targetId: String(member._id),
+      newState: {
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        isActive: member.isActive,
+      },
+      req,
+    });
+
+    // Optionally send welcome notification in background
+    hackathonEmailService
+      .sendEditorialWelcomeEmail({ email: member.email, name: member.name })
+      .catch((err) => console.error('Failed to send editorial welcome email:', err));
+
+    res.status(201).json({
+      success: true,
+      message: 'Editorial member account created successfully.',
+      member: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        isActive: member.isActive,
+        mustChangePassword: member.mustChangePassword,
+        createdAt: member.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('createAdminEditorialMember Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create editorial member.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 31. Admin Update Editorial Member (Profile / Active Toggle)
+ * PUT /api/hackathon/admin/editorial-members/:id
+ */
+exports.updateAdminEditorialMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, isActive } = req.body;
+
+    const member = await HackathonEditorialMember.findById(id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Editorial member not found.' });
+    }
+
+    const prevState = {
+      name: member.name,
+      isActive: member.isActive,
+    };
+
+    let action = 'EDITORIAL_ACCOUNT_UPDATED';
+
+    if (name && name.trim()) {
+      member.name = name.trim();
+    }
+
+    if (typeof isActive === 'boolean' && isActive !== member.isActive) {
+      member.isActive = isActive;
+      if (!isActive) {
+        member.deactivatedAt = new Date();
+        action = 'EDITORIAL_ACCOUNT_DEACTIVATED';
+      } else {
+        member.deactivatedAt = null;
+        action = 'EDITORIAL_ACCOUNT_REACTIVATED';
+      }
+    }
+
+    await member.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action,
+      targetEntity: 'HackathonEditorialMember',
+      targetId: String(member._id),
+      previousState: prevState,
+      newState: { name: member.name, isActive: member.isActive },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Editorial member updated successfully.',
+      member: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        isActive: member.isActive,
+        mustChangePassword: member.mustChangePassword,
+        deactivatedAt: member.deactivatedAt,
+        updatedAt: member.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('updateAdminEditorialMember Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update editorial member.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 32. Admin Reset Editorial Member Password
+ * POST /api/hackathon/admin/editorial-members/:id/reset-password
+ */
+exports.resetAdminEditorialMemberPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirm password do not match.',
+      });
+    }
+
+    const member = await HackathonEditorialMember.findById(id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Editorial member not found.' });
+    }
+
+    member.passwordHash = await bcrypt.hash(newPassword, 10);
+    member.mustChangePassword = true;
+    member.passwordChangedAt = new Date();
+    await member.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'EDITORIAL_PASSWORD_RESET',
+      targetEntity: 'HackathonEditorialMember',
+      targetId: String(member._id),
+      reason: 'Admin initiated password reset. First-login password change enforced.',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. The member will be required to change it on login.',
+    });
+  } catch (error) {
+    console.error('resetAdminEditorialMemberPassword Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 33. Admin Get Editorial Assignments
+ * GET /api/hackathon/admin/editorial-assignments
+ */
+exports.getAdminEditorialAssignments = async (req, res) => {
+  try {
+    const { editorialMemberId, teamId, status } = req.query;
+    const query = { hackathonId: 'can-hackathon-2026' };
+
+    if (status) query.status = status;
+    if (editorialMemberId) query.editorialMember = editorialMemberId;
+    if (teamId) {
+      query.$or = [{ teamId }, { team: mongoose.isValidObjectId(teamId) ? teamId : null }];
+    }
+
+    const assignments = await HackathonEditorialAssignment.find(query)
+      .populate('team')
+      .populate('submission')
+      .populate('editorialMember', 'name email role isActive')
+      .sort({ assignedAt: -1 })
+      .lean();
+
+    // Attach evaluation details to each assignment
+    const enrichedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        const evaluation = await HackathonEditorialEvaluation.findOne({
+          team: assignment.team?._id,
+          editorialMember: assignment.editorialMember?._id,
+        }).lean();
+
+        return {
+          ...assignment,
+          evaluation: evaluation
+            ? {
+                _id: evaluation._id,
+                status: evaluation.status,
+                totalScore: evaluation.totalScore,
+                scores: evaluation.scores,
+                comments: evaluation.comments,
+                isLocked: evaluation.isLocked,
+                finalizedAt: evaluation.finalizedAt,
+              }
+            : null,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      assignments: enrichedAssignments,
+    });
+  } catch (error) {
+    console.error('getAdminEditorialAssignments Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch editorial assignments.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 34. Admin Assign Project to Judge
+ * POST /api/hackathon/admin/editorial-assignments
+ */
+exports.createAdminEditorialAssignment = async (req, res) => {
+  try {
+    const { teamId, editorialMemberId, notes } = req.body;
+
+    if (!teamId || !editorialMemberId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both teamId and editorialMemberId are required.',
+      });
+    }
+
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    });
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Eligible hackathon team not found.' });
+    }
+
+    // Eligibility check: Team must be confirmed
+    const eligibleStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED'];
+    if (!eligibleStatuses.includes(team.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Team is not eligible for judging assignment. Current status: "${team.status}". Must be confirmed.`,
+      });
+    }
+
+    // Must have a valid submission
+    const submission = await HackathonSubmission.findOne({ team: team._id });
+    if (!submission || submission.status === 'NOT_STARTED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Team does not have a final project submission to evaluate.',
+      });
+    }
+
+    const judge = await HackathonEditorialMember.findById(editorialMemberId);
+    if (!judge) {
+      return res.status(404).json({ success: false, message: 'Editorial member / judge not found.' });
+    }
+
+    if (!judge.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot assign project to a deactivated judge account.',
+      });
+    }
+
+    // Check duplicate active assignment
+    const existingActive = await HackathonEditorialAssignment.findOne({
+      team: team._id,
+      editorialMember: judge._id,
+      status: 'ACTIVE',
+    });
+
+    if (existingActive) {
+      return res.status(400).json({
+        success: false,
+        message: `Team "${team.teamName}" is already assigned to Judge "${judge.name}".`,
+      });
+    }
+
+    const assignment = await HackathonEditorialAssignment.create({
+      hackathonId: team.hackathonId || 'can-hackathon-2026',
+      team: team._id,
+      teamId: team.teamId,
+      submission: submission._id,
+      editorialMember: judge._id,
+      status: 'ACTIVE',
+      assignedBy: req.user?.email || 'admin',
+      notes: notes || '',
+    });
+
+    // Initialize or bind HackathonEditorialEvaluation
+    let evaluation = await HackathonEditorialEvaluation.findOne({
+      team: team._id,
+      editorialMember: judge._id,
+    });
+
+    if (!evaluation) {
+      evaluation = await HackathonEditorialEvaluation.create({
+        hackathonId: team.hackathonId || 'can-hackathon-2026',
+        team: team._id,
+        teamId: team.teamId,
+        submission: submission._id,
+        editorialMember: judge._id,
+        assignment: assignment._id,
+        status: 'NOT_STARTED',
+        scores: [],
+        totalScore: 0,
+      });
+    } else {
+      evaluation.assignment = assignment._id;
+      await evaluation.save();
+    }
+
+    // Transition team status to UNDER_EVALUATION if currently SUBMITTED
+    if (team.status === 'SUBMITTED') {
+      team.status = 'UNDER_EVALUATION';
+      await team.save();
+    }
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'EDITORIAL_ASSIGNMENT_CREATED',
+      targetEntity: 'HackathonEditorialAssignment',
+      targetId: String(assignment._id),
+      newState: {
+        teamId: team.teamId,
+        teamName: team.teamName,
+        editorialMemberId: judge._id,
+        judgeName: judge.name,
+        notes: assignment.notes,
+      },
+      req,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully assigned project to Judge "${judge.name}".`,
+      assignment,
+      evaluation,
+    });
+  } catch (error) {
+    console.error('createAdminEditorialAssignment Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to assign project to judge.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 35. Admin Remove Judge Assignment
+ * DELETE /api/hackathon/admin/editorial-assignments/:id
+ */
+exports.deleteAdminEditorialAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const assignment = await HackathonEditorialAssignment.findById(id);
+
+    if (!assignment) {
+      return res.status(404).json({ success: false, message: 'Assignment record not found.' });
+    }
+
+    assignment.status = 'UNASSIGNED';
+    assignment.unassignedAt = new Date();
+    assignment.unassignedBy = req.user?.email || 'admin';
+    await assignment.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'EDITORIAL_ASSIGNMENT_REMOVED',
+      targetEntity: 'HackathonEditorialAssignment',
+      targetId: String(assignment._id),
+      previousState: { status: 'ACTIVE', teamId: assignment.teamId },
+      newState: { status: 'UNASSIGNED' },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Judge assignment removed successfully.',
+    });
+  } catch (error) {
+    console.error('deleteAdminEditorialAssignment Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove assignment.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 36. Admin Get Editorial Evaluations & Aggregated Scores
+ * GET /api/hackathon/admin/editorial-evaluations
+ */
+exports.getAdminEditorialEvaluations = async (req, res) => {
+  try {
+    const { teamId, editorialMemberId, status, track } = req.query;
+    const query = { hackathonId: 'can-hackathon-2026' };
+
+    if (status) query.status = status;
+    if (editorialMemberId) query.editorialMember = editorialMemberId;
+
+    const evaluations = await HackathonEditorialEvaluation.find(query)
+      .populate('team')
+      .populate('editorialMember', 'name email role isActive')
+      .populate('submission')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Filter by teamId or track if provided
+    let filteredEvaluations = evaluations;
+    if (teamId) {
+      filteredEvaluations = filteredEvaluations.filter(
+        (e) => e.teamId === teamId || String(e.team?._id) === String(teamId)
+      );
+    }
+    if (track && track !== 'ALL') {
+      filteredEvaluations = filteredEvaluations.filter((e) => e.team?.track === track);
+    }
+
+    // Aggregation Foundation per Team (PRD Section 15 & 32)
+    const teamAggregationMap = {};
+
+    filteredEvaluations.forEach((evalDoc) => {
+      const tId = evalDoc.teamId;
+      if (!teamAggregationMap[tId]) {
+        teamAggregationMap[tId] = {
+          teamId: tId,
+          teamName: evalDoc.team?.teamName || 'Unknown Team',
+          track: evalDoc.team?.track || 'General Track',
+          leaderName: evalDoc.team?.leader?.name || '',
+          evaluations: [],
+          totalFinalizedScores: 0,
+          finalizedCount: 0,
+          averageScore: 0,
+        };
+      }
+
+      teamAggregationMap[tId].evaluations.push({
+        evaluationId: evalDoc._id,
+        judgeName: evalDoc.editorialMember?.name || 'Judge',
+        judgeEmail: evalDoc.editorialMember?.email || '',
+        status: evalDoc.status,
+        isLocked: evalDoc.isLocked,
+        scores: evalDoc.scores,
+        totalScore: evalDoc.totalScore,
+        comments: evalDoc.comments,
+        finalizedAt: evalDoc.finalizedAt,
+      });
+
+      if (evalDoc.status === 'FINALIZED') {
+        teamAggregationMap[tId].totalFinalizedScores += evalDoc.totalScore || 0;
+        teamAggregationMap[tId].finalizedCount += 1;
+      }
+    });
+
+    const aggregatedResults = Object.values(teamAggregationMap).map((item) => ({
+      ...item,
+      averageScore: item.finalizedCount > 0 ? Number((item.totalFinalizedScores / item.finalizedCount).toFixed(2)) : 0,
+    }));
+
+    // Sort aggregated results descending by average score
+    aggregatedResults.sort((a, b) => b.averageScore - a.averageScore);
+
+    res.status(200).json({
+      success: true,
+      evaluations: filteredEvaluations,
+      aggregatedResults,
+    });
+  } catch (error) {
+    console.error('getAdminEditorialEvaluations Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch editorial evaluations.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 37. Admin Reopen Finalized Evaluation
+ * POST /api/hackathon/admin/editorial-evaluations/:id/reopen
+ */
+exports.reopenAdminEditorialEvaluation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const evaluation = await HackathonEditorialEvaluation.findById(id).populate('team').populate('editorialMember');
+    if (!evaluation) {
+      return res.status(404).json({ success: false, message: 'Evaluation record not found.' });
+    }
+
+    const prevState = {
+      status: evaluation.status,
+      isLocked: evaluation.isLocked,
+    };
+
+    evaluation.status = 'REOPENED';
+    evaluation.isLocked = false;
+    evaluation.reopenedAt = new Date();
+    evaluation.reopenedBy = req.user?.email || 'admin';
+    evaluation.reopenReason = reason || 'Admin explicitly reopened evaluation for score adjustments.';
+    await evaluation.save();
+
+    // Ensure team status reflects that evaluation is open
+    const team = await HackathonTeam.findById(evaluation.team?._id || evaluation.team);
+    if (team && team.status === 'EVALUATED') {
+      team.status = 'UNDER_EVALUATION';
+      await team.save();
+    }
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || '',
+      role: 'admin',
+      action: 'EDITORIAL_EVALUATION_REOPENED',
+      targetEntity: 'HackathonEditorialEvaluation',
+      targetId: String(evaluation._id),
+      previousState: prevState,
+      newState: { status: 'REOPENED', isLocked: false, reason: evaluation.reopenReason },
+      reason: evaluation.reopenReason,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Evaluation reopened successfully. Judge can now edit scores.',
+      evaluation,
+    });
+  } catch (error) {
+    console.error('reopenAdminEditorialEvaluation Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reopen evaluation.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 38. Editorial Judge Login
+ * POST /api/hackathon/editorial/login
+ */
+exports.editorialLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and password.',
+      });
+    }
+
+    const member = await HackathonEditorialMember.findOne({
+      email: email.toLowerCase().trim(),
+      hackathonId: 'can-hackathon-2026',
+    }).select('+passwordHash');
+
+    if (!member) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const isMatch = await member.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    if (!member.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: This Editorial account has been deactivated. Please contact the administrator.',
+      });
+    }
+
+    member.lastLoginAt = new Date();
+    await member.save();
+
+    const token = member.generateAuthToken();
+
+    await HackathonAuditLog.log({
+      actorId: String(member._id),
+      actorName: member.name,
+      actorEmail: member.email,
+      role: 'editorial',
+      action: 'EDITORIAL_LOGIN',
+      targetEntity: 'HackathonEditorialMember',
+      targetId: String(member._id),
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      token,
+      member: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        mustChangePassword: member.mustChangePassword,
+        lastLoginAt: member.lastLoginAt,
+      },
+    });
+  } catch (error) {
+    console.error('editorialLogin Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process editorial login.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 39. Editorial Judge Logout
+ * POST /api/hackathon/editorial/logout
+ */
+exports.editorialLogout = async (req, res) => {
+  try {
+    if (req.editorialMember) {
+      await HackathonAuditLog.log({
+        actorId: String(req.editorialMember._id),
+        actorName: req.editorialMember.name,
+        actorEmail: req.editorialMember.email,
+        role: 'editorial',
+        action: 'EDITORIAL_LOGOUT',
+        targetEntity: 'HackathonEditorialMember',
+        targetId: String(req.editorialMember._id),
+        req,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully.',
+    });
+  } catch (error) {
+    console.error('editorialLogout Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process logout.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 40. Get Logged-in Editorial Profile
+ * GET /api/hackathon/editorial/me
+ */
+exports.getEditorialMe = async (req, res) => {
+  try {
+    const member = req.editorialMember;
+    res.status(200).json({
+      success: true,
+      member: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        mustChangePassword: member.mustChangePassword,
+        lastLoginAt: member.lastLoginAt,
+      },
+    });
+  } catch (error) {
+    console.error('getEditorialMe Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch editorial profile.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 41. Editorial Change Password
+ * PUT /api/hackathon/editorial/password
+ */
+exports.changeEditorialPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirm password do not match.',
+      });
+    }
+
+    const member = await HackathonEditorialMember.findById(req.editorialMember._id).select('+passwordHash');
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Member not found.' });
+    }
+
+    const isMatch = await member.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect.',
+      });
+    }
+
+    member.passwordHash = await bcrypt.hash(newPassword, 10);
+    member.mustChangePassword = false;
+    member.passwordChangedAt = new Date();
+    await member.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(member._id),
+      actorName: member.name,
+      actorEmail: member.email,
+      role: 'editorial',
+      action: 'EDITORIAL_PASSWORD_RESET',
+      targetEntity: 'HackathonEditorialMember',
+      targetId: String(member._id),
+      reason: 'Editorial member updated password self-service.',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully.',
+    });
+  } catch (error) {
+    console.error('changeEditorialPassword Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update password.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 42. Editorial Dashboard Summary
+ * GET /api/hackathon/editorial/dashboard
+ */
+exports.getEditorialDashboard = async (req, res) => {
+  try {
+    const judgeId = req.editorialMember._id;
+
+    const activeAssignments = await HackathonEditorialAssignment.find({
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    }).select('team');
+
+    const assignedTeamIds = activeAssignments.map((a) => a.team);
+
+    const evaluations = await HackathonEditorialEvaluation.find({
+      editorialMember: judgeId,
+      team: { $in: assignedTeamIds },
+    });
+
+    const completedCount = evaluations.filter((e) => e.status === 'FINALIZED').length;
+    const pendingCount = activeAssignments.length - completedCount;
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        assignedCount: activeAssignments.length,
+        completedCount,
+        pendingCount,
+      },
+    });
+  } catch (error) {
+    console.error('getEditorialDashboard Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch editorial dashboard.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 43. Editorial Assigned Projects List
+ * GET /api/hackathon/editorial/projects
+ */
+exports.getEditorialProjects = async (req, res) => {
+  try {
+    const judgeId = req.editorialMember._id;
+
+    const assignments = await HackathonEditorialAssignment.find({
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    })
+      .populate('team')
+      .populate('submission')
+      .sort({ assignedAt: -1 })
+      .lean();
+
+    const projects = await Promise.all(
+      assignments.map(async (assignment) => {
+        const team = assignment.team;
+        if (!team || team.isDeleted) return null;
+
+        const evaluation = await HackathonEditorialEvaluation.findOne({
+          team: team._id,
+          editorialMember: judgeId,
+        }).lean();
+
+        return {
+          assignmentId: assignment._id,
+          teamId: team.teamId,
+          teamName: team.teamName,
+          track: team.track,
+          leaderName: team.leader?.name || '',
+          memberCount: (team.members?.length || 0) + 1,
+          submissionStatus: assignment.submission?.status || 'SUBMITTED',
+          submittedAt: assignment.submission?.submittedAt || assignment.assignedAt,
+          evaluationStatus: evaluation ? evaluation.status : 'NOT_STARTED',
+          totalScore: evaluation ? evaluation.totalScore : 0,
+          isLocked: evaluation ? evaluation.isLocked : false,
+          finalizedAt: evaluation ? evaluation.finalizedAt : null,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      projects: projects.filter(Boolean),
+    });
+  } catch (error) {
+    console.error('getEditorialProjects Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch assigned projects.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 44. Editorial Get Project Detail for Evaluation
+ * GET /api/hackathon/editorial/projects/:teamId
+ */
+exports.getEditorialProjectDetail = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const judgeId = req.editorialMember._id;
+
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    }).lean();
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Hackathon team not found.' });
+    }
+
+    // Strict Assignment Verification (Section 6 & 18): Judge can only access assigned projects
+    const assignment = await HackathonEditorialAssignment.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    });
+
+    if (!assignment) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You are not assigned to evaluate this team project.',
+      });
+    }
+
+    const submission = await HackathonSubmission.findOne({ team: team._id }).lean();
+
+    // Data Sanitization (PRD Section 28): Strip private phone, email, payment details, admin notes
+    const sanitizedTeam = {
+      _id: team._id,
+      teamId: team.teamId,
+      teamName: team.teamName,
+      track: team.track,
+      leader: {
+        name: team.leader?.name || 'Leader',
+        college: team.leader?.college || '',
+        state: team.leader?.state || '',
+      },
+      members: (team.members || []).map((m) => ({
+        name: m.name,
+        college: m.college,
+        state: m.state,
+      })),
+      initialIdea: {
+        title: team.initialIdea?.title || '',
+        description: team.initialIdea?.description || '',
+        problemStatement: team.initialIdea?.problemStatement || '',
+        proposedSolution: team.initialIdea?.proposedSolution || '',
+        techStack: team.initialIdea?.techStack || [],
+        pptUrl: team.initialIdea?.pptUrl || '',
+      },
+    };
+
+    const sanitizedSubmission = submission
+      ? {
+          _id: submission._id,
+          projectName: submission.projectName,
+          projectDescription: submission.projectDescription,
+          problemStatement: submission.problemStatement,
+          proposedSolution: submission.proposedSolution,
+          techStack: submission.techStack,
+          githubUrl: submission.githubUrl,
+          hostedProjectUrl: submission.hostedProjectUrl,
+          linkedInUrl: submission.linkedInUrl,
+          demoVideoUrl: submission.demoVideoUrl,
+          otherLinks: submission.otherLinks,
+          submittedAt: submission.submittedAt,
+        }
+      : null;
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+
+    let evaluation = await HackathonEditorialEvaluation.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+    });
+
+    if (!evaluation) {
+      evaluation = await HackathonEditorialEvaluation.create({
+        hackathonId: team.hackathonId || 'can-hackathon-2026',
+        team: team._id,
+        teamId: team.teamId,
+        submission: submission?._id,
+        editorialMember: judgeId,
+        assignment: assignment._id,
+        status: 'NOT_STARTED',
+        scores: [],
+        totalScore: 0,
+      });
+    }
+
+    await HackathonAuditLog.log({
+      actorId: String(judgeId),
+      actorName: req.editorialMember.name,
+      actorEmail: req.editorialMember.email,
+      role: 'editorial',
+      action: 'EDITORIAL_PROJECT_OPENED',
+      targetEntity: 'HackathonEditorialEvaluation',
+      targetId: team.teamId,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      team: sanitizedTeam,
+      submission: sanitizedSubmission,
+      evaluation,
+      judgingCriteria: settings.judgingCriteria || [],
+    });
+  } catch (error) {
+    console.error('getEditorialProjectDetail Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch project evaluation detail.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 45. Editorial Audit Deliverable Link Click
+ * POST /api/hackathon/editorial/projects/:teamId/audit-link-click
+ */
+exports.auditEditorialLinkClick = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { linkType } = req.body;
+    const judgeId = req.editorialMember._id;
+
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    });
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    // Verify judge assignment
+    const assignment = await HackathonEditorialAssignment.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    });
+
+    if (!assignment) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Not assigned to this team.' });
+    }
+
+    const actionMap = {
+      PPT: 'EDITORIAL_PPT_VIEWED',
+      GITHUB: 'EDITORIAL_GITHUB_OPENED',
+      HOSTED_LINK: 'EDITORIAL_HOSTED_LINK_OPENED',
+      LINKEDIN: 'EDITORIAL_LINKEDIN_OPENED',
+      DEMO: 'EDITORIAL_DEMO_OPENED',
+    };
+
+    const action = actionMap[linkType] || 'EDITORIAL_PROJECT_OPENED';
+
+    await HackathonAuditLog.log({
+      actorId: String(judgeId),
+      actorName: req.editorialMember.name,
+      actorEmail: req.editorialMember.email,
+      role: 'editorial',
+      action,
+      targetEntity: 'HackathonSubmission',
+      targetId: team.teamId,
+      reason: `Judge inspected deliverable link: ${linkType}`,
+      req,
+    });
+
+    res.status(200).json({ success: true, message: 'Link interaction audited.' });
+  } catch (error) {
+    console.error('auditEditorialLinkClick Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to audit link click.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 46. Editorial Save Evaluation Draft
+ * POST /api/hackathon/editorial/projects/:teamId/evaluation/draft
+ */
+exports.saveEditorialEvaluationDraft = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { scores, comments } = req.body;
+    const judgeId = req.editorialMember._id;
+
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    });
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    const assignment = await HackathonEditorialAssignment.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    });
+
+    if (!assignment) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Not assigned to evaluate this team.' });
+    }
+
+    const evaluation = await HackathonEditorialEvaluation.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+    });
+
+    if (!evaluation) {
+      return res.status(404).json({ success: false, message: 'Evaluation record not found.' });
+    }
+
+    if (evaluation.isLocked || evaluation.status === 'FINALIZED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Evaluation is finalized and locked. Contact hackathon administrator to reopen.',
+      });
+    }
+
+    // Validate partial scores if provided
+    let calculatedTotal = 0;
+    if (Array.isArray(scores)) {
+      for (const s of scores) {
+        const num = Number(s.score);
+        if (isNaN(num) || num < 0 || (s.maxScore && num > s.maxScore)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid score for criterion "${s.criterion}". Score must be between 0 and ${s.maxScore || 100}.`,
+          });
+        }
+        calculatedTotal += num;
+      }
+      evaluation.scores = scores;
+      evaluation.totalScore = calculatedTotal;
+    }
+
+    if (comments !== undefined) {
+      evaluation.comments = String(comments);
+    }
+
+    evaluation.status = 'IN_PROGRESS';
+    if (!evaluation.startedAt) evaluation.startedAt = new Date();
+    evaluation.lastUpdatedAt = new Date();
+    await evaluation.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(judgeId),
+      actorName: req.editorialMember.name,
+      actorEmail: req.editorialMember.email,
+      role: 'editorial',
+      action: 'EDITORIAL_EVALUATION_DRAFT_SAVED',
+      targetEntity: 'HackathonEditorialEvaluation',
+      targetId: team.teamId,
+      newState: { scores: evaluation.scores, totalScore: evaluation.totalScore },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Evaluation draft saved successfully.',
+      evaluation,
+    });
+  } catch (error) {
+    console.error('saveEditorialEvaluationDraft Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save evaluation draft.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 47. Editorial Finalize Evaluation
+ * POST /api/hackathon/editorial/projects/:teamId/evaluation/finalize
+ */
+exports.finalizeEditorialEvaluation = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { scores, comments } = req.body;
+    const judgeId = req.editorialMember._id;
+
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    });
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    const assignment = await HackathonEditorialAssignment.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+      status: 'ACTIVE',
+    });
+
+    if (!assignment) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Not assigned to evaluate this team.' });
+    }
+
+    const evaluation = await HackathonEditorialEvaluation.findOne({
+      team: team._id,
+      editorialMember: judgeId,
+    });
+
+    if (!evaluation) {
+      return res.status(404).json({ success: false, message: 'Evaluation record not found.' });
+    }
+
+    if (evaluation.isLocked || evaluation.status === 'FINALIZED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Evaluation is already finalized and locked.',
+      });
+    }
+
+    if (!Array.isArray(scores) || scores.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Evaluation scores array is required for finalization.',
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const requiredCriteria = settings.judgingCriteria || [];
+
+    // Mandatory Criteria Check: Every criterion configured in HackathonSetting must have a valid score
+    for (const crit of requiredCriteria) {
+      const matched = scores.find(
+        (s) => s.criterion && s.criterion.toLowerCase().trim() === crit.title.toLowerCase().trim()
+      );
+
+      if (!matched || matched.score === undefined || matched.score === null || matched.score === '') {
+        return res.status(400).json({
+          success: false,
+          message: `Missing mandatory score for criterion: "${crit.title}".`,
+        });
+      }
+
+      const num = Number(matched.score);
+      if (isNaN(num) || num < 0 || num > crit.maxScore) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid score for criterion "${crit.title}". Score must be a number between 0 and ${crit.maxScore}.`,
+        });
+      }
+    }
+
+    // Calculate server-side total score (NEVER trust frontend totalScore)
+    const serverTotalScore = scores.reduce((sum, s) => sum + Number(s.score || 0), 0);
+
+    evaluation.scores = scores;
+    evaluation.totalScore = serverTotalScore;
+    if (comments !== undefined) evaluation.comments = String(comments);
+    evaluation.status = 'FINALIZED';
+    evaluation.isLocked = true;
+    evaluation.finalizedAt = new Date();
+    evaluation.lastUpdatedAt = new Date();
+    evaluation.version = (evaluation.version || 1) + 1;
+    await evaluation.save();
+
+    // Check if all active judges have finalized to update team status
+    const allAssignments = await HackathonEditorialAssignment.find({
+      team: team._id,
+      status: 'ACTIVE',
+    });
+
+    const finalizedEvaluations = await HackathonEditorialEvaluation.find({
+      team: team._id,
+      editorialMember: { $in: allAssignments.map((a) => a.editorialMember) },
+      status: 'FINALIZED',
+    });
+
+    if (finalizedEvaluations.length >= allAssignments.length && allAssignments.length > 0) {
+      team.status = 'EVALUATED';
+    } else {
+      team.status = 'UNDER_EVALUATION';
+    }
+    await team.save();
+
+    await HackathonAuditLog.log({
+      actorId: String(judgeId),
+      actorName: req.editorialMember.name,
+      actorEmail: req.editorialMember.email,
+      role: 'editorial',
+      action: 'EDITORIAL_EVALUATION_FINALIZED',
+      targetEntity: 'HackathonEditorialEvaluation',
+      targetId: team.teamId,
+      newState: {
+        totalScore: evaluation.totalScore,
+        scores: evaluation.scores,
+        finalizedAt: evaluation.finalizedAt,
+      },
+      req,
+    });
+
+    await HackathonAuditLog.log({
+      actorId: String(judgeId),
+      actorName: req.editorialMember.name,
+      actorEmail: req.editorialMember.email,
+      role: 'editorial',
+      action: 'EDITORIAL_SCORE_SUBMITTED',
+      targetEntity: 'HackathonEditorialEvaluation',
+      targetId: team.teamId,
+      reason: `Finalized total score: ${evaluation.totalScore}`,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Evaluation finalized and locked successfully.',
+      evaluation,
+    });
+  } catch (error) {
+    console.error('finalizeEditorialEvaluation Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to finalize evaluation.',
+      error: error.message,
+    });
+  }
+};
+
 
 
 
