@@ -1976,7 +1976,12 @@ exports.saveSubmissionDraft = async (req, res) => {
     }
 
     // Step 14: Final Submission Lock check
-    let submission = await HackathonSubmission.findOne({ team: team._id });
+    let submission = await HackathonSubmission.findOne({
+      $or: [{ team: team._id }, { teamId: team.teamId }],
+    });
+    if (submission && String(submission.team) !== String(team._id)) {
+      submission.team = team._id;
+    }
     if (submission && submission.isLocked) {
       return res.status(400).json({
         success: false,
@@ -2187,7 +2192,12 @@ exports.finalSubmitProject = async (req, res) => {
     }
 
     // Step 14: Final Submission Lock check
-    let submission = await HackathonSubmission.findOne({ team: team._id });
+    let submission = await HackathonSubmission.findOne({
+      $or: [{ team: team._id }, { teamId: team.teamId }],
+    });
+    if (submission && String(submission.team) !== String(team._id)) {
+      submission.team = team._id;
+    }
     if (submission && submission.isLocked) {
       return res.status(400).json({
         success: false,

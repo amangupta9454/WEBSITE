@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const HackathonCertificate = require('../models/HackathonCertificate');
 const HackathonResult = require('../models/HackathonResult');
 const HackathonTeam = require('../models/HackathonTeam');
@@ -335,7 +336,11 @@ class HackathonCertificateService {
     }
 
     const cert = await HackathonCertificate.findOne({
-      $or: [{ certificateId }, { certificateNumber: certificateId }],
+      $or: [
+        { certificateId },
+        { certificateNumber: certificateId },
+        ...(mongoose.isValidObjectId(certificateId) ? [{ _id: certificateId }] : []),
+      ],
     });
 
     if (!cert) {

@@ -263,7 +263,10 @@ All exports omit passwords, password hashes, webhook secrets, authentication tok
 **Symptoms**: Team paid ₹49 on Razorpay, but status remains `PENDING` on dashboard.
 1. Check `BACKEND` logs for `Invalid Razorpay webhook signature`.
 2. Verify `RAZORPAY_WEBHOOK_SECRET` matches the secret configured in Razorpay Dashboard.
-3. In Razorpay Dashboard -> Webhooks, view the failed event and check the HTTP response code.
+3. In Razorpay Dashboard -> Webhooks:
+   - Ensure the configured Webhook URL exactly matches: `https://<api-domain>/api/hackathon/payment/webhook` (Note: singular `payment`, not `payments`).
+   - Confirm active events: `order.paid`, `payment.captured`.
+   - View the failed event and check the HTTP response code.
 4. **Manual Remediation**:
    - Locate payment in Razorpay Dashboard and obtain `payment_id` and `order_id`.
    - In Admin Workspace -> Teams, open team drawer.
