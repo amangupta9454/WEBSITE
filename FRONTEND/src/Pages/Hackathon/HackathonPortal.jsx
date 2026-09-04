@@ -660,6 +660,23 @@ export default function HackathonPortal() {
               </div>
             ))}
           </div>
+
+          {settings?.resultDate && (
+            <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-1 text-xs px-2 text-slate-400">
+              <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
+                <Trophy className="w-3.5 h-3.5" /> Official Result Announcement:
+              </span>
+              <span className="font-bold text-white font-mono">
+                {new Date(settings.resultDate).toLocaleString([], {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Quick Hero Actions */}
@@ -944,7 +961,7 @@ export default function HackathonPortal() {
               )}
 
               {/* PHASE 5: FINAL PROJECT SUBMISSION SECTION (Steps 6, 7, 8, 10, 12, 13, 14) */}
-              {["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED"].includes(userTeam.status) && (
+              {(userTeam.paymentStatus === "PAID" || ["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED", "UNDER_EVALUATION", "EVALUATED", "RESULT_PUBLISHED", "CERTIFICATE_AVAILABLE"].includes(userTeam.status)) && (
                 <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-slate-900 via-indigo-950/20 to-slate-950 border-2 border-indigo-500/40 shadow-2xl space-y-6">
                   {/* Top Bar: Title, Badges, Deadline Status */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
@@ -1032,7 +1049,7 @@ export default function HackathonPortal() {
                   </div>
 
                   {/* Body Content based on submission status */}
-                  {submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED" || userTeam.finalSubmission?.projectTitle ? (
+                  {submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED" || userTeam.status === "RESULT_PUBLISHED" || userTeam.finalSubmission?.projectTitle ? (
                     /* Finalized & Locked view for both Leader and Members */
                     <div className="space-y-4">
                       <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1235,101 +1252,129 @@ export default function HackathonPortal() {
               )}
 
               {/* ─── PHASE 7: OFFICIAL EVALUATION & RESULTS CARD ─── */}
-              {myResultData?.isPublished && myResultData?.result ? (
-                <div
-                  className={`p-6 sm:p-8 rounded-3xl border shadow-2xl relative overflow-hidden space-y-6 ${
-                    myResultData.result.isWinner || myResultData.result.rank <= 3
-                      ? "bg-gradient-to-b from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/50 shadow-amber-500/10"
-                      : "bg-gradient-to-b from-indigo-950/30 via-slate-900 to-slate-950 border-indigo-500/40 shadow-indigo-500/10"
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
-                          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                          Official Result Declared
-                        </span>
-                        {myResultData.result.category && (
-                          <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                            {myResultData.result.category}
-                          </span>
+              {(() => {
+                const participantResult = myResultData?.result || (myResultData?.rank !== undefined ? myResultData : null);
+                if (myResultData?.isPublished && participantResult) {
+                  return (
+                    <div
+                      className={`p-6 sm:p-8 rounded-3xl border shadow-2xl relative overflow-hidden space-y-6 ${
+                        participantResult.isWinner || participantResult.rank <= 3
+                          ? "bg-gradient-to-b from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/50 shadow-amber-500/10"
+                          : "bg-gradient-to-b from-indigo-950/30 via-slate-900 to-slate-950 border-indigo-500/40 shadow-indigo-500/10"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
+                              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                              Official Result Declared
+                            </span>
+                            {participantResult.category && (
+                              <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                {participantResult.category}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-2xl sm:text-3xl font-black text-white pt-1">
+                            {participantResult.isWinner || participantResult.rank <= 3
+                              ? "🎉 Congratulations, Champions!"
+                              : "🎖️ Final Evaluation Complete"}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+                            {participantResult.isWinner || participantResult.rank <= 3
+                              ? `Outstanding performance! Your team has secured a podium rank in the Code-A-Nova National Hackathon 2026.`
+                              : `Great job on completing your project submission and participating in Code-A-Nova 2026. Here is your verified evaluation score.`}
+                          </p>
+                        </div>
+
+                        <Link
+                          to="/hackathon/results"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer self-start sm:self-center"
+                        >
+                          <Trophy className="w-4 h-4" /> View Full Leaderboard
+                        </Link>
+                      </div>
+
+                      {/* Score & Rank Highlights Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                          <div className="text-[10px] uppercase font-bold text-slate-400">Official Rank</div>
+                          <div className="text-2xl sm:text-3xl font-black text-white font-mono flex items-center gap-1">
+                            {participantResult.rank === 1 ? "🥇 #1" : participantResult.rank === 2 ? "🥈 #2" : participantResult.rank === 3 ? "🥉 #3" : `#${participantResult.rank}`}
+                          </div>
+                          <div className="text-[10px] text-slate-500">National Finalist</div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                          <div className="text-[10px] uppercase font-bold text-slate-400">Final Score</div>
+                          <div className="text-2xl sm:text-3xl font-black text-cyan-400 font-mono">
+                            {Number(participantResult.finalScore || 0).toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-slate-500">Out of 100.00 pts</div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                          <div className="text-[10px] uppercase font-bold text-slate-400">Award Status</div>
+                          <div className="text-sm sm:text-base font-black text-white truncate">
+                            {participantResult.category || (participantResult.rank <= 10 ? "Top 10 Finalist" : "Finalist")}
+                          </div>
+                          <div className="text-[10px] text-slate-500">Editorial Verified</div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                          <div className="text-[10px] uppercase font-bold text-slate-400">Prize Package</div>
+                          <div className="text-sm sm:text-base font-black text-emerald-400 truncate">
+                            {participantResult.prize || "Certificate of Excellence"}
+                          </div>
+                          <div className="text-[10px] text-slate-500">Merit Recognition</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED" || userTeam.status === "RESULT_PUBLISHED" || userTeam.paymentStatus === "PAID") {
+                  return (
+                    <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> Jury Evaluation In Progress
+                        </div>
+                        <h4 className="text-base font-bold text-white">Results are currently under deliberation</h4>
+                        <p className="text-xs text-slate-400 max-w-xl">
+                          Your project code repository and live deployment are being evaluated by our editorial panel. Rankings and awards will be announced on the public leaderboard.
+                        </p>
+                        {(settings?.resultDate || myResultData?.resultDate) && (
+                          <div className="pt-2 flex items-center gap-2 text-xs font-bold text-cyan-400">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>
+                              Official Result Announcement:{" "}
+                              <span className="text-white font-mono font-bold">
+                                {new Date(settings?.resultDate || myResultData?.resultDate).toLocaleString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-black text-white pt-1">
-                        {myResultData.result.isWinner || myResultData.result.rank <= 3
-                          ? "🎉 Congratulations, Champions!"
-                          : "🎖️ Final Evaluation Complete"}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-                        {myResultData.result.isWinner || myResultData.result.rank <= 3
-                          ? `Outstanding performance! Your team has secured a podium rank in the Code-A-Nova National Hackathon 2026.`
-                          : `Great job on completing your project submission and participating in Code-A-Nova 2026. Here is your verified evaluation score.`}
-                      </p>
+                      <Link
+                        to="/hackathon/results"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all shrink-0 self-start sm:self-center"
+                      >
+                        Leaderboard Preview <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
+                  );
+                }
 
-                    <Link
-                      to="/hackathon/results"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer self-start sm:self-center"
-                    >
-                      <Trophy className="w-4 h-4" /> View Full Leaderboard
-                    </Link>
-                  </div>
-
-                  {/* Score & Rank Highlights Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                    <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Official Rank</div>
-                      <div className="text-2xl sm:text-3xl font-black text-white font-mono flex items-center gap-1">
-                        {myResultData.result.rank === 1 ? "🥇 #1" : myResultData.result.rank === 2 ? "🥈 #2" : myResultData.result.rank === 3 ? "🥉 #3" : `#${myResultData.result.rank}`}
-                      </div>
-                      <div className="text-[10px] text-slate-500">National Finalist</div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Final Score</div>
-                      <div className="text-2xl sm:text-3xl font-black text-cyan-400 font-mono">
-                        {Number(myResultData.result.finalScore || 0).toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-slate-500">Out of 100.00 pts</div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Award Status</div>
-                      <div className="text-sm sm:text-base font-black text-white truncate">
-                        {myResultData.result.category || (myResultData.result.rank <= 10 ? "Top 10 Finalist" : "Finalist")}
-                      </div>
-                      <div className="text-[10px] text-slate-500">Editorial Verified</div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Prize Package</div>
-                      <div className="text-sm sm:text-base font-black text-emerald-400 truncate">
-                        {myResultData.result.prize || "Certificate of Excellence"}
-                      </div>
-                      <div className="text-[10px] text-slate-500">Merit Recognition</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED") ? (
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" /> Jury Evaluation In Progress
-                    </div>
-                    <h4 className="text-base font-bold text-white">Results are currently under deliberation</h4>
-                    <p className="text-xs text-slate-400 max-w-xl">
-                      Your project code repository and live deployment are being evaluated by our editorial panel. Rankings and awards will be announced on the public leaderboard.
-                    </p>
-                  </div>
-                  <Link
-                    to="/hackathon/results"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all shrink-0 self-start sm:self-center"
-                  >
-                    Leaderboard Preview <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              ) : null}
+                return null;
+              })()}
 
               {/* ─── PHASE 8: PRIZE FULFILLMENT PIPELINE (If Won Prize) ─── */}
               {myPrizes.length > 0 && (

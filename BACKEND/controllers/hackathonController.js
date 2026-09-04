@@ -4694,7 +4694,10 @@ exports.getParticipantMyResult = async (req, res) => {
 
     const { team } = resolved;
 
-    const setting = await HackathonSetting.findOne({ hackathonId: team.hackathonId || 'can-hackathon-2026' }).lean();
+    const setting =
+      (await HackathonSetting.findOne({ hackathonId: team.hackathonId || 'can-hackathon-2026' }).lean()) ||
+      (await HackathonSetting.findOne().lean()) ||
+      (await HackathonSetting.getOrCreateSettings(team.hackathonId || 'can-hackathon-2026')).toObject();
 
     // If results unpublished, hide all results
     if (!setting?.isResultsPublished) {
@@ -4708,8 +4711,7 @@ exports.getParticipantMyResult = async (req, res) => {
 
     // Results are published: Return sanitized DTO for participant's team only
     const result = await HackathonResult.findOne({
-      hackathonId: team.hackathonId || 'can-hackathon-2026',
-      team: team._id,
+      $or: [{ team: team._id }, { teamId: team.teamId }],
     }).lean();
 
     if (!result || !result.isPublished) {
@@ -4719,12 +4721,11 @@ exports.getParticipantMyResult = async (req, res) => {
         message: 'Your team results are being processed.',
         teamName: team.teamName,
         track: team.track,
+        resultDate: setting?.resultDate || null,
       });
     }
 
-    res.status(200).json({
-      success: true,
-      isPublished: true,
+    const resultObj = {
       teamName: result.teamName,
       track: result.track,
       rank: result.rank,
@@ -4734,6 +4735,14 @@ exports.getParticipantMyResult = async (req, res) => {
       isWinner: result.isWinner,
       isRunnerUp: result.isRunnerUp,
       publishedAt: result.publishedAt,
+    };
+
+    res.status(200).json({
+      success: true,
+      isPublished: true,
+      resultDate: setting?.resultDate || null,
+      result: resultObj,
+      ...resultObj,
     });
   } catch (error) {
     console.error('getParticipantMyResult Error:', error);
@@ -4765,48 +4774,65 @@ exports.getPublicResults = async (req, res) => {
         resultDate: setting?.resultDate || null,
         winners: [],
         rankings: [],
+        leaderboard: [],
       });
     }
 
-    // Fetch only published, eligible results
-    const results = await HackathonResult.find({
-      hackathonId,
+    // Flexible query to find published results regardless of minor hackathonId naming variance
+    const resultFilter = {
       isPublished: true,
-      rankingStatus: 'READY',
-    })
+    };
+    if (hackathonId && hackathonId !== 'can-hackathon-2026') {
+      resultFilter.hackathonId = hackathonId;
+    } else {
+      resultFilter.$or = [
+        { hackathonId: 'can-hackathon-2026' },
+        { hackathonId: { $exists: false } },
+        { hackathonId: null },
+      ];
+    }
+
+    // Fetch published results, populate submission & team info
+    const results = await HackathonResult.find(resultFilter)
       .populate('submissionId', 'projectName')
+      .populate('team', 'teamName teamId track finalSubmission initialIdea')
       .sort({ rank: 1, finalScore: -1 })
       .lean();
 
-    // Completely sanitized public DTOs
+    const formatItem = (r) => ({
+      rank: r.rank,
+      teamName: r.teamName || r.team?.teamName || 'Team',
+      teamId: r.teamId || r.team?.teamId,
+      projectName:
+        r.submissionId?.projectName ||
+        r.team?.finalSubmission?.projectTitle ||
+        r.team?.initialIdea?.title ||
+        'Project Submission',
+      track: r.track || r.team?.track || 'General Track',
+      category:
+        r.category ||
+        (r.rank === 1 ? 'Winner' : r.rank === 2 ? '1st Runner Up' : r.rank === 3 ? '2nd Runner Up' : ''),
+      prize: r.prize || '',
+      finalScore: r.finalScore,
+      isWinner: r.isWinner,
+      isRunnerUp: r.isRunnerUp,
+    });
+
     const podiumWinners = results
       .filter((r) => r.isWinner || r.category || (r.rank && r.rank <= 3))
-      .map((r) => ({
-        rank: r.rank,
-        teamName: r.teamName,
-        projectName: r.submissionId?.projectName || 'Project Submission',
-        track: r.track,
-        category: r.category || (r.rank === 1 ? 'Winner' : r.rank === 2 ? '1st Runner Up' : '2nd Runner Up'),
-        prize: r.prize || '',
-        finalScore: r.finalScore,
-      }));
+      .map(formatItem);
 
-    const rankings = results.map((r) => ({
-      rank: r.rank,
-      teamName: r.teamName,
-      projectName: r.submissionId?.projectName || 'Project Submission',
-      track: r.track,
-      category: r.category || '',
-      finalScore: r.finalScore,
-    }));
+    const rankings = results.map(formatItem);
 
     res.status(200).json({
       success: true,
       isPublished: true,
       hackathonName: setting.name,
       publishedAt: setting.resultsPublishedAt,
+      resultDate: setting.resultDate || null,
       winners: podiumWinners,
       rankings,
+      leaderboard: rankings,
     });
   } catch (error) {
     console.error('getPublicResults Error:', error);

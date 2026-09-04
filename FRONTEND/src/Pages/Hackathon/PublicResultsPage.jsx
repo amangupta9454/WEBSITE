@@ -47,7 +47,7 @@ export default function PublicResultsPage() {
   }, []);
 
   const isPublished = resultsData?.isPublished;
-  const leaderboard = resultsData?.leaderboard || [];
+  const leaderboard = resultsData?.leaderboard || resultsData?.rankings || [];
   const tracks = ["ALL", ...new Set(leaderboard.map((item) => item.track).filter(Boolean))];
 
   // Filter leaderboard by search query and track
@@ -179,11 +179,28 @@ export default function PublicResultsPage() {
                 The editorial board and jury are currently finalizing evaluations, normalizing scores, and reviewing codebases.
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 text-xs text-slate-300 space-y-1">
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 text-xs text-slate-300 space-y-2">
               <div className="font-semibold text-white">Official Announcement Coming Soon</div>
               <div className="text-slate-500">
                 Final winners, podium standings, and overall leaderboard will be unlocked right here.
               </div>
+              {resultsData?.resultDate && (
+                <div className="pt-2 border-t border-slate-800/80 text-amber-400 font-bold flex items-center justify-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>
+                    Scheduled Result Announcement:{" "}
+                    <span className="text-white">
+                      {new Date(resultsData.resultDate).toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
             <div className="pt-2">
               <Link
