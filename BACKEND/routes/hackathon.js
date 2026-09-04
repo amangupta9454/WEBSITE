@@ -19,6 +19,12 @@ const {
   previewUnstopExcel,
   commitUnstopImport,
   getAdminTeams,
+  getAdminTeamById,
+  createManualTeam,
+  updateAdminTeam,
+  deleteAdminTeam,
+  updateTeamReview,
+  updateTeamStatus,
 } = require('../controllers/hackathonController');
 
 /**
@@ -39,6 +45,16 @@ router.get('/admin/settings', auth, verifyAdmin, getAdminSettings);
 router.put('/admin/settings', auth, verifyAdmin, updateAdminSettings);
 router.get('/admin/audit-logs', auth, verifyAdmin, getAdminAuditLogs);
 router.get('/admin/teams', auth, verifyAdmin, getAdminTeams);
+
+/**
+ * Phase 3: Admin Team Management & Review Routes
+ */
+router.get('/admin/teams/:id', auth, verifyAdmin, getAdminTeamById);
+router.post('/admin/teams', auth, verifyAdmin, createManualTeam);
+router.put('/admin/teams/:id', auth, verifyAdmin, updateAdminTeam);
+router.delete('/admin/teams/:id', auth, verifyAdmin, deleteAdminTeam);
+router.put('/admin/teams/:id/review', auth, verifyAdmin, updateTeamReview);
+router.put('/admin/teams/:id/status', auth, verifyAdmin, updateTeamStatus);
 
 /**
  * Phase 2: Unstop Excel Import Routes

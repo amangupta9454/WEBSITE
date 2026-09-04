@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const express = require('express');
 const xlsx = require('xlsx');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const Admin = require('../models/Admin');
 const hackathonRoutes = require('../routes/hackathon');

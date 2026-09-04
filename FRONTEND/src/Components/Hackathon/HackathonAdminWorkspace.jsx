@@ -27,8 +27,14 @@ import {
   UploadCloud,
   Search,
   Filter,
+  Eye,
+  Edit2,
+  PlusCircle,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
+import TeamDetailDrawer from "./TeamDetailDrawer";
+import TeamFormModal from "./TeamFormModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5006";
 
@@ -63,6 +69,15 @@ export default function HackathonAdminWorkspace() {
   const [teamsSearch, setTeamsSearch] = useState("");
   const [teamsStatusFilter, setTeamsStatusFilter] = useState("");
   const [teamsTrackFilter, setTeamsTrackFilter] = useState("");
+
+  // Phase 3: Team Profile Drawer & Action Modals State
+  const [selectedTeamIdForDrawer, setSelectedTeamIdForDrawer] = useState(null);
+  const [showTeamDrawer, setShowTeamDrawer] = useState(false);
+  const [showTeamFormModal, setShowTeamFormModal] = useState(false);
+  const [teamFormMode, setTeamFormMode] = useState("create");
+  const [selectedTeamForForm, setSelectedTeamForForm] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTeamForDelete, setSelectedTeamForDelete] = useState(null);
 
   const fetchTeams = async (page = 1) => {
     try {
@@ -893,7 +908,7 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
-      {/* ─── TAB 2: TEAMS MANAGEMENT (PHASE 2) ─── */}
+      {/* ─── TAB 2: TEAMS MANAGEMENT (PHASE 3) ─── */}
       {activeTab === "teams" && (
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -903,16 +918,29 @@ export default function HackathonAdminWorkspace() {
                 Hackathon Teams ({teamsTotal})
               </h2>
               <p className="text-xs text-slate-500">
-                All teams imported from Unstop Excel exports and registered in the system.
+                Manage, review, edit, and evaluate all imported and manual hackathon teams.
               </p>
             </div>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer"
-            >
-              <UploadCloud className="w-4 h-4" />
-              Import Unstop Excel
-            </button>
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => {
+                  setTeamFormMode("create");
+                  setSelectedTeamForForm(null);
+                  setShowTeamFormModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Add Team
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4" />
+                Import Unstop Excel
+              </button>
+            </div>
           </div>
 
           {/* Search and Filters */}
@@ -949,6 +977,7 @@ export default function HackathonAdminWorkspace() {
               <option value="IMPORTED">Imported</option>
               <option value="UNDER_REVIEW">Under Review</option>
               <option value="SHORTLISTED">Shortlisted</option>
+              <option value="REJECTED">Rejected</option>
               <option value="CONFIRMED">Confirmed</option>
               <option value="PAYMENT_PENDING">Payment Pending</option>
               <option value="SUBMITTED">Submitted</option>
@@ -969,13 +998,13 @@ export default function HackathonAdminWorkspace() {
                 <tr>
                   <th className="p-3">Team ID</th>
                   <th className="p-3">Team Name</th>
-                  <th className="p-3">Unstop App ID</th>
                   <th className="p-3">Leader</th>
                   <th className="p-3">Track</th>
                   <th className="p-3">Members</th>
                   <th className="p-3">PPT / Idea</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3">Import Date</th>
+                  <th className="p-3">Source</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -989,49 +1018,148 @@ export default function HackathonAdminWorkspace() {
                   <tr>
                     <td colSpan={9} className="p-12 text-center space-y-3">
                       <div className="text-slate-400 text-sm font-semibold">No teams found matching your query.</div>
-                      <button
-                        onClick={() => setShowImportModal(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-                      >
-                        <UploadCloud className="w-4 h-4" /> Import Teams from Unstop Excel
-                      </button>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => {
+                            setTeamFormMode("create");
+                            setSelectedTeamForForm(null);
+                            setShowTeamFormModal(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" /> Add Team Manually
+                        </button>
+                        <button
+                          onClick={() => setShowImportModal(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                        >
+                          <UploadCloud className="w-4 h-4" /> Import Teams from Unstop
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  teams.map((t) => (
-                    <tr key={t._id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3 font-mono font-bold text-indigo-600">{t.teamId}</td>
-                      <td className="p-3 font-bold text-slate-900">{t.teamName}</td>
-                      <td className="p-3 font-mono text-[11px] text-slate-500">{t.unstopApplicationId || "—"}</td>
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-800">{t.leader?.name || "—"}</div>
-                        <div className="text-[11px] text-slate-400">{t.leader?.email}</div>
-                      </td>
-                      <td className="p-3 text-slate-600">{t.track}</td>
-                      <td className="p-3 text-slate-500">{(t.members || []).length + 1} members</td>
-                      <td className="p-3 max-w-xs">
-                        <div className="font-semibold text-slate-800 truncate">{t.initialIdea?.title || "—"}</div>
-                        {t.initialIdea?.pptUrl && (
-                          <a
-                            href={t.initialIdea.pptUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[11px] text-indigo-600 hover:underline inline-flex items-center gap-1"
+                  teams.map((t) => {
+                    let statusBadgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+                    if (t.status === "SHORTLISTED") {
+                      statusBadgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                    } else if (t.status === "REJECTED") {
+                      statusBadgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+                    } else if (t.status === "UNDER_REVIEW") {
+                      statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+                    } else if (t.status === "IMPORTED") {
+                      statusBadgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+                    }
+
+                    return (
+                      <tr key={t._id} className="hover:bg-slate-50 transition-colors group">
+                        <td className="p-3 font-mono font-bold text-indigo-600">
+                          <button
+                            onClick={() => {
+                              setSelectedTeamIdForDrawer(t.teamId);
+                              setShowTeamDrawer(true);
+                            }}
+                            className="hover:underline text-left cursor-pointer"
                           >
-                            View PPT <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
-                          {t.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-[11px] text-slate-400 font-mono">
-                        {new Date(t.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))
+                            {t.teamId}
+                          </button>
+                          {t.unstopApplicationId && (
+                            <div className="text-[10px] text-slate-400 font-mono font-normal">
+                              {t.unstopApplicationId}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => {
+                              setSelectedTeamIdForDrawer(t.teamId);
+                              setShowTeamDrawer(true);
+                            }}
+                            className="font-bold text-slate-900 hover:text-indigo-600 text-left transition-colors cursor-pointer"
+                          >
+                            {t.teamName}
+                          </button>
+                          <div className="text-[10px] text-slate-400">
+                            Created {new Date(t.createdAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-semibold text-slate-800">{t.leader?.name || "—"}</div>
+                          <div className="text-[11px] text-slate-400">{t.leader?.email}</div>
+                        </td>
+                        <td className="p-3 text-slate-600">{t.track}</td>
+                        <td className="p-3 text-slate-500">{(t.members || []).length + 1} members</td>
+                        <td className="p-3 max-w-xs">
+                          <div className="font-semibold text-slate-800 truncate">{t.initialIdea?.title || "—"}</div>
+                          {t.initialIdea?.pptUrl ? (
+                            <a
+                              href={t.initialIdea.pptUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-indigo-600 hover:underline inline-flex items-center gap-1"
+                            >
+                              View PPT <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">No PPT</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadgeClass}`}
+                          >
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {t.source === "MANUAL_ADMIN" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">
+                              Manual
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                              Unstop
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => {
+                                setSelectedTeamIdForDrawer(t.teamId);
+                                setShowTeamDrawer(true);
+                              }}
+                              className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                              title="View Full Profile & Review"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTeamForForm(t);
+                                setTeamFormMode("edit");
+                                setShowTeamFormModal(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Edit Team"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTeamForDelete(t);
+                                setShowDeleteModal(true);
+                              }}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete Team"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1097,6 +1225,62 @@ export default function HackathonAdminWorkspace() {
           fetchTeams(1);
         }}
       />
+
+      {/* Phase 3: Team Detail & Review Drawer */}
+      <TeamDetailDrawer
+        teamId={selectedTeamIdForDrawer}
+        isOpen={showTeamDrawer}
+        onClose={() => {
+          setShowTeamDrawer(false);
+          setSelectedTeamIdForDrawer(null);
+        }}
+        onTeamUpdated={() => {
+          fetchTeams(teamsPage);
+          fetchOverview();
+        }}
+        onOpenEdit={(team) => {
+          setShowTeamDrawer(false);
+          setSelectedTeamForForm(team);
+          setTeamFormMode("edit");
+          setShowTeamFormModal(true);
+        }}
+        onOpenDelete={(team) => {
+          setShowTeamDrawer(false);
+          setSelectedTeamForDelete(team);
+          setShowDeleteModal(true);
+        }}
+      />
+
+      {/* Phase 3: Team Form Modal (Create / Edit) */}
+      <TeamFormModal
+        isOpen={showTeamFormModal}
+        mode={teamFormMode}
+        team={selectedTeamForForm}
+        tracks={settings?.tracks || []}
+        onClose={() => {
+          setShowTeamFormModal(false);
+          setSelectedTeamForForm(null);
+        }}
+        onSuccess={() => {
+          fetchTeams(teamsPage);
+          fetchOverview();
+        }}
+      />
+
+      {/* Phase 3: Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        team={selectedTeamForDelete}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedTeamForDelete(null);
+        }}
+        onDeleted={() => {
+          fetchTeams(teamsPage);
+          fetchOverview();
+        }}
+      />
     </div>
   );
 }
+

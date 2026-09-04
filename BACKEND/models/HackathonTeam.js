@@ -184,6 +184,32 @@ const hackathonTeamSchema = new mongoose.Schema(
       reviewedBy: { type: String, default: '' },
       reviewedAt: { type: Date, default: null },
       notes: { type: String, default: '' },
+      scores: {
+        innovation: { type: Number, min: 0, max: 10, default: null },
+        ideaQuality: { type: Number, min: 0, max: 10, default: null },
+        feasibility: { type: Number, min: 0, max: 10, default: null },
+        presentation: { type: Number, min: 0, max: 10, default: null },
+      },
+      totalScore: { type: Number, default: null },
+      tags: { type: [String], default: [] },
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    deletedBy: {
+      type: String,
+      default: '',
     },
     finalSubmission: {
       projectTitle: { type: String, default: '', trim: true },
