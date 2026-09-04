@@ -36,6 +36,9 @@ import {
   CreditCard,
   Send,
   Loader2,
+  Rocket,
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5006";
@@ -81,6 +84,10 @@ export default function TeamDetailDrawer({
   const [rejectionReason, setRejectionReason] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Phase 5: Submission details state
+  const [submission, setSubmission] = useState(null);
+  const [unlockingSubmission, setUnlockingSubmission] = useState(false);
+
   const getAdminToken = () => {
     return localStorage.getItem("adminToken") || localStorage.getItem("token");
   };
@@ -109,11 +116,51 @@ export default function TeamDetailDrawer({
         setReviewNotes(rev.notes || "");
         setSelectedTags(rev.tags || []);
       }
+
+      // Fetch Phase 5 submission details
+      try {
+        const subRes = await axios.get(`${BACKEND_URL}/api/hackathon/admin/submissions/team/${teamId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (subRes.data?.success) {
+          setSubmission(subRes.data.submission);
+        }
+      } catch (subErr) {
+        setSubmission(null);
+      }
     } catch (err) {
       console.error("fetchTeamDetails error:", err);
       toast.error(err.response?.data?.message || "Failed to load team details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUnlockSubmission = async () => {
+    if (!submission?._id && !team?.teamId) return;
+    const confirmUnlock = window.confirm(
+      "Are you sure you want to unlock this team's submission? The team leader will be able to edit and re-submit."
+    );
+    if (!confirmUnlock) return;
+
+    try {
+      setUnlockingSubmission(true);
+      const token = getAdminToken();
+      const targetId = submission?._id || team?.teamId;
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/submissions/${targetId}/unlock`,
+        { reason: "Admin unlocked submission from TeamDetailDrawer" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Submission unlocked successfully");
+        setSubmission(res.data.submission);
+        if (onTeamUpdated) onTeamUpdated();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unlock submission");
+    } finally {
+      setUnlockingSubmission(false);
     }
   };
 
@@ -763,94 +810,255 @@ export default function TeamDetailDrawer({
               </div>
             </div>
 
-            {/* SECTION 3: SUBMITTED LINKS (Step 7) */}
+            {/* SECTION 3: FINAL PROJECT SUBMISSION (Phase 5 - Steps 17 & 18) */}
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Globe className="w-4 h-4 text-indigo-600" />
-                Submitted Project Links
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <Rocket className="w-4 h-4 text-indigo-600" />
+                    Final Project Submission
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Distinguished from initial Unstop idea. Contains live repositories, deployed URLs, and architecture details.
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {team.submittedLinks?.githubUrl ? (
-                  <a
-                    href={team.submittedLinks.githubUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      <Github className="w-4 h-4 text-slate-700" />
-                      <span className="truncate">GitHub Repo</span>
+                <div className="flex items-center gap-2">
+                  {submission?.status === "SUBMITTED" || team.status === "SUBMITTED" ? (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      SUBMITTED & LOCKED
                     </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  </a>
-                ) : (
-                  <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
-                    <Github className="w-4 h-4 opacity-40" />
-                    <span>No GitHub repository</span>
-                  </div>
-                )}
+                  ) : submission?.status === "DRAFT" ? (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      DRAFT IN PROGRESS
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 border border-slate-200">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      NOT STARTED
+                    </span>
+                  )}
 
-                {team.submittedLinks?.hostedProjectUrl ? (
-                  <a
-                    href={team.submittedLinks.hostedProjectUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      <Globe className="w-4 h-4 text-emerald-600" />
-                      <span className="truncate">Hosted Live Demo</span>
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  </a>
-                ) : (
-                  <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
-                    <Globe className="w-4 h-4 opacity-40" />
-                    <span>No hosted link</span>
-                  </div>
-                )}
-
-                {team.submittedLinks?.linkedInUrl ? (
-                  <a
-                    href={team.submittedLinks.linkedInUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      <Linkedin className="w-4 h-4 text-blue-600" />
-                      <span className="truncate">LinkedIn</span>
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  </a>
-                ) : (
-                  <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
-                    <Linkedin className="w-4 h-4 opacity-40" />
-                    <span>No LinkedIn link</span>
-                  </div>
-                )}
-
-                {team.submittedLinks?.demoVideoUrl ? (
-                  <a
-                    href={team.submittedLinks.demoVideoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
-                  >
-                    <span className="flex items-center gap-2 truncate">
-                      <Video className="w-4 h-4 text-rose-600" />
-                      <span className="truncate">Demo Video</span>
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  </a>
-                ) : (
-                  <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
-                    <Video className="w-4 h-4 opacity-40" />
-                    <span>No demo video</span>
-                  </div>
-                )}
+                  {/* Admin Unlock Action */}
+                  {submission?.isLocked && (
+                    <button
+                      onClick={handleUnlockSubmission}
+                      disabled={unlockingSubmission}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition-all cursor-pointer disabled:opacity-50"
+                      title="Unlock submission so team can make corrections and re-submit"
+                    >
+                      <Unlock className="w-3.5 h-3.5" />
+                      {unlockingSubmission ? "Unlocking..." : "Unlock Submission"}
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Submission details display */}
+              {submission?.projectName || submission?.projectDescription || submission?.githubUrl || team.submittedLinks?.githubUrl ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Final Project Name
+                      </span>
+                      <p className="text-xs font-black text-slate-900">
+                        {submission?.projectName || team.finalSubmission?.projectTitle || "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Submitted At
+                      </span>
+                      <p className="text-xs font-bold text-slate-700">
+                        {submission?.submittedAt
+                          ? new Date(submission.submittedAt).toLocaleString()
+                          : team.finalSubmission?.submittedAt
+                          ? new Date(team.finalSubmission.submittedAt).toLocaleString()
+                          : "Draft not yet finalized"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {submission?.projectDescription && (
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Project Description
+                      </span>
+                      <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {submission.projectDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {(submission?.problemStatement || submission?.proposedSolution) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {submission.problemStatement && (
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                            Problem Statement
+                          </span>
+                          <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                            {submission.problemStatement}
+                          </p>
+                        </div>
+                      )}
+                      {submission.proposedSolution && (
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                            Proposed Solution
+                          </span>
+                          <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                            {submission.proposedSolution}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tech Stack */}
+                  {((submission?.techStack && submission.techStack.length > 0) ||
+                    (team.finalSubmission?.techStack && team.finalSubmission.techStack.length > 0)) && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                        Tech Stack
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(submission?.techStack || team.finalSubmission?.techStack || []).map((t, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Safe External Action Link Buttons (Step 17) */}
+                  <div className="pt-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                      External Deliverables & Repositories
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* GitHub */}
+                      {submission?.githubUrl || team.submittedLinks?.githubUrl ? (
+                        <a
+                          href={submission?.githubUrl || team.submittedLinks?.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <Github className="w-4 h-4 text-slate-700" />
+                            <span className="truncate">Open GitHub</span>
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
+                          <Github className="w-4 h-4 opacity-40" />
+                          <span>No GitHub repo provided</span>
+                        </div>
+                      )}
+
+                      {/* Hosted Link */}
+                      {submission?.hostedProjectUrl || team.submittedLinks?.hostedProjectUrl ? (
+                        <a
+                          href={submission?.hostedProjectUrl || team.submittedLinks?.hostedProjectUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <Globe className="w-4 h-4 text-emerald-600" />
+                            <span className="truncate">Open Hosted Project</span>
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
+                          <Globe className="w-4 h-4 opacity-40" />
+                          <span>No hosted project provided</span>
+                        </div>
+                      )}
+
+                      {/* LinkedIn */}
+                      {submission?.linkedInUrl || team.submittedLinks?.linkedInUrl ? (
+                        <a
+                          href={submission?.linkedInUrl || team.submittedLinks?.linkedInUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <Linkedin className="w-4 h-4 text-blue-600" />
+                            <span className="truncate">Open LinkedIn</span>
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
+                          <Linkedin className="w-4 h-4 opacity-40" />
+                          <span>No LinkedIn link provided</span>
+                        </div>
+                      )}
+
+                      {/* Demo Video */}
+                      {submission?.demoVideoUrl || team.submittedLinks?.demoVideoUrl ? (
+                        <a
+                          href={submission?.demoVideoUrl || team.submittedLinks?.demoVideoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-800 transition-colors"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <Video className="w-4 h-4 text-rose-600" />
+                            <span className="truncate">Open Demo</span>
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100 flex items-center gap-2 text-xs text-slate-400">
+                          <Video className="w-4 h-4 opacity-40" />
+                          <span>No demo video provided</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Other links if present */}
+                  {submission?.otherLinks && submission.otherLinks.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Additional Links
+                      </span>
+                      <div className="space-y-1">
+                        {submission.otherLinks.map((lnk, idx) => (
+                          <a
+                            key={idx}
+                            href={lnk}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 truncate"
+                          >
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{lnk}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-slate-50 text-slate-500 text-xs text-center">
+                  Team has not started or saved their final project submission yet.
+                </div>
+              )}
             </div>
 
             {/* SECTION 4: TEAM LEADER & MEMBERS (Steps 4 & 5) */}

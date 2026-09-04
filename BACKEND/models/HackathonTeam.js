@@ -239,6 +239,12 @@ const hackathonTeamSchema = new mongoose.Schema(
       techStack: { type: [String], default: [] },
       submittedAt: { type: Date, default: null },
     },
+    submissionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'HackathonSubmission',
+      default: null,
+      index: true,
+    },
     assignedJudges: [
       {
         type: mongoose.Schema.Types.ObjectId,

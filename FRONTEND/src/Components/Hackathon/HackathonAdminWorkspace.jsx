@@ -30,6 +30,12 @@ import {
   Eye,
   Edit2,
   PlusCircle,
+  Github,
+  Globe,
+  Linkedin,
+  Video,
+  Unlock,
+  Lock,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -103,6 +109,68 @@ export default function HackathonAdminWorkspace() {
       console.error("fetchTeams error:", err);
     } finally {
       setLoadingTeams(false);
+    }
+  };
+
+  // Phase 5: Submissions Management State
+  const [submissions, setSubmissions] = useState([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [submissionsPage, setSubmissionsPage] = useState(1);
+  const [submissionsTotalPages, setSubmissionsTotalPages] = useState(1);
+  const [submissionsTotal, setSubmissionsTotal] = useState(0);
+  const [submissionsSearch, setSubmissionsSearch] = useState("");
+  const [submissionsStatusFilter, setSubmissionsStatusFilter] = useState("ALL");
+  const [submissionsTrackFilter, setSubmissionsTrackFilter] = useState("ALL");
+
+  const fetchSubmissions = async (page = 1) => {
+    try {
+      setLoadingSubmissions(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/submissions?page=${page}&limit=15`;
+      if (submissionsSearch) url += `&search=${encodeURIComponent(submissionsSearch)}`;
+      if (submissionsStatusFilter && submissionsStatusFilter !== "ALL") {
+        url += `&status=${encodeURIComponent(submissionsStatusFilter)}`;
+      }
+      if (submissionsTrackFilter && submissionsTrackFilter !== "ALL") {
+        url += `&track=${encodeURIComponent(submissionsTrackFilter)}`;
+      }
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setSubmissions(res.data.submissions || []);
+        setSubmissionsPage(res.data.pagination?.page || 1);
+        setSubmissionsTotalPages(res.data.pagination?.totalPages || 1);
+        setSubmissionsTotal(res.data.pagination?.total || 0);
+      }
+    } catch (err) {
+      console.error("fetchSubmissions error:", err);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
+  const handleWorkspaceUnlockSubmission = async (submissionId, teamId) => {
+    const confirmUnlock = window.confirm(
+      "Are you sure you want to unlock this team's submission? The team leader will be permitted to edit and re-submit."
+    );
+    if (!confirmUnlock) return;
+
+    try {
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/submissions/${submissionId || teamId}/unlock`,
+        { reason: "Admin unlocked submission from Submissions tab" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success("Submission unlocked successfully");
+        fetchSubmissions(submissionsPage);
+        fetchOverview();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unlock submission");
     }
   };
 
@@ -203,7 +271,10 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "teams") {
       fetchTeams(1);
     }
-  }, [activeTab, teamsStatusFilter, teamsTrackFilter]);
+    if (activeTab === "submissions") {
+      fetchSubmissions(1);
+    }
+  }, [activeTab, teamsStatusFilter, teamsTrackFilter, submissionsStatusFilter, submissionsTrackFilter]);
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -323,7 +394,12 @@ export default function HackathonAdminWorkspace() {
             { id: "overview", label: "Overview", icon: Layers, badge: null },
             { id: "teams", label: "Teams", icon: Users, badge: stats.totalTeams > 0 ? `${stats.totalTeams} Teams` : "Active" },
             { id: "editorial", label: "Editorial & Judges", icon: Award, badge: "Phase 9" },
-            { id: "submissions", label: "Submissions", icon: FileText, badge: "Phase 8" },
+            {
+              id: "submissions",
+              label: "Submissions",
+              icon: FileText,
+              badge: stats.finalSubmissions > 0 ? `${stats.finalSubmissions} Submissions` : "Active",
+            },
             { id: "judging", label: "Judging", icon: Sparkles, badge: "Phase 10" },
             { id: "results", label: "Results", icon: Trophy, badge: "Phase 11" },
             { id: "certificates", label: "Certificates", icon: CheckCircle2, badge: "Phase 12" },
@@ -1236,8 +1312,308 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
+      {/* ─── PHASE 5: SUBMISSIONS MANAGEMENT TAB (Step 16) ─── */}
+      {activeTab === "submissions" && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+          {/* Header & Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  Phase 5 Module
+                </span>
+                <span className="text-xs font-bold text-slate-500">
+                  {submissionsTotal} Total Records
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-slate-900 mt-1">Project Submissions Workspace</h2>
+              <p className="text-xs text-slate-500">
+                Inspect code repositories, hosted deployments, demo videos, and locked snapshots submitted by confirmed teams.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchSubmissions(submissionsPage)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingSubmissions ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="relative sm:col-span-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search project, team, email, team ID..."
+                value={submissionsSearch}
+                onChange={(e) => setSubmissionsSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    fetchSubmissions(1);
+                  }
+                }}
+                className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <select
+                value={submissionsStatusFilter}
+                onChange={(e) => setSubmissionsStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="ALL">All Submission States</option>
+                <option value="SUBMITTED">Submitted & Locked Only</option>
+                <option value="DRAFT">Draft In Progress Only</option>
+                <option value="NOT_STARTED">Not Started Only</option>
+              </select>
+            </div>
+
+            <div>
+              <select
+                value={submissionsTrackFilter}
+                onChange={(e) => setSubmissionsTrackFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="ALL">All Tracks</option>
+                {(settingsForm.tracks || []).map((t, idx) => (
+                  <option key={idx} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Submissions Table */}
+          {loadingSubmissions ? (
+            <div className="p-12 text-center text-slate-400 space-y-2">
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs font-bold text-slate-600">Loading submissions...</p>
+            </div>
+          ) : submissions.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <FileText className="w-8 h-8 mx-auto text-slate-300" />
+              <p className="text-sm font-bold text-slate-700">No project submissions found</p>
+              <p className="text-xs text-slate-500">
+                Try adjusting your search keywords, status filter, or track filter.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4">Team & ID</th>
+                    <th className="py-3 px-4">Leader / Submitter</th>
+                    <th className="py-3 px-4">Track</th>
+                    <th className="py-3 px-4">Project Title</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Submitted At</th>
+                    <th className="py-3 px-4">Deliverables</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {submissions.map((sub) => {
+                    const teamData = sub.team || {};
+                    return (
+                      <tr key={sub._id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{teamData.teamName || sub.teamId}</div>
+                          <div className="text-[11px] text-slate-500">{sub.teamId}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-800">
+                            {sub.submitterName || teamData.leader?.name || "—"}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {sub.submitterEmail || teamData.leader?.email || "—"}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            {teamData.track || "General Track"}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 max-w-xs">
+                          <div className="font-bold text-slate-900 truncate">
+                            {sub.projectName || "Untitled Project"}
+                          </div>
+                          <div className="text-[11px] text-slate-500 truncate">
+                            {sub.projectDescription || "No description provided"}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          {sub.status === "SUBMITTED" || sub.isLocked ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              SUBMITTED
+                            </span>
+                          ) : sub.status === "DRAFT" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              DRAFT
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              NOT STARTED
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-[11px] text-slate-600 whitespace-nowrap">
+                          {sub.submittedAt ? (
+                            <div>
+                              <div>{new Date(sub.submittedAt).toLocaleDateString()}</div>
+                              <div className="text-[10px] text-slate-400">
+                                {new Date(sub.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Not finalized</span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-1.5">
+                            {sub.githubUrl ? (
+                              <a
+                                href={sub.githubUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors"
+                                title="Open GitHub Repository"
+                              >
+                                <Github className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 flex items-center justify-center">
+                                <Github className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+
+                            {sub.hostedProjectUrl ? (
+                              <a
+                                href={sub.hostedProjectUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition-colors"
+                                title="Open Hosted Project"
+                              >
+                                <Globe className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 flex items-center justify-center">
+                                <Globe className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+
+                            {sub.linkedInUrl ? (
+                              <a
+                                href={sub.linkedInUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center justify-center transition-colors"
+                                title="Open LinkedIn Post"
+                              >
+                                <Linkedin className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 flex items-center justify-center">
+                                <Linkedin className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+
+                            {sub.demoVideoUrl ? (
+                              <a
+                                href={sub.demoVideoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 flex items-center justify-center transition-colors"
+                                title="Open Demo Video"
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 flex items-center justify-center">
+                                <Video className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => {
+                                setSelectedTeamIdForDrawer(sub.teamId || teamData._id);
+                                setShowTeamDrawer(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View
+                            </button>
+
+                            {sub.isLocked && (
+                              <button
+                                onClick={() => handleWorkspaceUnlockSubmission(sub._id, sub.teamId)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer"
+                                title="Unlock submission"
+                              >
+                                <Unlock className="w-3 h-3" />
+                                Unlock
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Submissions Pagination */}
+          {submissionsTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <button
+                disabled={submissionsPage <= 1}
+                onClick={() => fetchSubmissions(submissionsPage - 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-slate-500">
+                Page {submissionsPage} of {submissionsTotalPages} ({submissionsTotal} total submissions)
+              </span>
+              <button
+                disabled={submissionsPage >= submissionsTotalPages}
+                onClick={() => fetchSubmissions(submissionsPage + 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ─── PLACEHOLDER TABS (Scheduled for Later Phases) ─── */}
-      {["editorial", "submissions", "judging", "results", "certificates"].includes(activeTab) && (
+      {["editorial", "judging", "results", "certificates"].includes(activeTab) && (
         <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
             <Info className="w-8 h-8" />

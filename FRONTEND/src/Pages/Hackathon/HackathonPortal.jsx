@@ -28,6 +28,17 @@ import {
   Lock,
   CreditCard,
   Loader2,
+  Send,
+  Save,
+  Github,
+  Globe,
+  Linkedin,
+  Video,
+  AlertTriangle,
+  X,
+  Copy,
+  Rocket,
+  Edit2,
 } from "lucide-react";
 import SEO from "../../Components/SEO";
 
@@ -45,6 +56,68 @@ export default function HackathonPortal() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
   const [paymentSuccess, setPaymentSuccess] = useState(null);
+
+  // Phase 5: Submission Portal State
+  const [submissionData, setSubmissionData] = useState(null);
+  const [loadingSubmission, setLoadingSubmission] = useState(false);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [submittingFinal, setSubmittingFinal] = useState(false);
+  const [submissionFormError, setSubmissionFormError] = useState(null);
+  const [submissionFormSuccess, setSubmissionFormSuccess] = useState(null);
+  const [submissionForm, setSubmissionForm] = useState({
+    projectName: "",
+    projectDescription: "",
+    problemStatement: "",
+    proposedSolution: "",
+    techStack: "",
+    githubUrl: "",
+    hostedProjectUrl: "",
+    linkedInUrl: "",
+    demoVideoUrl: "",
+    otherLinks: "",
+    additionalNotes: "",
+  });
+  const [deadlineCountdown, setDeadlineCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isPassed: false,
+  });
+
+  const fetchSubmissionData = async () => {
+    const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+    if (!token) return;
+    try {
+      setLoadingSubmission(true);
+      const res = await axios.get(`${BACKEND_URL}/api/hackathon/submission/my-submission`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success && res.data.submission) {
+        const sub = res.data.submission;
+        setSubmissionData(sub);
+        setSubmissionForm({
+          projectName: sub.projectName || "",
+          projectDescription: sub.projectDescription || "",
+          problemStatement: sub.problemStatement || "",
+          proposedSolution: sub.proposedSolution || "",
+          techStack: Array.isArray(sub.techStack) ? sub.techStack.join(", ") : "",
+          githubUrl: sub.githubUrl || "",
+          hostedProjectUrl: sub.hostedProjectUrl || "",
+          linkedInUrl: sub.linkedInUrl || "",
+          demoVideoUrl: sub.demoVideoUrl || "",
+          otherLinks: Array.isArray(sub.otherLinks) ? sub.otherLinks.join("\n") : "",
+          additionalNotes: sub.additionalNotes || "",
+        });
+      }
+    } catch (err) {
+      console.log("Submission info check:", err.response?.data?.message);
+    } finally {
+      setLoadingSubmission(false);
+    }
+  };
 
   // Check auth and fetch data
   useEffect(() => {
@@ -67,11 +140,16 @@ export default function HackathonPortal() {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (teamRes.data?.success && teamRes.data?.hasTeam) {
-              setUserTeam(teamRes.data.team);
+              const t = teamRes.data.team;
+              setUserTeam(t);
               setIsLeader(teamRes.data.isLeader);
+
+              // If confirmed/submitted, fetch submission details
+              if (["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED"].includes(t.status)) {
+                fetchSubmissionData();
+              }
             }
           } catch (teamErr) {
-            // Unauthenticated or not associated with a team
             console.log("No hackathon team attached to current session.");
           }
         }
@@ -85,7 +163,34 @@ export default function HackathonPortal() {
     loadData();
   }, []);
 
-  // Live dynamic countdown timer
+  // Live dynamic submission deadline countdown
+  useEffect(() => {
+    if (!settings?.submissionDeadline) return;
+
+    const deadlineTime = new Date(settings.submissionDeadline).getTime();
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = deadlineTime - now;
+
+      if (distance <= 0) {
+        setDeadlineCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: true });
+        clearInterval(interval);
+      } else {
+        setDeadlineCountdown({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+          isPassed: false,
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [settings?.submissionDeadline]);
+
+  // Live dynamic event start countdown timer
   useEffect(() => {
     if (!settings?.startDate && !settings?.submissionDeadline) return;
 
@@ -110,6 +215,102 @@ export default function HackathonPortal() {
 
     return () => clearInterval(interval);
   }, [settings]);
+
+  const handleSaveDraft = async () => {
+    if (!isLeader) {
+      alert("Only the Team Leader is authorized to save submission drafts.");
+      return;
+    }
+    try {
+      setSavingDraft(true);
+      setSubmissionFormError(null);
+      setSubmissionFormSuccess(null);
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+
+      const payload = {
+        projectName: submissionForm.projectName,
+        projectDescription: submissionForm.projectDescription,
+        problemStatement: submissionForm.problemStatement,
+        proposedSolution: submissionForm.proposedSolution,
+        techStack: submissionForm.techStack
+          ? submissionForm.techStack.split(",").map((s) => s.trim()).filter(Boolean)
+          : [],
+        githubUrl: submissionForm.githubUrl,
+        hostedProjectUrl: submissionForm.hostedProjectUrl,
+        linkedInUrl: submissionForm.linkedInUrl,
+        demoVideoUrl: submissionForm.demoVideoUrl,
+        otherLinks: submissionForm.otherLinks
+          ? submissionForm.otherLinks.split("\n").map((s) => s.trim()).filter(Boolean)
+          : [],
+        additionalNotes: submissionForm.additionalNotes,
+      };
+
+      const res = await axios.post(`${BACKEND_URL}/api/hackathon/submission/save-draft`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.data?.success) {
+        setSubmissionData(res.data.submission);
+        setSubmissionFormSuccess("Draft saved successfully!");
+        setTimeout(() => setSubmissionFormSuccess(null), 4000);
+      }
+    } catch (err) {
+      setSubmissionFormError(err.response?.data?.message || "Failed to save draft.");
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!isLeader) {
+      alert("Only the Team Leader is authorized to finalize and submit the project.");
+      return;
+    }
+    try {
+      setSubmittingFinal(true);
+      setSubmissionFormError(null);
+      setSubmissionFormSuccess(null);
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+
+      const payload = {
+        projectName: submissionForm.projectName,
+        projectDescription: submissionForm.projectDescription,
+        problemStatement: submissionForm.problemStatement,
+        proposedSolution: submissionForm.proposedSolution,
+        techStack: submissionForm.techStack
+          ? submissionForm.techStack.split(",").map((s) => s.trim()).filter(Boolean)
+          : [],
+        githubUrl: submissionForm.githubUrl,
+        hostedProjectUrl: submissionForm.hostedProjectUrl,
+        linkedInUrl: submissionForm.linkedInUrl,
+        demoVideoUrl: submissionForm.demoVideoUrl,
+        otherLinks: submissionForm.otherLinks
+          ? submissionForm.otherLinks.split("\n").map((s) => s.trim()).filter(Boolean)
+          : [],
+        additionalNotes: submissionForm.additionalNotes,
+      };
+
+      const res = await axios.post(`${BACKEND_URL}/api/hackathon/submission/final-submit`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.data?.success) {
+        setSubmissionData(res.data.submission);
+        setShowConfirmSubmitModal(false);
+        setSubmissionFormSuccess(
+          "Project finalized and submitted successfully! Your submission is now permanently locked."
+        );
+        if (userTeam) {
+          setUserTeam({ ...userTeam, status: "SUBMITTED" });
+        }
+      }
+    } catch (err) {
+      setSubmissionFormError(err.response?.data?.message || "Failed to submit project.");
+      setShowConfirmSubmitModal(false);
+    } finally {
+      setSubmittingFinal(false);
+    }
+  };
 
   const getStatusBadge = (status) => {
     const map = {
@@ -532,6 +733,236 @@ export default function HackathonPortal() {
                 </div>
               )}
 
+              {/* PHASE 5: FINAL PROJECT SUBMISSION SECTION (Steps 6, 7, 8, 10, 12, 13, 14) */}
+              {["CONFIRMED", "SUBMISSION_PENDING", "SUBMITTED"].includes(userTeam.status) && (
+                <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-slate-900 via-indigo-950/20 to-slate-950 border-2 border-indigo-500/40 shadow-2xl space-y-6">
+                  {/* Top Bar: Title, Badges, Deadline Status */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center gap-1">
+                          <Rocket className="w-3.5 h-3.5 text-indigo-400" />
+                          Phase 5 Portal
+                        </span>
+
+                        {/* Status badge */}
+                        {submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED" ? (
+                          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            🟢 Project Submitted (Locked)
+                          </span>
+                        ) : submissionData?.status === "DRAFT" ? (
+                          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            Draft in Progress
+                          </span>
+                        ) : (
+                          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            Not Started
+                          </span>
+                        )}
+
+                        {/* Submission Window / Deadline status badge */}
+                        {(!settings?.isSubmissionOpen || deadlineCountdown.isPassed) && (
+                          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5" />
+                            🔒 Submission Closed
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                        FINAL PROJECT SUBMISSION
+                      </h3>
+                      <p className="text-xs text-slate-400 max-w-2xl">
+                        Your team is confirmed. Develop your project and submit your code repository, hosted preview, and architecture before the deadline.
+                      </p>
+                    </div>
+
+                    {/* Deadline & Countdown Block */}
+                    <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 shrink-0 space-y-2 text-right">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-end gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                        Submission Deadline
+                      </div>
+                      <div className="text-xs font-semibold text-slate-300">
+                        {settings?.submissionDeadline
+                          ? new Date(settings.submissionDeadline).toLocaleString([], {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Announced Soon"}
+                      </div>
+                      {/* Countdown Timer */}
+                      {!deadlineCountdown.isPassed ? (
+                        <div className="flex items-center gap-1.5 justify-end text-xs font-mono font-black text-amber-400">
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                            {deadlineCountdown.days}d
+                          </span>
+                          :
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                            {deadlineCountdown.hours}h
+                          </span>
+                          :
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                            {deadlineCountdown.minutes}m
+                          </span>
+                          :
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                            {deadlineCountdown.seconds}s
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-xs font-black text-rose-400">Deadline Passed</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body Content based on submission status */}
+                  {submissionData?.status === "SUBMITTED" || userTeam.status === "SUBMITTED" ? (
+                    /* Finalized & Locked view */
+                    <div className="space-y-4">
+                      <div className="p-5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="text-sm font-black text-emerald-400 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            🟢 Project Submitted (Locked)
+                          </div>
+                          <p className="text-xs text-slate-300">
+                            Submitted on{" "}
+                            <span className="font-bold text-white">
+                              {submissionData?.submittedAt
+                                ? new Date(submissionData.submittedAt).toLocaleString()
+                                : "Recently"}
+                            </span>{" "}
+                            by {submissionData?.submitterName || userTeam.leader?.name || "Team Leader"}.
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            An immutable snapshot has been frozen for the judging committee.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowSubmissionModal(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shrink-0"
+                        >
+                          <FileText className="w-4 h-4 text-emerald-400" /> View Submission
+                        </button>
+                      </div>
+
+                      {/* Fast Links */}
+                      {(submissionData?.githubUrl || submissionData?.hostedProjectUrl || submissionData?.demoVideoUrl) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {submissionData.githubUrl && (
+                            <a
+                              href={submissionData.githubUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200 transition-colors"
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Github className="w-4 h-4 text-slate-400" />
+                                <span className="truncate">GitHub Repo</span>
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                            </a>
+                          )}
+                          {submissionData.hostedProjectUrl && (
+                            <a
+                              href={submissionData.hostedProjectUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200 transition-colors"
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Globe className="w-4 h-4 text-teal-400" />
+                                <span className="truncate">Live Deployment</span>
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                            </a>
+                          )}
+                          {submissionData.demoVideoUrl && (
+                            <a
+                              href={submissionData.demoVideoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 flex items-center justify-between text-xs font-bold text-slate-200 transition-colors"
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Video className="w-4 h-4 text-purple-400" />
+                                <span className="truncate">Demo Video</span>
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : submissionData?.status === "DRAFT" ? (
+                    /* Draft saved view */
+                    <div className="p-5 rounded-xl bg-amber-950/20 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                          <Clock className="w-4 h-4" /> Status: DRAFT
+                        </div>
+                        <p className="text-xs text-slate-300">
+                          Last saved:{" "}
+                          <span className="font-semibold text-white">
+                            {submissionData?.draftSavedAt
+                              ? new Date(submissionData.draftSavedAt).toLocaleString()
+                              : "Recently"}
+                          </span>
+                          . Your progress is saved.
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Make sure to perform final submission before the deadline.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-3">
+                        <button
+                          onClick={() => setShowSubmissionModal(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          {isLeader ? "Continue Submission" : "View Draft"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Not Started view */
+                    <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="text-sm font-bold text-slate-200">
+                          Status: NOT STARTED
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          Your team is confirmed. Start your project submission form, save drafts anytime, and finalize when your prototype is ready.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0">
+                        {isLeader ? (
+                          <button
+                            onClick={() => setShowSubmissionModal(true)}
+                            disabled={!settings?.isSubmissionOpen || deadlineCountdown.isPassed}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Rocket className="w-4 h-4" /> Start Submission
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">
+                            Leader ({userTeam.leader?.name}) will submit project.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Leader & Members Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Leader Card */}
@@ -774,6 +1205,369 @@ export default function HackathonPortal() {
           </div>
         </div>
       </section>
+
+      {/* ─── PHASE 5: SUBMISSION MODAL & CONFIRMATION DIALOG ─── */}
+      {showSubmissionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    Final Submission
+                  </span>
+                  {submissionData?.isLocked ? (
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      🟢 Locked
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      Editable
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl font-black text-white">
+                  {userTeam?.teamName || "Team"} — Project Submission
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Track: <strong className="text-indigo-300">{userTeam?.track}</strong> • Team ID:{" "}
+                  <strong className="text-slate-300">{userTeam?.teamId}</strong>
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowSubmissionModal(false)}
+                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+              {/* Informational banners */}
+              {submissionData?.isLocked ? (
+                <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-sm">🟢 FINAL SUBMISSION LOCKED</div>
+                    <p className="text-[11px] text-emerald-400/90 mt-0.5">
+                      This project has been finalized and locked. An immutable snapshot was captured on{" "}
+                      {submissionData.submittedAt ? new Date(submissionData.submittedAt).toLocaleString() : "submission"}.
+                    </p>
+                  </div>
+                </div>
+              ) : !isLeader ? (
+                <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-500/30 text-indigo-300 flex items-center gap-3">
+                  <Info className="w-5 h-5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-sm">Read-Only Participant View</div>
+                    <p className="text-[11px] text-indigo-300/80 mt-0.5">
+                      Only your Team Leader ({userTeam?.leader?.name}) can modify fields, save drafts, or finalize the submission.
+                    </p>
+                  </div>
+                </div>
+              ) : deadlineCountdown.isPassed ? (
+                <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 flex items-center gap-3">
+                  <Lock className="w-5 h-5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-sm">🔒 Submission Closed</div>
+                    <p className="text-[11px] text-rose-400/90 mt-0.5">
+                      The official submission deadline has passed. Edits or new submissions cannot be accepted.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Status messages */}
+              {submissionFormError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{submissionFormError}</span>
+                </div>
+              )}
+
+              {submissionFormSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{submissionFormSuccess}</span>
+                </div>
+              )}
+
+              {/* Form Inputs */}
+              <div className="space-y-4">
+                {/* Project Name */}
+                <div className="space-y-1.5">
+                  <label className="text-slate-300 font-bold flex items-center justify-between">
+                    <span>Project Name <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-500">Official name of your product</span>
+                  </label>
+                  <input
+                    type="text"
+                    disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                    placeholder="e.g., NovaAI Autonomous Code Reviewer"
+                    value={submissionForm.projectName}
+                    onChange={(e) => setSubmissionForm({ ...submissionForm, projectName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Project Description */}
+                <div className="space-y-1.5">
+                  <label className="text-slate-300 font-bold flex items-center justify-between">
+                    <span>Project Description <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-500">High-level summary of your project</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                    placeholder="Explain what your project does, target audience, and key features..."
+                    value={submissionForm.projectDescription}
+                    onChange={(e) => setSubmissionForm({ ...submissionForm, projectDescription: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Problem Statement & Proposed Solution */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold block">
+                      Problem Statement <span className="text-rose-400">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="What exact friction or inefficiency does your project address?"
+                      value={submissionForm.problemStatement}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, problemStatement: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold block">
+                      Proposed Solution <span className="text-rose-400">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="How does your architecture solve the problem?"
+                      value={submissionForm.proposedSolution}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, proposedSolution: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                {/* Tech Stack */}
+                <div className="space-y-1.5">
+                  <label className="text-slate-300 font-bold flex items-center justify-between">
+                    <span>Tech Stack <span className="text-rose-400">*</span></span>
+                    <span className="text-[10px] text-slate-500">Comma-separated</span>
+                  </label>
+                  <input
+                    type="text"
+                    disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                    placeholder="React, Node.js, MongoDB, Express, Docker, TailwindCSS"
+                    value={submissionForm.techStack}
+                    onChange={(e) => setSubmissionForm({ ...submissionForm, techStack: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* URLs Grid: GitHub, Hosted Link, LinkedIn, Demo Video */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* GitHub Repo */}
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold flex items-center gap-1.5">
+                      <Github className="w-3.5 h-3.5 text-slate-400" />
+                      GitHub Repository <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="https://github.com/your-username/repo-name"
+                      value={submissionForm.githubUrl}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, githubUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Hosted Project URL */}
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-teal-400" />
+                      Hosted Live Project <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="https://your-project.vercel.app"
+                      value={submissionForm.hostedProjectUrl}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, hostedProjectUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* LinkedIn Post URL */}
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold flex items-center gap-1.5">
+                      <Linkedin className="w-3.5 h-3.5 text-sky-400" />
+                      LinkedIn Post / Share <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="https://www.linkedin.com/posts/..."
+                      value={submissionForm.linkedInUrl}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, linkedInUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Demo Video URL */}
+                  <div className="space-y-1.5">
+                    <label className="text-slate-300 font-bold flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-purple-400" />
+                      Demo Video (YouTube / Loom / Drive) <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                      placeholder="https://youtu.be/... or Loom URL"
+                      value={submissionForm.demoVideoUrl}
+                      onChange={(e) => setSubmissionForm({ ...submissionForm, demoVideoUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                {/* Other Links & Additional Notes */}
+                <div className="space-y-1.5">
+                  <label className="text-slate-300 font-bold flex items-center justify-between">
+                    <span>Other Links (Optional)</span>
+                    <span className="text-[10px] text-slate-500">One link per line (Figma, Slide Deck, API Docs)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                    placeholder="https://www.figma.com/file/...&#10;https://docs.google.com/presentation/..."
+                    value={submissionForm.otherLinks}
+                    onChange={(e) => setSubmissionForm({ ...submissionForm, otherLinks: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-300 font-bold block">
+                    Additional Information / Deployment Notes (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    disabled={submissionData?.isLocked || !isLeader || deadlineCountdown.isPassed}
+                    placeholder="Any test credentials, special setup, or architecture notes for reviewers..."
+                    value={submissionForm.additionalNotes}
+                    onChange={(e) => setSubmissionForm({ ...submissionForm, additionalNotes: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-6 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-[11px] text-slate-400">
+                {submissionData?.isLocked ? (
+                  <span className="text-emerald-400 font-bold">Project is locked from editing.</span>
+                ) : (
+                  <span>Draft saves do not finalize your project.</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 justify-end">
+                <button
+                  onClick={() => setShowSubmissionModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+
+                {!submissionData?.isLocked && isLeader && !deadlineCountdown.isPassed && settings?.isSubmissionOpen && (
+                  <>
+                    <button
+                      onClick={handleSaveDraft}
+                      disabled={savingDraft}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                      Save Draft
+                    </button>
+
+                    <button
+                      onClick={() => setShowConfirmSubmitModal(true)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer hover:scale-102"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Final Submit
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── PHASE 5: TWO-STEP FINAL SUBMISSION CONFIRMATION DIALOG (Step 10) ─── */}
+      {showConfirmSubmitModal && (
+        <div className="fixed inset-0 z-60 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-indigo-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-lg font-black text-white">Confirm Final Submission?</h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Once submitted, your project details, GitHub repository, and hosted links will be{" "}
+                <strong className="text-amber-400">permanently locked</strong> from further editing.
+              </p>
+              <p className="text-[11px] text-slate-400 mt-2">
+                An immutable snapshot will be captured immediately and transferred to the judging panel. Are you sure you want to submit?
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowConfirmSubmitModal(false)}
+                disabled={submittingFinal}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleFinalSubmit}
+                disabled={submittingFinal}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {submittingFinal ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Yes, Final Submit</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">

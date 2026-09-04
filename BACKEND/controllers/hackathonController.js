@@ -4,6 +4,7 @@ const Razorpay = require('razorpay');
 const HackathonSetting = require('../models/HackathonSetting');
 const HackathonTeam = require('../models/HackathonTeam');
 const HackathonPayment = require('../models/HackathonPayment');
+const HackathonSubmission = require('../models/HackathonSubmission');
 const HackathonAuditLog = require('../models/HackathonAuditLog');
 const User = require('../models/User');
 const unstopParserService = require('../services/unstopParserService');
@@ -13,6 +14,30 @@ const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
+
+/**
+ * URL Validation Helper (Phase 5 PRD Step 9)
+ * Strictly verifies HTTP/HTTPS URLs and rejects dangerous schemes (javascript:, data:, file:)
+ */
+const validateSafeUrl = (url, fieldName = 'URL') => {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch (err) {
+    throw new Error(`Invalid URL format for ${fieldName}. Must be a valid URL with http:// or https://`);
+  }
+
+  const protocol = parsed.protocol.toLowerCase();
+  if (protocol !== 'http:' && protocol !== 'https:') {
+    throw new Error(`Security violation for ${fieldName}: protocol "${protocol}" is not permitted. Only http:// and https:// URLs are allowed.`);
+  }
+
+  return trimmed;
+};
 
 /**
  * 1. Get Public Hackathon Information
@@ -142,11 +167,14 @@ exports.getMyTeam = async (req, res) => {
           college: m.college,
         })),
         initialIdea: team.initialIdea,
+        submittedLinks: team.submittedLinks,
         finalSubmission: team.finalSubmission,
         shortlistedAt: team.shortlistedAt,
         whatsAppLink,
       },
       participationFee: settings.participationFee,
+      submissionDeadline: settings.submissionDeadline,
+      isSubmissionOpen: settings.isSubmissionOpen,
     });
   } catch (error) {
     console.error('getMyTeam Error:', error);
@@ -1707,6 +1735,763 @@ exports.handlePaymentWebhook = async (req, res) => {
     });
   }
 };
+
+/**
+ * =========================================================================
+ * PHASE 5: FINAL PROJECT SUBMISSION SYSTEM (Participant & Admin)
+ * =========================================================================
+ */
+
+/**
+ * 23. Get Participant Submission
+ * GET /api/hackathon/submission/my-submission
+ * Accessible to authenticated members of a confirmed team.
+ */
+exports.getMySubmission = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email;
+
+    if (!userId && !userEmail) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    // Locate active team
+    const query = {
+      isDeleted: { $ne: true },
+      $or: [],
+    };
+    if (userId) {
+      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
+    }
+    if (userEmail) {
+      const normalizedEmail = userEmail.toLowerCase().trim();
+      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
+    }
+
+    const team = await HackathonTeam.findOne(query);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'No team registered or linked to your account.',
+      });
+    }
+
+    const isLeader =
+      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
+      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+
+    // Step 4: Only teams with status = CONFIRMED (or SUBMISSION_PENDING/SUBMITTED) can access
+    const allowedStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED', 'UNDER_EVALUATION', 'EVALUATED'];
+    if (!allowedStatuses.includes(team.status)) {
+      return res.status(403).json({
+        success: false,
+        isEligible: false,
+        teamStatus: team.status,
+        message: `Your team status is "${team.status}". Only CONFIRMED teams can access the project submission portal.`,
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const serverTime = new Date();
+    const isDeadlinePassed = settings.submissionDeadline ? serverTime > new Date(settings.submissionDeadline) : false;
+
+    // Retrieve or initialize submission document
+    let submission = await HackathonSubmission.findOne({ team: team._id });
+    if (!submission) {
+      submission = {
+        hackathonId: settings.hackathonId || 'can-hackathon-2026',
+        team: team._id,
+        teamId: team.teamId,
+        projectName: team.initialIdea?.title || '',
+        projectDescription: team.initialIdea?.description || '',
+        problemStatement: team.initialIdea?.problemStatement || '',
+        proposedSolution: team.initialIdea?.proposedSolution || '',
+        techStack: team.initialIdea?.techStack || [],
+        githubUrl: team.submittedLinks?.githubUrl || '',
+        hostedProjectUrl: team.submittedLinks?.hostedProjectUrl || '',
+        linkedInUrl: team.submittedLinks?.linkedInUrl || '',
+        demoVideoUrl: team.submittedLinks?.demoVideoUrl || '',
+        otherLinks: team.submittedLinks?.otherLinks || [],
+        status: 'NOT_STARTED',
+        isLocked: false,
+        draftSavedAt: null,
+        submittedAt: null,
+      };
+    }
+
+    res.status(200).json({
+      success: true,
+      isEligible: true,
+      isLeader,
+      team: {
+        teamId: team.teamId,
+        teamName: team.teamName,
+        track: team.track,
+        status: team.status,
+        initialIdea: team.initialIdea,
+      },
+      submission,
+      settings: {
+        isSubmissionOpen: settings.isSubmissionOpen,
+        submissionDeadline: settings.submissionDeadline,
+        serverTime,
+      },
+      isDeadlinePassed,
+    });
+  } catch (error) {
+    console.error('getMySubmission Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve submission details.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 24. Save Submission Draft
+ * POST /api/hackathon/submission/save-draft
+ * Leader-only. Validates basic URL formatting, saves safely without finalizing.
+ */
+exports.saveSubmissionDraft = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email;
+
+    if (!userId && !userEmail) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    const query = {
+      isDeleted: { $ne: true },
+      $or: [],
+    };
+    if (userId) {
+      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
+    }
+    if (userEmail) {
+      const normalizedEmail = userEmail.toLowerCase().trim();
+      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
+    }
+
+    const team = await HackathonTeam.findOne(query);
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    // Step 5: Team Ownership - Only Leader can create/edit draft
+    const isLeader =
+      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
+      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+
+    if (!isLeader) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the Team Leader is authorized to modify or save the project submission.',
+      });
+    }
+
+    // Step 4: Eligibility
+    const allowedStatuses = ['CONFIRMED', 'SUBMISSION_PENDING', 'SUBMITTED'];
+    if (!allowedStatuses.includes(team.status)) {
+      return res.status(403).json({
+        success: false,
+        message: `Your team status is "${team.status}". Only CONFIRMED teams can draft project submissions.`,
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const serverTime = new Date();
+
+    // Step 12: Deadline & Window enforcement
+    if (!settings.isSubmissionOpen) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project submissions are currently closed by hackathon organizers.',
+      });
+    }
+
+    if (settings.submissionDeadline && serverTime > new Date(settings.submissionDeadline)) {
+      await HackathonAuditLog.log({
+        actorId: String(userId || 'unknown'),
+        actorName: req.user?.name || team.leader?.name || 'Leader',
+        actorEmail: userEmail || team.leader?.email || '',
+        role: 'participant',
+        action: 'SUBMISSION_DEADLINE_REACHED',
+        targetEntity: 'HackathonSubmission',
+        targetId: team.teamId,
+        reason: 'Attempted to save draft after official submission deadline.',
+        req,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Submission deadline has passed. Drafts can no longer be updated.',
+      });
+    }
+
+    // Step 14: Final Submission Lock check
+    let submission = await HackathonSubmission.findOne({ team: team._id });
+    if (submission && submission.isLocked) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your submission is finalized and locked. You cannot modify a locked submission.',
+      });
+    }
+
+    const isFirstTime = !submission || submission.status === 'NOT_STARTED';
+
+    const {
+      projectName,
+      projectDescription,
+      problemStatement,
+      proposedSolution,
+      techStack,
+      githubUrl,
+      hostedProjectUrl,
+      linkedInUrl,
+      demoVideoUrl,
+      otherLinks,
+      additionalNotes,
+    } = req.body;
+
+    // Step 9: Server-side URL format validation for any provided URLs
+    let safeGithub = '';
+    let safeHosted = '';
+    let safeLinkedIn = '';
+    let safeDemo = '';
+    const safeOtherLinks = [];
+
+    if (githubUrl) safeGithub = validateSafeUrl(githubUrl, 'GitHub Repository URL');
+    if (hostedProjectUrl) safeHosted = validateSafeUrl(hostedProjectUrl, 'Hosted Project URL');
+    if (linkedInUrl) safeLinkedIn = validateSafeUrl(linkedInUrl, 'LinkedIn URL');
+    if (demoVideoUrl) safeDemo = validateSafeUrl(demoVideoUrl, 'Demo Video URL');
+
+    if (Array.isArray(otherLinks)) {
+      for (let i = 0; i < otherLinks.length; i++) {
+        if (otherLinks[i] && typeof otherLinks[i] === 'string' && otherLinks[i].trim()) {
+          safeOtherLinks.push(validateSafeUrl(otherLinks[i], `Other Link #${i + 1}`));
+        }
+      }
+    }
+
+    if (!submission) {
+      submission = new HackathonSubmission({
+        hackathonId: settings.hackathonId || 'can-hackathon-2026',
+        team: team._id,
+        teamId: team.teamId,
+        submittedBy: userId,
+        submitterEmail: userEmail || team.leader.email,
+        submitterName: req.user?.name || team.leader.name,
+      });
+    }
+
+    if (projectName !== undefined) submission.projectName = projectName.trim();
+    if (projectDescription !== undefined) submission.projectDescription = projectDescription;
+    if (problemStatement !== undefined) submission.problemStatement = problemStatement;
+    if (proposedSolution !== undefined) submission.proposedSolution = proposedSolution;
+    if (techStack !== undefined) {
+      submission.techStack = Array.isArray(techStack)
+        ? techStack.map((t) => String(t).trim()).filter(Boolean)
+        : [];
+    }
+    if (githubUrl !== undefined) submission.githubUrl = safeGithub;
+    if (hostedProjectUrl !== undefined) submission.hostedProjectUrl = safeHosted;
+    if (linkedInUrl !== undefined) submission.linkedInUrl = safeLinkedIn;
+    if (demoVideoUrl !== undefined) submission.demoVideoUrl = safeDemo;
+    if (otherLinks !== undefined) submission.otherLinks = safeOtherLinks;
+    if (additionalNotes !== undefined) submission.additionalNotes = additionalNotes.trim();
+
+    submission.status = 'DRAFT';
+    submission.draftSavedAt = serverTime;
+    submission.lastUpdatedAt = serverTime;
+
+    await submission.save();
+
+    // Link submission to team
+    if (!team.submissionId || String(team.submissionId) !== String(submission._id)) {
+      team.submissionId = submission._id;
+      await team.save();
+    }
+
+    // Step 19: Audit Logging
+    await HackathonAuditLog.log({
+      actorId: String(userId || 'unknown'),
+      actorName: req.user?.name || team.leader?.name || 'Leader',
+      actorEmail: userEmail || team.leader?.email || '',
+      role: 'participant',
+      action: isFirstTime ? 'SUBMISSION_STARTED' : 'SUBMISSION_DRAFT_SAVED',
+      targetEntity: 'HackathonSubmission',
+      targetId: team.teamId,
+      newState: { status: 'DRAFT', projectName: submission.projectName },
+      reason: 'Participant saved submission draft',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Draft saved successfully.',
+      submission,
+    });
+  } catch (error) {
+    console.error('saveSubmissionDraft Error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to save submission draft.',
+    });
+  }
+};
+
+/**
+ * 25. Final Project Submission
+ * POST /api/hackathon/submission/final-submit
+ * Leader-only. Strict validation of all fields, creates immutable snapshot, permanently locks submission.
+ */
+exports.finalSubmitProject = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email;
+
+    if (!userId && !userEmail) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    const query = {
+      isDeleted: { $ne: true },
+      $or: [],
+    };
+    if (userId) {
+      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
+    }
+    if (userEmail) {
+      const normalizedEmail = userEmail.toLowerCase().trim();
+      query.$or.push({ 'leader.email': normalizedEmail }, { 'members.email': normalizedEmail });
+    }
+
+    const team = await HackathonTeam.findOne(query);
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    // Step 5: Team Ownership - Leader only
+    const isLeader =
+      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
+      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+
+    if (!isLeader) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the Team Leader is authorized to finalize and submit the project.',
+      });
+    }
+
+    // Step 4: Eligibility
+    if (team.status !== 'CONFIRMED' && team.status !== 'SUBMISSION_PENDING') {
+      if (team.status === 'SUBMITTED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Your project has already been finalized and submitted.',
+        });
+      }
+      return res.status(403).json({
+        success: false,
+        message: `Your team status is "${team.status}". Only CONFIRMED teams can submit final projects.`,
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const serverTime = new Date();
+
+    // Step 12: Deadline & Window enforcement
+    if (!settings.isSubmissionOpen) {
+      await HackathonAuditLog.log({
+        actorId: String(userId || 'unknown'),
+        actorName: req.user?.name || team.leader?.name || 'Leader',
+        actorEmail: userEmail || team.leader?.email || '',
+        role: 'participant',
+        action: 'SUBMISSION_REJECTED_BY_SYSTEM',
+        targetEntity: 'HackathonSubmission',
+        targetId: team.teamId,
+        reason: 'Attempted to finalize submission while submissions are closed.',
+        req,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Project submissions are currently closed by hackathon organizers.',
+      });
+    }
+
+    if (settings.submissionDeadline && serverTime > new Date(settings.submissionDeadline)) {
+      await HackathonAuditLog.log({
+        actorId: String(userId || 'unknown'),
+        actorName: req.user?.name || team.leader?.name || 'Leader',
+        actorEmail: userEmail || team.leader?.email || '',
+        role: 'participant',
+        action: 'SUBMISSION_DEADLINE_REACHED',
+        targetEntity: 'HackathonSubmission',
+        targetId: team.teamId,
+        reason: 'Attempted to finalize submission after official submission deadline.',
+        req,
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Submission deadline has passed. Final submission cannot be accepted.',
+      });
+    }
+
+    // Step 14: Final Submission Lock check
+    let submission = await HackathonSubmission.findOne({ team: team._id });
+    if (submission && submission.isLocked) {
+      return res.status(400).json({
+        success: false,
+        message: 'This submission is already finalized and locked.',
+      });
+    }
+
+    const {
+      projectName,
+      projectDescription,
+      problemStatement,
+      proposedSolution,
+      techStack,
+      githubUrl,
+      hostedProjectUrl,
+      linkedInUrl,
+      demoVideoUrl,
+      otherLinks,
+      additionalNotes,
+    } = req.body;
+
+    // Step 11: Server-side validation of all required fields
+    if (!projectName || !projectName.trim()) {
+      return res.status(400).json({ success: false, message: 'Project Name is required.' });
+    }
+    if (!projectDescription || !projectDescription.trim()) {
+      return res.status(400).json({ success: false, message: 'Project Description is required.' });
+    }
+    if (!problemStatement || !problemStatement.trim()) {
+      return res.status(400).json({ success: false, message: 'Problem Statement is required.' });
+    }
+    if (!proposedSolution || !proposedSolution.trim()) {
+      return res.status(400).json({ success: false, message: 'Proposed Solution is required.' });
+    }
+
+    const parsedTechStack = Array.isArray(techStack)
+      ? techStack.map((t) => String(t).trim()).filter(Boolean)
+      : [];
+    if (parsedTechStack.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one technology must be listed in Tech Stack.' });
+    }
+
+    if (!githubUrl || !githubUrl.trim()) {
+      return res.status(400).json({ success: false, message: 'GitHub Repository URL is required.' });
+    }
+    if (!hostedProjectUrl || !hostedProjectUrl.trim()) {
+      return res.status(400).json({ success: false, message: 'Hosted Project URL is required.' });
+    }
+    if (!linkedInUrl || !linkedInUrl.trim()) {
+      return res.status(400).json({ success: false, message: 'LinkedIn URL is required.' });
+    }
+    if (!demoVideoUrl || !demoVideoUrl.trim()) {
+      return res.status(400).json({ success: false, message: 'Demo Video URL is required.' });
+    }
+
+    // Step 9: Validate URLs server-side
+    const safeGithub = validateSafeUrl(githubUrl, 'GitHub Repository URL');
+    const safeHosted = validateSafeUrl(hostedProjectUrl, 'Hosted Project URL');
+    const safeLinkedIn = validateSafeUrl(linkedInUrl, 'LinkedIn URL');
+    const safeDemo = validateSafeUrl(demoVideoUrl, 'Demo Video URL');
+
+    const safeOtherLinks = [];
+    if (Array.isArray(otherLinks)) {
+      for (let i = 0; i < otherLinks.length; i++) {
+        if (otherLinks[i] && typeof otherLinks[i] === 'string' && otherLinks[i].trim()) {
+          safeOtherLinks.push(validateSafeUrl(otherLinks[i], `Other Link #${i + 1}`));
+        }
+      }
+    }
+
+    // Step 15: Freeze immutable snapshot
+    const snapshot = {
+      hackathonId: settings.hackathonId || 'can-hackathon-2026',
+      teamId: team.teamId,
+      teamName: team.teamName,
+      track: team.track,
+      projectName: projectName.trim(),
+      projectDescription: projectDescription.trim(),
+      problemStatement: problemStatement.trim(),
+      proposedSolution: proposedSolution.trim(),
+      techStack: parsedTechStack,
+      githubUrl: safeGithub,
+      hostedProjectUrl: safeHosted,
+      linkedInUrl: safeLinkedIn,
+      demoVideoUrl: safeDemo,
+      otherLinks: safeOtherLinks,
+      additionalNotes: additionalNotes ? additionalNotes.trim() : '',
+      submittedBy: {
+        userId: userId || null,
+        email: userEmail || team.leader.email,
+        name: req.user?.name || team.leader.name,
+      },
+      submittedAt: serverTime,
+      frozenAt: serverTime,
+    };
+
+    if (!submission) {
+      submission = new HackathonSubmission({
+        hackathonId: settings.hackathonId || 'can-hackathon-2026',
+        team: team._id,
+        teamId: team.teamId,
+      });
+    }
+
+    submission.submittedBy = userId;
+    submission.submitterEmail = userEmail || team.leader.email;
+    submission.submitterName = req.user?.name || team.leader.name;
+    submission.projectName = projectName.trim();
+    submission.projectDescription = projectDescription.trim();
+    submission.problemStatement = problemStatement.trim();
+    submission.proposedSolution = proposedSolution.trim();
+    submission.techStack = parsedTechStack;
+    submission.githubUrl = safeGithub;
+    submission.hostedProjectUrl = safeHosted;
+    submission.linkedInUrl = safeLinkedIn;
+    submission.demoVideoUrl = safeDemo;
+    submission.otherLinks = safeOtherLinks;
+    submission.additionalNotes = additionalNotes ? additionalNotes.trim() : '';
+    submission.status = 'SUBMITTED';
+    submission.isLocked = true;
+    submission.submittedAt = serverTime;
+    submission.lastUpdatedAt = serverTime;
+    submission.snapshot = snapshot;
+
+    await submission.save();
+
+    // Update Team record: status and legacy links (preserving team.initialIdea untouched!)
+    team.status = 'SUBMITTED';
+    team.submissionId = submission._id;
+    team.submittedLinks = {
+      githubUrl: safeGithub,
+      hostedProjectUrl: safeHosted,
+      linkedInUrl: safeLinkedIn,
+      demoVideoUrl: safeDemo,
+      otherLinks: safeOtherLinks,
+    };
+    team.finalSubmission = {
+      projectTitle: projectName.trim(),
+      description: projectDescription.trim(),
+      githubUrl: safeGithub,
+      liveDemoUrl: safeHosted,
+      videoDemoUrl: safeDemo,
+      techStack: parsedTechStack,
+      submittedAt: serverTime,
+    };
+    await team.save();
+
+    // Step 19: Audit Logging
+    await HackathonAuditLog.log({
+      actorId: String(userId || 'unknown'),
+      actorName: req.user?.name || team.leader?.name || 'Leader',
+      actorEmail: userEmail || team.leader?.email || '',
+      role: 'participant',
+      action: 'SUBMISSION_FINALIZED',
+      targetEntity: 'HackathonSubmission',
+      targetId: team.teamId,
+      newState: { status: 'SUBMITTED', projectName: submission.projectName },
+      reason: 'Participant finalized and submitted hackathon project.',
+      req,
+    });
+
+    await HackathonAuditLog.log({
+      actorId: String(userId || 'unknown'),
+      actorName: req.user?.name || team.leader?.name || 'Leader',
+      actorEmail: userEmail || team.leader?.email || '',
+      role: 'participant',
+      action: 'SUBMISSION_LOCKED',
+      targetEntity: 'HackathonSubmission',
+      targetId: team.teamId,
+      reason: 'Project submission permanently locked upon final submission.',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Project finalized and submitted successfully! Your submission is now locked.',
+      submission,
+    });
+  } catch (error) {
+    console.error('finalSubmitProject Error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to finalize project submission.',
+    });
+  }
+};
+
+/**
+ * 26. Admin Submissions List
+ * GET /api/hackathon/admin/submissions
+ * Supports search, track filter, status filter, and pagination
+ */
+exports.getAdminSubmissions = async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 15));
+    const skip = (page - 1) * limit;
+
+    const { search, status, track } = req.query;
+
+    const query = {};
+
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { projectName: regex },
+        { teamId: regex },
+        { submitterEmail: regex },
+        { submitterName: regex },
+      ];
+    }
+
+    const [submissions, total] = await Promise.all([
+      HackathonSubmission.find(query)
+        .populate({
+          path: 'team',
+          select: 'teamId teamName track leader members status paymentStatus initialIdea confirmedAt',
+        })
+        .sort({ submittedAt: -1, updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      HackathonSubmission.countDocuments(query),
+    ]);
+
+    let filtered = submissions;
+    if (track && track !== 'ALL') {
+      filtered = submissions.filter((s) => s.team?.track === track);
+    }
+
+    res.status(200).json({
+      success: true,
+      submissions: filtered,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    });
+  } catch (error) {
+    console.error('getAdminSubmissions Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve submissions.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 27. Admin Get Submission by Team ID
+ * GET /api/hackathon/admin/submissions/team/:teamId
+ */
+exports.getAdminSubmissionByTeamId = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const team = await HackathonTeam.findOne({
+      $or: [{ teamId }, { _id: mongoose.isValidObjectId(teamId) ? teamId : null }],
+      isDeleted: { $ne: true },
+    }).lean();
+
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    const submission = await HackathonSubmission.findOne({ team: team._id }).lean();
+    const auditLogs = await HackathonAuditLog.find({
+      targetId: team.teamId,
+      action: { $regex: /^SUBMISSION_/ },
+    })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      team,
+      submission,
+      auditLogs,
+    });
+  } catch (error) {
+    console.error('getAdminSubmissionByTeamId Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch team submission detail.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 28. Admin Unlock Submission
+ * POST /api/hackathon/admin/submissions/:id/unlock
+ */
+exports.unlockAdminSubmission = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const submission = await HackathonSubmission.findOne({
+      $or: [{ _id: mongoose.isValidObjectId(id) ? id : null }, { teamId: id }],
+    });
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Submission record not found.' });
+    }
+
+    submission.isLocked = false;
+    submission.status = 'DRAFT';
+    await submission.save();
+
+    // Also reset team status back to CONFIRMED so drafting is allowed
+    const team = await HackathonTeam.findById(submission.team);
+    if (team && team.status === 'SUBMITTED') {
+      team.status = 'CONFIRMED';
+      await team.save();
+    }
+
+    await HackathonAuditLog.log({
+      actorId: String(req.user?._id || req.user?.id || 'admin'),
+      actorName: req.user?.name || 'Administrator',
+      actorEmail: req.user?.email || 'admin@code-a-nova.online',
+      role: 'admin',
+      action: 'SUBMISSION_UNLOCKED',
+      targetEntity: 'HackathonSubmission',
+      targetId: submission.teamId,
+      reason: req.body.reason || 'Admin unlocked submission for participant revision.',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Submission unlocked successfully. Team can now edit and re-submit.',
+      submission,
+    });
+  } catch (error) {
+    console.error('unlockAdminSubmission Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unlock submission.',
+      error: error.message,
+    });
+  }
+};
+
 
 
 

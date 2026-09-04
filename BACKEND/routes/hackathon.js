@@ -29,6 +29,12 @@ const {
   createPaymentOrder,
   verifyPayment,
   handlePaymentWebhook,
+  getMySubmission,
+  saveSubmissionDraft,
+  finalSubmitProject,
+  getAdminSubmissions,
+  getAdminSubmissionByTeamId,
+  unlockAdminSubmission,
 } = require('../controllers/hackathonController');
 
 /**
@@ -49,6 +55,13 @@ router.post('/payment/verify', auth, verifyPayment);
 router.post('/payment/webhook', handlePaymentWebhook);
 
 /**
+ * Phase 5: Participant Project Submission Routes
+ */
+router.get('/submission/my-submission', auth, getMySubmission);
+router.post('/submission/save-draft', auth, saveSubmissionDraft);
+router.post('/submission/final-submit', auth, finalSubmitProject);
+
+/**
  * Admin Hackathon Management Workspace Routes
  */
 router.get('/admin/overview', auth, verifyAdmin, getAdminOverview);
@@ -56,6 +69,13 @@ router.get('/admin/settings', auth, verifyAdmin, getAdminSettings);
 router.put('/admin/settings', auth, verifyAdmin, updateAdminSettings);
 router.get('/admin/audit-logs', auth, verifyAdmin, getAdminAuditLogs);
 router.get('/admin/teams', auth, verifyAdmin, getAdminTeams);
+
+/**
+ * Phase 5: Admin Submissions Management Routes
+ */
+router.get('/admin/submissions', auth, verifyAdmin, getAdminSubmissions);
+router.get('/admin/submissions/team/:teamId', auth, verifyAdmin, getAdminSubmissionByTeamId);
+router.post('/admin/submissions/:id/unlock', auth, verifyAdmin, unlockAdminSubmission);
 
 /**
  * Phase 3 & 4: Admin Team Management & Review Routes
@@ -75,3 +95,4 @@ router.post('/admin/unstop/preview', auth, verifyAdmin, upload.single('excelFile
 router.post('/admin/unstop/commit', auth, verifyAdmin, commitUnstopImport);
 
 module.exports = router;
+
