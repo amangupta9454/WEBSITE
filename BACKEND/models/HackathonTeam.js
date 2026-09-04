@@ -23,6 +23,16 @@ const memberSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    state: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    role: {
+      type: String,
+      default: 'Team Member',
+      trim: true,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -79,6 +89,12 @@ const hackathonTeamSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    unstopApplicationId: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true,
+    },
     teamName: {
       type: String,
       required: true,
@@ -102,8 +118,22 @@ const hackathonTeamSchema = new mongoose.Schema(
     initialIdea: {
       title: { type: String, default: '', trim: true },
       description: { type: String, default: '' },
+      problemStatement: { type: String, default: '' },
+      proposedSolution: { type: String, default: '' },
+      techStack: { type: [String], default: [] },
       pptUrl: { type: String, default: '', trim: true },
       theme: { type: String, default: '', trim: true },
+    },
+    submittedLinks: {
+      githubUrl: { type: String, default: '', trim: true },
+      hostedProjectUrl: { type: String, default: '', trim: true },
+      linkedInUrl: { type: String, default: '', trim: true },
+      demoVideoUrl: { type: String, default: '', trim: true },
+      otherLinks: { type: [String], default: [] },
+    },
+    rawUnstopData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     status: {
       type: String,

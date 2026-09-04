@@ -2,6 +2,7 @@ const HackathonSetting = require('../models/HackathonSetting');
 const HackathonTeam = require('../models/HackathonTeam');
 const HackathonAuditLog = require('../models/HackathonAuditLog');
 const User = require('../models/User');
+const unstopParserService = require('../services/unstopParserService');
 
 /**
  * 1. Get Public Hackathon Information
@@ -340,3 +341,204 @@ exports.getAdminAuditLogs = async (req, res) => {
     });
   }
 };
+
+/**
+ * 7. Preview Unstop Excel Upload
+ */
+exports.previewUnstopExcel = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded. Please provide an Excel (.xlsx or .xls) file.',
+      });
+    }
+
+    const originalName = req.file.originalname || '';
+    const isExcel =
+      originalName.endsWith('.xlsx') ||
+      originalName.endsWith('.xls') ||
+      req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      req.file.mimetype === 'application/vnd.ms-excel';
+
+    if (!isExcel) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file format. Only .xlsx and .xls files are supported.',
+      });
+    }
+
+    let workbookData;
+    try {
+      workbookData = unstopParserService.parseWorkbookBuffer(req.file.buffer);
+    } catch (parseErr) {
+      return res.status(400).json({
+        success: false,
+        message: 'Corrupted or unreadable Excel file: ' + parseErr.message,
+      });
+    }
+
+    const { sheetNames, workbook } = workbookData;
+    if (!sheetNames || sheetNames.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'The uploaded Excel file contains no worksheets.',
+      });
+    }
+
+    const requestedSheet = req.body.sheetName || sheetNames[0];
+    const sheetData = unstopParserService.extractSheetData(workbook, requestedSheet);
+
+    if (sheetData.rawRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Sheet "${sheetData.sheetName}" contains no data rows or is empty.`,
+      });
+    }
+
+    let customMapping = {};
+    if (req.body.customMapping) {
+      try {
+        customMapping = typeof req.body.customMapping === 'string'
+          ? JSON.parse(req.body.customMapping)
+          : req.body.customMapping;
+      } catch (e) {}
+    }
+
+    const preview = await unstopParserService.generateImportPreview({
+      sheetData,
+      customMapping,
+    });
+
+    res.status(200).json({
+      success: true,
+      filename: originalName,
+      sheetNames,
+      activeSheet: sheetData.sheetName,
+      headers: sheetData.headers,
+      mappedColumns: sheetData.mappedColumns,
+      stats: {
+        totalRows: preview.totalRows,
+        newCount: preview.newCount,
+        duplicateCount: preview.duplicateCount,
+        warningCount: preview.warningCount,
+        invalidCount: preview.invalidCount,
+        validToImportCount: preview.validToImportCount,
+      },
+      previewRows: preview.previewRows,
+    });
+  } catch (error) {
+    console.error('previewUnstopExcel Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process Excel file: ' + error.message,
+    });
+  }
+};
+
+/**
+ * 8. Commit Unstop Import to Database
+ */
+exports.commitUnstopImport = async (req, res) => {
+  try {
+    const { rows, duplicateHandling = 'SKIP', filename = 'unstop_export.xlsx' } = req.body;
+
+    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No row data provided for import.',
+      });
+    }
+
+    const result = await unstopParserService.commitBatchImport({
+      rowsToImport: rows,
+      duplicateHandling,
+    });
+
+    // Write immutable audit log
+    await HackathonAuditLog.log({
+      actorId: req.admin?._id || req.admin?.id || 'admin',
+      actorName: req.admin?.name || req.admin?.username || 'Admin',
+      actorEmail: req.admin?.email || '',
+      role: 'admin',
+      action: 'UNSTOP_IMPORT',
+      targetEntity: 'HackathonTeam',
+      reason: `Imported ${result.importedCount} teams from Unstop file "${filename}". (${result.skippedCount} skipped, ${result.updatedCount} updated, ${result.failedCount} failed)`,
+      newState: {
+        filename,
+        totalProcessed: result.totalProcessed,
+        importedCount: result.importedCount,
+        updatedCount: result.updatedCount,
+        skippedCount: result.skippedCount,
+        failedCount: result.failedCount,
+        duplicateHandling,
+      },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Import complete: ${result.importedCount} imported, ${result.skippedCount} skipped, ${result.updatedCount} updated, ${result.failedCount} failed.`,
+      result,
+    });
+  } catch (error) {
+    console.error('commitUnstopImport Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to commit import: ' + error.message,
+    });
+  }
+};
+
+/**
+ * 9. Get Admin Teams List
+ */
+exports.getAdminTeams = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    if (req.query.track) {
+      filter.track = req.query.track;
+    }
+    if (req.query.search) {
+      const regex = new RegExp(req.query.search, 'i');
+      filter.$or = [
+        { teamName: regex },
+        { teamId: regex },
+        { unstopApplicationId: regex },
+        { 'leader.email': regex },
+        { 'leader.name': regex },
+      ];
+    }
+
+    const [teams, total] = await Promise.all([
+      HackathonTeam.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      HackathonTeam.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      teams,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error('getAdminTeams Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch teams.',
+      error: error.message,
+    });
+  }
+};
+

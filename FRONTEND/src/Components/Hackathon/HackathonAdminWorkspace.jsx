@@ -24,7 +24,11 @@ import {
   Layers,
   Sparkles,
   Info,
+  UploadCloud,
+  Search,
+  Filter,
 } from "lucide-react";
+import UnstopImportModal from "./UnstopImportModal";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5006";
 
@@ -48,6 +52,42 @@ export default function HackathonAdminWorkspace() {
   const [auditPage, setAuditPage] = useState(1);
   const [auditTotalPages, setAuditTotalPages] = useState(1);
   const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Unstop Import & Teams State
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+  const [teamsPage, setTeamsPage] = useState(1);
+  const [teamsTotalPages, setTeamsTotalPages] = useState(1);
+  const [teamsTotal, setTeamsTotal] = useState(0);
+  const [teamsSearch, setTeamsSearch] = useState("");
+  const [teamsStatusFilter, setTeamsStatusFilter] = useState("");
+  const [teamsTrackFilter, setTeamsTrackFilter] = useState("");
+
+  const fetchTeams = async (page = 1) => {
+    try {
+      setLoadingTeams(true);
+      const token = getAdminToken();
+      let url = `${BACKEND_URL}/api/hackathon/admin/teams?page=${page}&limit=15`;
+      if (teamsSearch) url += `&search=${encodeURIComponent(teamsSearch)}`;
+      if (teamsStatusFilter) url += `&status=${encodeURIComponent(teamsStatusFilter)}`;
+      if (teamsTrackFilter) url += `&track=${encodeURIComponent(teamsTrackFilter)}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success) {
+        setTeams(res.data.teams || []);
+        setTeamsPage(res.data.pagination?.page || 1);
+        setTeamsTotalPages(res.data.pagination?.totalPages || 1);
+        setTeamsTotal(res.data.pagination?.total || 0);
+      }
+    } catch (err) {
+      console.error("fetchTeams error:", err);
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
 
   // Settings Form State
   const [settingsForm, setSettingsForm] = useState({
@@ -143,7 +183,10 @@ export default function HackathonAdminWorkspace() {
     if (activeTab === "audit_logs") {
       fetchAuditLogs(1);
     }
-  }, [activeTab]);
+    if (activeTab === "teams") {
+      fetchTeams(1);
+    }
+  }, [activeTab, teamsStatusFilter, teamsTrackFilter]);
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -231,6 +274,13 @@ export default function HackathonAdminWorkspace() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md transition-all cursor-pointer"
+            >
+              <UploadCloud className="w-4 h-4" />
+              Import Unstop Excel
+            </button>
             <a
               href="/hackathon"
               target="_blank"
@@ -254,7 +304,7 @@ export default function HackathonAdminWorkspace() {
         <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: "overview", label: "Overview", icon: Layers, badge: null },
-            { id: "teams", label: "Teams", icon: Users, badge: "Phase 2" },
+            { id: "teams", label: "Teams", icon: Users, badge: stats.totalTeams > 0 ? `${stats.totalTeams} Teams` : "Active" },
             { id: "editorial", label: "Editorial & Judges", icon: Award, badge: "Phase 9" },
             { id: "submissions", label: "Submissions", icon: FileText, badge: "Phase 8" },
             { id: "judging", label: "Judging", icon: Sparkles, badge: "Phase 10" },
@@ -843,8 +893,177 @@ export default function HackathonAdminWorkspace() {
         </div>
       )}
 
+      {/* ─── TAB 2: TEAMS MANAGEMENT (PHASE 2) ─── */}
+      {activeTab === "teams" && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-600" />
+                Hackathon Teams ({teamsTotal})
+              </h2>
+              <p className="text-xs text-slate-500">
+                All teams imported from Unstop Excel exports and registered in the system.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer"
+            >
+              <UploadCloud className="w-4 h-4" />
+              Import Unstop Excel
+            </button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by team name, team ID, leader email or Unstop ID..."
+                value={teamsSearch}
+                onChange={(e) => setTeamsSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchTeams(1)}
+                className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <select
+              value={teamsTrackFilter}
+              onChange={(e) => setTeamsTrackFilter(e.target.value)}
+              className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700"
+            >
+              <option value="">All Tracks</option>
+              {(settings?.tracks || []).map((t, idx) => (
+                <option key={idx} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={teamsStatusFilter}
+              onChange={(e) => setTeamsStatusFilter(e.target.value)}
+              className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700"
+            >
+              <option value="">All Statuses</option>
+              <option value="IMPORTED">Imported</option>
+              <option value="UNDER_REVIEW">Under Review</option>
+              <option value="SHORTLISTED">Shortlisted</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="PAYMENT_PENDING">Payment Pending</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="EVALUATED">Evaluated</option>
+            </select>
+            <button
+              onClick={() => fetchTeams(1)}
+              className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              Filter
+            </button>
+          </div>
+
+          {/* Teams Table */}
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th className="p-3">Team ID</th>
+                  <th className="p-3">Team Name</th>
+                  <th className="p-3">Unstop App ID</th>
+                  <th className="p-3">Leader</th>
+                  <th className="p-3">Track</th>
+                  <th className="p-3">Members</th>
+                  <th className="p-3">PPT / Idea</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Import Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loadingTeams ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-slate-400">
+                      Loading team records...
+                    </td>
+                  </tr>
+                ) : teams.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-12 text-center space-y-3">
+                      <div className="text-slate-400 text-sm font-semibold">No teams found matching your query.</div>
+                      <button
+                        onClick={() => setShowImportModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                      >
+                        <UploadCloud className="w-4 h-4" /> Import Teams from Unstop Excel
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  teams.map((t) => (
+                    <tr key={t._id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-mono font-bold text-indigo-600">{t.teamId}</td>
+                      <td className="p-3 font-bold text-slate-900">{t.teamName}</td>
+                      <td className="p-3 font-mono text-[11px] text-slate-500">{t.unstopApplicationId || "—"}</td>
+                      <td className="p-3">
+                        <div className="font-semibold text-slate-800">{t.leader?.name || "—"}</div>
+                        <div className="text-[11px] text-slate-400">{t.leader?.email}</div>
+                      </td>
+                      <td className="p-3 text-slate-600">{t.track}</td>
+                      <td className="p-3 text-slate-500">{(t.members || []).length + 1} members</td>
+                      <td className="p-3 max-w-xs">
+                        <div className="font-semibold text-slate-800 truncate">{t.initialIdea?.title || "—"}</div>
+                        {t.initialIdea?.pptUrl && (
+                          <a
+                            href={t.initialIdea.pptUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] text-indigo-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            View PPT <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                          {t.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[11px] text-slate-400 font-mono">
+                        {new Date(t.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {teamsTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <button
+                disabled={teamsPage <= 1}
+                onClick={() => fetchTeams(teamsPage - 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-slate-500">
+                Page {teamsPage} of {teamsTotalPages} ({teamsTotal} total teams)
+              </span>
+              <button
+                disabled={teamsPage >= teamsTotalPages}
+                onClick={() => fetchTeams(teamsPage + 1)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ─── PLACEHOLDER TABS (Scheduled for Later Phases) ─── */}
-      {["teams", "editorial", "submissions", "judging", "results", "certificates"].includes(activeTab) && (
+      {["editorial", "submissions", "judging", "results", "certificates"].includes(activeTab) && (
         <div className="bg-white rounded-2xl p-12 border border-slate-200 shadow-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
             <Info className="w-8 h-8" />
@@ -868,6 +1087,16 @@ export default function HackathonAdminWorkspace() {
           </div>
         </div>
       )}
+
+      {/* Unstop Import Modal */}
+      <UnstopImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportSuccess={() => {
+          fetchOverview();
+          fetchTeams(1);
+        }}
+      />
     </div>
   );
 }
