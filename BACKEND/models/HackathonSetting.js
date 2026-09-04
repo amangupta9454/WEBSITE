@@ -241,8 +241,11 @@ const hackathonSettingSchema = new mongoose.Schema(
 );
 
 // Helper static to get or initialize default setting
-hackathonSettingSchema.statics.getOrCreateSettings = async function () {
-  let settings = await this.findOne({ isActive: true });
+hackathonSettingSchema.statics.getOrCreateSettings = async function (hackathonId = 'can-hackathon-2026') {
+  let settings = await this.findOne({ hackathonId });
+  if (!settings) {
+    settings = await this.findOne();
+  }
   if (!settings) {
     settings = await this.create({
       hackathonId: 'can-hackathon-2026',

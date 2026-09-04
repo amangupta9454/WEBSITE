@@ -16,6 +16,7 @@ const {
   getAdminOverview,
   getAdminSettings,
   updateAdminSettings,
+  toggleHackathonActive,
   getAdminAuditLogs,
   previewUnstopExcel,
   commitUnstopImport,
@@ -134,6 +135,7 @@ router.post('/submission/final-submit', auth, finalSubmitProject);
 router.get('/admin/overview', auth, verifyAdmin, getAdminOverview);
 router.get('/admin/settings', auth, verifyAdmin, getAdminSettings);
 router.put('/admin/settings', auth, verifyAdmin, updateAdminSettings);
+router.post('/admin/settings/toggle-active', auth, verifyAdmin, toggleHackathonActive);
 router.get('/admin/audit-logs', auth, verifyAdmin, getAdminAuditLogs);
 router.get('/admin/teams', auth, verifyAdmin, getAdminTeams);
 

@@ -9,6 +9,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   CreditCard,
   Send,
   Award,
@@ -28,6 +29,7 @@ import {
   Search,
   Filter,
   Eye,
+  EyeOff,
   Edit2,
   PlusCircle,
   Github,
@@ -53,6 +55,7 @@ import {
   FileSpreadsheet,
   AlertOctagon,
   Compass,
+  Video,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -1236,6 +1239,7 @@ export default function HackathonAdminWorkspace() {
     isRegistrationOpen: true,
     isSubmissionOpen: false,
     isResultsPublished: false,
+    isActive: true,
   });
 
   const [newRule, setNewRule] = useState("");
@@ -1276,6 +1280,7 @@ export default function HackathonAdminWorkspace() {
             isRegistrationOpen: s.isRegistrationOpen ?? true,
             isSubmissionOpen: s.isSubmissionOpen ?? false,
             isResultsPublished: s.isResultsPublished ?? false,
+            isActive: s.isActive !== false,
           });
         }
       }
@@ -1400,6 +1405,31 @@ export default function HackathonAdminWorkspace() {
     }
   };
 
+  const [togglingActive, setTogglingActive] = useState(false);
+
+  const handleToggleActive = async () => {
+    try {
+      setTogglingActive(true);
+      const token = getAdminToken();
+      const currentActive = settings?.isActive !== false;
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/settings/toggle-active`,
+        { isActive: !currentActive },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message);
+        setSettings((prev) => ({ ...prev, isActive: res.data.isActive }));
+        setSettingsForm((prev) => ({ ...prev, isActive: res.data.isActive }));
+      }
+    } catch (err) {
+      console.error("handleToggleActive error:", err);
+      toast.error(err.response?.data?.message || "Failed to toggle active status");
+    } finally {
+      setTogglingActive(false);
+    }
+  };
+
   const handleAddRule = () => {
     if (!newRule.trim()) return;
     setSettingsForm((prev) => ({
@@ -1454,7 +1484,32 @@ export default function HackathonAdminWorkspace() {
               One centralized hub for participant lifecycle, team reviews, shortlisting, judging, and settings.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleToggleActive}
+              disabled={togglingActive}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer border ${
+                settings?.isActive !== false
+                  ? "bg-emerald-600/90 hover:bg-emerald-500 text-white border-emerald-400/40 shadow-emerald-900/20"
+                  : "bg-rose-600/90 hover:bg-rose-500 text-white border-rose-400/40 shadow-rose-900/20"
+              }`}
+              title={
+                settings?.isActive !== false
+                  ? "Click to Disable / Hide Hackathon from Student Dashboard"
+                  : "Click to Enable / Show Hackathon on Student Dashboard"
+              }
+            >
+              {togglingActive ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : settings?.isActive !== false ? (
+                <Eye className="w-4 h-4 text-emerald-200" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-rose-200" />
+              )}
+              <span>
+                {settings?.isActive !== false ? "Dashboard: ON (Visible)" : "Dashboard: OFF (Hidden)"}
+              </span>
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md transition-all cursor-pointer"
@@ -1688,6 +1743,30 @@ export default function HackathonAdminWorkspace() {
                       Results: {settings?.isResultsPublished ? "Published" : "Hidden"}
                     </span>
                   </div>
+                  <div className="flex items-center gap-2 pl-2 border-l border-indigo-200/60">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        settings?.isActive !== false ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                      }`}
+                    />
+                    <span className="text-xs font-bold text-slate-700">
+                      Dashboard Card:{" "}
+                      <span className={settings?.isActive !== false ? "text-emerald-700 font-black" : "text-rose-600 font-black"}>
+                        {settings?.isActive !== false ? "Visible (Active)" : "Hidden (Disabled)"}
+                      </span>
+                    </span>
+                    <button
+                      onClick={handleToggleActive}
+                      disabled={togglingActive}
+                      className={`ml-1 text-[11px] font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                        settings?.isActive !== false
+                          ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      }`}
+                    >
+                      {togglingActive ? "Updating..." : settings?.isActive !== false ? "Turn Off" : "Turn On"}
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => setActiveTab("settings")}
@@ -1874,6 +1953,38 @@ export default function HackathonAdminWorkspace() {
               <div className="pt-3 border-t border-slate-100 space-y-3">
                 <h4 className="text-xs font-bold text-slate-700">Feature Status Toggles</h4>
                 <div className="space-y-2">
+                  <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    settingsForm.isActive !== false
+                      ? "bg-emerald-50/70 border-emerald-300 text-emerald-900"
+                      : "bg-rose-50/70 border-rose-300 text-rose-900"
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={settingsForm.isActive !== false}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, isActive: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                      />
+                      <div>
+                        <span className="text-xs font-bold block">
+                          Hackathon Dashboard Card Visibility ({settingsForm.isActive !== false ? "Visible / Enabled" : "Hidden / Disabled"})
+                        </span>
+                        <span className="text-[11px] opacity-80 block">
+                          {settingsForm.isActive !== false
+                            ? "Hackathon card is visible to students on the main dashboard (/dashboard)."
+                            : "Hackathon card is completely hidden from the student dashboard (/dashboard)."}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      settingsForm.isActive !== false
+                        ? "bg-emerald-200 text-emerald-800 border border-emerald-300"
+                        : "bg-rose-200 text-rose-800 border border-rose-300"
+                    }`}>
+                      {settingsForm.isActive !== false ? "ON" : "OFF"}
+                    </span>
+                  </label>
+
                   <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-150 cursor-pointer">
                     <input
                       type="checkbox"

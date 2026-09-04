@@ -95,8 +95,8 @@ hackathonAuditLogSchema.statics.log = async function ({
     let ipAddress = '';
     let userAgent = '';
     if (req) {
-      ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '';
-      userAgent = req.headers['user-agent'] || '';
+      ipAddress = req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '';
+      userAgent = req.headers?.['user-agent'] || '';
     }
 
     return await this.create({

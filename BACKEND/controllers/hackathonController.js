@@ -80,6 +80,7 @@ exports.getPublicHackathonInfo = async (req, res) => {
       isRegistrationOpen: settings.isRegistrationOpen,
       isSubmissionOpen: settings.isSubmissionOpen,
       isResultsPublished: settings.isResultsPublished,
+      isActive: settings.isActive !== false,
     };
 
     res.status(200).json({
@@ -308,6 +309,7 @@ exports.updateAdminSettings = async (req, res) => {
       'isRegistrationOpen',
       'isSubmissionOpen',
       'isResultsPublished',
+      'isActive',
       'announcements',
     ];
 
@@ -347,6 +349,55 @@ exports.updateAdminSettings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update hackathon settings.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 5b. Toggle Hackathon Active / Visibility Status
+ * Allows Admin to turn ON / OFF Hackathon feature visibility on the user dashboard.
+ */
+exports.toggleHackathonActive = async (req, res) => {
+  try {
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const previousState = settings.toObject();
+
+    if (typeof req.body.isActive === 'boolean') {
+      settings.isActive = req.body.isActive;
+    } else {
+      settings.isActive = settings.isActive === false ? true : false;
+    }
+
+    settings.updatedBy = req.admin?.email || req.admin?.username || 'Admin';
+    settings.updatedAt = new Date();
+    const updatedSettings = await settings.save();
+
+    await HackathonAuditLog.log({
+      actorId: req.admin?._id || req.admin?.id || 'admin',
+      actorName: req.admin?.name || req.admin?.username || 'Admin',
+      actorEmail: req.admin?.email || '',
+      role: 'admin',
+      action: 'UPDATE_SETTINGS',
+      targetEntity: 'HackathonSetting',
+      targetId: settings.hackathonId,
+      previousState,
+      newState: updatedSettings.toObject(),
+      reason: `Admin ${settings.isActive ? 'enabled' : 'disabled'} Hackathon visibility on dashboard`,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Hackathon feature is now ${settings.isActive ? 'Active (Visible on Dashboard)' : 'Disabled (Hidden from Dashboard)'}.`,
+      isActive: settings.isActive,
+      data: updatedSettings,
+    });
+  } catch (error) {
+    console.error('toggleHackathonActive Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to toggle hackathon active status.',
       error: error.message,
     });
   }
