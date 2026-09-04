@@ -225,6 +225,7 @@ router.get('/prizes/my-prizes', auth, getParticipantMyPrizes);
 
 // Admin Certificates Endpoints
 router.get('/admin/certificates', auth, verifyAdmin, getAdminCertificates);
+router.post('/admin/certificates/generate', auth, verifyAdmin, generateAdminCertificates);
 router.post('/admin/certificates/generate-bulk', auth, verifyAdmin, generateAdminCertificates);
 router.post('/admin/certificates/email-bulk', auth, verifyAdmin, emailBulkAdminCertificates);
 router.post('/admin/certificates/:id/email', auth, verifyAdmin, emailAdminCertificate);

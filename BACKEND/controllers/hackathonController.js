@@ -4859,18 +4859,29 @@ exports.getAdminCertificates = async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
-    const filter = { hackathonId };
+    const filter = {};
+    if (hackathonId && hackathonId !== 'can-hackathon-2026') {
+      filter.hackathonId = hackathonId;
+    } else {
+      filter.$or = [
+        { hackathonId: 'can-hackathon-2026' },
+        { hackathonId: { $exists: false } },
+        { hackathonId: null },
+      ];
+    }
+
     if (req.query.type) filter.type = req.query.type;
     if (req.query.status) filter.status = req.query.status;
     if (req.query.search) {
       const q = req.query.search.trim();
-      filter.$or = [
+      const searchOr = [
         { recipientName: { $regex: q, $options: 'i' } },
         { recipientEmail: { $regex: q, $options: 'i' } },
         { certificateNumber: { $regex: q, $options: 'i' } },
         { award: { $regex: q, $options: 'i' } },
         { projectName: { $regex: q, $options: 'i' } },
       ];
+      filter.$and = [{ $or: searchOr }];
     }
 
     const [certificates, total, counts] = await Promise.all([
@@ -4882,7 +4893,7 @@ exports.getAdminCertificates = async (req, res) => {
         .lean(),
       HackathonCertificate.countDocuments(filter),
       HackathonCertificate.aggregate([
-        { $match: { hackathonId } },
+        { $match: {} },
         {
           $group: {
             _id: null,

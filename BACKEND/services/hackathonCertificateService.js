@@ -160,14 +160,26 @@ class HackathonCertificateService {
    * Generates all eligible certificates for a hackathon
    */
   async generateAllEligibleCertificates({ hackathonId = 'can-hackathon-2026', adminId, actorDetails }) {
-    const settings = await HackathonSetting.findOne({ hackathonId }).lean();
+    const settings =
+      (await HackathonSetting.findOne({ hackathonId }).lean()) ||
+      (await HackathonSetting.findOne().lean()) ||
+      (await HackathonSetting.getOrCreateSettings(hackathonId)).toObject();
     const isPublished = settings?.isResultsPublished;
 
     // Fetch official results
-    const results = await HackathonResult.find({
-      hackathonId,
+    const resultFilter = {
       resultStatus: { $in: ['APPROVED', 'PUBLISHED', 'LOCKED'] },
-    }).lean();
+    };
+    if (hackathonId && hackathonId !== 'can-hackathon-2026') {
+      resultFilter.hackathonId = hackathonId;
+    } else {
+      resultFilter.$or = [
+        { hackathonId: 'can-hackathon-2026' },
+        { hackathonId: { $exists: false } },
+        { hackathonId: null },
+      ];
+    }
+    const results = await HackathonResult.find(resultFilter).lean();
 
     const resultMap = new Map();
     for (const r of results) {
@@ -175,11 +187,20 @@ class HackathonCertificateService {
     }
 
     // Fetch confirmed teams
-    const teams = await HackathonTeam.find({
-      hackathonId,
+    const teamFilter = {
       status: { $in: ['CONFIRMED', 'SUBMITTED', 'RESULT_PUBLISHED', 'EVALUATED'] },
-      isDeleted: false,
-    }).lean();
+      isDeleted: { $ne: true },
+    };
+    if (hackathonId && hackathonId !== 'can-hackathon-2026') {
+      teamFilter.hackathonId = hackathonId;
+    } else {
+      teamFilter.$or = [
+        { hackathonId: 'can-hackathon-2026' },
+        { hackathonId: { $exists: false } },
+        { hackathonId: null },
+      ];
+    }
+    const teams = await HackathonTeam.find(teamFilter).lean();
 
     let generatedCount = 0;
     let skippedCount = 0;
