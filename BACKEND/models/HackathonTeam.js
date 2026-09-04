@@ -180,6 +180,25 @@ const hackathonTeamSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    shortlistEmailStatus: {
+      type: String,
+      enum: ['NOT_SENT', 'SENT', 'FAILED'],
+      default: 'NOT_SENT',
+      index: true,
+    },
+    shortlistEmailError: {
+      type: String,
+      default: '',
+    },
+    confirmedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    confirmationSource: {
+      type: String,
+      default: 'PAYMENT',
+    },
     adminReview: {
       reviewedBy: { type: String, default: '' },
       reviewedAt: { type: Date, default: null },

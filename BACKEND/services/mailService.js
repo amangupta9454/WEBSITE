@@ -111,15 +111,6 @@ class MailService {
     source,
     recipientName,
   }) {
-    try {
-      if (!this.transporter) {
-        this.initTransporter();
-      }
-
-      if (!this.transporter) {
-        throw new Error("SMTP transporter not initialized.");
-      }
-
     // Strictly enforce manager@code-a-nova.online as outgoing sender (never hr@code-a-nova.online)
     let effectiveFrom = from;
     if (!effectiveFrom || effectiveFrom.includes('hr@code-a-nova.online')) {
@@ -130,6 +121,15 @@ class MailService {
     if (!effectiveReplyTo || effectiveReplyTo.includes('hr@code-a-nova.online')) {
       effectiveReplyTo = process.env.SMTP_REPLY_TO || process.env.SMTP_FROM || 'manager@code-a-nova.online';
     }
+
+    try {
+      if (!this.transporter) {
+        this.initTransporter();
+      }
+
+      if (!this.transporter) {
+        throw new Error("SMTP transporter not initialized.");
+      }
 
     const mailOptions = {
       from: effectiveFrom,

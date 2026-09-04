@@ -24,6 +24,10 @@ import {
   LogIn,
   Check,
   Zap,
+  Info,
+  Lock,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 import SEO from "../../Components/SEO";
 
@@ -38,6 +42,9 @@ export default function HackathonPortal() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeFaq, setActiveFaq] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
 
   // Check auth and fetch data
   useEffect(() => {
@@ -120,6 +127,105 @@ export default function HackathonPortal() {
       CERTIFICATE_AVAILABLE: { text: "Certificate Ready", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
     };
     return map[status] || { text: status, color: "bg-slate-700 text-slate-300 border-slate-600" };
+  };
+
+  const handlePayConfirmation = async () => {
+    if (!isLeader) {
+      alert("Only the Team Leader can complete the participation fee payment.");
+      return;
+    }
+    try {
+      setPaymentLoading(true);
+      setPaymentError(null);
+      setPaymentSuccess(null);
+      const token = localStorage.getItem("studentToken") || localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const orderRes = await axios.post(
+        `${BACKEND_URL}/api/hackathon/payment/create-order`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (!orderRes.data?.success) {
+        throw new Error(orderRes.data?.message || "Failed to create payment order");
+      }
+
+      const { orderId, amount, currency, key, teamName } = orderRes.data;
+
+      if (typeof window.Razorpay === "undefined") {
+        throw new Error("Razorpay SDK is not loaded. Please verify your connection and try again.");
+      }
+
+      const options = {
+        key: key,
+        amount: amount,
+        currency: currency,
+        name: "Code-A-Nova Hackathon",
+        description: `Team Participation Fee — ${teamName}`,
+        order_id: orderId,
+        prefill: {
+          name: userTeam.leader?.name || "",
+          email: userTeam.leader?.email || "",
+          contact: userTeam.leader?.phone || "",
+        },
+        theme: {
+          color: "#6366f1",
+        },
+        handler: async function (response) {
+          try {
+            setPaymentLoading(true);
+            const verifyRes = await axios.post(
+              `${BACKEND_URL}/api/hackathon/payment/verify`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (verifyRes.data?.success) {
+              setPaymentSuccess("Participation confirmed successfully! WhatsApp group unlocked.");
+              // Reload team details
+              const teamRes = await axios.get(`${BACKEND_URL}/api/hackathon/my-team`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (teamRes.data?.success && teamRes.data?.hasTeam) {
+                setUserTeam(teamRes.data.team);
+                setIsLeader(teamRes.data.isLeader);
+              }
+            } else {
+              setPaymentError(verifyRes.data?.message || "Payment verification failed.");
+            }
+          } catch (vErr) {
+            console.error("Verification error:", vErr);
+            setPaymentError(vErr.response?.data?.message || "Payment verification failed. Please contact support.");
+          } finally {
+            setPaymentLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setPaymentLoading(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response) {
+        setPaymentError(response.error?.description || "Payment transaction was declined or failed.");
+        setPaymentLoading(false);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("handlePayConfirmation error:", err);
+      setPaymentError(err.response?.data?.message || err.message || "Failed to initiate payment.");
+      setPaymentLoading(false);
+    }
   };
 
   return (
@@ -319,6 +425,113 @@ export default function HackathonPortal() {
           {/* If Team Found */}
           {userTeam ? (
             <div className="space-y-6">
+              {/* PHASE 4: SHORTLIST NOTIFICATION & CONFIRMATION ACTION BANNER */}
+              {userTeam.status === "SHORTLISTED" && userTeam.paymentStatus !== "PAID" && (
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-950/90 via-purple-950/80 to-slate-950 border-2 border-indigo-500/50 shadow-2xl shadow-indigo-950/80 space-y-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-400" />
+                        <span>Congratulations! Your Team is Shortlisted 🎉</span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                        Confirm Participation — Code-A-Nova Hackathon
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                        Your PPT and project idea have cleared the initial review. Confirm your team slot by paying the
+                        one-time team confirmation fee of{" "}
+                        <span className="font-extrabold text-emerald-400">
+                          ₹{settings?.participationFee ?? 49}
+                        </span>
+                        . Once confirmed, you will instantly unlock the official WhatsApp group and finalist briefings.
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 flex flex-col items-start lg:items-end gap-2">
+                      {isLeader ? (
+                        <>
+                          <button
+                            onClick={handlePayConfirmation}
+                            disabled={paymentLoading}
+                            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-black bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 hover:from-emerald-400 hover:to-cyan-300 text-slate-950 shadow-xl shadow-emerald-500/25 transition-all hover:scale-102 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {paymentLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing Payment...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="w-4 h-4" />
+                                <span>CONFIRM PARTICIPATION — ₹{settings?.participationFee ?? 49}</span>
+                              </>
+                            )}
+                          </button>
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            ₹{settings?.participationFee ?? 49} per team (one payment confirms all members).
+                          </span>
+                        </>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-slate-900 border border-indigo-500/30 text-xs text-slate-300 space-y-1 max-w-sm">
+                          <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                            <Info className="w-4 h-4" /> Leader Action Required
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-normal">
+                            Participation confirmation is being completed by your Team Leader (
+                            <span className="text-white font-bold">{userTeam.leader?.name || "Team Leader"}</span>
+                            ). Once payment is verified, your team will be confirmed automatically.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {paymentError && (
+                    <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{paymentError}</span>
+                    </div>
+                  )}
+
+                  {paymentSuccess && (
+                    <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span>{paymentSuccess}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CONFIRMED PARTICIPANT BANNER */}
+              {(userTeam.status === "CONFIRMED" || userTeam.paymentStatus === "PAID") && (
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-950 border border-emerald-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-emerald-950/30">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-wider">
+                      <CheckCircle2 className="w-4 h-4" /> Team Participation Confirmed ✅
+                    </div>
+                    <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                      Your team is officially registered for the Code-A-Nova Hackathon Grand Finale.
+                      {userTeam.confirmedAt && (
+                        <span className="text-slate-400 block text-[11px] mt-0.5">
+                          Confirmed on {new Date(userTeam.confirmedAt).toLocaleDateString()} at{" "}
+                          {new Date(userTeam.confirmedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {userTeam.whatsAppLink && (
+                    <a
+                      href={userTeam.whatsAppLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 transition-all shrink-0 hover:scale-102"
+                    >
+                      <MessageSquare className="w-4 h-4" /> Join Official WhatsApp Group
+                    </a>
+                  )}
+                </div>
+              )}
+
               {/* Leader & Members Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Leader Card */}

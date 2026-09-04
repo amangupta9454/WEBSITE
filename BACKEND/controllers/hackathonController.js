@@ -1,9 +1,18 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const HackathonSetting = require('../models/HackathonSetting');
 const HackathonTeam = require('../models/HackathonTeam');
+const HackathonPayment = require('../models/HackathonPayment');
 const HackathonAuditLog = require('../models/HackathonAuditLog');
 const User = require('../models/User');
 const unstopParserService = require('../services/unstopParserService');
+const hackathonEmailService = require('../services/hackathonEmailService');
+
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
+});
 
 /**
  * 1. Get Public Hackathon Information
@@ -521,6 +530,9 @@ exports.getAdminTeams = async (req, res) => {
     if (req.query.status) {
       filter.status = req.query.status;
     }
+    if (req.query.paymentStatus) {
+      filter.paymentStatus = req.query.paymentStatus;
+    }
     if (req.query.track) {
       filter.track = req.query.track;
     }
@@ -939,11 +951,11 @@ exports.updateTeamStatus = async (req, res) => {
     const { id } = req.params;
     const { status, rejectionReason, note } = req.body;
 
-    const allowedTransitions = ['IMPORTED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED'];
+    const allowedTransitions = ['IMPORTED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'CONFIRMED'];
     if (!allowedTransitions.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status transition for Phase 3. Allowed: ${allowedTransitions.join(', ')}`,
+        message: `Invalid status transition. Allowed: ${allowedTransitions.join(', ')}`,
       });
     }
 
@@ -962,9 +974,49 @@ exports.updateTeamStatus = async (req, res) => {
     let auditAction = 'TEAM_STATUS_UPDATED';
 
     if (status === 'SHORTLISTED') {
-      team.shortlistedAt = new Date();
+      team.shortlistedAt = team.shortlistedAt || new Date();
       auditAction = 'TEAM_SHORTLISTED';
-      // PRD Step 14: Phase 3 MUST ONLY update database status and record audit log.
+
+      // Phase 4: Idempotent Shortlist Email to Team Leader
+      if (team.shortlistEmailStatus !== 'SENT' && !team.shortlistEmailSent) {
+        try {
+          const settings = await HackathonSetting.getOrCreateSettings();
+          const portalUrl = `${process.env.CLIENT_URL || 'https://code-a-nova.online'}/hackathon`;
+          await hackathonEmailService.sendShortlistEmail({ team, settings, portalUrl });
+          team.shortlistEmailSent = true;
+          team.shortlistEmailSentAt = new Date();
+          team.shortlistEmailStatus = 'SENT';
+          team.shortlistEmailError = '';
+
+          await HackathonAuditLog.log({
+            actorId: req.admin?._id || req.admin?.id || 'admin',
+            actorName: req.admin?.name || req.admin?.username || 'Admin',
+            actorEmail: req.admin?.email || '',
+            role: 'admin',
+            action: 'SHORTLIST_EMAIL_SENT',
+            targetEntity: 'HackathonTeam',
+            targetId: team.teamId,
+            reason: `Shortlist notification email delivered to team leader (${team.leader?.email})`,
+            req,
+          });
+        } catch (emailErr) {
+          console.error('Shortlist email error:', emailErr.message);
+          team.shortlistEmailStatus = 'FAILED';
+          team.shortlistEmailError = emailErr.message;
+
+          await HackathonAuditLog.log({
+            actorId: req.admin?._id || req.admin?.id || 'admin',
+            actorName: req.admin?.name || req.admin?.username || 'Admin',
+            actorEmail: req.admin?.email || '',
+            role: 'admin',
+            action: 'SHORTLIST_EMAIL_FAILED',
+            targetEntity: 'HackathonTeam',
+            targetId: team.teamId,
+            reason: `Email delivery failed: ${emailErr.message}`,
+            req,
+          });
+        }
+      }
     } else if (status === 'REJECTED') {
       if (rejectionReason) {
         team.rejectionReason = rejectionReason.trim();
@@ -983,7 +1035,11 @@ exports.updateTeamStatus = async (req, res) => {
       targetEntity: 'HackathonTeam',
       targetId: team.teamId,
       previousState: { status: previousStatus },
-      newState: { status: updatedTeam.status, rejectionReason: updatedTeam.rejectionReason },
+      newState: {
+        status: updatedTeam.status,
+        rejectionReason: updatedTeam.rejectionReason,
+        shortlistEmailStatus: updatedTeam.shortlistEmailStatus,
+      },
       reason: note || rejectionReason || `Status transitioned from ${previousStatus} to ${status}`,
       req,
     });
@@ -995,6 +1051,7 @@ exports.updateTeamStatus = async (req, res) => {
         teamId: updatedTeam.teamId,
         status: updatedTeam.status,
         shortlistedAt: updatedTeam.shortlistedAt,
+        shortlistEmailStatus: updatedTeam.shortlistEmailStatus,
         rejectionReason: updatedTeam.rejectionReason,
       },
     });
@@ -1006,5 +1063,503 @@ exports.updateTeamStatus = async (req, res) => {
     });
   }
 };
+
+/**
+ * 16. Admin Resend Shortlist Notification Email
+ */
+exports.resendShortlistEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = mongoose.Types.ObjectId.isValid(id)
+      ? { _id: id }
+      : { teamId: id.toUpperCase() };
+
+    const team = await HackathonTeam.findOne(query);
+    if (!team) {
+      return res.status(404).json({ success: false, message: 'Team not found.' });
+    }
+
+    if (team.status !== 'SHORTLISTED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Team must have SHORTLISTED status to send shortlist email.',
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const portalUrl = `${process.env.CLIENT_URL || 'https://code-a-nova.online'}/hackathon`;
+
+    try {
+      await hackathonEmailService.sendShortlistEmail({ team, settings, portalUrl });
+      team.shortlistEmailSent = true;
+      team.shortlistEmailSentAt = new Date();
+      team.shortlistEmailStatus = 'SENT';
+      team.shortlistEmailError = '';
+      await team.save();
+
+      await HackathonAuditLog.log({
+        actorId: req.admin?._id || req.admin?.id || 'admin',
+        actorName: req.admin?.name || req.admin?.username || 'Admin',
+        actorEmail: req.admin?.email || '',
+        role: 'admin',
+        action: 'SHORTLIST_EMAIL_SENT',
+        targetEntity: 'HackathonTeam',
+        targetId: team.teamId,
+        reason: `Admin manually resent shortlist notification email to leader (${team.leader?.email})`,
+        req,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Shortlist notification email resent successfully to ${team.leader?.email}`,
+      });
+    } catch (sendErr) {
+      team.shortlistEmailStatus = 'FAILED';
+      team.shortlistEmailError = sendErr.message;
+      await team.save();
+
+      await HackathonAuditLog.log({
+        actorId: req.admin?._id || req.admin?.id || 'admin',
+        actorName: req.admin?.name || req.admin?.username || 'Admin',
+        actorEmail: req.admin?.email || '',
+        role: 'admin',
+        action: 'SHORTLIST_EMAIL_FAILED',
+        targetEntity: 'HackathonTeam',
+        targetId: team.teamId,
+        reason: `Manual resend failed: ${sendErr.message}`,
+        req,
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send email: ' + sendErr.message,
+      });
+    }
+  } catch (error) {
+    console.error('resendShortlistEmail Error:', error);
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+  }
+};
+
+/**
+ * 17. Participant Payment: Create Razorpay Order for ₹49 Team Fee
+ * PRD Steps 3, 4, 6 & 7: Strictly enforced for Team Leader only, server-configured fee
+ */
+exports.createPaymentOrder = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?.unifiedUserId || req.user?.userId;
+    let userEmail = req.user?.email;
+
+    if (!userEmail && userId) {
+      const user = await User.findById(userId).select('email name');
+      if (user) userEmail = user.email;
+    }
+
+    if (!userEmail && !userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: Session credentials missing.',
+      });
+    }
+
+    const query = {
+      isDeleted: { $ne: true },
+      $or: [],
+    };
+    if (userId) {
+      query.$or.push({ 'leader.userId': userId }, { 'members.userId': userId });
+    }
+    if (userEmail) {
+      const normalized = userEmail.toLowerCase().trim();
+      query.$or.push({ 'leader.email': normalized }, { 'members.email': normalized });
+    }
+
+    const team = await HackathonTeam.findOne(query);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'No registered hackathon team found for your account.',
+      });
+    }
+
+    // PRD Step 4: Strict Team Leader Authorization Check
+    const isLeader =
+      (userId && team.leader?.userId && String(team.leader.userId) === String(userId)) ||
+      (userEmail && team.leader?.email && team.leader.email.toLowerCase() === userEmail.toLowerCase());
+
+    if (!isLeader) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Participation confirmation payment can only be initiated by the designated Team Leader.',
+      });
+    }
+
+    // PRD Step 6: Verify team status is payable
+    if (team.status !== 'SHORTLISTED' && team.status !== 'PAYMENT_PENDING') {
+      return res.status(400).json({
+        success: false,
+        message: `Participation payment is not active for this team. Current status: ${team.status}`,
+      });
+    }
+
+    // PRD Step 17: Check if already paid / confirmed
+    if (team.paymentStatus === 'PAID' || team.status === 'CONFIRMED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Team participation fee has already been paid and confirmed.',
+      });
+    }
+
+    // PRD Step 6 & 21: Read fee from HackathonSettings
+    const settings = await HackathonSetting.getOrCreateSettings();
+    const amount = Number(settings.participationFee) >= 0 ? Number(settings.participationFee) : 49;
+
+    // Create Razorpay Order (smallest currency unit: paise)
+    const options = {
+      amount: Math.round(amount * 100),
+      currency: 'INR',
+      receipt: `rcpt_${team.teamId}_${Date.now().toString().slice(-6)}`,
+      notes: {
+        teamId: team.teamId,
+        teamName: team.teamName,
+        leaderEmail: team.leader?.email,
+      },
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    if (!order || !order.id) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment gateway order.',
+      });
+    }
+
+    // Create / update HackathonPayment record
+    await HackathonPayment.create({
+      teamId: team.teamId,
+      leaderId: userId || null,
+      leaderEmail: team.leader.email,
+      amount,
+      currency: 'INR',
+      gateway: 'RAZORPAY',
+      orderId: order.id,
+      status: 'PENDING',
+    });
+
+    // Update team payment state to PENDING
+    team.paymentStatus = 'PENDING';
+    team.paymentDetails = {
+      ...team.paymentDetails,
+      amount,
+      currency: 'INR',
+      orderId: order.id,
+    };
+    await team.save();
+
+    // Audit log
+    await HackathonAuditLog.log({
+      actorId: String(userId || team.leader.email),
+      actorName: team.leader.name,
+      actorEmail: team.leader.email,
+      role: 'participant',
+      action: 'PAYMENT_CREATED',
+      targetEntity: 'HackathonPayment',
+      targetId: order.id,
+      reason: `Team leader initiated ₹${amount} confirmation payment for ${team.teamId}`,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      order,
+      key: process.env.RAZORPAY_KEY_ID,
+      amount,
+      currency: 'INR',
+      team: {
+        teamId: team.teamId,
+        teamName: team.teamName,
+        leaderName: team.leader.name,
+        leaderEmail: team.leader.email,
+        leaderMobile: team.leader.mobile,
+      },
+    });
+  } catch (error) {
+    console.error('createPaymentOrder Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating payment order: ' + error.message,
+    });
+  }
+};
+
+/**
+ * 18. Participant Payment: Server-Side Signature Verification & Team Confirmation
+ * PRD Steps 9, 11 & 13: Verifies HMAC signature, confirms team, unlocks WhatsApp community
+ */
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required payment verification credentials.',
+      });
+    }
+
+    // Verify HMAC signature
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'dummy_secret')
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      await HackathonPayment.findOneAndUpdate(
+        { orderId: razorpay_order_id },
+        { status: 'FAILED', failureReason: 'Invalid signature mismatch' }
+      );
+      await HackathonAuditLog.log({
+        actorId: req.user?.id || 'participant',
+        actorName: req.user?.name || 'Participant',
+        actorEmail: req.user?.email || '',
+        role: 'participant',
+        action: 'PAYMENT_FAILED',
+        targetEntity: 'HackathonPayment',
+        targetId: razorpay_order_id,
+        reason: 'Payment signature verification mismatch',
+        req,
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment signature. Verification failed.',
+      });
+    }
+
+    // Locate Payment record
+    const payment = await HackathonPayment.findOne({ orderId: razorpay_order_id });
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment order record not found in system.',
+      });
+    }
+
+    const team = await HackathonTeam.findOne({ teamId: payment.teamId });
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'Associated team not found.',
+      });
+    }
+
+    const settings = await HackathonSetting.getOrCreateSettings();
+
+    // Idempotency: If already paid & confirmed
+    if (team.paymentStatus === 'PAID' && team.status === 'CONFIRMED') {
+      return res.status(200).json({
+        success: true,
+        message: 'Participation already confirmed.',
+        team: {
+          teamId: team.teamId,
+          status: team.status,
+          paymentStatus: team.paymentStatus,
+          confirmedAt: team.confirmedAt,
+        },
+        whatsAppLink: settings.whatsAppLink,
+      });
+    }
+
+    // Update payment record
+    payment.status = 'PAID';
+    payment.paymentId = razorpay_payment_id;
+    payment.signature = razorpay_signature;
+    payment.paidAt = new Date();
+    await payment.save();
+
+    // Update team to CONFIRMED
+    const previousStatus = team.status;
+    team.paymentStatus = 'PAID';
+    team.status = 'CONFIRMED';
+    team.confirmedAt = new Date();
+    team.confirmationSource = 'PAYMENT';
+    team.paymentDetails = {
+      amount: payment.amount,
+      currency: payment.currency,
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      paidAt: payment.paidAt,
+      paymentMethod: 'RAZORPAY',
+      razorpaySignature: razorpay_signature,
+    };
+    await team.save();
+
+    // Audit logs
+    await HackathonAuditLog.log({
+      actorId: String(payment.leaderId || team.leader.email),
+      actorName: team.leader.name,
+      actorEmail: team.leader.email,
+      role: 'participant',
+      action: 'PAYMENT_VERIFIED',
+      targetEntity: 'HackathonPayment',
+      targetId: razorpay_order_id,
+      reason: `Verified ₹${payment.amount} payment (Payment ID: ${razorpay_payment_id})`,
+      req,
+    });
+
+    await HackathonAuditLog.log({
+      actorId: String(payment.leaderId || team.leader.email),
+      actorName: team.leader.name,
+      actorEmail: team.leader.email,
+      role: 'participant',
+      action: 'TEAM_CONFIRMED',
+      targetEntity: 'HackathonTeam',
+      targetId: team.teamId,
+      previousState: { status: previousStatus, paymentStatus: 'PENDING' },
+      newState: { status: 'CONFIRMED', paymentStatus: 'PAID' },
+      reason: 'Team confirmed participation upon successful payment',
+      req,
+    });
+
+    await HackathonAuditLog.log({
+      actorId: 'SYSTEM',
+      actorName: 'System',
+      actorEmail: 'system@code-a-nova.online',
+      role: 'system',
+      action: 'WHATSAPP_ACCESS_UNLOCKED',
+      targetEntity: 'HackathonTeam',
+      targetId: team.teamId,
+      reason: 'Official WhatsApp group link unlocked for confirmed team',
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Participation successfully confirmed! WhatsApp community access unlocked.',
+      team: {
+        teamId: team.teamId,
+        teamName: team.teamName,
+        status: team.status,
+        paymentStatus: team.paymentStatus,
+        confirmedAt: team.confirmedAt,
+        paymentDetails: team.paymentDetails,
+      },
+      whatsAppLink: settings.whatsAppLink,
+    });
+  } catch (error) {
+    console.error('verifyPayment Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Payment verification failed: ' + error.message,
+    });
+  }
+};
+
+/**
+ * 19. Payment Webhook: Secure, Idempotent Gateway Event Handler
+ * PRD Step 10: Handles asynchronous gateway webhooks (order.paid / payment.captured)
+ */
+exports.handlePaymentWebhook = async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+
+    if (!signature || !webhookSecret) {
+      return res.status(400).json({ success: false, message: 'Missing webhook signature or secret.' });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      console.warn('Hackathon Webhook signature mismatch.');
+      return res.status(400).json({ success: false, message: 'Invalid webhook signature.' });
+    }
+
+    const event = req.body.event;
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = req.body.payload?.payment?.entity;
+      const orderId = paymentEntity?.order_id;
+      const paymentId = paymentEntity?.id;
+      const amount = (paymentEntity?.amount || 0) / 100;
+
+      if (orderId) {
+        let payment = await HackathonPayment.findOne({ orderId });
+        let teamId = payment?.teamId || paymentEntity?.notes?.teamId;
+
+        if (teamId) {
+          const team = await HackathonTeam.findOne({ teamId });
+          if (team) {
+            // Idempotency: Ignore if already marked confirmed & paid
+            if (team.paymentStatus === 'PAID' && team.status === 'CONFIRMED') {
+              return res.status(200).json({
+                success: true,
+                message: 'Already confirmed via direct client verification.',
+              });
+            }
+
+            if (payment) {
+              payment.status = 'PAID';
+              payment.paymentId = paymentId;
+              payment.paidAt = new Date();
+              payment.webhookReceived = true;
+              payment.webhookPayload = req.body;
+              await payment.save();
+            }
+
+            team.paymentStatus = 'PAID';
+            team.status = 'CONFIRMED';
+            team.confirmedAt = new Date();
+            team.confirmationSource = 'WEBHOOK';
+            team.paymentDetails = {
+              amount,
+              currency: 'INR',
+              orderId,
+              paymentId,
+              paidAt: new Date(),
+              paymentMethod: 'RAZORPAY',
+            };
+            await team.save();
+
+            await HackathonAuditLog.log({
+              actorId: 'GATEWAY_WEBHOOK',
+              actorName: 'Razorpay Webhook',
+              actorEmail: 'webhook@razorpay.com',
+              role: 'system',
+              action: 'PAYMENT_WEBHOOK_RECEIVED',
+              targetEntity: 'HackathonPayment',
+              targetId: orderId,
+              reason: `Webhook event "${event}" processed for order ${orderId}`,
+              req,
+            });
+
+            await HackathonAuditLog.log({
+              actorId: 'SYSTEM',
+              actorName: 'System',
+              actorEmail: 'system@code-a-nova.online',
+              role: 'system',
+              action: 'TEAM_CONFIRMED',
+              targetEntity: 'HackathonTeam',
+              targetId: team.teamId,
+              reason: `Team confirmed participation via gateway webhook (${event})`,
+              req,
+            });
+          }
+        }
+      }
+    }
+
+    res.status(200).json({ success: true, message: 'Webhook processed successfully.' });
+  } catch (error) {
+    console.error('handlePaymentWebhook Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Webhook processing error: ' + error.message,
+    });
+  }
+};
+
 
 

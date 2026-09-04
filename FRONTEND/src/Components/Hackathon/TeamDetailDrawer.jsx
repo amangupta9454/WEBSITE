@@ -33,6 +33,9 @@ import {
   Mail,
   Layers,
   Save,
+  CreditCard,
+  Send,
+  Loader2,
 } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5006";
@@ -197,6 +200,7 @@ export default function TeamDetailDrawer({
           ...prev,
           status: "SHORTLISTED",
           shortlistedAt: res.data.team?.shortlistedAt,
+          shortlistEmailStatus: res.data.team?.shortlistEmailStatus || prev.shortlistEmailStatus,
         }));
         if (onTeamUpdated) onTeamUpdated();
       }
@@ -205,6 +209,34 @@ export default function TeamDetailDrawer({
       toast.error(err.response?.data?.message || "Failed to shortlist team");
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const [resendingEmail, setResendingEmail] = useState(false);
+
+  const handleResendShortlistEmail = async () => {
+    try {
+      setResendingEmail(true);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/teams/${team.teamId}/resend-shortlist-email`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message || "Shortlist notification email sent successfully!");
+        setTeam((prev) => ({
+          ...prev,
+          shortlistEmailStatus: "SENT",
+          shortlistEmailError: null,
+        }));
+        if (onTeamUpdated) onTeamUpdated();
+      }
+    } catch (err) {
+      console.error("handleResendShortlistEmail error:", err);
+      toast.error(err.response?.data?.message || "Failed to resend shortlist email");
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -415,6 +447,120 @@ export default function TeamDetailDrawer({
                     Reject Team
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* PHASE 4: PARTICIPATION CONFIRMATION & PAYMENT DETAILS */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-emerald-600" />
+                    Participation & ₹49 Payment Details (Phase 4)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Status of team participation fee, confirmation timestamp, and leader shortlist email dispatch.
+                  </p>
+                </div>
+                {team.status === "SHORTLISTED" && (
+                  <button
+                    type="button"
+                    disabled={resendingEmail}
+                    onClick={handleResendShortlistEmail}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {resendingEmail ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Resend Shortlist Email</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Status</div>
+                  <div className="text-xs font-black">
+                    {team.paymentStatus === "PAID" ? (
+                      <span className="text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Paid (₹49)
+                      </span>
+                    ) : team.paymentStatus === "FAILED" ? (
+                      <span className="text-rose-600 flex items-center gap-1">
+                        <XCircle className="w-3.5 h-3.5" /> Failed
+                      </span>
+                    ) : team.status === "SHORTLISTED" ? (
+                      <span className="text-amber-600 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> Due (₹49)
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">{team.paymentStatus || "NOT_REQUIRED"}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Shortlist Email</div>
+                  <div className="text-xs font-bold">
+                    {team.shortlistEmailStatus === "SENT" ? (
+                      <span className="text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Sent
+                      </span>
+                    ) : team.shortlistEmailStatus === "FAILED" ? (
+                      <span className="text-rose-600 flex items-center gap-1" title={team.shortlistEmailError}>
+                        <AlertTriangle className="w-3.5 h-3.5" /> Delivery Failed
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">Not Sent</span>
+                    )}
+                  </div>
+                  {team.shortlistEmailError && (
+                    <div className="text-[10px] text-rose-500 truncate" title={team.shortlistEmailError}>
+                      {team.shortlistEmailError}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Order ID</div>
+                  <div className="text-xs font-mono font-semibold text-slate-700 truncate" title={team.paymentOrderId || "—"}>
+                    {team.paymentOrderId || "—"}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment ID</div>
+                  <div className="text-xs font-mono font-semibold text-slate-700 truncate" title={team.paymentId || "—"}>
+                    {team.paymentId || "—"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-2 pt-1 border-t border-slate-100">
+                <div>
+                  {team.confirmedAt ? (
+                    <span>
+                      Confirmed on: <strong className="text-slate-700">{new Date(team.confirmedAt).toLocaleString()}</strong>
+                    </span>
+                  ) : (
+                    <span>Participation confirmation: <strong className="text-amber-600">Pending</strong></span>
+                  )}
+                </div>
+                <div>
+                  WhatsApp Access:{" "}
+                  {team.status === "CONFIRMED" || team.paymentStatus === "PAID" ? (
+                    <span className="font-bold text-emerald-600">Unlocked</span>
+                  ) : (
+                    <span className="font-medium text-slate-400">Locked until ₹49 payment</span>
+                  )}
+                </div>
               </div>
             </div>
 

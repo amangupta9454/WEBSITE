@@ -16,7 +16,7 @@ const hackathonAuditLogSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'editorial', 'judge', 'system'],
+      enum: ['admin', 'editorial', 'judge', 'system', 'participant'],
       default: 'admin',
     },
     action: {
@@ -27,7 +27,7 @@ const hackathonAuditLogSchema = new mongoose.Schema(
     targetEntity: {
       type: String,
       required: true,
-      enum: ['HackathonSetting', 'HackathonTeam', 'HackathonSubmission', 'Evaluation', 'General'],
+      enum: ['HackathonSetting', 'HackathonTeam', 'HackathonPayment', 'HackathonSubmission', 'Evaluation', 'General'],
       default: 'General',
       index: true,
     },

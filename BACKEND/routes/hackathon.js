@@ -25,6 +25,10 @@ const {
   deleteAdminTeam,
   updateTeamReview,
   updateTeamStatus,
+  resendShortlistEmail,
+  createPaymentOrder,
+  verifyPayment,
+  handlePaymentWebhook,
 } = require('../controllers/hackathonController');
 
 /**
@@ -38,6 +42,13 @@ router.get('/info', getPublicHackathonInfo);
 router.get('/my-team', auth, getMyTeam);
 
 /**
+ * Phase 4: Participant Payment Routes
+ */
+router.post('/payment/create-order', auth, createPaymentOrder);
+router.post('/payment/verify', auth, verifyPayment);
+router.post('/payment/webhook', handlePaymentWebhook);
+
+/**
  * Admin Hackathon Management Workspace Routes
  */
 router.get('/admin/overview', auth, verifyAdmin, getAdminOverview);
@@ -47,7 +58,7 @@ router.get('/admin/audit-logs', auth, verifyAdmin, getAdminAuditLogs);
 router.get('/admin/teams', auth, verifyAdmin, getAdminTeams);
 
 /**
- * Phase 3: Admin Team Management & Review Routes
+ * Phase 3 & 4: Admin Team Management & Review Routes
  */
 router.get('/admin/teams/:id', auth, verifyAdmin, getAdminTeamById);
 router.post('/admin/teams', auth, verifyAdmin, createManualTeam);
@@ -55,6 +66,7 @@ router.put('/admin/teams/:id', auth, verifyAdmin, updateAdminTeam);
 router.delete('/admin/teams/:id', auth, verifyAdmin, deleteAdminTeam);
 router.put('/admin/teams/:id/review', auth, verifyAdmin, updateTeamReview);
 router.put('/admin/teams/:id/status', auth, verifyAdmin, updateTeamStatus);
+router.post('/admin/teams/:id/resend-shortlist-email', auth, verifyAdmin, resendShortlistEmail);
 
 /**
  * Phase 2: Unstop Excel Import Routes
