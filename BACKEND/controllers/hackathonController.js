@@ -676,6 +676,70 @@ exports.previewUnstopExcel = async (req, res) => {
       } catch (e) {}
     }
 
+    const requestedType = req.body.importType || null;
+    const detectedType = unstopParserService.detectImportType(sheetData.headers, requestedType);
+
+    if (detectedType === 'REGISTRATION') {
+      const preview = await unstopParserService.generateRegistrationImportPreview({
+        sheetData,
+        customMapping,
+      });
+
+      return res.status(200).json({
+        success: true,
+        importType: 'REGISTRATION',
+        filename: originalName,
+        sheetNames,
+        activeSheet: sheetData.sheetName,
+        headers: sheetData.headers,
+        mappedColumns: sheetData.mappedColumns,
+        stats: {
+          totalRows: preview.totalRows,
+          totalTeams: preview.totalTeams,
+          newTeamsCount: preview.newTeamsCount,
+          updatedTeamsCount: preview.updatedTeamsCount,
+          newMembersCount: preview.newMembersCount,
+          updatedMembersCount: preview.updatedMembersCount,
+          invalidCount: preview.invalidCount,
+          newCount: preview.newTeamsCount,
+          duplicateCount: preview.updatedTeamsCount,
+          validToImportCount: preview.newTeamsCount + preview.updatedTeamsCount,
+        },
+        previewTeams: preview.previewTeams,
+        previewRows: preview.previewRows,
+      });
+    }
+
+    if (detectedType === 'PPT') {
+      const preview = await unstopParserService.generatePptImportPreview({
+        sheetData,
+        customMapping,
+      });
+
+      return res.status(200).json({
+        success: true,
+        importType: 'PPT',
+        filename: originalName,
+        sheetNames,
+        activeSheet: sheetData.sheetName,
+        headers: sheetData.headers,
+        mappedColumns: sheetData.mappedColumns,
+        stats: {
+          totalRows: preview.totalRows,
+          matchedCount: preview.matchedCount,
+          newPptCount: preview.newPptCount,
+          updatedPptCount: preview.updatedPptCount,
+          unmatchedCount: preview.unmatchedCount,
+          ambiguousCount: preview.ambiguousCount,
+          newCount: preview.newPptCount,
+          duplicateCount: preview.updatedPptCount,
+          validToImportCount: preview.matchedCount,
+        },
+        previewRows: preview.previewRows,
+      });
+    }
+
+    // Standard fallback / Legacy Phase 2 preview
     const preview = await unstopParserService.generateImportPreview({
       sheetData,
       customMapping,
@@ -683,6 +747,7 @@ exports.previewUnstopExcel = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      importType: 'LEGACY',
       filename: originalName,
       sheetNames,
       activeSheet: sheetData.sheetName,
@@ -712,17 +777,97 @@ exports.previewUnstopExcel = async (req, res) => {
  */
 exports.commitUnstopImport = async (req, res) => {
   try {
-    const { rows, duplicateHandling = 'SKIP', filename = 'unstop_export.xlsx' } = req.body;
+    const {
+      rows,
+      previewTeams,
+      importType = 'LEGACY',
+      duplicateHandling = 'UPDATE',
+      filename = 'unstop_export.xlsx',
+    } = req.body;
 
-    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+    const dataToImport = previewTeams || rows;
+
+    if (!dataToImport || !Array.isArray(dataToImport) || dataToImport.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No row data provided for import.',
+        message: 'No data provided for import.',
       });
     }
 
+    // 1. Stage 1: Registration Import
+    if (importType === 'REGISTRATION') {
+      const result = await unstopParserService.commitRegistrationImport({
+        teamsToImport: dataToImport,
+        duplicateHandling,
+      });
+
+      await HackathonAuditLog.log({
+        actorId: req.admin?._id || req.admin?.id || 'admin',
+        actorName: req.admin?.name || req.admin?.username || 'Admin',
+        actorEmail: req.admin?.email || '',
+        role: 'admin',
+        action: 'UNSTOP_REGISTRATION_IMPORT',
+        targetEntity: 'HackathonTeam',
+        reason: `Registration import from "${filename}": ${result.teamsCreated} teams created, ${result.teamsUpdated} teams updated, ${result.membersCreated} members created, ${result.membersUpdated} members updated.`,
+        newState: {
+          filename,
+          importType: 'REGISTRATION',
+          totalTeamsProcessed: result.totalTeamsProcessed,
+          teamsCreated: result.teamsCreated,
+          teamsUpdated: result.teamsUpdated,
+          membersCreated: result.membersCreated,
+          membersUpdated: result.membersUpdated,
+          failedCount: result.failedCount,
+        },
+        req,
+      });
+
+      return res.status(200).json({
+        success: true,
+        importType: 'REGISTRATION',
+        message: `Registration import complete: ${result.teamsCreated} teams created, ${result.teamsUpdated} teams updated, ${result.membersCreated} members created, ${result.membersUpdated} members updated.`,
+        result,
+      });
+    }
+
+    // 2. Stage 2: PPT Round Import
+    if (importType === 'PPT') {
+      const result = await unstopParserService.commitPptImport({
+        rowsToImport: dataToImport,
+      });
+
+      await HackathonAuditLog.log({
+        actorId: req.admin?._id || req.admin?.id || 'admin',
+        actorName: req.admin?.name || req.admin?.username || 'Admin',
+        actorEmail: req.admin?.email || '',
+        role: 'admin',
+        action: 'UNSTOP_PPT_IMPORT',
+        targetEntity: 'HackathonTeam',
+        reason: `PPT import from "${filename}": ${result.pptCreated} new PPT submissions attached, ${result.pptUpdated} PPT submissions updated. (${result.unmatchedSkipped} unmatched, ${result.ambiguousSkipped} ambiguous skipped)`,
+        newState: {
+          filename,
+          importType: 'PPT',
+          totalProcessed: result.totalProcessed,
+          pptCreated: result.pptCreated,
+          pptUpdated: result.pptUpdated,
+          unmatchedSkipped: result.unmatchedSkipped,
+          ambiguousSkipped: result.ambiguousSkipped,
+          failedCount: result.failedCount,
+        },
+        req,
+      });
+
+      return res.status(200).json({
+        success: true,
+        importType: 'PPT',
+        message: `PPT import complete: ${result.pptCreated} new PPT submissions attached, ${result.pptUpdated} PPT submissions updated. (${result.unmatchedSkipped} unmatched, ${result.ambiguousSkipped} ambiguous skipped)`,
+        result,
+      });
+    }
+
+    // 3. Fallback / Legacy Phase 2 commit
     const result = await unstopParserService.commitBatchImport({
-      rowsToImport: rows,
+      rowsToImport: dataToImport,
       duplicateHandling,
     });
 
@@ -749,6 +894,7 @@ exports.commitUnstopImport = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      importType: 'LEGACY',
       message: `Import complete: ${result.importedCount} imported, ${result.skippedCount} skipped, ${result.updatedCount} updated, ${result.failedCount} failed.`,
       result,
     });

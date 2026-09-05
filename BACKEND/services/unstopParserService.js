@@ -851,3 +851,830 @@ exports.commitBatchImport = async ({
     failedRows,
   };
 };
+
+/**
+ * Detect Import Type based on headers or explicit request
+ */
+function detectImportType(headers, requestedType = null) {
+  if (requestedType && (requestedType === 'REGISTRATION' || requestedType === 'PPT')) {
+    return requestedType;
+  }
+  const normHeaders = headers.map((h) => normalizeHeader(h));
+
+  const isPpt = normHeaders.some(
+    (h) =>
+      h.includes('report url') ||
+      h.includes('ppt pdf url') ||
+      h.includes('ppt url') ||
+      h.includes('team name candidate name') ||
+      h.includes('team leader email candidate email') ||
+      h.includes('round 1 submission') ||
+      h.includes('round 1 score') ||
+      h.includes('submission file') ||
+      h.includes('pitch deck') ||
+      h.includes('presentation link')
+  );
+  if (isPpt) return 'PPT';
+
+  const isRegistration = normHeaders.some(
+    (h) =>
+      h.includes('candidate role') ||
+      h.includes('specialization') ||
+      h.includes('course duration') ||
+      h.includes('ref code') ||
+      h.includes('registration time') ||
+      h.includes('year of graduation') ||
+      h.includes('candidate id')
+  );
+  if (isRegistration) return 'REGISTRATION';
+
+  return 'LEGACY';
+}
+exports.detectImportType = detectImportType;
+
+/**
+ * STAGE 1 — REGISTRATION IMPORT PREVIEW
+ * Master source for Teams + Multiple Members grouped by Team ID.
+ */
+exports.generateRegistrationImportPreview = async ({ sheetData, customMapping = {} }) => {
+  const { rawRows } = sheetData;
+  const candidateRows = [];
+
+  for (const rawRow of rawRows) {
+    const { rowIndex, rawObj } = rawRow;
+
+    // Helper to retrieve value by matching column names (exact match first)
+    const getVal = (fieldKeys) => {
+      // 1. Exact match first
+      for (const [hdr, val] of Object.entries(rawObj)) {
+        const normH = normalizeHeader(hdr);
+        for (const key of fieldKeys) {
+          if (normH === key) {
+            return cleanString(val);
+          }
+        }
+      }
+      // 2. Substring fallback
+      for (const [hdr, val] of Object.entries(rawObj)) {
+        const normH = normalizeHeader(hdr);
+        for (const key of fieldKeys) {
+          if (normH.includes(key)) {
+            return cleanString(val);
+          }
+        }
+      }
+      return '';
+    };
+
+    const teamId = cleanString(getVal(['team id', 'unstop id', 'application id', 'registration id', 'reg id', 'app id']));
+    const teamName = cleanString(getVal(['team name', 'team', 'group name']));
+    const candidateRole = cleanString(getVal(['candidate role', 'role', 'team role', 'member role']));
+    const candidateName = cleanString(getVal(['candidate name', 'participant name', 'name', 'full name']));
+    const candidateEmail = cleanEmail(getVal(['candidate email', 'email id', 'email address', 'email']));
+    const candidateMobile = cleanPhone(getVal(['candidate mobile', 'mobile', 'phone', 'contact']));
+    const candidateGender = cleanString(getVal(['candidate gender', 'gender', 'sex']));
+    const candidateLocation = cleanString(getVal(['candidate location', 'location', 'city', 'state']));
+    const userType = cleanString(getVal(['user type', 'type of user']));
+    const domain = cleanString(getVal(['domain', 'track', 'theme', 'preferred track']));
+    const course = cleanString(getVal(['course', 'degree', 'program']));
+    const specialization = cleanString(getVal(['specialization', 'branch', 'department']));
+    const courseType = cleanString(getVal(['course type']));
+    const courseDuration = cleanString(getVal(['course duration']));
+    const classGrade = cleanString(getVal(['class grade', 'class', 'grade', 'year of study']));
+    const yearOfGraduation = cleanString(getVal(['year of graduation', 'graduation year', 'yog', 'passing year']));
+    const candidateOrganisation = cleanString(getVal(['candidate organisation', 'candidate organization', 'college', 'university', 'organisation', 'organization', 'institution']));
+    const designation = cleanString(getVal(['designation', 'occupation']));
+    const registrationTime = getVal(['registration time', 'registered at', 'registered on', 'registration date', 'timestamp']);
+    const workExperience = cleanString(getVal(['work experience', 'experience']));
+    const registrationStatus = cleanString(getVal(['registration status', 'reg status']));
+    const refCode = cleanString(getVal(['ref code', 'referral code', 'refcode']));
+
+    candidateRows.push({
+      rowIndex,
+      teamId: teamId || 'UNKNOWN_TEAM',
+      teamName: teamName || 'Untitled Team',
+      candidateRole,
+      candidateName,
+      candidateEmail,
+      candidateMobile,
+      candidateGender,
+      candidateLocation,
+      userType,
+      domain,
+      course,
+      specialization,
+      courseType,
+      courseDuration,
+      classGrade,
+      yearOfGraduation,
+      candidateOrganisation,
+      designation,
+      registrationTime: registrationTime ? new Date(registrationTime) : null,
+      workExperience,
+      registrationStatus,
+      refCode,
+      rawObj,
+    });
+  }
+
+  // Group candidates by Team ID (or fallback to Team Name)
+  const teamGroups = new Map();
+  candidateRows.forEach((cand) => {
+    const groupKey = cand.teamId && cand.teamId !== 'UNKNOWN_TEAM'
+      ? cand.teamId.toUpperCase()
+      : cand.teamName.toLowerCase();
+
+    if (!teamGroups.has(groupKey)) {
+      teamGroups.set(groupKey, []);
+    }
+    teamGroups.get(groupKey).push(cand);
+  });
+
+  // Batch query database for existing teams
+  const allTeamIds = Array.from(teamGroups.keys());
+  const allCandidateEmails = candidateRows.map((c) => c.candidateEmail).filter(Boolean);
+
+  const existingTeamsDb = await HackathonTeam.find({
+    $or: [
+      { unstopApplicationId: { $in: allTeamIds } },
+      { teamId: { $in: allTeamIds } },
+      { 'leader.email': { $in: allCandidateEmails } },
+    ],
+    isDeleted: { $ne: true },
+  }).lean();
+
+  const existingByUnstopId = new Map();
+  const existingByTeamId = new Map();
+  const existingByLeaderEmail = new Map();
+
+  existingTeamsDb.forEach((t) => {
+    if (t.unstopApplicationId) existingByUnstopId.set(t.unstopApplicationId.toUpperCase(), t);
+    if (t.teamId) existingByTeamId.set(t.teamId.toUpperCase(), t);
+    if (t.leader?.email) existingByLeaderEmail.set(t.leader.email.toLowerCase(), t);
+  });
+
+  const previewTeams = [];
+  let newTeamsCount = 0;
+  let updatedTeamsCount = 0;
+  let newMembersCount = 0;
+  let updatedMembersCount = 0;
+  let invalidCount = 0;
+
+  for (const [groupKey, candidates] of teamGroups.entries()) {
+    // Identify Team Leader: Candidate Role contains 'leader' or first candidate in team
+    let leaderCand = candidates.find((c) => /leader/i.test(c.candidateRole));
+    if (!leaderCand) {
+      leaderCand = candidates[0];
+    }
+    const memberCands = candidates.filter((c) => c !== leaderCand);
+
+    const teamId = leaderCand.teamId !== 'UNKNOWN_TEAM' ? leaderCand.teamId : '';
+    const teamName = leaderCand.teamName;
+    const domain = leaderCand.domain || candidates.find((c) => c.domain)?.domain || '';
+    const regTime = leaderCand.registrationTime || candidates.find((c) => c.registrationTime)?.registrationTime || null;
+    const regStatus = leaderCand.registrationStatus || candidates.find((c) => c.registrationStatus)?.registrationStatus || '';
+
+    // Check if team already exists in DB
+    const existingTeam =
+      (teamId && existingByUnstopId.get(teamId.toUpperCase())) ||
+      (teamId && existingByTeamId.get(teamId.toUpperCase())) ||
+      (leaderCand.candidateEmail && existingByLeaderEmail.get(leaderCand.candidateEmail));
+
+    let status = 'NEW';
+    let existingTeamRef = null;
+    const errors = [];
+
+    if (!teamName || teamName === 'Untitled Team') errors.push('Missing Team Name');
+    if (!leaderCand.candidateEmail) errors.push('Missing Leader Email');
+    else if (!isValidEmail(leaderCand.candidateEmail)) errors.push(`Invalid Leader Email format: ${leaderCand.candidateEmail}`);
+
+    let teamNewMembers = 0;
+    let teamUpdatedMembers = 0;
+
+    if (errors.length > 0) {
+      status = 'INVALID';
+      invalidCount++;
+    } else if (existingTeam) {
+      status = 'EXISTING_UPDATE';
+      updatedTeamsCount++;
+      existingTeamRef = {
+        teamId: existingTeam.teamId,
+        teamName: existingTeam.teamName,
+        unstopApplicationId: existingTeam.unstopApplicationId,
+      };
+
+      const existingMemberEmails = new Set(
+        (existingTeam.members || []).map((m) => cleanEmail(m.email))
+      );
+      memberCands.forEach((m) => {
+        if (existingMemberEmails.has(cleanEmail(m.candidateEmail))) {
+          updatedMembersCount++;
+          teamUpdatedMembers++;
+        } else {
+          newMembersCount++;
+          teamNewMembers++;
+        }
+      });
+    } else {
+      status = 'NEW';
+      newTeamsCount++;
+      newMembersCount += memberCands.length;
+      teamNewMembers = memberCands.length;
+    }
+
+    previewTeams.push({
+      status,
+      unstopApplicationId: teamId,
+      teamName,
+      domain,
+      track: domain || 'General Track',
+      registrationTime: regTime,
+      registrationStatus: regStatus,
+      leader: {
+        name: leaderCand.candidateName,
+        email: leaderCand.candidateEmail,
+        mobile: leaderCand.candidateMobile,
+        gender: leaderCand.candidateGender,
+        location: leaderCand.candidateLocation,
+        college: leaderCand.candidateOrganisation,
+        state: leaderCand.candidateLocation,
+        userType: leaderCand.userType,
+        domain: leaderCand.domain,
+        course: leaderCand.course,
+        specialization: leaderCand.specialization,
+        courseType: leaderCand.courseType,
+        courseDuration: leaderCand.courseDuration,
+        classGrade: leaderCand.classGrade,
+        yearOfGraduation: leaderCand.yearOfGraduation,
+        organisation: leaderCand.candidateOrganisation,
+        designation: leaderCand.designation,
+        workExperience: leaderCand.workExperience,
+        refCode: leaderCand.refCode,
+        role: 'Team Leader',
+      },
+      members: memberCands.map((m) => ({
+        name: m.candidateName,
+        email: m.candidateEmail,
+        mobile: m.candidateMobile,
+        gender: m.candidateGender,
+        location: m.candidateLocation,
+        college: m.candidateOrganisation,
+        state: m.candidateLocation,
+        userType: m.userType,
+        domain: m.domain,
+        course: m.course,
+        specialization: m.specialization,
+        courseType: m.courseType,
+        courseDuration: m.courseDuration,
+        classGrade: m.classGrade,
+        yearOfGraduation: m.yearOfGraduation,
+        organisation: m.candidateOrganisation,
+        designation: m.designation,
+        workExperience: m.workExperience,
+        refCode: m.refCode,
+        role: m.candidateRole || 'Team Member',
+      })),
+      totalMembersInSheet: candidates.length,
+      memberDiff: {
+        newCount: teamNewMembers,
+        updatedCount: teamUpdatedMembers,
+        totalCount: memberCands.length,
+      },
+      existingTeamRef,
+      errors,
+    });
+  }
+
+  return {
+    importType: 'REGISTRATION',
+    totalRows: candidateRows.length,
+    totalTeams: previewTeams.length,
+    newTeamsCount,
+    updatedTeamsCount,
+    newCount: newTeamsCount,
+    existingUpdateCount: updatedTeamsCount,
+    newMembersCount,
+    updatedMembersCount,
+    totalNewMembers: newMembersCount,
+    totalUpdatedMembers: updatedMembersCount,
+    teamsToImportCount: newTeamsCount + updatedTeamsCount,
+    validToImportCount: newTeamsCount + updatedTeamsCount,
+    invalidCount,
+    teams: previewTeams,
+    previewTeams,
+    previewRows: previewTeams.map((t, idx) => ({
+      rowIndex: idx + 1,
+      status: t.status === 'EXISTING_UPDATE' ? 'UPDATE' : t.status,
+      teamName: t.teamName,
+      unstopApplicationId: t.unstopApplicationId,
+      track: t.track,
+      leader: t.leader,
+      membersCount: t.members.length,
+      members: t.members,
+      errors: t.errors,
+      existingTeamRef: t.existingTeamRef,
+    })),
+  };
+};
+
+/**
+ * STAGE 1 — REGISTRATION IMPORT COMMIT
+ */
+exports.commitRegistrationImport = async ({ teamsToImport, duplicateHandling = 'UPDATE' }) => {
+  let teamsCreated = 0;
+  let teamsUpdated = 0;
+  let membersCreated = 0;
+  let membersUpdated = 0;
+  let failedCount = 0;
+  const failedRows = [];
+
+  for (const item of teamsToImport) {
+    try {
+      if (item.status === 'INVALID' || (item.errors && item.errors.length > 0)) {
+        failedCount++;
+        failedRows.push({
+          teamName: item.teamName,
+          reason: item.errors?.join(', ') || 'Validation error',
+        });
+        continue;
+      }
+
+      // Check if team already exists by unstopApplicationId, existing teamId, or leader email
+      const existing = await HackathonTeam.findOne({
+        $or: [
+          ...(item.unstopApplicationId ? [{ unstopApplicationId: item.unstopApplicationId }] : []),
+          ...(item.existingTeamRef?.teamId ? [{ teamId: item.existingTeamRef.teamId.toUpperCase() }] : []),
+          ...(item.leader?.email ? [{ 'leader.email': item.leader.email.toLowerCase() }] : []),
+        ],
+        isDeleted: { $ne: true },
+      });
+
+      if (existing) {
+        // UPDATE Existing Team
+        existing.teamName = item.teamName || existing.teamName;
+        existing.domain = item.domain || existing.domain;
+        if (item.track) existing.track = item.track;
+        if (item.registrationTime) existing.registrationTime = item.registrationTime;
+        if (item.registrationStatus) existing.registrationStatus = item.registrationStatus;
+
+        if (item.leader) {
+          existing.leader.name = item.leader.name || existing.leader.name;
+          existing.leader.mobile = item.leader.mobile || existing.leader.mobile;
+          existing.leader.college = item.leader.college || existing.leader.college;
+          existing.leader.state = item.leader.state || existing.leader.state;
+          existing.leader.gender = item.leader.gender || existing.leader.gender;
+          existing.leader.location = item.leader.location || existing.leader.location;
+          existing.leader.domain = item.leader.domain || existing.leader.domain;
+          existing.leader.course = item.leader.course || existing.leader.course;
+          existing.leader.specialization = item.leader.specialization || existing.leader.specialization;
+          existing.leader.yearOfGraduation = item.leader.yearOfGraduation || existing.leader.yearOfGraduation;
+          existing.leader.organisation = item.leader.organisation || existing.leader.organisation;
+          existing.leader.designation = item.leader.designation || existing.leader.designation;
+          existing.leader.workExperience = item.leader.workExperience || existing.leader.workExperience;
+          existing.leader.refCode = item.leader.refCode || existing.leader.refCode;
+        }
+
+        // Upsert members: match by email, update existing or append new
+        if (Array.isArray(item.members)) {
+          if (!Array.isArray(existing.members)) existing.members = [];
+          const existingEmails = new Set(existing.members.map((m) => cleanEmail(m.email)));
+
+          for (const incM of item.members) {
+            const mEmail = cleanEmail(incM.email);
+            if (existingEmails.has(mEmail)) {
+              // Update existing member fields
+              const targetMember = existing.members.find((m) => cleanEmail(m.email) === mEmail);
+              if (targetMember) {
+                targetMember.name = incM.name || targetMember.name;
+                targetMember.mobile = incM.mobile || targetMember.mobile;
+                targetMember.college = incM.college || targetMember.college;
+                targetMember.state = incM.state || targetMember.state;
+                targetMember.gender = incM.gender || targetMember.gender;
+                targetMember.location = incM.location || targetMember.location;
+                targetMember.domain = incM.domain || targetMember.domain;
+                targetMember.course = incM.course || targetMember.course;
+                targetMember.specialization = incM.specialization || targetMember.specialization;
+                targetMember.yearOfGraduation = incM.yearOfGraduation || targetMember.yearOfGraduation;
+                targetMember.organisation = incM.organisation || targetMember.organisation;
+                targetMember.designation = incM.designation || targetMember.designation;
+                targetMember.workExperience = incM.workExperience || targetMember.workExperience;
+                targetMember.refCode = incM.refCode || targetMember.refCode;
+                membersUpdated++;
+              }
+            } else {
+              // Add new member to existing team
+              existing.members.push(incM);
+              existingEmails.add(mEmail);
+              membersCreated++;
+            }
+          }
+        }
+
+        await existing.save();
+        teamsUpdated++;
+      } else {
+        // CREATE New Team
+        const teamId = await generateTeamId();
+        await HackathonTeam.create({
+          teamId,
+          unstopApplicationId: item.unstopApplicationId || '',
+          teamName: item.teamName,
+          domain: item.domain || '',
+          track: item.track || item.domain || 'General Track',
+          registrationTime: item.registrationTime || null,
+          registrationStatus: item.registrationStatus || '',
+          leader: item.leader,
+          members: item.members || [],
+          status: 'IMPORTED',
+          paymentStatus: 'NOT_REQUIRED',
+          source: 'UNSTOP_IMPORT',
+        });
+        teamsCreated++;
+        membersCreated += item.members?.length || 0;
+      }
+    } catch (err) {
+      console.error(`Error importing team ${item.teamName}:`, err);
+      failedCount++;
+      failedRows.push({
+        teamName: item.teamName,
+        reason: err.message,
+      });
+    }
+  }
+
+  return {
+    totalTeamsProcessed: teamsToImport.length,
+    teamsCreated,
+    teamsUpdated,
+    membersCreated,
+    membersUpdated,
+    createdCount: teamsCreated,
+    updatedCount: teamsUpdated,
+    membersAppended: membersCreated,
+    failedCount,
+    failedRows,
+  };
+};
+
+/**
+ * STAGE 2 — PPT ROUND IMPORT PREVIEW
+ * Enrichment only: matches existing teams via multi-tier hierarchy and attaches PPT.
+ * MUST NEVER CREATE A NEW TEAM.
+ */
+exports.generatePptImportPreview = async ({ sheetData, customMapping = {} }) => {
+  const { rawRows } = sheetData;
+
+  // 1. Fetch all active teams from DB
+  const activeTeams = await HackathonTeam.find({ isDeleted: { $ne: true } })
+    .select('teamId teamName unstopApplicationId leader members initialIdea pptSubmission track')
+    .lean();
+
+  const byUnstopId = new Map();
+  const byTeamId = new Map();
+  const byLeaderEmail = new Map();
+  const byMemberEmail = new Map();
+  const byNormalizedName = new Map();
+
+  activeTeams.forEach((team) => {
+    if (team.unstopApplicationId) {
+      const uId = team.unstopApplicationId.trim().toUpperCase();
+      if (!byUnstopId.has(uId)) byUnstopId.set(uId, []);
+      byUnstopId.get(uId).push(team);
+    }
+    if (team.teamId) {
+      const tId = team.teamId.trim().toUpperCase();
+      if (!byTeamId.has(tId)) byTeamId.set(tId, []);
+      byTeamId.get(tId).push(team);
+    }
+    if (team.leader?.email) {
+      const em = team.leader.email.trim().toLowerCase();
+      if (!byLeaderEmail.has(em)) byLeaderEmail.set(em, []);
+      byLeaderEmail.get(em).push(team);
+    }
+    if (Array.isArray(team.members)) {
+      team.members.forEach((m) => {
+        if (m.email) {
+          const em = m.email.trim().toLowerCase();
+          if (!byMemberEmail.has(em)) byMemberEmail.set(em, []);
+          byMemberEmail.get(em).push(team);
+        }
+      });
+    }
+    if (team.teamName) {
+      const normName = normalizeHeader(team.teamName);
+      if (normName) {
+        if (!byNormalizedName.has(normName)) byNormalizedName.set(normName, []);
+        byNormalizedName.get(normName).push(team);
+      }
+    }
+  });
+
+  const previewRows = [];
+  let matchedCount = 0;
+  let newPptCount = 0;
+  let updatedPptCount = 0;
+  let unmatchedCount = 0;
+  let ambiguousCount = 0;
+
+  for (const rawRow of rawRows) {
+    const { rowIndex, rawObj } = rawRow;
+
+    // Helper to retrieve value (exact match first)
+    const getVal = (keys) => {
+      // 1. Exact match first
+      for (const [hdr, val] of Object.entries(rawObj)) {
+        const normH = normalizeHeader(hdr);
+        for (const k of keys) {
+          if (normH === k) {
+            return cleanString(val);
+          }
+        }
+      }
+      // 2. Substring fallback
+      for (const [hdr, val] of Object.entries(rawObj)) {
+        const normH = normalizeHeader(hdr);
+        for (const k of keys) {
+          if (normH.includes(k)) {
+            return cleanString(val);
+          }
+        }
+      }
+      return '';
+    };
+
+    const regnId = cleanString(getVal(['regn id', 'registration id', 'unstop id', 'application id', 'team id']));
+    const teamNameRaw = cleanString(getVal(['team name candidate name', 'team name', 'team']));
+    const leaderEmailRaw = cleanEmail(getVal(['team leader email candidate email', 'team leader email', 'leader email']));
+    const candidateType = cleanString(getVal(['candidate type']));
+    const candidateName = cleanString(getVal(['candidate name', 'participant name', 'name']));
+    const candidateEmail = cleanEmail(getVal(['candidate email', 'email']));
+    const candidateMobile = cleanPhone(getVal(['candidate mobile', 'mobile', 'phone']));
+    const reportUrl = cleanUrl(getVal(['report url', 'report link', 'project report']));
+    const pptUrl = cleanUrl(
+      getVal([
+        'ppt pdf url',
+        'ppt url',
+        'ppt link',
+        'ppt',
+        'presentation link',
+        'round 1 submission',
+        'submission',
+        'round 1',
+        'submission file',
+        'pitch deck',
+      ])
+    );
+
+    // MATCHING PRIORITY HIERARCHY
+    let matchedTeams = [];
+    let matchStrategy = 'NONE';
+
+    // 1. Strongest identifier: Regn ID matches unstopApplicationId or teamId
+    if (regnId) {
+      const regnUpper = regnId.toUpperCase();
+      if (byUnstopId.has(regnUpper)) {
+        matchedTeams = byUnstopId.get(regnUpper);
+        matchStrategy = 'REGN_ID_UNSTOP';
+      } else if (byTeamId.has(regnUpper)) {
+        matchedTeams = byTeamId.get(regnUpper);
+        matchStrategy = 'REGN_ID_TEAM';
+      }
+    }
+
+    // 2. Team Leader Email -> existing Team leader
+    if (matchedTeams.length === 0 && leaderEmailRaw) {
+      if (byLeaderEmail.has(leaderEmailRaw)) {
+        matchedTeams = byLeaderEmail.get(leaderEmailRaw);
+        matchStrategy = 'LEADER_EMAIL';
+      }
+    }
+
+    // 3. Candidate Email -> existing Member -> that Member's teamId
+    if (matchedTeams.length === 0 && candidateEmail) {
+      if (byLeaderEmail.has(candidateEmail)) {
+        matchedTeams = byLeaderEmail.get(candidateEmail);
+        matchStrategy = 'CANDIDATE_AS_LEADER_EMAIL';
+      } else if (byMemberEmail.has(candidateEmail)) {
+        matchedTeams = byMemberEmail.get(candidateEmail);
+        matchStrategy = 'MEMBER_EMAIL';
+      }
+    }
+
+    // 4. Controlled fallback using normalized Team Name + candidate info
+    if (matchedTeams.length === 0 && teamNameRaw) {
+      const normTeamName = normalizeHeader(teamNameRaw);
+      if (byNormalizedName.has(normTeamName)) {
+        const potential = byNormalizedName.get(normTeamName);
+        matchedTeams = potential;
+        matchStrategy = potential.length === 1 ? 'TEAM_NAME_FALLBACK' : 'TEAM_NAME_AMBIGUOUS';
+      }
+    }
+
+    // Deduplicate matched teams by _id string
+    const uniqueMatchedMap = new Map();
+    matchedTeams.forEach((t) => uniqueMatchedMap.set(String(t._id), t));
+    const uniqueMatchedTeams = Array.from(uniqueMatchedMap.values());
+
+    let status = 'UNMATCHED';
+    let matchReason = '';
+    let matchedTeamInfo = null;
+
+    if (uniqueMatchedTeams.length > 1) {
+      status = 'AMBIGUOUS';
+      ambiguousCount++;
+      matchReason = `Needs Admin Review: Matches ${uniqueMatchedTeams.length} teams (${uniqueMatchedTeams.map((t) => t.teamId).join(', ')})`;
+    } else if (uniqueMatchedTeams.length === 0) {
+      status = 'UNMATCHED';
+      unmatchedCount++;
+      matchReason = 'No existing registered team found in database';
+    } else {
+      // Exactly 1 confident match
+      const targetTeam = uniqueMatchedTeams[0];
+      matchedTeamInfo = {
+        teamId: targetTeam.teamId,
+        teamName: targetTeam.teamName,
+        leaderName: targetTeam.leader?.name,
+        leaderEmail: targetTeam.leader?.email,
+        track: targetTeam.track,
+      };
+
+      const hasExistingPpt = Boolean(
+        targetTeam.initialIdea?.pptUrl || targetTeam.pptSubmission?.pptUrl
+      );
+
+      if (hasExistingPpt) {
+        status = 'UPDATE_PPT';
+        updatedPptCount++;
+        matchReason = `Matched team "${targetTeam.teamName}" (${targetTeam.teamId}) via ${matchStrategy} (Update existing PPT)`;
+      } else {
+        status = 'NEW_PPT';
+        newPptCount++;
+        matchReason = `Matched team "${targetTeam.teamName}" (${targetTeam.teamId}) via ${matchStrategy} (New PPT submission)`;
+      }
+      matchedCount++;
+    }
+
+    previewRows.push({
+      rowIndex,
+      status, // 'NEW_PPT', 'UPDATE_PPT', 'AMBIGUOUS', 'UNMATCHED'
+      regnId,
+      teamName: teamNameRaw,
+      leaderEmail: leaderEmailRaw,
+      candidateType,
+      candidateName,
+      candidateEmail,
+      candidateMobile,
+      reportUrl,
+      pptUrl: pptUrl || reportUrl,
+      matchStrategy,
+      matchReason,
+      matchedTeam: matchedTeamInfo,
+      ambiguousCandidates:
+        uniqueMatchedTeams.length > 1
+          ? uniqueMatchedTeams.map((t) => ({
+              teamId: t.teamId,
+              teamName: t.teamName,
+              leaderEmail: t.leader?.email,
+              college: t.leader?.college,
+            }))
+          : [],
+      ignoredFields: ['Status', 'Round 1 Score', 'Official Website Registration', 'WhatsApp Group Join'],
+      rawObj,
+    });
+  }
+
+  return {
+    importType: 'PPT',
+    totalRows: previewRows.length,
+    matchedCount,
+    newPptCount,
+    updatedPptCount,
+    updatePptCount: updatedPptCount,
+    unmatchedCount,
+    ambiguousCount,
+    validToImportCount: matchedCount,
+    rows: previewRows,
+    previewRows,
+  };
+};
+
+/**
+ * STAGE 2 — PPT ROUND IMPORT COMMIT
+ */
+exports.commitPptImport = async ({ rowsToImport }) => {
+  let pptCreated = 0;
+  let pptUpdated = 0;
+  let unmatchedSkipped = 0;
+  let ambiguousSkipped = 0;
+  let failedCount = 0;
+  const failedRows = [];
+
+  for (const row of rowsToImport) {
+    try {
+      if (row.status === 'UNMATCHED') {
+        unmatchedSkipped++;
+        continue;
+      }
+      if (row.status === 'AMBIGUOUS') {
+        ambiguousSkipped++;
+        continue;
+      }
+      if (!row.matchedTeam?.teamId && !row.matchedTeam?._id) {
+        failedCount++;
+        failedRows.push({
+          rowIndex: row.rowIndex,
+          reason: 'No matched team identifier provided',
+        });
+        continue;
+      }
+
+      const team = await HackathonTeam.findOne({
+        $or: [
+          ...(row.matchedTeam._id ? [{ _id: row.matchedTeam._id }] : []),
+          ...(row.matchedTeam.teamId ? [{ teamId: row.matchedTeam.teamId.toUpperCase() }] : []),
+          ...(row.matchedTeam.unstopApplicationId ? [{ unstopApplicationId: row.matchedTeam.unstopApplicationId }] : []),
+          ...(row.matchedTeam.leaderEmail ? [{ 'leader.email': row.matchedTeam.leaderEmail.toLowerCase() }] : []),
+        ],
+        isDeleted: { $ne: true },
+      });
+
+      if (!team) {
+        failedCount++;
+        failedRows.push({
+          rowIndex: row.rowIndex,
+          reason: `Team ${row.matchedTeam.teamId || row.matchedTeam.teamName} not found or is deleted`,
+        });
+        continue;
+      }
+
+      const effectivePptUrl = row.pptUrl || row.reportUrl || '';
+      const hadExistingPpt = Boolean(team.initialIdea?.pptUrl || team.pptSubmission?.pptUrl);
+
+      // Update initialIdea.pptUrl for downstream Phases 3-9
+      if (effectivePptUrl) {
+        if (!team.initialIdea) team.initialIdea = {};
+        team.initialIdea.pptUrl = effectivePptUrl;
+      }
+
+      // Update dedicated pptSubmission subdocument
+      team.pptSubmission = {
+        unstopRegnId: row.regnId || row.unstopApplicationId || '',
+        reportUrl: row.reportUrl || '',
+        pptUrl: effectivePptUrl,
+        candidateType: row.candidateType || '',
+        importedAt: new Date(),
+        round: 'round1',
+        source: 'unstop',
+        submittedBy: row.candidateName || row.leaderEmail || row.candidateEmail || '',
+      };
+
+      // Add to submittedLinks.otherLinks if not already present
+      if (effectivePptUrl) {
+        if (!team.submittedLinks) team.submittedLinks = {};
+        if (!Array.isArray(team.submittedLinks.otherLinks)) team.submittedLinks.otherLinks = [];
+        const existsInLinks = team.submittedLinks.otherLinks.some(
+          (l) => (typeof l === 'string' ? l : l?.url) === effectivePptUrl
+        );
+        if (!existsInLinks) {
+          team.submittedLinks.otherLinks.push(effectivePptUrl);
+        }
+      }
+
+      // If team rawUnstopData exists, merge ppt info
+      if (row.rawObj) {
+        team.rawUnstopData = {
+          ...(team.rawUnstopData || {}),
+          pptImportData: row.rawObj,
+        };
+      }
+
+      await team.save();
+
+      if (hadExistingPpt) {
+        pptUpdated++;
+      } else {
+        pptCreated++;
+      }
+    } catch (err) {
+      console.error(`Error committing PPT row ${row.rowIndex}:`, err);
+      failedCount++;
+      failedRows.push({
+        rowIndex: row.rowIndex,
+        reason: err.message,
+      });
+    }
+  }
+
+  return {
+    totalProcessed: rowsToImport.length,
+    pptCreated,
+    pptUpdated,
+    matchedCount: pptCreated + pptUpdated,
+    updatedCount: pptCreated + pptUpdated,
+    skippedCount: unmatchedSkipped + ambiguousSkipped,
+    unmatchedSkipped,
+    ambiguousSkipped,
+    failedCount,
+    failedRows,
+  };
+};
