@@ -1352,6 +1352,8 @@ export default function HackathonAdminWorkspace() {
   useEffect(() => {
     fetchOverview();
     fetchOpsData();
+    fetchEvaluations();
+    fetchResults();
   }, []);
 
   useEffect(() => {
@@ -1579,6 +1581,10 @@ export default function HackathonAdminWorkspace() {
               onClick={() => {
                 fetchOverview();
                 fetchOpsData();
+                fetchEvaluations();
+                fetchResults();
+                fetchTeams(1);
+                fetchSubmissions(1);
               }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all cursor-pointer"
             >
@@ -6797,6 +6803,12 @@ export default function HackathonAdminWorkspace() {
         onDeleted={() => {
           fetchTeams(teamsPage);
           fetchOverview();
+          fetchEvaluations();
+          fetchResults();
+          fetchSubmissions(1);
+          fetchCertificates(1);
+          fetchPrizeFulfillments();
+          fetchAssignments();
         }}
       />
     </div>

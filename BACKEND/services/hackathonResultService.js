@@ -227,6 +227,12 @@ class HackathonResultService {
     const allRanked = [...eligibleTeams, ...ineligibleTeams];
 
     // 7. Persist or Update into HackathonResult collection
+    // Automatically purge stale result records for teams that were deleted or no longer exist
+    await HackathonResult.deleteMany({
+      hackathonId,
+      teamId: { $nin: teamStringIds },
+    });
+
     const existingResults = await HackathonResult.find({ hackathonId }).lean();
     const existingMap = {};
     existingResults.forEach((ex) => {

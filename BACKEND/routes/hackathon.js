@@ -25,6 +25,7 @@ const {
   createManualTeam,
   updateAdminTeam,
   deleteAdminTeam,
+  cleanOrphanedRecords,
   updateTeamReview,
   updateTeamStatus,
   resendShortlistEmail,
@@ -153,6 +154,7 @@ router.get('/admin/teams/:id', auth, verifyAdmin, getAdminTeamById);
 router.post('/admin/teams', auth, verifyAdmin, createManualTeam);
 router.put('/admin/teams/:id', auth, verifyAdmin, updateAdminTeam);
 router.delete('/admin/teams/:id', auth, verifyAdmin, deleteAdminTeam);
+router.post('/admin/cleanup-orphaned', auth, verifyAdmin, cleanOrphanedRecords);
 router.put('/admin/teams/:id/review', auth, verifyAdmin, updateTeamReview);
 router.put('/admin/teams/:id/status', auth, verifyAdmin, updateTeamStatus);
 router.post('/admin/teams/:id/resend-shortlist-email', auth, verifyAdmin, resendShortlistEmail);

@@ -258,11 +258,88 @@ exports.getMyTeam = async (req, res) => {
 };
 
 /**
+ * Auto-cleanup: remove downstream records (evaluations, results, submissions, assignments,
+ * fulfillments, certificates, payments) belonging to deleted teams or non-existent teams.
+ */
+const cleanupOrphanedHackathonRecords = async () => {
+  try {
+    const deletedTeams = await HackathonTeam.find({ isDeleted: true }, { _id: 1, teamId: 1 }).lean();
+    const deletedIds = deletedTeams.map((t) => t._id);
+    const deletedTeamCodes = deletedTeams.map((t) => t.teamId).filter(Boolean);
+
+    const activeTeams = await HackathonTeam.find({ isDeleted: { $ne: true } }, { _id: 1, teamId: 1 }).lean();
+    const activeIds = activeTeams.map((t) => t._id);
+    const activeTeamCodes = activeTeams.map((t) => t.teamId).filter(Boolean);
+
+    // If there are NO active teams, all downstream records belong to deleted or non-existent teams
+    if (activeTeamCodes.length === 0) {
+      await Promise.allSettled([
+        HackathonSubmission.deleteMany({}),
+        HackathonEditorialAssignment.deleteMany({}),
+        HackathonEditorialEvaluation.deleteMany({}),
+        HackathonResult.deleteMany({}),
+        HackathonPrizeFulfillment.deleteMany({}),
+        HackathonCertificate.deleteMany({}),
+        HackathonPayment.deleteMany({}),
+      ]);
+      return;
+    }
+
+    // Otherwise, delete records matching deleted teams OR not present in active teams
+    const deleteCondition = {
+      $or: [
+        { team: { $in: deletedIds } },
+        { teamId: { $in: deletedTeamCodes } },
+        { teamId: { $nin: activeTeamCodes } },
+        { team: { $nin: activeIds } },
+      ],
+    };
+
+    await Promise.allSettled([
+      HackathonSubmission.deleteMany(deleteCondition),
+      HackathonEditorialAssignment.deleteMany(deleteCondition),
+      HackathonEditorialEvaluation.deleteMany(deleteCondition),
+      HackathonResult.deleteMany(deleteCondition),
+      HackathonPrizeFulfillment.deleteMany(deleteCondition),
+      HackathonCertificate.deleteMany(deleteCondition),
+      HackathonPayment.deleteMany({
+        $or: [
+          { teamId: { $in: deletedTeamCodes } },
+          { teamId: { $nin: activeTeamCodes } },
+        ],
+      }),
+    ]);
+  } catch (err) {
+    console.error('cleanupOrphanedHackathonRecords Error:', err);
+  }
+};
+exports.cleanupOrphanedHackathonRecords = cleanupOrphanedHackathonRecords;
+
+exports.cleanOrphanedRecords = async (req, res) => {
+  try {
+    await cleanupOrphanedHackathonRecords();
+    res.status(200).json({
+      success: true,
+      message: 'Orphaned hackathon records cleaned up successfully across all collections.',
+    });
+  } catch (error) {
+    console.error('cleanOrphanedRecords Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clean up orphaned records: ' + error.message,
+    });
+  }
+};
+
+/**
  * 3. Admin Overview Statistics
  * Live metrics for the Hackathon Admin Workspace
  */
 exports.getAdminOverview = async (req, res) => {
   try {
+    // Proactively clean up any orphaned records from previously deleted teams
+    await cleanupOrphanedHackathonRecords();
+
     const [
       totalTeams,
       pptSubmitted,
@@ -1006,6 +1083,27 @@ exports.deleteAdminTeam = async (req, res) => {
     team.deletedBy = req.admin?.name || req.admin?.username || 'Admin';
     await team.save();
 
+    // Cascade delete across all downstream entities for this team
+    const teamMatch = {
+      $or: [
+        { team: team._id },
+        { teamId: team.teamId },
+      ],
+    };
+
+    await Promise.allSettled([
+      HackathonSubmission.deleteMany(teamMatch),
+      HackathonEditorialAssignment.deleteMany(teamMatch),
+      HackathonEditorialEvaluation.deleteMany(teamMatch),
+      HackathonResult.deleteMany(teamMatch),
+      HackathonPrizeFulfillment.deleteMany(teamMatch),
+      HackathonCertificate.deleteMany(teamMatch),
+      HackathonPayment.deleteMany({ teamId: team.teamId }),
+    ]);
+
+    // Also run general orphaned cleanup to ensure total integrity
+    await cleanupOrphanedHackathonRecords();
+
     await HackathonAuditLog.log({
       actorId: req.admin?._id || req.admin?.id || 'admin',
       actorName: req.admin?.name || req.admin?.username || 'Admin',
@@ -1016,13 +1114,13 @@ exports.deleteAdminTeam = async (req, res) => {
       targetId: team.teamId,
       previousState,
       newState: { isDeleted: true, deletedAt: team.deletedAt, deletedBy: team.deletedBy },
-      reason: req.body.reason || `Admin soft-deleted team "${team.teamName}" (${team.teamId})`,
+      reason: req.body.reason || `Admin soft-deleted team "${team.teamName}" (${team.teamId}) and cascaded removal of downstream process records`,
       req,
     });
 
     res.status(200).json({
       success: true,
-      message: `Team ${team.teamName} (${team.teamId}) deleted successfully.`,
+      message: `Team ${team.teamName} (${team.teamId}) and all downstream process records removed successfully.`,
     });
   } catch (error) {
     console.error('deleteAdminTeam Error:', error);
@@ -2460,6 +2558,8 @@ exports.finalSubmitProject = async (req, res) => {
  */
 exports.getAdminSubmissions = async (req, res) => {
   try {
+    await cleanupOrphanedHackathonRecords();
+
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 15));
     const skip = (page - 1) * limit;
@@ -2486,7 +2586,7 @@ exports.getAdminSubmissions = async (req, res) => {
       HackathonSubmission.find(query)
         .populate({
           path: 'team',
-          select: 'teamId teamName track leader members status paymentStatus initialIdea confirmedAt',
+          select: 'teamId teamName track leader members status paymentStatus initialIdea confirmedAt isDeleted',
         })
         .sort({ submittedAt: -1, updatedAt: -1 })
         .skip(skip)
@@ -2495,9 +2595,9 @@ exports.getAdminSubmissions = async (req, res) => {
       HackathonSubmission.countDocuments(query),
     ]);
 
-    let filtered = submissions;
+    let filtered = submissions.filter((s) => s.team && !s.team.isDeleted);
     if (track && track !== 'ALL') {
-      filtered = submissions.filter((s) => s.team?.track === track);
+      filtered = filtered.filter((s) => s.team?.track === track);
     }
 
     res.status(200).json({
@@ -2911,6 +3011,8 @@ exports.resetAdminEditorialMemberPassword = async (req, res) => {
  */
 exports.getAdminEditorialAssignments = async (req, res) => {
   try {
+    await cleanupOrphanedHackathonRecords();
+
     const { editorialMemberId, teamId, status } = req.query;
     const query = { hackathonId: 'can-hackathon-2026' };
 
@@ -2927,9 +3029,11 @@ exports.getAdminEditorialAssignments = async (req, res) => {
       .sort({ assignedAt: -1 })
       .lean();
 
+    const validAssignments = assignments.filter((a) => a.team && !a.team.isDeleted);
+
     // Attach evaluation details to each assignment
     const enrichedAssignments = await Promise.all(
-      assignments.map(async (assignment) => {
+      validAssignments.map(async (assignment) => {
         const evaluation = await HackathonEditorialEvaluation.findOne({
           team: assignment.team?._id,
           editorialMember: assignment.editorialMember?._id,
@@ -3161,6 +3265,8 @@ exports.deleteAdminEditorialAssignment = async (req, res) => {
  */
 exports.getAdminEditorialEvaluations = async (req, res) => {
   try {
+    await cleanupOrphanedHackathonRecords();
+
     const { teamId, editorialMemberId, status, track } = req.query;
     const query = { hackathonId: 'can-hackathon-2026' };
 
@@ -3174,8 +3280,8 @@ exports.getAdminEditorialEvaluations = async (req, res) => {
       .sort({ updatedAt: -1 })
       .lean();
 
-    // Filter by teamId or track if provided
-    let filteredEvaluations = evaluations;
+    // Filter by active team (exclude deleted/missing teams)
+    let filteredEvaluations = evaluations.filter((e) => e.team && !e.team.isDeleted);
     if (teamId) {
       filteredEvaluations = filteredEvaluations.filter(
         (e) => e.teamId === teamId || String(e.team?._id) === String(teamId)
@@ -3189,6 +3295,7 @@ exports.getAdminEditorialEvaluations = async (req, res) => {
     const teamAggregationMap = {};
 
     filteredEvaluations.forEach((evalDoc) => {
+      if (!evalDoc.team || evalDoc.team.isDeleted) return;
       const tId = evalDoc.teamId;
       if (!teamAggregationMap[tId]) {
         teamAggregationMap[tId] = {
@@ -4097,6 +4204,8 @@ exports.calculateAdminResults = async (req, res) => {
  */
 exports.getAdminResults = async (req, res) => {
   try {
+    await cleanupOrphanedHackathonRecords();
+
     const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
     const { track, status, rankingStatus, category, search } = req.query;
 
@@ -4112,6 +4221,9 @@ exports.getAdminResults = async (req, res) => {
       .sort({ rank: 1, finalScore: -1 })
       .lean();
 
+    // Filter out deleted/orphaned teams
+    results = results.filter((r) => r.team && !r.team.isDeleted);
+
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       results = results.filter(
@@ -4122,17 +4234,20 @@ exports.getAdminResults = async (req, res) => {
       );
     }
 
-    // Summary counters
-    const allResults = await HackathonResult.find({ hackathonId }).lean();
+    // Summary counters - only count active non-deleted teams
+    const allResults = await HackathonResult.find({ hackathonId })
+      .populate('team', 'isDeleted')
+      .lean();
+    const validResults = allResults.filter((r) => r.team && !r.team.isDeleted);
     const summary = {
-      total: allResults.length,
-      eligible: allResults.filter((r) => r.rankingStatus === 'READY').length,
-      pending: allResults.filter((r) => r.rankingStatus === 'PENDING_EVALUATIONS').length,
-      ineligible: allResults.filter((r) => r.rankingStatus === 'INELIGIBLE').length,
-      ties: allResults.filter((r) => r.rankingStatus === 'TIE').length,
-      approved: allResults.filter((r) => ['APPROVED', 'PUBLISHED', 'LOCKED'].includes(r.resultStatus)).length,
-      published: allResults.filter((r) => r.isPublished).length,
-      locked: allResults.filter((r) => r.isLocked).length,
+      total: validResults.length,
+      eligible: validResults.filter((r) => r.rankingStatus === 'READY').length,
+      pending: validResults.filter((r) => r.rankingStatus === 'PENDING_EVALUATIONS').length,
+      ineligible: validResults.filter((r) => r.rankingStatus === 'INELIGIBLE').length,
+      ties: validResults.filter((r) => r.rankingStatus === 'TIE').length,
+      approved: validResults.filter((r) => ['APPROVED', 'PUBLISHED', 'LOCKED'].includes(r.resultStatus)).length,
+      published: validResults.filter((r) => r.isPublished).length,
+      locked: validResults.filter((r) => r.isLocked).length,
     };
 
     const setting =
@@ -4815,16 +4930,18 @@ exports.getPublicResults = async (req, res) => {
     }
 
     // Fetch published results, populate submission & team info
-    const [results, fulfillments] = await Promise.all([
+    const [resultsRaw, fulfillments] = await Promise.all([
       HackathonResult.find(resultFilter)
         .populate('submissionId', 'projectName')
-        .populate('team', 'teamName teamId track finalSubmission initialIdea')
+        .populate('team', 'teamName teamId track finalSubmission initialIdea isDeleted')
         .sort({ rank: 1, finalScore: -1 })
         .lean(),
       HackathonPrizeFulfillment.find({ status: { $ne: 'CANCELLED' } })
         .populate('prizeId', 'name amount currency')
         .lean(),
     ]);
+
+    const results = resultsRaw.filter((r) => r.team && !r.team.isDeleted);
 
     const fulfillmentMap = new Map();
     for (const f of fulfillments) {
@@ -4929,8 +5046,11 @@ exports.getAdminCertificates = async (req, res) => {
       filter.$and = [{ $or: searchOr }];
     }
 
+    await cleanupOrphanedHackathonRecords();
+
     const [certificatesRaw, total, counts] = await Promise.all([
       HackathonCertificate.find(filter)
+        .populate('team', 'isDeleted')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -5831,6 +5951,8 @@ exports.getPublicSponsors = async (req, res) => {
  */
 exports.getAdminPrizeFulfillments = async (req, res) => {
   try {
+    await cleanupOrphanedHackathonRecords();
+
     const hackathonId = req.query.hackathonId || 'can-hackathon-2026';
     const filter = {};
     if (hackathonId && hackathonId !== 'can-hackathon-2026') {
@@ -5845,8 +5967,8 @@ exports.getAdminPrizeFulfillments = async (req, res) => {
     if (req.query.status) filter.status = req.query.status;
 
     // Auto-sync: Check if there are official winner results who don't have a prize fulfillment record yet
-    const [existingFulfillments, winnerResults, prizes] = await Promise.all([
-      HackathonPrizeFulfillment.find(filter).lean(),
+    const [existingFulfillmentsRaw, winnerResultsRaw, prizes] = await Promise.all([
+      HackathonPrizeFulfillment.find(filter).populate('team').lean(),
       HackathonResult.find({
         $or: [
           { hackathonId: 'can-hackathon-2026' },
@@ -5871,6 +5993,9 @@ exports.getAdminPrizeFulfillments = async (req, res) => {
         ],
       }).lean(),
     ]);
+
+    const existingFulfillments = existingFulfillmentsRaw.filter((f) => f.team && !f.team.isDeleted);
+    const winnerResults = winnerResultsRaw.filter((w) => w.team && !w.team.isDeleted);
 
     // If any winner is missing a fulfillment record, auto-create it
     for (const w of winnerResults) {
@@ -5918,12 +6043,12 @@ exports.getAdminPrizeFulfillments = async (req, res) => {
             prizeId: matchedPrize._id,
             resultId: w._id,
             teamId: w.teamId,
-            team: w.team?._id || w.team,
+            team: w.team._id,
             recipient: {
-              name: w.team?.leader?.name || w.teamName,
-              email: w.team?.leader?.email || '',
-              mobile: w.team?.leader?.mobile || w.team?.leader?.phone || '',
-              college: w.team?.leader?.college || '',
+              name: w.team.leader?.name || 'Leader',
+              email: w.team.leader?.email || '',
+              mobile: w.team.leader?.phone || '',
+              college: w.team.leader?.college || '',
             },
             fulfillmentMethod: matchedPrize.fulfillmentMethod || 'BANK_TRANSFER',
             amount: matchedPrize.amount || 0,
@@ -5936,13 +6061,15 @@ exports.getAdminPrizeFulfillments = async (req, res) => {
       }
     }
 
-    const fulfillments = await HackathonPrizeFulfillment.find(filter)
+    const fulfillmentsRaw = await HackathonPrizeFulfillment.find(filter)
       .select('+transactionReference')
       .populate('prizeId', 'name category amount currency fulfillmentMethod sponsorNameSnapshot')
       .populate('resultId', 'rank category finalScore')
-      .populate('team', 'teamName leader track')
+      .populate('team', 'teamName leader track isDeleted')
       .sort({ createdAt: -1 })
       .lean();
+
+    const fulfillments = fulfillmentsRaw.filter((f) => f.team && !f.team.isDeleted);
 
     res.status(200).json({ success: true, fulfillments });
   } catch (error) {

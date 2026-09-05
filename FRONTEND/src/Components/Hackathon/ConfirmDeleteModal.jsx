@@ -84,7 +84,7 @@ export default function ConfirmDeleteModal({
         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Notice:</span> Related submissions, review records, and participant queries for this team will be marked inactive.
+            <span className="font-bold">Cascade Removal Notice:</span> Deleting this team will automatically remove all of its associated submissions, judge evaluations, rankings/results, prize fulfillments, and certificates across all subsequent steps.
           </div>
         </div>
 
