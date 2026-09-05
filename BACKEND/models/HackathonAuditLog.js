@@ -40,6 +40,7 @@ const hackathonAuditLogSchema = new mongoose.Schema(
         'HackathonPrize',
         'HackathonSponsor',
         'HackathonPrizeFulfillment',
+        'HackathonDuplicateQueue',
         'Evaluation',
         'General',
       ],

@@ -21,6 +21,8 @@ const bcrypt = require('bcryptjs');
 const unstopParserService = require('../services/unstopParserService');
 const hackathonEmailService = require('../services/hackathonEmailService');
 const hackathonOpsService = require('../services/hackathonOpsService');
+const HackathonDuplicateQueue = require('../models/HackathonDuplicateQueue');
+const hackathonIdentityService = require('../services/hackathonIdentityService');
 const { validateHackathonConfig } = require('../services/hackathonConfigService');
 
 const razorpayInstance = new Razorpay({
@@ -946,6 +948,8 @@ exports.getAdminTeams = async (req, res) => {
         { teamName: regex },
         { teamId: regex },
         { unstopApplicationId: regex },
+        { 'sourceReferences.unstopTeamIds': regex },
+        { 'sourceReferences.websiteRegistrationIds': regex },
         { 'leader.email': regex },
         { 'leader.name': regex },
       ];
@@ -6626,6 +6630,140 @@ exports.getAdminTeam360 = async (req, res) => {
       return res.status(404).json({ success: false, message: error.message });
     }
     res.status(500).json({ success: false, message: 'Failed to fetch team 360 details.', error: error.message });
+  }
+};
+
+/**
+ * 84. Register Website Team (Public / Applicant)
+ * POST /api/hackathon/register or POST /api/hackathon/teams/register-website
+ */
+exports.registerWebsiteTeam = async (req, res) => {
+  try {
+    const {
+      teamName,
+      track,
+      domain,
+      leader,
+      members,
+      initialIdea,
+      submittedLinks,
+      sourceRegistrationId,
+    } = req.body;
+
+    if (!teamName || !teamName.trim()) {
+      return res.status(400).json({ success: false, message: 'Team Name is required.' });
+    }
+    if (!leader || !leader.email || !leader.email.trim()) {
+      return res.status(400).json({ success: false, message: 'Team Leader email is required.' });
+    }
+
+    const result = await hackathonIdentityService.processIncomingTeam({
+      source: 'WEBSITE',
+      sourceId: sourceRegistrationId || '',
+      teamName,
+      track,
+      domain,
+      leader,
+      members: members || [],
+      initialIdea: initialIdea || {},
+      submittedLinks: submittedLinks || {},
+    });
+
+    if (result.status === 'QUEUED_FOR_ADMIN') {
+      return res.status(202).json({
+        success: true,
+        queued: true,
+        message: 'Your registration is under administrative verification.',
+        queueItem: result.queueItem,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      team: result.team,
+      teamId: result.teamId,
+      action: result.action,
+      message: result.action === 'EXISTING_TEAM_LINKED'
+        ? 'Successfully linked to existing team.'
+        : 'Team registered successfully.',
+    });
+  } catch (error) {
+    console.error('registerWebsiteTeam Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to register team.', error: error.message });
+  }
+};
+
+/**
+ * 85. Admin: Get Duplicate / Ambiguous Matches Verification Queue
+ * GET /api/hackathon/admin/duplicates
+ */
+exports.getAdminDuplicateQueue = async (req, res) => {
+  try {
+    const { status = 'PENDING', page = 1, limit = 50 } = req.query;
+    const query = {};
+    if (status && status !== 'ALL') {
+      query.status = status;
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, total] = await Promise.all([
+      HackathonDuplicateQueue.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      HackathonDuplicateQueue.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      items,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
+  } catch (error) {
+    console.error('getAdminDuplicateQueue Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch duplicate queue.', error: error.message });
+  }
+};
+
+/**
+ * 86. Admin: Resolve Duplicate / Ambiguous Verification Queue Item
+ * POST /api/hackathon/admin/duplicates/:id/resolve
+ */
+exports.resolveAdminDuplicateQueueItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decision, targetTeamId, notes } = req.body;
+
+    if (!decision || !['MERGE', 'KEEP_SEPARATE', 'REJECT'].includes(decision)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid decision (MERGE, KEEP_SEPARATE, REJECT) is required.',
+      });
+    }
+
+    const adminUser = req.user || { name: 'Admin', email: 'admin@codenova.com' };
+    const result = await hackathonIdentityService.resolveAdminVerification({
+      queueId: id,
+      decision,
+      targetTeamId,
+      adminUser,
+      notes,
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('resolveAdminDuplicateQueueItem Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

@@ -56,6 +56,7 @@ import {
   AlertOctagon,
   Compass,
   Video,
+  GitMerge,
 } from "lucide-react";
 import UnstopImportModal from "./UnstopImportModal";
 import TeamDetailDrawer from "./TeamDetailDrawer";
@@ -105,6 +106,13 @@ export default function HackathonAdminWorkspace() {
   const [selectedTeamForForm, setSelectedTeamForForm] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTeamForDelete, setSelectedTeamForDelete] = useState(null);
+
+  // Team Identity & Duplicate Verification Queue State
+  const [duplicateQueue, setDuplicateQueue] = useState([]);
+  const [duplicateQueueLoading, setDuplicateQueueLoading] = useState(false);
+  const [duplicateQueueTotal, setDuplicateQueueTotal] = useState(0);
+  const [duplicateQueueStatus, setDuplicateQueueStatus] = useState("PENDING");
+  const [resolvingQueueId, setResolvingQueueId] = useState(null);
 
   const fetchTeams = async (page = 1, overrideFilters = null) => {
     try {
@@ -1349,11 +1357,52 @@ export default function HackathonAdminWorkspace() {
     }
   };
 
+  const fetchDuplicateQueue = async (page = 1) => {
+    try {
+      setDuplicateQueueLoading(true);
+      const token = getAdminToken();
+      const res = await axios.get(
+        `${BACKEND_URL}/api/hackathon/admin/duplicates?status=${duplicateQueueStatus}&page=${page}&limit=50`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        setDuplicateQueue(res.data.items || []);
+        setDuplicateQueueTotal(res.data.total || 0);
+      }
+    } catch (err) {
+      console.error("fetchDuplicateQueue error:", err);
+    } finally {
+      setDuplicateQueueLoading(false);
+    }
+  };
+
+  const handleResolveDuplicate = async (queueId, decision, targetTeamId = "", notes = "") => {
+    try {
+      setResolvingQueueId(queueId);
+      const token = getAdminToken();
+      const res = await axios.post(
+        `${BACKEND_URL}/api/hackathon/admin/duplicates/${queueId}/resolve`,
+        { decision, targetTeamId, notes },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data?.success) {
+        toast.success(res.data.message || `Queue item resolved (${decision})`);
+        fetchDuplicateQueue(1);
+        fetchTeams(1);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resolve verification item");
+    } finally {
+      setResolvingQueueId(null);
+    }
+  };
+
   useEffect(() => {
     fetchOverview();
     fetchOpsData();
     fetchEvaluations();
     fetchResults();
+    fetchDuplicateQueue(1);
   }, []);
 
   useEffect(() => {
@@ -1365,6 +1414,10 @@ export default function HackathonAdminWorkspace() {
     }
     if (activeTab === "teams") {
       fetchTeams(1);
+      fetchDuplicateQueue(1);
+    }
+    if (activeTab === "duplicates") {
+      fetchDuplicateQueue(1);
     }
     if (activeTab === "submissions") {
       fetchSubmissions(1);
@@ -1605,6 +1658,12 @@ export default function HackathonAdminWorkspace() {
               badge: opsAlerts.filter((a) => a.severity === "CRITICAL").length > 0 ? "Alerts" : "Live",
             },
             { id: "teams", label: "Teams", icon: Users, badge: stats.totalTeams > 0 ? `${stats.totalTeams} Teams` : "Active" },
+            {
+              id: "duplicates",
+              label: "Verification Queue",
+              icon: GitMerge,
+              badge: duplicateQueueTotal > 0 ? `${duplicateQueueTotal} Review` : null,
+            },
             { id: "editorial", label: "Editorial & Judges", icon: Award, badge: editorialMembers.length > 0 ? `${editorialMembers.length} Judges` : "Active" },
             {
               id: "submissions",
@@ -2935,21 +2994,40 @@ export default function HackathonAdminWorkspace() {
 
                     return (
                       <tr key={t._id} className="hover:bg-slate-50 transition-colors group">
-                        <td className="p-3 font-mono font-bold text-indigo-600">
-                          <button
-                            onClick={() => {
-                              setSelectedTeamIdForDrawer(t.teamId);
-                              setShowTeamDrawer(true);
-                            }}
-                            className="hover:underline text-left cursor-pointer"
-                          >
-                            {t.teamId}
-                          </button>
-                          {t.unstopApplicationId && (
-                            <div className="text-[10px] text-slate-400 font-mono font-normal">
-                              {t.unstopApplicationId}
-                            </div>
-                          )}
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setSelectedTeamIdForDrawer(t.teamId);
+                                setShowTeamDrawer(true);
+                              }}
+                              className="font-mono font-bold text-indigo-600 hover:underline text-left cursor-pointer"
+                            >
+                              {t.teamId}
+                            </button>
+                            {Array.isArray(t.sources) && t.sources.map((s) => (
+                              <span
+                                key={s}
+                                className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded uppercase ${
+                                  s === "WEBSITE"
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                    : s === "UNSTOP"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-slate-100 text-slate-700 border border-slate-200"
+                                }`}
+                              >
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono font-normal mt-0.5 space-y-0.5">
+                            {t.sourceReferences?.websiteRegistrationIds?.length > 0 && (
+                              <div>Web: {t.sourceReferences.websiteRegistrationIds.join(", ")}</div>
+                            )}
+                            {(t.sourceReferences?.unstopTeamIds?.length > 0 || t.unstopApplicationId) && (
+                              <div>Unstop: {t.sourceReferences?.unstopTeamIds?.join(", ") || t.unstopApplicationId}</div>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3">
                           <button
@@ -3099,6 +3177,243 @@ export default function HackathonAdminWorkspace() {
               >
                 Next
               </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── TEAM IDENTITY: VERIFICATION QUEUE & AMBIGUOUS MATCH REVIEW ─── */}
+      {activeTab === "duplicates" && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <GitMerge className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-bold text-slate-900">Admin Verification & Duplicate Queue</h3>
+                {duplicateQueueTotal > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    {duplicateQueueTotal} Records
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Records flagged for ambiguous identity, email conflicts, or member overlap. Resolve with strict canonical Internal Team ID preservation.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={duplicateQueueStatus}
+                onChange={(e) => {
+                  setDuplicateQueueStatus(e.target.value);
+                  setTimeout(() => fetchDuplicateQueue(1), 50);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 cursor-pointer"
+              >
+                <option value="PENDING">Pending Review</option>
+                <option value="RESOLVED">Resolved / Merged</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="ALL">All Records</option>
+              </select>
+              <button
+                onClick={() => fetchDuplicateQueue(1)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${duplicateQueueLoading ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {duplicateQueueLoading ? (
+            <div className="p-12 text-center text-slate-400">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
+              <p className="text-xs font-semibold">Loading verification queue records...</p>
+            </div>
+          ) : duplicateQueue.length === 0 ? (
+            <div className="p-12 text-center space-y-2 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+              <h4 className="text-sm font-bold text-slate-800">Verification Queue is Clean</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                No ambiguous or duplicate team records pending review. All Website and Unstop registrations have matched cleanly or generated unique Internal IDs.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {duplicateQueue.map((item) => {
+                const incoming = item.incomingRecord || {};
+                const candidates = item.candidateMatches || [];
+                const isPending = item.status === "PENDING";
+                const isResolving = resolvingQueueId === item.queueId;
+
+                return (
+                  <div
+                    key={item.queueId || item._id}
+                    className="border border-slate-200 rounded-xl p-5 hover:border-indigo-200 transition-all bg-white shadow-xs space-y-4"
+                  >
+                    {/* Item Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+                          {item.queueId}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase border ${
+                            item.incomingSource === "WEBSITE"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          Source: {item.incomingSource} ({item.incomingSourceId || "N/A"})
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            item.status === "PENDING"
+                              ? "bg-amber-100 text-amber-800"
+                              : item.status === "RESOLVED"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-rose-100 text-rose-800"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        Queued: {new Date(item.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Incoming vs Candidate Comparison Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      {/* Incoming Record Box */}
+                      <div className="bg-slate-50 rounded-lg p-3.5 border border-slate-100 space-y-1.5">
+                        <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                          Incoming Application
+                        </div>
+                        <div>
+                          Team Name: <strong className="text-slate-900">{incoming.teamName || item.incomingTeamName}</strong>
+                        </div>
+                        <div>
+                          Leader: <strong className="text-slate-900">{incoming.leader?.name || "—"}</strong> ({incoming.leader?.email})
+                        </div>
+                        <div>
+                          Track: <span className="text-slate-700">{incoming.track || "General Track"}</span>
+                        </div>
+                        <div>
+                          Members: <span className="text-slate-700">{(incoming.members || []).length} additional</span>
+                        </div>
+                      </div>
+
+                      {/* Candidate Matches Box */}
+                      <div className="bg-indigo-50/40 rounded-lg p-3.5 border border-indigo-100 space-y-2">
+                        <div className="font-bold text-indigo-900 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Candidate Matches ({candidates.length})
+                          </span>
+                        </div>
+                        {candidates.length === 0 ? (
+                          <p className="text-slate-400 italic">No direct candidates found.</p>
+                        ) : (
+                          candidates.map((cand, cIdx) => (
+                            <div
+                              key={cIdx}
+                              className="bg-white p-2.5 rounded-lg border border-indigo-100 space-y-1 shadow-2xs"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono font-bold text-indigo-600 text-[11px]">
+                                  {cand.teamId}
+                                </span>
+                                <span className="text-[10px] font-semibold text-slate-700">
+                                  {cand.teamName}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                Leader: {cand.leaderEmail}
+                              </div>
+                              {/* Match Signals */}
+                              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                                {cand.matchSignals?.exactLeaderEmailMatch && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Leader Email Match
+                                  </span>
+                                )}
+                                {cand.matchSignals?.memberOverlapCount > 0 && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                    Overlap: {cand.matchSignals.memberOverlapCount} ({Math.round(cand.matchSignals.overlapRatio * 100)}%)
+                                  </span>
+                                )}
+                                {cand.matchSignals?.sameTeamName && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-600">
+                                    Same Name Signal
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Resolution Details or Actions */}
+                    {isPending ? (
+                      <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        {candidates.length > 0 && (
+                          <button
+                            disabled={isResolving}
+                            onClick={() => {
+                              const target = candidates[0]?.teamId;
+                              if (confirm(`Link and Merge source record into existing canonical team ${target}?`)) {
+                                handleResolveDuplicate(item.queueId, "MERGE", target);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
+                          >
+                            <GitMerge className="w-3.5 h-3.5" />
+                            Merge & Link to {candidates[0]?.teamId}
+                          </button>
+                        )}
+                        <button
+                          disabled={isResolving}
+                          onClick={() => {
+                            if (confirm("Keep this record separate and issue a brand-new canonical Internal Team ID?")) {
+                              handleResolveDuplicate(item.queueId, "KEEP_SEPARATE");
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Keep Separate (New ID)
+                        </button>
+                        <button
+                          disabled={isResolving}
+                          onClick={() => {
+                            if (confirm("Reject and discard this incoming record?")) {
+                              handleResolveDuplicate(item.queueId, "REJECT");
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer disabled:opacity-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs flex items-center justify-between text-slate-600">
+                        <span>
+                          Resolved Action: <strong className="text-slate-900">{item.resolution?.action}</strong>
+                          {item.resolution?.targetTeamId && (
+                            <> &rarr; Internal Team ID: <strong className="font-mono text-indigo-600">{item.resolution.targetTeamId}</strong></>
+                          )}
+                        </span>
+                        <span className="text-slate-400 text-[11px]">
+                          by {item.resolution?.resolvedBy?.name || "Admin"} on {new Date(item.resolution?.resolvedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

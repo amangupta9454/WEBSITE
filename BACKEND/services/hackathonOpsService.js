@@ -807,13 +807,16 @@ async function operationalSearch(query, hackathonId = 'can-hackathon-2026') {
       $or: [
         { teamId: regex },
         { name: regex },
+        { teamName: regex },
         { 'leader.name': regex },
         { 'leader.email': regex },
         { unstopApplicationId: regex },
+        { 'sourceReferences.unstopTeamIds': regex },
+        { 'sourceReferences.websiteRegistrationIds': regex },
         { 'project.title': regex },
       ],
     })
-      .select('teamId name track status paymentStatus leader.name leader.email leader.college unstopApplicationId createdAt')
+      .select('teamId teamName name track status paymentStatus leader.name leader.email leader.college unstopApplicationId sourceReferences sources createdAt')
       .limit(10)
       .lean(),
 

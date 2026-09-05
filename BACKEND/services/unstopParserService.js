@@ -1,5 +1,6 @@
 const xlsx = require('xlsx');
 const HackathonTeam = require('../models/HackathonTeam');
+const { generateInternalTeamId } = require('./hackathonIdentityService');
 
 /**
  * Standard fuzzy field dictionary for Unstop Excel columns
@@ -424,20 +425,10 @@ exports.extractSheetData = (workbook, requestedSheetName = null) => {
 };
 
 /**
- * Generate unique internal Team ID (e.g. CAN-1001)
+ * Generate unique internal Team ID (e.g. CAN-TEAM-000001)
  */
 async function generateTeamId() {
-  const count = await HackathonTeam.countDocuments();
-  const nextNum = 1000 + count + 1;
-  let candidate = `CAN-${nextNum}`;
-  let exists = await HackathonTeam.findOne({ teamId: candidate });
-  let offset = 1;
-  while (exists) {
-    candidate = `CAN-${nextNum + offset}`;
-    exists = await HackathonTeam.findOne({ teamId: candidate });
-    offset++;
-  }
-  return candidate;
+  return await generateInternalTeamId();
 }
 
 /**
@@ -807,10 +798,16 @@ exports.commitBatchImport = async ({
 
         // Standard Insert for NEW and WARNING rows
         const teamId = await generateTeamId();
+        const unstopAppId = (item.unstopApplicationId || '').trim();
 
         await HackathonTeam.create({
           teamId,
-          unstopApplicationId: item.unstopApplicationId || '',
+          unstopApplicationId: unstopAppId,
+          sourceReferences: {
+            unstopTeamIds: unstopAppId ? [unstopAppId] : [],
+            websiteRegistrationIds: [],
+          },
+          sources: ['UNSTOP'],
           teamName: item.teamName,
           track: item.track || 'General Track',
           leader: {
@@ -996,6 +993,7 @@ exports.generateRegistrationImportPreview = async ({ sheetData, customMapping = 
 
   const existingTeamsDb = await HackathonTeam.find({
     $or: [
+      { 'sourceReferences.unstopTeamIds': { $in: allTeamIds } },
       { unstopApplicationId: { $in: allTeamIds } },
       { teamId: { $in: allTeamIds } },
       { 'leader.email': { $in: allCandidateEmails } },
@@ -1008,6 +1006,11 @@ exports.generateRegistrationImportPreview = async ({ sheetData, customMapping = 
   const existingByLeaderEmail = new Map();
 
   existingTeamsDb.forEach((t) => {
+    if (t.sourceReferences?.unstopTeamIds) {
+      t.sourceReferences.unstopTeamIds.forEach((id) => {
+        if (id) existingByUnstopId.set(id.toUpperCase(), t);
+      });
+    }
     if (t.unstopApplicationId) existingByUnstopId.set(t.unstopApplicationId.toUpperCase(), t);
     if (t.teamId) existingByTeamId.set(t.teamId.toUpperCase(), t);
     if (t.leader?.email) existingByLeaderEmail.set(t.leader.email.toLowerCase(), t);
@@ -1199,10 +1202,13 @@ exports.commitRegistrationImport = async ({ teamsToImport, duplicateHandling = '
         continue;
       }
 
-      // Check if team already exists by unstopApplicationId, existing teamId, or leader email
+      // Check if team already exists by sourceReferences, unstopApplicationId, existing teamId, or leader email
       const existing = await HackathonTeam.findOne({
         $or: [
-          ...(item.unstopApplicationId ? [{ unstopApplicationId: item.unstopApplicationId }] : []),
+          ...(item.unstopApplicationId ? [
+            { 'sourceReferences.unstopTeamIds': item.unstopApplicationId },
+            { unstopApplicationId: item.unstopApplicationId },
+          ] : []),
           ...(item.existingTeamRef?.teamId ? [{ teamId: item.existingTeamRef.teamId.toUpperCase() }] : []),
           ...(item.leader?.email ? [{ 'leader.email': item.leader.email.toLowerCase() }] : []),
         ],
@@ -1211,6 +1217,19 @@ exports.commitRegistrationImport = async ({ teamsToImport, duplicateHandling = '
 
       if (existing) {
         // UPDATE Existing Team
+        if (!existing.sourceReferences) {
+          existing.sourceReferences = { websiteRegistrationIds: [], unstopTeamIds: [] };
+        }
+        if (item.unstopApplicationId && !existing.sourceReferences.unstopTeamIds.includes(item.unstopApplicationId)) {
+          existing.sourceReferences.unstopTeamIds.push(item.unstopApplicationId);
+        }
+        if (item.unstopApplicationId && !existing.unstopApplicationId) {
+          existing.unstopApplicationId = item.unstopApplicationId;
+        }
+        if (!existing.sources.includes('UNSTOP')) {
+          existing.sources.push('UNSTOP');
+        }
+
         existing.teamName = item.teamName || existing.teamName;
         existing.domain = item.domain || existing.domain;
         if (item.track) existing.track = item.track;
@@ -1275,9 +1294,15 @@ exports.commitRegistrationImport = async ({ teamsToImport, duplicateHandling = '
       } else {
         // CREATE New Team
         const teamId = await generateTeamId();
+        const unstopAppId = (item.unstopApplicationId || '').trim();
         await HackathonTeam.create({
           teamId,
-          unstopApplicationId: item.unstopApplicationId || '',
+          unstopApplicationId: unstopAppId,
+          sourceReferences: {
+            unstopTeamIds: unstopAppId ? [unstopAppId] : [],
+            websiteRegistrationIds: [],
+          },
+          sources: ['UNSTOP'],
           teamName: item.teamName,
           domain: item.domain || '',
           track: item.track || item.domain || 'General Track',
@@ -1326,7 +1351,7 @@ exports.generatePptImportPreview = async ({ sheetData, customMapping = {} }) => 
 
   // 1. Fetch all active teams from DB
   const activeTeams = await HackathonTeam.find({ isDeleted: { $ne: true } })
-    .select('teamId teamName unstopApplicationId leader members initialIdea pptSubmission track')
+    .select('teamId teamName unstopApplicationId sourceReferences sources leader members initialIdea pptSubmission track')
     .lean();
 
   const byUnstopId = new Map();
@@ -1341,10 +1366,32 @@ exports.generatePptImportPreview = async ({ sheetData, customMapping = {} }) => 
       if (!byUnstopId.has(uId)) byUnstopId.set(uId, []);
       byUnstopId.get(uId).push(team);
     }
+    if (Array.isArray(team.sourceReferences?.unstopTeamIds)) {
+      team.sourceReferences.unstopTeamIds.forEach((sId) => {
+        if (sId) {
+          const uId = sId.trim().toUpperCase();
+          if (!byUnstopId.has(uId)) byUnstopId.set(uId, []);
+          if (!byUnstopId.get(uId).some((t) => t.teamId === team.teamId)) {
+            byUnstopId.get(uId).push(team);
+          }
+        }
+      });
+    }
     if (team.teamId) {
       const tId = team.teamId.trim().toUpperCase();
       if (!byTeamId.has(tId)) byTeamId.set(tId, []);
       byTeamId.get(tId).push(team);
+    }
+    if (Array.isArray(team.sourceReferences?.websiteRegistrationIds)) {
+      team.sourceReferences.websiteRegistrationIds.forEach((sId) => {
+        if (sId) {
+          const wId = sId.trim().toUpperCase();
+          if (!byTeamId.has(wId)) byTeamId.set(wId, []);
+          if (!byTeamId.get(wId).some((t) => t.teamId === team.teamId)) {
+            byTeamId.get(wId).push(team);
+          }
+        }
+      });
     }
     if (team.leader?.email) {
       const em = team.leader.email.trim().toLowerCase();
@@ -1591,8 +1638,14 @@ exports.commitPptImport = async ({ rowsToImport }) => {
       const team = await HackathonTeam.findOne({
         $or: [
           ...(row.matchedTeam._id ? [{ _id: row.matchedTeam._id }] : []),
-          ...(row.matchedTeam.teamId ? [{ teamId: row.matchedTeam.teamId.toUpperCase() }] : []),
-          ...(row.matchedTeam.unstopApplicationId ? [{ unstopApplicationId: row.matchedTeam.unstopApplicationId }] : []),
+          ...(row.matchedTeam.teamId ? [
+            { teamId: row.matchedTeam.teamId.toUpperCase() },
+            { 'sourceReferences.websiteRegistrationIds': row.matchedTeam.teamId.toUpperCase() },
+          ] : []),
+          ...(row.matchedTeam.unstopApplicationId ? [
+            { unstopApplicationId: row.matchedTeam.unstopApplicationId },
+            { 'sourceReferences.unstopTeamIds': row.matchedTeam.unstopApplicationId },
+          ] : []),
           ...(row.matchedTeam.leaderEmail ? [{ 'leader.email': row.matchedTeam.leaderEmail.toLowerCase() }] : []),
         ],
         isDeleted: { $ne: true },

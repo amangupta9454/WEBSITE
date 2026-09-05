@@ -99,6 +99,9 @@ const {
   exportAdminResource,
   operationalSearch,
   getAdminTeam360,
+  registerWebsiteTeam,
+  getAdminDuplicateQueue,
+  resolveAdminDuplicateQueueItem,
 } = require('../controllers/hackathonController');
 const {
   hackathonPublicLimiter,
@@ -265,6 +268,14 @@ router.get('/admin/security-summary', auth, verifyAdmin, getAdminSecuritySummary
 router.get('/admin/export/:resource', auth, verifyAdmin, hackathonExportLimiter, exportAdminResource);
 router.get('/admin/search', auth, verifyAdmin, operationalSearch);
 router.get('/admin/team-360/:teamId', auth, verifyAdmin, getAdminTeam360);
+
+// ==========================================
+// Team Identity & Duplicate Verification Queue
+// ==========================================
+router.post('/register', hackathonPublicLimiter, registerWebsiteTeam);
+router.post('/teams/register-website', hackathonPublicLimiter, registerWebsiteTeam);
+router.get('/admin/duplicates', auth, verifyAdmin, getAdminDuplicateQueue);
+router.post('/admin/duplicates/:id/resolve', auth, verifyAdmin, resolveAdminDuplicateQueueItem);
 
 module.exports = router;
 

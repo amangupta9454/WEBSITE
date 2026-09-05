@@ -2048,3 +2048,4 @@ export default function HackathonPortal() {
     </div>
   );
 }
+

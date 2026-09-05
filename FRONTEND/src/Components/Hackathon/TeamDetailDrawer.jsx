@@ -430,11 +430,26 @@ export default function TeamDetailDrawer({
                   {loading ? "Loading Team Details..." : team?.teamName || "Team Profile"}
                 </h2>
                 {team?.teamId && (
-                  <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
-                    {team.teamId}
+                  <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-100" title="Canonical Internal Team ID">
+                    Internal ID: {team.teamId}
                   </span>
                 )}
-                {team?.source === "MANUAL_ADMIN" ? (
+                {Array.isArray(team?.sources) && team.sources.length > 0 ? (
+                  team.sources.map((s) => (
+                    <span
+                      key={s}
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
+                        s === "WEBSITE"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : s === "UNSTOP"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-purple-50 text-purple-700 border-purple-200"
+                      }`}
+                    >
+                      {s}
+                    </span>
+                  ))
+                ) : team?.source === "MANUAL_ADMIN" ? (
                   <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 uppercase">
                     Manual Team
                   </span>
@@ -458,12 +473,15 @@ export default function TeamDetailDrawer({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Track: <span className="font-semibold text-slate-700">{team?.track || "General Track"}</span>
-                {team?.unstopApplicationId && (
-                  <> • Unstop App ID: <span className="font-mono text-slate-700">{team.unstopApplicationId}</span></>
+              <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>Track: <strong className="text-slate-700">{team?.track || "General Track"}</strong></span>
+                {team?.sourceReferences?.websiteRegistrationIds?.length > 0 && (
+                  <span>Website Reg ID: <strong className="font-mono text-slate-700">{team.sourceReferences.websiteRegistrationIds.join(", ")}</strong></span>
                 )}
-              </p>
+                {(team?.sourceReferences?.unstopTeamIds?.length > 0 || team?.unstopApplicationId) && (
+                  <span>Unstop ID: <strong className="font-mono text-slate-700">{team?.sourceReferences?.unstopTeamIds?.join(", ") || team?.unstopApplicationId}</strong></span>
+                )}
+              </div>
             </div>
           </div>
 

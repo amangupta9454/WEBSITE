@@ -115,6 +115,20 @@ const hackathonTeamSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    sourceReferences: {
+      websiteRegistrationIds: {
+        type: [String],
+        default: [],
+      },
+      unstopTeamIds: {
+        type: [String],
+        default: [],
+      },
+    },
+    sources: {
+      type: [String],
+      default: [],
+    },
     teamName: {
       type: String,
       required: true,
@@ -318,8 +332,51 @@ const hackathonTeamSchema = new mongoose.Schema(
   }
 );
 
+// Bidirectional sync for source references and backward compatibility
+hackathonTeamSchema.pre('save', function (next) {
+  if (!this.sourceReferences) {
+    this.sourceReferences = { websiteRegistrationIds: [], unstopTeamIds: [] };
+  }
+  if (!Array.isArray(this.sourceReferences.websiteRegistrationIds)) {
+    this.sourceReferences.websiteRegistrationIds = [];
+  }
+  if (!Array.isArray(this.sourceReferences.unstopTeamIds)) {
+    this.sourceReferences.unstopTeamIds = [];
+  }
+  if (!Array.isArray(this.sources)) {
+    this.sources = [];
+  }
+
+  // If unstopApplicationId is set, ensure it exists in sourceReferences.unstopTeamIds
+  if (this.unstopApplicationId && !this.sourceReferences.unstopTeamIds.includes(this.unstopApplicationId)) {
+    this.sourceReferences.unstopTeamIds.push(this.unstopApplicationId);
+  }
+
+  // If unstopTeamIds exists but unstopApplicationId is empty, sync first ID
+  if (!this.unstopApplicationId && this.sourceReferences.unstopTeamIds.length > 0) {
+    this.unstopApplicationId = this.sourceReferences.unstopTeamIds[0];
+  }
+
+  // Sync sources array
+  if (this.sourceReferences.unstopTeamIds.length > 0 && !this.sources.includes('UNSTOP')) {
+    this.sources.push('UNSTOP');
+  }
+  if (this.sourceReferences.websiteRegistrationIds.length > 0 && !this.sources.includes('WEBSITE')) {
+    this.sources.push('WEBSITE');
+  }
+  if (this.sources.length === 0) {
+    this.sources.push(this.source === 'DIRECT_REGISTRATION' ? 'WEBSITE' : 'UNSTOP');
+  }
+
+  if (typeof next === 'function') {
+    next();
+  }
+});
+
 // Indexes for quick lookup and high-performance operations
 hackathonTeamSchema.index({ 'members.email': 1 });
+hackathonTeamSchema.index({ 'sourceReferences.unstopTeamIds': 1 });
+hackathonTeamSchema.index({ 'sourceReferences.websiteRegistrationIds': 1 });
 hackathonTeamSchema.index({ hackathonId: 1, status: 1 });
 hackathonTeamSchema.index({ hackathonId: 1, paymentStatus: 1 });
 hackathonTeamSchema.index({ hackathonId: 1, track: 1 });
